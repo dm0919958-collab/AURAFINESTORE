@@ -63,10 +63,6 @@ let storeData = {
     codAdvancePercent: 15
   },
   products: [
-    // =========================================================================
-    // 1. MEN SECTION (Shirts, T-Shirts, Watches -> ৩টি করে, প্রতিটিতে ৪টি ছবি)
-    // =========================================================================
-    // --- MEN: SHIRTS ---
     {
       id: 301,
       name: "Men's Classic Oxford Cotton Shirt",
@@ -133,8 +129,6 @@ let storeData = {
       ],
       description: "Rich micro-brushed cotton woven with timeless tartan checks and a curved tailored hem."
     },
-
-    // --- MEN: T-SHIRTS ---
     {
       id: 304,
       name: "Supima Heavyweight Minimalist Tee",
@@ -201,8 +195,6 @@ let storeData = {
       ],
       description: "Breathable textured honeycomb pique knit polo shirt finished with ribbed collar and genuine horn buttons."
     },
-
-    // --- MEN: WATCHES ---
     {
       id: 307,
       name: "Royal Heritage Chronograph Master Watch",
@@ -269,11 +261,6 @@ let storeData = {
       ],
       description: "Ultra-modern ion-plated stealth black finish featuring magnetic Milanese mesh band and water resistance up to 5 ATM."
     },
-
-    // =========================================================================
-    // 2. WOMEN SECTION (Jhumka, Studs, Kurtis, Sarees, Handbags -> ৩টি করে)
-    // =========================================================================
-    // --- WOMEN: JHUMKA ---
     {
       id: 401,
       name: "Royal Heritage Kundan Drop Jhumkas",
@@ -340,8 +327,6 @@ let storeData = {
       ],
       description: "Bohemian silver oxidised finish inspired by temple motifs with lightweight hypoallergenic ear hooks."
     },
-
-    // --- WOMEN: STUDS ---
     {
       id: 404,
       name: "Solitaire Zirconia Halo Floral Studs",
@@ -408,8 +393,6 @@ let storeData = {
       ],
       description: "Contemporary bezel-set multi-faceted synthetic stones designed for modern office and party wear."
     },
-
-    // --- WOMEN: KURTIS ---
     {
       id: 407,
       name: "Anarkali Embroidered Pure Chanderi Kurti",
@@ -476,8 +459,6 @@ let storeData = {
       ],
       description: "Authentic hand-embroidered Bakhiya and Phanda thread work crafted gracefully on butter-soft rayon fabric."
     },
-
-    // --- WOMEN: SAREES ---
     {
       id: 410,
       name: "Banarasi Katan Silk Woven Zari Saree",
@@ -544,8 +525,6 @@ let storeData = {
       ],
       description: "100 count pure organic linen handloom weave featuring breathable drape, Jamdani motifs, and zari border."
     },
-
-    // --- WOMEN: HANDBAGS ---
     {
       id: 413,
       name: "Velvet Quilted Evening Crossbody Sling Bag",
@@ -612,11 +591,6 @@ let storeData = {
       ],
       description: "Artisanal party clutch embellished with intricate bullion zari embroidery and crystal magnetic lock."
     },
-
-    // =========================================================================
-    // 3. GF & BF SPECIAL GIFTS (Couples, Romantic, Gift Sets -> ৩টি করে)
-    // =========================================================================
-    // --- GIFTS: COUPLES ---
     {
       id: 501,
       name: "Magnetic Mutual Heart Couple Bracelets Set",
@@ -683,8 +657,6 @@ let storeData = {
       ],
       description: "Luxury matching his and her watch pair presented inside an aesthetic premium velvet couple jewelry gift box."
     },
-
-    // --- GIFTS: ROMANTIC ---
     {
       id: 504,
       name: "100 Languages I Love You Projection Necklace",
@@ -751,8 +723,6 @@ let storeData = {
       ],
       description: "Iridescent blooming flower encapsulated within an immaculate glass dome encircled by fairy string lights."
     },
-
-    // --- GIFTS: GIFT SETS ---
     {
       id: 507,
       name: "Luxury Couple Grand Surprise Hamper Box",
@@ -823,7 +793,112 @@ let storeData = {
   orders: []
 };
 
-// টেলিগ্রাম মেসেজ নোটিফিকেশন
+// ১. অফিশিয়াল PDF ইনভয়েস স্লিপ তৈরি করার ফাংশন
+function generateOrderInvoicePDF(order) {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ margin: 40, size: 'A4' });
+      const buffers = [];
+
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => {
+        const pdfData = Buffer.concat(buffers);
+        resolve(pdfData);
+      });
+
+      // হেডার বার
+      doc.rect(40, 40, 515, 60).fill('#78350f');
+      doc.fillColor('#FFFFFF').fontSize(22).font('Helvetica-Bold').text('AURA FINE STORE', 55, 50);
+      doc.fontSize(9).font('Helvetica').text('Premium Lifestyle, Ethnic Wear & Luxury Collections', 55, 75);
+      doc.fontSize(8).text('Bolpur, Birbhum, West Bengal - 731204 | Support: +91 6289145092', 55, 87);
+
+      doc.fillColor('#FFFFFF').fontSize(14).font('Helvetica-Bold').text('TAX INVOICE / BILL', 360, 50, { align: 'right', width: 180 });
+      doc.fontSize(9).font('Helvetica').text(`Order ID: #${order.id}`, 360, 68, { align: 'right', width: 180 });
+      doc.text(`Date: ${order.date}`, 360, 80, { align: 'right', width: 180 });
+
+      // গ্রাহক ও শিপিং ডিটেলস
+      doc.rect(40, 115, 250, 95).strokeColor('#e5e7eb').stroke();
+      doc.fillColor('#78350f').fontSize(10).font('Helvetica-Bold').text('BILLED & DELIVERED TO:', 50, 125);
+      doc.fillColor('#111827').fontSize(9).font('Helvetica-Bold').text(order.customerName, 50, 140);
+      doc.font('Helvetica').fontSize(8).text(`Phone: +91 ${order.phone}`, 50, 153);
+      doc.text(order.address, 50, 166, { width: 230 });
+
+      doc.rect(305, 115, 250, 95).strokeColor('#e5e7eb').stroke();
+      doc.fillColor('#78350f').fontSize(10).font('Helvetica-Bold').text('DISPATCH LOGISTICS:', 315, 125);
+      doc.fillColor('#111827').fontSize(9).font('Helvetica-Bold').text('AURA Central Logistics Hub', 315, 140);
+      doc.font('Helvetica').fontSize(8).text('Bolpur, Birbhum, WB - 731204', 315, 153);
+      doc.text(`Courier Partner: ${order.courierPartner || 'Delhivery'}`, 315, 166);
+      doc.text(`AWB / Tracking: Post-Packing Dispatch`, 315, 179);
+
+      // আইটেমস টেবিল
+      const tableTop = 225;
+      doc.rect(40, tableTop, 515, 22).fill('#3b1a08');
+      doc.fillColor('#FFFFFF').fontSize(9).font('Helvetica-Bold');
+      doc.text('SL', 50, tableTop + 6);
+      doc.text('ITEM DESCRIPTION', 90, tableTop + 6);
+      doc.text('UNIT PRICE', 350, tableTop + 6, { width: 60, align: 'right' });
+      doc.text('QTY', 430, tableTop + 6, { width: 30, align: 'center' });
+      doc.text('TOTAL', 480, tableTop + 6, { width: 65, align: 'right' });
+
+      let y = tableTop + 30;
+      doc.fillColor('#1f2937').fontSize(8).font('Helvetica');
+
+      (order.items || []).forEach((item, idx) => {
+        doc.text(String(idx + 1), 50, y);
+        doc.font('Helvetica-Bold').text(item.name, 90, y);
+        doc.font('Helvetica').fontSize(7).fillColor('#6b7280');
+        doc.text(`Size: ${item.selectedSize || 'Standard'} | Color: ${item.selectedColor || 'Standard'}`, 90, y + 10);
+
+        doc.fillColor('#1f2937').fontSize(8);
+        doc.text(`Rs. ${item.price}`, 350, y, { width: 60, align: 'right' });
+        doc.text(String(item.qty || 1), 430, y, { width: 30, align: 'center' });
+        doc.text(`Rs. ${item.price * (item.qty || 1)}`, 480, y, { width: 65, align: 'right' });
+
+        y += 26;
+      });
+
+      // পেমেন্ট ও সামারি
+      const summaryTop = Math.max(y + 20, 360);
+      doc.rect(40, summaryTop, 250, 95).strokeColor('#e5e7eb').stroke();
+      doc.fillColor('#78350f').fontSize(9).font('Helvetica-Bold').text('PAYMENT VERIFICATION:', 50, summaryTop + 10);
+      doc.fillColor('#111827').fontSize(8).text(`Mode: ${order.paymentMethod}`, 50, summaryTop + 24);
+      doc.fillColor('#059669').font('Helvetica-Bold').text(
+        order.paymentMethod === 'UPI' ? 'Payment: 100% Fully Paid (Verified)' : `Advance: Rs. ${order.advancePaid} (Balance Due: Rs. ${order.balanceDue})`,
+        50, summaryTop + 37
+      );
+      doc.fillColor('#374151').font('Helvetica').text(`Transaction UTR: ${order.utrNumber}`, 50, summaryTop + 52);
+      doc.fontSize(7).fillColor('#9ca3af').text('* 100% Safe & Authenticated Order', 50, summaryTop + 75);
+
+      doc.rect(305, summaryTop, 250, 95).strokeColor('#e5e7eb').stroke();
+      doc.fillColor('#374151').fontSize(8);
+      doc.text('Bag Subtotal:', 315, summaryTop + 10);
+      doc.text(`Rs. ${order.subTotal}`, 450, summaryTop + 10, { width: 95, align: 'right' });
+
+      doc.text(`Coupon Discount (${order.couponCode || 'None'}):`, 315, summaryTop + 24);
+      doc.fillColor('#059669').text(`- Rs. ${order.discountApplied || 0}`, 450, summaryTop + 24, { width: 95, align: 'right' });
+
+      doc.fillColor('#374151').text('Delivery Charge:', 315, summaryTop + 38);
+      doc.text(order.deliveryCharge > 0 ? `Rs. ${order.deliveryCharge}` : 'FREE', 450, summaryTop + 38, { width: 95, align: 'right' });
+
+      doc.rect(305, summaryTop + 65, 250, 30).fill('#3b1a08');
+      doc.fillColor('#FFFFFF').fontSize(10).font('Helvetica-Bold');
+      doc.text('TOTAL BILL AMOUNT:', 315, summaryTop + 75);
+      doc.text(`Rs. ${order.total}`, 450, summaryTop + 75, { width: 95, align: 'right' });
+
+      // টার্মস
+      doc.fillColor('#6b7280').fontSize(7).font('Helvetica');
+      doc.text('TERMS & REPLACEMENT POLICY:', 40, summaryTop + 120);
+      doc.text('1. 7-Day Replacement: Report transit damage via WhatsApp (+91 6289145092) within 7 days.', 40, summaryTop + 130);
+      doc.text('2. Please keep unboxing video for transit guarantee coverage.', 40, summaryTop + 140);
+
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+// ২. টেলিগ্রাম অ্যালার্ট এবং PDF স্লিপ সরাসরি পাঠানোর ফাংশন
 async function sendTelegramAlert(order) {
   try {
     const text = `🧾 <b>AURA FINE STORE - NEW ORDER CONFIRMED</b>\n` +
@@ -835,16 +910,23 @@ async function sendTelegramAlert(order) {
       `💰 <b>Total Bill:</b> <b>₹${order.total}</b> (${order.paymentMethod})\n` +
       `🚚 <b>Delivery Fee:</b> ₹${order.deliveryCharge}\n` +
       `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `<i>অর্ডারের সম্পূর্ণ অফিশিয়াল PDF চালান নিচে সংযুক্ত করা হলো।</i>`;
 
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    const pdfBuffer = await generateOrderInvoicePDF(order);
+
+    // Node.js Native FormData ব্যবহার করে sendDocument পাঠানো হচ্ছে
+    const formData = new FormData();
+    formData.append('chat_id', TELEGRAM_CHAT_ID);
+    formData.append('caption', text);
+    formData.append('parse_mode', 'HTML');
+    
+    const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+    formData.append('document', blob, `Invoice_${order.id}.pdf`);
+
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: text,
-        parse_mode: 'HTML'
-      })
+      body: formData
     });
   } catch (err) {
     console.error("Telegram alert error:", err.message);
@@ -856,7 +938,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ১. পাবলিক স্টোর API (No-Cache Headers যাতে সাথে সাথে রিফ্রেশ হয়)
+// পাবলিক স্টোর API[cite: 3]
 app.get('/api/store', (req, res) => {
   res.set({
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -873,7 +955,7 @@ app.get('/api/store', (req, res) => {
   });
 });
 
-// ২. প্রোডাক্ট যোগ, এডিট ও ডিলিট API[cite: 5]
+// প্রোডাক্ট অ্যাড, এডিট ও ডিলিট API[cite: 3]
 app.post('/api/admin/products', (req, res) => {
   const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, sizeOptions, colorOptions, badge, images, description } = req.body;
   if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -930,7 +1012,7 @@ app.delete('/api/admin/products/:id', (req, res) => {
   res.json({ success: true, products: storeData.products });
 });
 
-// ৩. ব্যানার API[cite: 5]
+// ব্যানার API[cite: 3]
 app.post('/api/admin/banners/add', (req, res) => {
   const { pin, title, tag, productId, image } = req.body;
   if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -953,7 +1035,7 @@ app.delete('/api/admin/banners/:id', (req, res) => {
   res.json({ success: true, dealBanners: storeData.dealBanners });
 });
 
-// ৪. কুপন ও স্টোর সেটিংস API[cite: 5]
+// কুপন ও স্টোর সেটিংস API[cite: 3]
 app.post('/api/admin/coupons', (req, res) => {
   const { pin, code, discountPercent, minSpend, title, description, showOnStore } = req.body;
   if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -992,7 +1074,7 @@ app.post('/api/admin/store-settings', (req, res) => {
   res.json({ success: true, storeSettings: storeData.storeSettings });
 });
 
-// ৫. অর্ডার প্রসেসিং ও ট্র্যাকিং API[cite: 5]
+// অর্ডার প্রসেসিং ও ট্র্যাকিং API[cite: 3]
 app.post('/api/orders', async (req, res) => {
   try {
     const { 
@@ -1063,7 +1145,7 @@ app.get('/api/orders/track', (req, res) => {
   res.json({ success: true, orders: matched });
 });
 
-// ৬. অ্যাডমিন প্যানেল কন্ট্রোল[cite: 5]
+// অ্যাডমিন প্যানেল কন্ট্রোল[cite: 3]
 app.post('/api/admin/login', (req, res) => {
   const { pin } = req.body;
   if (pin === ADMIN_SECRET_PIN) return res.json({ success: true, token: "admin-active" });
@@ -1094,6 +1176,22 @@ app.post('/api/admin/orders', (req, res) => {
       pendingOrders: storeData.orders.filter(o => o.status.includes('Pending')).length
     }
   });
+});
+
+// ৩. নতুন যুক্ত করা হলো: অ্যাডমিন প্যানেল থেকে অর্ডার ডিলিট করার API
+app.delete('/api/admin/orders/:id', (req, res) => {
+  const { pin } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  const orderId = req.params.id;
+  const initialLength = storeData.orders.length;
+  storeData.orders = storeData.orders.filter(o => o.id !== orderId);
+
+  if (storeData.orders.length === initialLength) {
+    return res.status(404).json({ success: false, message: "Order not found" });
+  }
+
+  res.json({ success: true, message: `Order #${orderId} deleted successfully` });
 });
 
 app.patch('/api/admin/orders/:id/status', (req, res) => {
