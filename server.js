@@ -1,0 +1,1141 @@
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const nodemailer = require('nodemailer');
+const PDFDocument = require('pdfkit');
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// অ্যাডমিন প্যানেল ক্রেডেনশিয়াল
+const ADMIN_SECRET_PIN = "admin123";
+const ADMIN_EMAIL = "mahatosarita436@gmail.com";
+
+// টেলিগ্রাম কনফিগারেশন
+const TELEGRAM_BOT_TOKEN = "8818940415:AAHdq6roV4XDCF3sxtJdDSqw-Abq20i1KbQ";
+const TELEGRAM_CHAT_ID = "8836538477";
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: ADMIN_EMAIL,
+    pass: process.env.EMAIL_APP_PASSWORD || 'your-gmail-app-password'
+  }
+});
+
+let storeData = {
+  dealBanners: [
+    {
+      id: 1,
+      productId: 301,
+      title: "Men's Luxury Oxford Royal Shirt",
+      tag: "MEN'S SPECIAL • 50% SAVINGS",
+      image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&auto=format&fit=crop&q=60"
+    },
+    {
+      id: 2,
+      productId: 501,
+      title: "Magnetic Mutual Heart Couple Bracelets Set",
+      tag: "GF & BF SPECIAL • FLAT 50% OFF",
+      image: "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=600&auto=format&fit=crop&q=60"
+    }
+  ],
+  coupons: [
+    {
+      code: "DIWALI33",
+      discountPercent: 33,
+      minSpend: 499,
+      title: "শুভ দীপাবলি স্পেশাল অফার",
+      description: "কমপক্ষে ৪৯৯ টাকার কেনাকাটায় সরাসরি ৩৩% ছাড়!",
+      showOnStore: true
+    },
+    {
+      code: "AURA20",
+      discountPercent: 20,
+      minSpend: 0,
+      title: "মেগা ওয়েলকাম অফার",
+      description: "যেকোনো মূল্যের কেনাকাটায় সরাসরি ২০% ফ্ল্যাট ছাড় উপভোগ করুন।",
+      showOnStore: true
+    }
+  ],
+  storeSettings: {
+    deliveryCharge: 0,
+    codAdvancePercent: 15
+  },
+  products: [
+    // =========================================================================
+    // 1. MEN SECTION (Shirts, T-Shirts, Watches -> ৩টি করে, প্রতিটিতে ৪টি ছবি)
+    // =========================================================================
+    // --- MEN: SHIRTS ---
+    {
+      id: 301,
+      name: "Men's Classic Oxford Cotton Shirt",
+      mainCategory: "Men",
+      category: "Shirts",
+      price: 899,
+      originalPrice: 1799,
+      stockQuantity: 18,
+      badge: "Bestseller",
+      rating: 4.9,
+      reviewsCount: 78,
+      inStock: true,
+      sizeOptions: ["M (38)", "L (40)", "XL (42)", "XXL (44)"],
+      colorOptions: ["Pure White", "Sky Blue", "Pastel Pink", "Navy Blue"],
+      images: [
+        "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1620012253295-c15c429f66bf?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "100% breathable pure combed Oxford cotton with formal spread collar and double-stitched durability."
+    },
+    {
+      id: 302,
+      name: "Royal Linen Blend Casual Resort Shirt",
+      mainCategory: "Men",
+      category: "Shirts",
+      price: 949,
+      originalPrice: 1899,
+      stockQuantity: 14,
+      badge: "Trending",
+      rating: 4.8,
+      reviewsCount: 42,
+      inStock: true,
+      sizeOptions: ["M (38)", "L (40)", "XL (42)"],
+      colorOptions: ["Olive Green", "Beige Sand", "Charcoal", "Sky Mist"],
+      images: [
+        "https://images.unsplash.com/photo-1589310243389-96a5483213a8?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1620012253295-c15c429f66bf?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Lightweight European linen blend casual shirt crafted for effortless summer and evening sophistication."
+    },
+    {
+      id: 303,
+      name: "Executive Dark Tartan Checked Shirt",
+      mainCategory: "Men",
+      category: "Shirts",
+      price: 799,
+      originalPrice: 1599,
+      stockQuantity: 20,
+      badge: "Popular",
+      rating: 4.7,
+      reviewsCount: 39,
+      inStock: true,
+      sizeOptions: ["S (36)", "M (38)", "L (40)", "XL (42)"],
+      colorOptions: ["Dark Maroon", "Forest Green", "Royal Navy", "Slate Grey"],
+      images: [
+        "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1589310243389-96a5483213a8?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Rich micro-brushed cotton woven with timeless tartan checks and a curved tailored hem."
+    },
+
+    // --- MEN: T-SHIRTS ---
+    {
+      id: 304,
+      name: "Supima Heavyweight Minimalist Tee",
+      mainCategory: "Men",
+      category: "T-Shirts",
+      price: 549,
+      originalPrice: 1099,
+      stockQuantity: 25,
+      badge: "Must Have",
+      rating: 4.9,
+      reviewsCount: 88,
+      inStock: true,
+      sizeOptions: ["S", "M", "L", "XL", "XXL"],
+      colorOptions: ["Pitch Black", "Pure White", "Sage Olive", "Earthy Sand"],
+      images: [
+        "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "240 GSM ultra-combed Supima cotton t-shirt with bio-wash finish and structured drop-shoulder fit."
+    },
+    {
+      id: 305,
+      name: "Vintage Aesthetic Washed Graphic Tee",
+      mainCategory: "Men",
+      category: "T-Shirts",
+      price: 599,
+      originalPrice: 1199,
+      stockQuantity: 15,
+      badge: "Trending",
+      rating: 4.8,
+      reviewsCount: 52,
+      inStock: true,
+      sizeOptions: ["M", "L", "XL"],
+      colorOptions: ["Washed Grey", "Faded Rust", "Vintage Indigo", "Off-Black"],
+      images: [
+        "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Streetwear aesthetic acid-washed crew neck t-shirt with fade-resistant artisanal typography."
+    },
+    {
+      id: 306,
+      name: "Signature Pique Knit Polo T-Shirt",
+      mainCategory: "Men",
+      category: "T-Shirts",
+      price: 699,
+      originalPrice: 1399,
+      stockQuantity: 18,
+      badge: "Premium Polo",
+      rating: 4.9,
+      reviewsCount: 64,
+      inStock: true,
+      sizeOptions: ["M", "L", "XL", "XXL"],
+      colorOptions: ["Navy Blue", "Crimson Red", "Jet Black", "Snow White"],
+      images: [
+        "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Breathable textured honeycomb pique knit polo shirt finished with ribbed collar and genuine horn buttons."
+    },
+
+    // --- MEN: WATCHES ---
+    {
+      id: 307,
+      name: "Royal Heritage Chronograph Master Watch",
+      mainCategory: "Men",
+      category: "Watches",
+      price: 1899,
+      originalPrice: 3999,
+      stockQuantity: 10,
+      badge: "Luxury Edition",
+      rating: 5.0,
+      reviewsCount: 94,
+      inStock: true,
+      sizeOptions: ["Standard (42mm Case)"],
+      colorOptions: ["Obsidian Black", "Emerald Gold", "Silver Blue", "Rose Gold"],
+      images: [
+        "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1533139502658-0198f920d8e8?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Multi-dial functional quartz chronograph watch with anti-scratch sapphire crystal and surgical stainless steel casing."
+    },
+    {
+      id: 308,
+      name: "Vintage Genuine Leather Gentleman Timepiece",
+      mainCategory: "Men",
+      category: "Watches",
+      price: 1399,
+      originalPrice: 2799,
+      stockQuantity: 12,
+      badge: "Classic",
+      rating: 4.8,
+      reviewsCount: 46,
+      inStock: true,
+      sizeOptions: ["Standard (40mm Case)"],
+      colorOptions: ["Antique Tan Brown", "Dark Chocolate", "Matte Black", "Cognac"],
+      images: [
+        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1533139502658-0198f920d8e8?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Hand-stitched genuine calfskin leather watch paired with an ultra-slim satin metallic dial and Japanese movement."
+    },
+    {
+      id: 309,
+      name: "Matte All-Black Minimalist Steel Watch",
+      mainCategory: "Men",
+      category: "Watches",
+      price: 1599,
+      originalPrice: 3199,
+      stockQuantity: 9,
+      badge: "Limited Drop",
+      rating: 4.9,
+      reviewsCount: 61,
+      inStock: true,
+      sizeOptions: ["Standard (41mm Case)"],
+      colorOptions: ["Stealth Black", "Gunmetal Grey", "Deep Space Navy", "Silver Mesh"],
+      images: [
+        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1533139502658-0198f920d8e8?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Ultra-modern ion-plated stealth black finish featuring magnetic Milanese mesh band and water resistance up to 5 ATM."
+    },
+
+    // =========================================================================
+    // 2. WOMEN SECTION (Jhumka, Studs, Kurtis, Sarees, Handbags -> ৩টি করে)
+    // =========================================================================
+    // --- WOMEN: JHUMKA ---
+    {
+      id: 401,
+      name: "Royal Heritage Kundan Drop Jhumkas",
+      mainCategory: "Women",
+      category: "Jhumka",
+      price: 699,
+      originalPrice: 1299,
+      stockQuantity: 14,
+      badge: "Bestseller",
+      rating: 4.9,
+      reviewsCount: 142,
+      inStock: true,
+      sizeOptions: ["Standard (Height: 6.5 cm)"],
+      colorOptions: ["22K Antique Gold", "Kundan Pearl White", "Ruby Emerald Dual"],
+      images: [
+        "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "22K micron gold plated traditional handcrafted earrings with real freshwater river seed pearls."
+    },
+    {
+      id: 402,
+      name: "Peacock Meenakari Tribal Dome Jhumkas",
+      mainCategory: "Women",
+      category: "Jhumka",
+      price: 599,
+      originalPrice: 1199,
+      stockQuantity: 18,
+      badge: "Handcrafted",
+      rating: 4.8,
+      reviewsCount: 89,
+      inStock: true,
+      sizeOptions: ["Standard (Height: 5.5 cm)"],
+      colorOptions: ["Royal Blue Meena", "Emerald Green Meena", "Crimson Red"],
+      images: [
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Artisanal hand-painted Meenakari enamel peacock artwork suspended above micro-tinkle floral ghungroos."
+    },
+    {
+      id: 403,
+      name: "Vintage Silver Oxidised Temple Jhumkas",
+      mainCategory: "Women",
+      category: "Jhumka",
+      price: 499,
+      originalPrice: 999,
+      stockQuantity: 22,
+      badge: "Trending",
+      rating: 4.7,
+      reviewsCount: 67,
+      inStock: true,
+      sizeOptions: ["Standard (Height: 6.0 cm)"],
+      colorOptions: ["Oxidised Silver", "German Silver Dual", "Matte Black Silver"],
+      images: [
+        "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Bohemian silver oxidised finish inspired by temple motifs with lightweight hypoallergenic ear hooks."
+    },
+
+    // --- WOMEN: STUDS ---
+    {
+      id: 404,
+      name: "Solitaire Zirconia Halo Floral Studs",
+      mainCategory: "Women",
+      category: "Studs",
+      price: 399,
+      originalPrice: 799,
+      stockQuantity: 25,
+      badge: "Sparkle Cut",
+      rating: 4.9,
+      reviewsCount: 110,
+      inStock: true,
+      sizeOptions: ["Free Size (1.2 cm)"],
+      colorOptions: ["Platinum Silver", "Rose Gold Polish", "Champagne Gold"],
+      images: [
+        "https://images.unsplash.com/photo-1635767798638-3e25273a8236?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "5A diamond-cut cubic zirconia surrounded by sparkling micro-pave crystals with push-back closures."
+    },
+    {
+      id: 405,
+      name: "925 Sterling Silver Plated Pearl Studs",
+      mainCategory: "Women",
+      category: "Studs",
+      price: 449,
+      originalPrice: 899,
+      stockQuantity: 20,
+      badge: "Daily Grace",
+      rating: 4.8,
+      reviewsCount: 74,
+      inStock: true,
+      sizeOptions: ["8mm Pearl", "10mm Pearl"],
+      colorOptions: ["Pure Ivory White", "Blush Pink Pearl", "Tahitian Grey"],
+      images: [
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1635767798638-3e25273a8236?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Classy and skin-friendly cultured shell pearls mounted onto anti-tarnish rhodium plated stems."
+    },
+    {
+      id: 406,
+      name: "Geometric Hexagon Ruby Stone Studs",
+      mainCategory: "Women",
+      category: "Studs",
+      price: 499,
+      originalPrice: 999,
+      stockQuantity: 16,
+      badge: "Modern Chic",
+      rating: 4.9,
+      reviewsCount: 58,
+      inStock: true,
+      sizeOptions: ["Standard (1.0 cm)"],
+      colorOptions: ["Crimson Ruby", "Emerald Green", "Sapphire Blue"],
+      images: [
+        "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1635767798638-3e25273a8236?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Contemporary bezel-set multi-faceted synthetic stones designed for modern office and party wear."
+    },
+
+    // --- WOMEN: KURTIS ---
+    {
+      id: 407,
+      name: "Anarkali Embroidered Pure Chanderi Kurti",
+      mainCategory: "Women",
+      category: "Kurtis",
+      price: 1199,
+      originalPrice: 2399,
+      stockQuantity: 15,
+      badge: "Royal Festive",
+      rating: 4.9,
+      reviewsCount: 96,
+      inStock: true,
+      sizeOptions: ["M (38)", "L (40)", "XL (42)", "XXL (44)"],
+      colorOptions: ["Mustard Gold", "Pastel Mint Green", "Dusty Pink", "Royal Maroon"],
+      images: [
+        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Graceful flared Chanderi silk blend Anarkali kurti adorned with intricate sequin zari work and cotton lining."
+    },
+    {
+      id: 408,
+      name: "Jaipuri Hand-Block Printed Cotton Straight Kurti",
+      mainCategory: "Women",
+      category: "Kurtis",
+      price: 799,
+      originalPrice: 1599,
+      stockQuantity: 20,
+      badge: "Daily Cotton",
+      rating: 4.8,
+      reviewsCount: 82,
+      inStock: true,
+      sizeOptions: ["S (36)", "M (38)", "L (40)", "XL (42)"],
+      colorOptions: ["Indigo Blue", "Turmeric Ochre", "Madder Red"],
+      images: [
+        "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "100% pure lightweight Cambric cotton styled with Mandarin collar and three-quarter tailored sleeves."
+    },
+    {
+      id: 409,
+      name: "Lucknowi Chikankari Rayon Long Kurti",
+      mainCategory: "Women",
+      category: "Kurtis",
+      price: 899,
+      originalPrice: 1799,
+      stockQuantity: 18,
+      badge: "Chikankari Art",
+      rating: 4.9,
+      reviewsCount: 114,
+      inStock: true,
+      sizeOptions: ["M (38)", "L (40)", "XL (42)", "XXL (44)"],
+      colorOptions: ["Lavender Lilac", "Sky Breeze", "Snow White", "Peach Rose"],
+      images: [
+        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Authentic hand-embroidered Bakhiya and Phanda thread work crafted gracefully on butter-soft rayon fabric."
+    },
+
+    // --- WOMEN: SAREES ---
+    {
+      id: 410,
+      name: "Banarasi Katan Silk Woven Zari Saree",
+      mainCategory: "Women",
+      category: "Sarees",
+      price: 1899,
+      originalPrice: 3899,
+      stockQuantity: 12,
+      badge: "Bridal Classic",
+      rating: 5.0,
+      reviewsCount: 128,
+      inStock: true,
+      sizeOptions: ["Standard 6.3m (With Blouse Piece)"],
+      colorOptions: ["Vermillion Red", "Peacock Teal Blue", "Wine Purple", "Emerald Green"],
+      images: [
+        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Woven with gleaming golden Kadwa floral jaal along with heavy designer pallu and matching unstitched blouse."
+    },
+    {
+      id: 411,
+      name: "Pure Soft Organza Floral Hand-Painted Saree",
+      mainCategory: "Women",
+      category: "Sarees",
+      price: 1399,
+      originalPrice: 2799,
+      stockQuantity: 16,
+      badge: "Celebrity Pick",
+      rating: 4.8,
+      reviewsCount: 76,
+      inStock: true,
+      sizeOptions: ["Standard 6.3m (With Blouse Piece)"],
+      colorOptions: ["Blush Pink Organza", "Mint Green Organza", "Butter Yellow"],
+      images: [
+        "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1635767798638-3e25273a8236?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Feather-light sheer organza saree with delicate floral motifs and scallop embroidery bordered in golden sequins."
+    },
+    {
+      id: 412,
+      name: "Traditional Handloom Linen Jamdani Saree",
+      mainCategory: "Women",
+      category: "Sarees",
+      price: 1249,
+      originalPrice: 2499,
+      stockQuantity: 14,
+      badge: "Handloom Heritage",
+      rating: 4.9,
+      reviewsCount: 91,
+      inStock: true,
+      sizeOptions: ["Standard 6.3m (With Blouse Piece)"],
+      colorOptions: ["Beige & Antique Gold", "Charcoal & Silver", "Indigo & Copper"],
+      images: [
+        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "100 count pure organic linen handloom weave featuring breathable drape, Jamdani motifs, and zari border."
+    },
+
+    // --- WOMEN: HANDBAGS ---
+    {
+      id: 413,
+      name: "Velvet Quilted Evening Crossbody Sling Bag",
+      mainCategory: "Women",
+      category: "Handbags",
+      price: 799,
+      originalPrice: 1599,
+      stockQuantity: 19,
+      badge: "Trending Bag",
+      rating: 4.9,
+      reviewsCount: 84,
+      inStock: true,
+      sizeOptions: ["Compact (22x15 cm)"],
+      colorOptions: ["Midnight Black Velvet", "Wine Maroon Velvet", "Emerald Green Velvet"],
+      images: [
+        "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Plush diamond quilted velvet sling crafted with antique gold hardware curb chain and high-security twist lock."
+    },
+    {
+      id: 414,
+      name: "Executive Structured Vegan Leather Tote Bag",
+      mainCategory: "Women",
+      category: "Handbags",
+      price: 1099,
+      originalPrice: 2199,
+      stockQuantity: 12,
+      badge: "Office Essential",
+      rating: 4.8,
+      reviewsCount: 78,
+      inStock: true,
+      sizeOptions: ["Large (Fits 13\" Laptop)"],
+      colorOptions: ["Classic Tan", "Matte Charcoal", "Soft Nude Taupe"],
+      images: [
+        "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Scratch-resistant vegan saffiano grain leather tote with triple spacious compartments and reinforced dual handles."
+    },
+    {
+      id: 415,
+      name: "Handcrafted Zari Clutch with Detachable Chain",
+      mainCategory: "Women",
+      category: "Handbags",
+      price: 699,
+      originalPrice: 1399,
+      stockQuantity: 17,
+      badge: "Party Glam",
+      rating: 4.7,
+      reviewsCount: 63,
+      inStock: true,
+      sizeOptions: ["Standard (20x12 cm)"],
+      colorOptions: ["Antique Gold", "Shimmer Silver", "Rose Pink Zari"],
+      images: [
+        "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Artisanal party clutch embellished with intricate bullion zari embroidery and crystal magnetic lock."
+    },
+
+    // =========================================================================
+    // 3. GF & BF SPECIAL GIFTS (Couples, Romantic, Gift Sets -> ৩টি করে)
+    // =========================================================================
+    // --- GIFTS: COUPLES ---
+    {
+      id: 501,
+      name: "Magnetic Mutual Heart Couple Bracelets Set",
+      mainCategory: "Gifts",
+      category: "Couples",
+      price: 499,
+      originalPrice: 999,
+      stockQuantity: 28,
+      badge: "Love Magnet",
+      rating: 5.0,
+      reviewsCount: 154,
+      inStock: true,
+      sizeOptions: ["Adjustable Size (Pair of 2)"],
+      colorOptions: ["Matte Onyx & White Howlite", "All Black Cord", "Silver Charm Milanese"],
+      images: [
+        "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "When brought close, the two heart halves automatically snap together via custom magnetic attraction bells."
+    },
+    {
+      id: 502,
+      name: "Matching Sun & Moon Adjustable Promise Rings",
+      mainCategory: "Gifts",
+      category: "Couples",
+      price: 549,
+      originalPrice: 1099,
+      stockQuantity: 20,
+      badge: "Couple Promise",
+      rating: 4.9,
+      reviewsCount: 89,
+      inStock: true,
+      sizeOptions: ["Adjustable Open Bands (For Him & Her)"],
+      colorOptions: ["925 Sterling Silver Plated", "Vintage Black & Rose"],
+      images: [
+        "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Symbolizes eternal harmony. Delicate open adjustable bands that resize smoothly to fit any ring finger."
+    },
+    {
+      id: 503,
+      name: "His Queen & Her King Engraved Couple Watches",
+      mainCategory: "Gifts",
+      category: "Couples",
+      price: 1699,
+      originalPrice: 3399,
+      stockQuantity: 12,
+      badge: "Royal Pair",
+      rating: 4.9,
+      reviewsCount: 77,
+      inStock: true,
+      sizeOptions: ["Couple Combo (Men + Women)"],
+      colorOptions: ["Duo Tone Gold & Silver", "All Midnight Black", "Rose Gold & Brown Leather"],
+      images: [
+        "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Luxury matching his and her watch pair presented inside an aesthetic premium velvet couple jewelry gift box."
+    },
+
+    // --- GIFTS: ROMANTIC ---
+    {
+      id: 504,
+      name: "100 Languages I Love You Projection Necklace",
+      mainCategory: "Gifts",
+      category: "Romantic",
+      price: 499,
+      originalPrice: 999,
+      stockQuantity: 22,
+      badge: "Viral Trend",
+      rating: 4.9,
+      reviewsCount: 140,
+      inStock: true,
+      sizeOptions: ["45cm Chain"],
+      colorOptions: ["Rose Gold Finish", "Platinum Silver"],
+      images: [
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Using phone light or holding close reveals 'I Love You' etched in 100 languages inside the central micro crystal."
+    },
+    {
+      id: 505,
+      name: "Everlasting Preserved Red Rose Jewel Case",
+      mainCategory: "Gifts",
+      category: "Romantic",
+      price: 699,
+      originalPrice: 1399,
+      stockQuantity: 15,
+      badge: "Pure Love",
+      rating: 5.0,
+      reviewsCount: 95,
+      inStock: true,
+      sizeOptions: ["Display Box (10x10x10 cm)"],
+      colorOptions: ["Passionate Ruby Red", "Royal Blue", "Princess Pink"],
+      images: [
+        "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Real fresh rose preserved using bio-infusion lasting 3+ years, with a hidden pull-out jewelry compartment."
+    },
+    {
+      id: 506,
+      name: "Crystal LED 3D Galaxy Rose Heart Lamp",
+      mainCategory: "Gifts",
+      category: "Romantic",
+      price: 599,
+      originalPrice: 1199,
+      stockQuantity: 19,
+      badge: "Magical Glow",
+      rating: 4.8,
+      reviewsCount: 81,
+      inStock: true,
+      sizeOptions: ["Height: 22 cm"],
+      colorOptions: ["Rainbow Holographic", "Warm Gold Fairy Lights"],
+      images: [
+        "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Iridescent blooming flower encapsulated within an immaculate glass dome encircled by fairy string lights."
+    },
+
+    // --- GIFTS: GIFT SETS ---
+    {
+      id: 507,
+      name: "Luxury Couple Grand Surprise Hamper Box",
+      mainCategory: "Gifts",
+      category: "Gift Sets",
+      price: 1299,
+      originalPrice: 2599,
+      stockQuantity: 10,
+      badge: "Mega Hamper",
+      rating: 5.0,
+      reviewsCount: 112,
+      inStock: true,
+      sizeOptions: ["Grand Combo Box"],
+      colorOptions: ["Signature Black & Gold", "Romantic Blush"],
+      images: [
+        "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Includes Magnetic Bracelets, Projection Pendant, Velvet Rose Case, Scented Candle, and Love Message Scroll."
+    },
+    {
+      id: 508,
+      name: "Gentleman Boyfriend Leather Care Combo Gift Box",
+      mainCategory: "Gifts",
+      category: "Gift Sets",
+      price: 999,
+      originalPrice: 1999,
+      stockQuantity: 14,
+      badge: "For Him",
+      rating: 4.8,
+      reviewsCount: 66,
+      inStock: true,
+      sizeOptions: ["Combo Kit (Wallet, Belt & Pen)"],
+      colorOptions: ["Rich Tan Leather", "Matte Black Leather"],
+      images: [
+        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "Handcrafted RFID-protected genuine leather wallet, matching reversible pin-buckle belt, and an executive metal pen."
+    },
+    {
+      id: 509,
+      name: "Girlfriend Queen Luxury Perfume & Pendant Set",
+      mainCategory: "Gifts",
+      category: "Gift Sets",
+      price: 1099,
+      originalPrice: 2199,
+      stockQuantity: 13,
+      badge: "For Her",
+      rating: 4.9,
+      reviewsCount: 83,
+      inStock: true,
+      sizeOptions: ["Combo Gift Box"],
+      colorOptions: ["French Rose & Gold", "Vanilla Orchid & Silver"],
+      images: [
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55",
+        "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55"
+      ],
+      description: "French floral artisanal perfume paired with a shimmering 925 sterling silver plated butterfly drop pendant."
+    }
+  ],
+  orders: []
+};
+
+// টেলিগ্রাম মেসেজ নোটিফিকেশন
+async function sendTelegramAlert(order) {
+  try {
+    const text = `🧾 <b>AURA FINE STORE - NEW ORDER CONFIRMED</b>\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `📦 <b>Order ID:</b> <code>#${order.id}</code>\n` +
+      `👤 <b>Customer:</b> ${order.customerName}\n` +
+      `📞 <b>Mobile:</b> <code>${order.phone}</code>\n` +
+      `📍 <b>Address:</b> ${order.address}\n` +
+      `💰 <b>Total Bill:</b> <b>₹${order.total}</b> (${order.paymentMethod})\n` +
+      `🚚 <b>Delivery Fee:</b> ₹${order.deliveryCharge}\n` +
+      `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: text,
+        parse_mode: 'HTML'
+      })
+    });
+  } catch (err) {
+    console.error("Telegram alert error:", err.message);
+  }
+}
+
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ১. পাবলিক স্টোর API (No-Cache Headers যাতে সাথে সাথে রিফ্রেশ হয়)
+app.get('/api/store', (req, res) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
+  });
+  
+  res.json({
+    dealBanners: storeData.dealBanners,
+    products: storeData.products,
+    coupons: storeData.coupons,
+    storeSettings: storeData.storeSettings
+  });
+});
+
+// ২. প্রোডাক্ট যোগ, এডিট ও ডিলিট API[cite: 5]
+app.post('/api/admin/products', (req, res) => {
+  const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, sizeOptions, colorOptions, badge, images, description } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  const newProd = {
+    id: Date.now(),
+    name,
+    mainCategory,
+    category,
+    price: Number(price) || 0,
+    originalPrice: Number(originalPrice) || Number(price) || 0,
+    stockQuantity: Number(stockQuantity) || 1,
+    sizeOptions: sizeOptions || [],
+    colorOptions: colorOptions || [],
+    badge: badge || "New",
+    rating: 5.0,
+    reviewsCount: 1,
+    inStock: Number(stockQuantity) > 0,
+    images: images || [],
+    description: description || ""
+  };
+  storeData.products.unshift(newProd);
+  res.json({ success: true, product: newProd });
+});
+
+app.put('/api/admin/products/:id', (req, res) => {
+  const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, sizeOptions, colorOptions, badge, images, description } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  const prodId = Number(req.params.id);
+  const p = storeData.products.find(item => item.id === prodId);
+  if (!p) return res.status(404).json({ success: false, message: "Product not found" });
+
+  p.name = name;
+  p.mainCategory = mainCategory;
+  p.category = category;
+  p.price = Number(price);
+  p.originalPrice = Number(originalPrice);
+  p.stockQuantity = Number(stockQuantity);
+  p.sizeOptions = sizeOptions;
+  p.colorOptions = colorOptions;
+  p.badge = badge;
+  p.description = description;
+  p.images = images;
+  p.inStock = p.stockQuantity > 0;
+
+  res.json({ success: true, product: p });
+});
+
+app.delete('/api/admin/products/:id', (req, res) => {
+  const { pin } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+  storeData.products = storeData.products.filter(p => p.id !== Number(req.params.id));
+  res.json({ success: true, products: storeData.products });
+});
+
+// ৩. ব্যানার API[cite: 5]
+app.post('/api/admin/banners/add', (req, res) => {
+  const { pin, title, tag, productId, image } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  const banner = {
+    id: Date.now(),
+    productId: Number(productId),
+    title,
+    tag,
+    image
+  };
+  storeData.dealBanners.push(banner);
+  res.json({ success: true, dealBanners: storeData.dealBanners });
+});
+
+app.delete('/api/admin/banners/:id', (req, res) => {
+  const { pin } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+  storeData.dealBanners = storeData.dealBanners.filter(b => b.id !== Number(req.params.id));
+  res.json({ success: true, dealBanners: storeData.dealBanners });
+});
+
+// ৪. কুপন ও স্টোর সেটিংস API[cite: 5]
+app.post('/api/admin/coupons', (req, res) => {
+  const { pin, code, discountPercent, minSpend, title, description, showOnStore } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  const cleanCode = (code || "").trim().toUpperCase();
+  const existingIdx = storeData.coupons.findIndex(c => c.code === cleanCode);
+  const couponObj = {
+    code: cleanCode,
+    discountPercent: Number(discountPercent) || 10,
+    minSpend: Number(minSpend) || 0,
+    title: title || `${cleanCode} Special Offer`,
+    description: description || `Flat ${discountPercent}% OFF`,
+    showOnStore: showOnStore === true || showOnStore === "true"
+  };
+
+  if (existingIdx > -1) storeData.coupons[existingIdx] = couponObj;
+  else storeData.coupons.push(couponObj);
+
+  res.json({ success: true, coupons: storeData.coupons });
+});
+
+app.delete('/api/admin/coupons/:code', (req, res) => {
+  const { pin } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+  storeData.coupons = storeData.coupons.filter(c => c.code !== req.params.code.toUpperCase());
+  res.json({ success: true, coupons: storeData.coupons });
+});
+
+app.post('/api/admin/store-settings', (req, res) => {
+  const { pin, deliveryCharge, codAdvancePercent } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  if (deliveryCharge !== undefined) storeData.storeSettings.deliveryCharge = Number(deliveryCharge) || 0;
+  if (codAdvancePercent !== undefined) storeData.storeSettings.codAdvancePercent = Number(codAdvancePercent) || 15;
+
+  res.json({ success: true, storeSettings: storeData.storeSettings });
+});
+
+// ৫. অর্ডার প্রসেসিং ও ট্র্যাকিং API[cite: 5]
+app.post('/api/orders', async (req, res) => {
+  try {
+    const { 
+      customerName, phone, pincode, city, state, 
+      villageOrCity, houseNoStreet, postOffice, policeStation, landmark,
+      items, total, subTotal, discountApplied, couponCode, deliveryCharge,
+      paymentMethod, utrNumber, advancePaid, balanceDue
+    } = req.body;
+
+    const structuredAddress = `${houseNoStreet}, ${villageOrCity}, P.O: ${postOffice}${policeStation ? ', P.S: ' + policeStation : ''}${landmark ? ' (Landmark: ' + landmark + ')' : ''}, ${city}, ${state} - ${pincode}`;
+
+    if (items && items.length > 0) {
+      items.forEach(cartItem => {
+        const p = storeData.products.find(prod => prod.id === cartItem.id);
+        if (p) {
+          p.stockQuantity = Math.max(0, (p.stockQuantity || 10) - (cartItem.qty || 1));
+          if (p.stockQuantity === 0) p.inStock = false;
+        }
+      });
+    }
+
+    const orderId = 'AUR-' + Math.floor(100000 + Math.random() * 900000);
+    const orderDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+    const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+    const order = {
+      id: orderId,
+      customerName,
+      phone: String(phone).replace(/[^0-9]/g, ''),
+      address: structuredAddress,
+      pincode,
+      city,
+      state,
+      items: items || [],
+      subTotal: Number(subTotal) || Number(total),
+      discountApplied: Number(discountApplied) || 0,
+      deliveryCharge: Number(deliveryCharge) || 0,
+      couponCode: couponCode || "None",
+      total: Number(total),
+      paymentMethod,
+      advancePaid: Number(advancePaid) || 0,
+      balanceDue: Number(balanceDue) || 0,
+      utrNumber: utrNumber || "N/A",
+      status: "Pending Verification",
+      courierPartner: "Delhivery",
+      awbNumber: "",
+      deliverySlipFile: "",
+      date: orderDate,
+      orderDateRaw: todayStr
+    };
+
+    storeData.orders.unshift(order);
+    await sendTelegramAlert(order);
+
+    res.json({ success: true, orderId: order.id });
+  } catch (err) {
+    console.error("Order error:", err);
+    res.status(500).json({ success: false, message: "Order creation failed" });
+  }
+});
+
+app.get('/api/orders/track', (req, res) => {
+  const query = (req.query.q || "").trim().toLowerCase();
+  const cleanDigits = query.replace(/[^0-9]/g, '');
+  const matched = storeData.orders.filter(o => 
+    o.id.toLowerCase() === query || (cleanDigits.length >= 6 && o.phone.includes(cleanDigits))
+  );
+  res.json({ success: true, orders: matched });
+});
+
+// ৬. অ্যাডমিন প্যানেল কন্ট্রোল[cite: 5]
+app.post('/api/admin/login', (req, res) => {
+  const { pin } = req.body;
+  if (pin === ADMIN_SECRET_PIN) return res.json({ success: true, token: "admin-active" });
+  res.status(401).json({ success: false, message: "Invalid Passcode!" });
+});
+
+app.post('/api/admin/orders', (req, res) => {
+  const { pin } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+  const todayOrders = storeData.orders.filter(o => o.orderDateRaw === todayStr || o.date.includes(todayStr));
+  const totalSales = storeData.orders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const totalOnlineRevenue = storeData.orders.filter(o => o.paymentMethod === 'UPI').reduce((sum, o) => sum + (o.total || 0), 0);
+  const totalCodRevenue = storeData.orders.filter(o => o.paymentMethod === 'COD').reduce((sum, o) => sum + (o.total || 0), 0);
+
+  res.json({
+    success: true,
+    orders: storeData.orders,
+    coupons: storeData.coupons,
+    storeSettings: storeData.storeSettings,
+    analytics: {
+      totalOrders: storeData.orders.length,
+      todayOrdersCount: todayOrders.length,
+      totalSales,
+      totalOnlineRevenue,
+      totalCodRevenue,
+      pendingOrders: storeData.orders.filter(o => o.status.includes('Pending')).length
+    }
+  });
+});
+
+app.patch('/api/admin/orders/:id/status', (req, res) => {
+  const { pin, status } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+  const order = storeData.orders.find(o => o.id === req.params.id);
+  if (order) {
+    order.status = status;
+    return res.json({ success: true, status: order.status });
+  }
+  res.status(404).json({ success: false });
+});
+
+app.post('/api/admin/orders/:id/dispatch-tracking', (req, res) => {
+  const { pin, courierPartner, awbNumber } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  const order = storeData.orders.find(o => o.id === req.params.id);
+  if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+  order.courierPartner = courierPartner;
+  order.awbNumber = awbNumber;
+  order.status = "Verified & Shipped";
+
+  res.json({ success: true });
+});
+
+app.post('/api/admin/orders/:id/upload-slip', (req, res) => {
+  const { pin, slipFileBase64 } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  const order = storeData.orders.find(o => o.id === req.params.id);
+  if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+  order.deliverySlipFile = slipFileBase64;
+  res.json({ success: true });
+});
+
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+app.listen(PORT, () => {
+  console.log(`🛍️ Store: http://localhost:${PORT}`);
+  console.log(`🔒 Admin: http://localhost:${PORT}/admin`);
+});
