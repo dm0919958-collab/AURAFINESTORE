@@ -233,7 +233,7 @@
         <div id="cartCouponsBadges" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1"></div>
       </div>
 
-      <!-- কুপন ইনপুট বক্স (e.g. সরানো হয়েছে) -->
+      <!-- কুপন ইনপুট বক্স -->
       <div class="border-t border-stone-200 pt-3 space-y-3">
         <div class="flex gap-2">
           <input type="text" id="couponInput" placeholder="Enter Coupon Code" class="uppercase border rounded px-3 py-1.5 text-xs flex-1 font-mono font-bold focus:outline-amber-900">
@@ -255,7 +255,7 @@
     </div>
   </div>
 
-  <!-- 2-Step Multi-Stage Checkout Modal (আগের মতো ফুল অ্যাড্রেস ফর্ম সহ) -->
+  <!-- 2-Step Multi-Stage Checkout Modal -->
   <div id="checkoutModal" class="fixed inset-0 bg-stone-950/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b pb-3">
@@ -267,7 +267,7 @@
       </div>
 
       <form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="space-y-3 text-xs">
-        <!-- STEP 1: সম্পূর্ণ আগের মতো ফুল অ্যাড্রেস ফর্ম -->
+        <!-- STEP 1: শিপিং ঠিকানা -->
         <div id="checkoutStep1" class="space-y-3">
           <div>
             <label class="block font-semibold text-stone-700 mb-1">Full Customer Name *</label>
@@ -297,7 +297,6 @@
             </div>
           </div>
 
-          <!-- আলাদা হাউস, ভিলেজ, পোস্ট অফিস, থানা ও ল্যান্ডমার্ক -->
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block font-semibold text-stone-700 mb-1">House No. / Flat / Road *</label>
@@ -330,7 +329,7 @@
           </button>
         </div>
 
-        <!-- STEP 2: Payment Details with Coupon Input & Offer Breakdown -->
+        <!-- STEP 2: পেমেন্ট ও অফার ভেরিফিকেশন -->
         <div id="checkoutStep2" class="hidden space-y-3">
           <div class="bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-xs flex justify-between items-center">
             <div>
@@ -340,7 +339,7 @@
             <button type="button" onclick="backToStep1Address()" class="text-[11px] text-amber-900 font-bold underline">Edit</button>
           </div>
 
-          <!-- পেমেন্ট পেজে কুপন ইনপুট বক্স (e.g. সরানো হয়েছে) -->
+          <!-- পেমেন্ট পেজে কুপন ইনপুট বক্স -->
           <div class="bg-amber-50/70 border border-amber-200 p-2.5 rounded-xl space-y-1.5">
             <label class="block font-bold text-amber-950 text-[11px]"><i class="fa-solid fa-ticket text-amber-700 mr-1"></i> Apply Coupon Code for Instant Discount:</label>
             <div class="flex gap-2">
@@ -441,7 +440,7 @@
     </div>
   </div>
 
-  <!-- অরিজিনাল প্রিমিয়াম ফুটার বার -->
+  <!-- অরিজিনাল প্রিমিয়াম ফুটার বার -->
   <footer class="bg-stone-950 text-stone-300 pt-16 pb-8 border-t border-amber-950/40 mt-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-stone-800 text-xs">
       <div class="space-y-4">
@@ -515,6 +514,27 @@
     let currentSelectedSize = "";
     let currentSelectedColor = "";
 
+    // হেল্পার ফাংশন: যেকোনো প্রোডাক্ট অবজেক্ট থেকে আসল ছবি বের করা
+    function getProductImage(prod) {
+      if (prod.images && Array.isArray(prod.images) && prod.images.length > 0 && prod.images[0]) {
+        return prod.images[0];
+      }
+      if (prod.image && typeof prod.image === 'string' && prod.image.trim()) {
+        return prod.image;
+      }
+      return "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600";
+    }
+
+    function getProductImagesArray(prod) {
+      if (prod.images && Array.isArray(prod.images) && prod.images.length > 0) {
+        return prod.images.filter(img => Boolean(img));
+      }
+      if (prod.image && typeof prod.image === 'string' && prod.image.trim()) {
+        return [prod.image];
+      }
+      return ["https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600"];
+    }
+
     function setupDealCarousel() {
       if (!dealBanners.length) return;
       renderCurrentDealSlide();
@@ -586,7 +606,8 @@
 
     async function loadStore() {
       try {
-        const res = await fetch('/api/store');
+        // টাইমস্ট্যাম্প যোগ করে ব্রাউজার ক্যাশ এড়ানো হয়েছে
+        const res = await fetch('/api/store?t=' + Date.now());
         const data = await res.json();
         allProducts = data.products || [];
         activeCoupons = data.coupons || [];
@@ -679,9 +700,9 @@
       const search = (document.getElementById('searchInput').value || "").toLowerCase();
       
       const filtered = allProducts.filter(p => {
-        const matchMain = (activeMainSection === 'All' || p.mainCategory === activeMainSection);
-        const matchSub = (activeSubCategory === 'All' || p.category === activeSubCategory);
-        const matchSearch = p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search);
+        const matchMain = (activeMainSection === 'All' || p.mainCategory === activeMainSection || p.mainSection === activeMainSection);
+        const matchSub = (activeSubCategory === 'All' || p.category === activeSubCategory || p.subCategory === activeSubCategory);
+        const matchSearch = (p.name || "").toLowerCase().includes(search) || (p.description || "").toLowerCase().includes(search);
         return matchMain && matchSub && matchSearch;
       });
 
@@ -694,10 +715,12 @@
       }
 
       grid.innerHTML = filtered.map(p => {
-        const discountPct = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
-        const isOut = p.inStock === false || p.stockQuantity <= 0;
-        const mainImage = (p.images && p.images[0]) || p.image || "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600";
-        const photosCount = (p.images && p.images.length) || 1;
+        const origPrice = p.originalPrice || (p.price * 2);
+        const discountPct = Math.round(((origPrice - p.price) / origPrice) * 100);
+        const isOut = p.inStock === false || (p.stockQuantity !== undefined && p.stockQuantity <= 0);
+        const mainImage = getProductImage(p);
+        const imagesArr = getProductImagesArray(p);
+        const photosCount = imagesArr.length;
 
         return `
           <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
@@ -709,7 +732,7 @@
                 </div>
               ` : `
                 <span class="absolute top-3 left-3 bg-amber-950 text-amber-50 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">
-                  ${p.badge}
+                  ${p.badge || 'New'}
                 </span>
                 <span class="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
                   <i class="fa-regular fa-images"></i> ${photosCount} Photos
@@ -720,18 +743,18 @@
             <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
               <div onclick="openQuickView(${p.id})" class="cursor-pointer">
                 <div class="flex items-center gap-1 text-amber-500 text-xs">
-                  <span>★</span><span class="font-bold text-stone-900">${p.rating}</span>
-                  <span class="text-stone-400 text-[10px]">(${p.reviewsCount} reviews)</span>
+                  <span>★</span><span class="font-bold text-stone-900">${p.rating || 5.0}</span>
+                  <span class="text-stone-400 text-[10px]">(${p.reviewsCount || 1} reviews)</span>
                 </div>
                 <h3 class="font-serif-lux font-bold text-stone-900 text-base mt-1 line-clamp-1">${p.name}</h3>
-                <p class="text-stone-500 text-xs mt-1 line-clamp-2 leading-relaxed">${p.description}</p>
+                <p class="text-stone-500 text-xs mt-1 line-clamp-2 leading-relaxed">${p.description || ''}</p>
               </div>
 
               <div class="pt-3 border-t border-stone-100 space-y-2">
                 <div class="flex items-baseline justify-between">
                   <div>
                     <span class="text-xl font-extrabold text-amber-950">₹${p.price}</span>
-                    <span class="text-xs line-through text-stone-400 ml-1">₹${p.originalPrice}</span>
+                    <span class="text-xs line-through text-stone-400 ml-1">₹${origPrice}</span>
                   </div>
                   <span class="text-[10px] text-emerald-700 font-bold">${discountPct}% SAVED</span>
                 </div>
@@ -756,18 +779,19 @@
       if (!prod) return;
       currentOpenedProduct = prod;
 
-      const discountPct = Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100);
-      const images = (prod.images && prod.images.length > 0) ? prod.images : ["https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600"];
+      const origPrice = prod.originalPrice || (prod.price * 2);
+      const discountPct = Math.round(((origPrice - prod.price) / origPrice) * 100);
+      const images = getProductImagesArray(prod);
+      
       document.getElementById('qvMainImage').src = images[0];
-
       renderThumbnails(images);
 
-      document.getElementById('qvBadge').innerText = prod.badge || prod.category;
+      document.getElementById('qvBadge').innerText = prod.badge || prod.category || 'Special';
       document.getElementById('qvTitle').innerText = prod.name;
       document.getElementById('qvPrice').innerText = `₹${prod.price}`;
-      document.getElementById('qvOrigPrice').innerText = `₹${prod.originalPrice}`;
+      document.getElementById('qvOrigPrice').innerText = `₹${origPrice}`;
       document.getElementById('qvDiscount').innerText = `${discountPct}% OFF`;
-      document.getElementById('qvDesc').innerText = prod.description;
+      document.getElementById('qvDesc').innerText = prod.description || '';
 
       const sizes = prod.sizeOptions && prod.sizeOptions.length > 0 ? prod.sizeOptions : ["Standard Free Size"];
       currentSelectedSize = sizes[0];
@@ -826,9 +850,10 @@
       });
       btn.className = "color-pill-btn px-3 py-1 text-xs border rounded-lg font-medium transition bg-amber-950 text-white border-amber-950";
 
-      if (currentOpenedProduct && currentOpenedProduct.images && currentOpenedProduct.images.length > 0) {
-        const targetImgIndex = colorIndex < currentOpenedProduct.images.length ? colorIndex : 0;
-        setMainImage(currentOpenedProduct.images[targetImgIndex], targetImgIndex);
+      if (currentOpenedProduct) {
+        const images = getProductImagesArray(currentOpenedProduct);
+        const targetImgIndex = colorIndex < images.length ? colorIndex : 0;
+        setMainImage(images[targetImgIndex], targetImgIndex);
       }
     }
 
@@ -879,7 +904,6 @@
       let subTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
       let discountAmt = 0;
 
-      // কুপনের মিনিমাম কেনাকাটা লিমিট চেক
       if (appliedDiscountRate > 0) {
         if (subTotal >= appliedCouponMinSpend) {
           discountAmt = Math.round((subTotal * appliedDiscountRate) / 100);
@@ -917,7 +941,7 @@
       const { subTotal, discountAmt, finalAmt, deliveryCharge } = calculateCartTotals();
 
       list.innerHTML = cart.map((item, index) => {
-        const itemImg = (item.images && item.images[0]) || item.image || "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600";
+        const itemImg = getProductImage(item);
         return `
           <div class="flex items-center gap-3 border-b border-stone-100 pb-3">
             <img src="${itemImg}" class="w-14 h-14 object-cover rounded-lg border">
@@ -955,7 +979,7 @@
         if (subTotal < (found.minSpend || 0)) {
           appliedDiscountRate = 0;
           appliedCouponCode = "";
-          status.innerText = `এই কুপনের জন্য কমপক্ষে ₹${found.minSpend} টাকার কেনাকাটা প্রয়োজন!`;
+          status.innerText = `এই কুপনের জন্য কমপক্ষে ₹${found.minSpend} টাকার কেনাকাটা প্রয়োজন!`;
           status.className = "text-[11px] text-rose-600 block font-semibold";
           status.classList.remove('hidden');
         } else {
@@ -986,7 +1010,7 @@
         if (subTotal < (found.minSpend || 0)) {
           appliedDiscountRate = 0;
           appliedCouponCode = "";
-          status.innerText = `এই কুপনের জন্য কমপক্ষে ₹${found.minSpend} টাকার কেনাকাটা প্রয়োজন!`;
+          status.innerText = `এই কুপনের জন্য কমপক্ষে ₹${found.minSpend} টাকার কেনাকাটা প্রয়োজন!`;
           status.className = "text-[11px] text-rose-600 block font-bold mt-1";
           status.classList.remove('hidden');
         } else {
@@ -1190,7 +1214,7 @@
         });
         const data = await res.json();
         if (data.success) {
-          alert(`🎉 আপনার অর্ডারটি সফলভাবে সম্পন্ন হয়েছে!\n\nOrder ID: #${data.orderId}\n\nঅর্ডারের সম্পূর্ণ অফিশিয়াল PDF চালান আপনার টেলিগ্রামে চলে গেছে।`);
+          alert(`🎉 আপনার অর্ডারটি সফলভাবে সম্পন্ন হয়েছে!\n\nOrder ID: #${data.orderId}\n\nঅর্ডারের সম্পূর্ণ অফিশিয়াল PDF চালান আপনার টেলিগ্রামে চলে গেছে।`);
 
           cart = [];
           appliedDiscountRate = 0;
@@ -1230,16 +1254,19 @@
       }
 
       container.innerHTML = data.orders.map(o => {
-        const itemsHtml = (o.items || []).map(i => `
-          <div class="flex items-center gap-2 border-b border-stone-100 py-1.5">
-            <img src="${(i.images && i.images[0]) || i.image || ''}" class="w-10 h-10 object-cover rounded-lg border">
-            <div class="flex-1">
-              <p class="font-bold text-stone-900">${i.name} (x${i.qty})</p>
-              <p class="text-[10px] text-amber-900 font-bold">Size: ${i.selectedSize || 'N/A'} | Color: ${i.selectedColor || 'N/A'}</p>
+        const itemsHtml = (o.items || []).map(i => {
+          const itemImg = getProductImage(i);
+          return `
+            <div class="flex items-center gap-2 border-b border-stone-100 py-1.5">
+              <img src="${itemImg}" class="w-10 h-10 object-cover rounded-lg border">
+              <div class="flex-1">
+                <p class="font-bold text-stone-900">${i.name} (x${i.qty})</p>
+                <p class="text-[10px] text-amber-900 font-bold">Size: ${i.selectedSize || 'N/A'} | Color: ${i.selectedColor || 'N/A'}</p>
+              </div>
+              <span class="font-bold text-stone-800">₹${i.price * i.qty}</span>
             </div>
-            <span class="font-bold text-stone-800">₹${i.price * i.qty}</span>
-          </div>
-        `).join('');
+          `;
+        }).join('');
 
         return `
           <div class="border border-stone-200 bg-stone-50/70 p-4 rounded-2xl space-y-2.5 shadow-sm">
