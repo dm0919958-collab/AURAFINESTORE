@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURA Fine Store | Premium Lifestyle & Artisanal Collections</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+    .font-serif-lux { font-family: 'Playfair Display', serif; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #faf9f6; }
+    .fade-carousel { transition: opacity 0.6s ease-in-out; }
+  </style>
+</head>
+<body class="text-stone-800 antialiased selection:bg-amber-100 relative min-h-screen flex flex-col justify-between">
+
+  <div>
+    <!-- Top Announcement Bar with Live Active Coupons -->
+    <div class="bg-gradient-to-r from-stone-950 via-amber-950 to-stone-950 text-white py-2 px-4 shadow border-b border-amber-600/40 sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs">
+        <div class="flex items-center gap-2 overflow-x-auto" id="topCouponsDisplayWrap">
+          <span class="bg-amber-500 text-stone-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse whitespace-nowrap">ACTIVE COUPONS</span>
+          <div id="topCouponsContainer" class="flex items-center gap-2 text-amber-200 font-bold"></div>
+        </div>
+        <div class="flex items-center gap-1 font-mono text-[11px] bg-black/50 px-3 py-0.5 rounded-full border border-amber-700/50 whitespace-nowrap">
+          <span class="text-amber-400 font-bold"><i class="fa-solid fa-stopwatch mr-1"></i> Offer Ends:</span>
+          <span id="flashHours" class="bg-amber-950 px-1 rounded font-bold text-white">04</span>h :
+          <span id="flashMinutes" class="bg-amber-950 px-1 rounded font-bold text-white">32</span>m :
+          <span id="flashSeconds" class="bg-amber-950 px-1 rounded font-bold text-amber-300">18</span>s
+        </div>
+      </div>
+    </div>
+
+    <!-- Header Navigation with Home, Men, Women & GF-BF Gifts -->
+    <header class="bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-9 z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
+        
+        <a href="/" class="flex flex-col">
+          <span class="text-2xl sm:text-3xl font-extrabold font-serif-lux tracking-[0.2em] text-amber-950">AURA</span>
+          <span class="text-[9px] uppercase tracking-[0.35em] text-amber-700 font-bold -mt-1">Fine Store</span>
+        </a>
+
+        <!-- Desktop Navigation Bar -->
+        <nav class="hidden md:flex items-center gap-7 text-xs font-bold tracking-wide text-stone-700">
+          <a href="#" onclick="showAllCatalog()" class="hover:text-amber-900 transition flex items-center gap-1">
+            <i class="fa-solid fa-house"></i> Home
+          </a>
+
+          <!-- Men Dropdown -->
+          <div class="relative group">
+            <button class="flex items-center gap-1 hover:text-amber-900 py-2 group-hover:text-amber-950">
+              <span>Men</span>
+              <i class="fa-solid fa-chevron-down text-[10px] transition-transform group-hover:rotate-180"></i>
+            </button>
+            <div class="absolute left-0 top-full hidden group-hover:block w-48 bg-white border border-stone-200 rounded-2xl shadow-xl p-2.5 space-y-1 z-50">
+              <a href="#catalogSection" onclick="filterBySection('Men', 'Shirts')" class="block px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">👔 Shirts</a>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts')" class="block px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">👕 T-Shirts</a>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'Watches')" class="block px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">⌚ Watches</a>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'All')" class="block px-3 py-1.5 text-[11px] text-amber-800 font-bold border-t border-stone-100 mt-1">View All Men &rarr;</a>
+            </div>
+          </div>
+
+          <!-- Women Dropdown -->
+          <div class="relative group">
+            <button class="flex items-center gap-1 hover:text-amber-900 py-2 group-hover:text-amber-950">
+              <span>Women</span>
+              <i class="fa-solid fa-chevron-down text-[10px] transition-transform group-hover:rotate-180"></i>
+            </button>
+            <div class="absolute left-0 top-full hidden group-hover:block w-52 bg-white border border-stone-200 rounded-2xl shadow-xl p-2.5 space-y-1 z-50">
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Jhumka')" class="block px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">✨ Royal Jhumkas</a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Studs')" class="block px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">💎 Solitaire Studs</a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Kurtis')" class="block px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">👗 Flared Kurtis</a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Sarees')" class="block px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">🥻 Banarasi Sarees</a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Handbags')" class="block px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">👜 Velvet Handbags</a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'All')" class="block px-3 py-1.5 text-[11px] text-amber-800 font-bold border-t border-stone-100 mt-1">View All Women &rarr;</a>
+            </div>
+          </div>
+
+          <!-- GF & BF Special Gifts Menu -->
+          <div class="relative group">
+            <button class="flex items-center gap-1.5 text-rose-700 hover:text-rose-900 py-2 font-extrabold bg-rose-50 hover:bg-rose-100 px-3 py-1 rounded-full border border-rose-200 transition">
+              <i class="fa-solid fa-heart text-rose-500"></i>
+              <span>GF & BF Special Gifts</span>
+              <i class="fa-solid fa-chevron-down text-[9px]"></i>
+            </button>
+            <div class="absolute left-0 top-full hidden group-hover:block w-60 bg-white border border-stone-200 rounded-2xl shadow-xl p-2.5 space-y-1 z-50">
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Couples')" class="block px-3 py-2 rounded-xl hover:bg-rose-50 hover:text-rose-950 transition font-medium">💑 Couple Magnetic Bracelets & Rings</a>
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Romantic')" class="block px-3 py-2 rounded-xl hover:bg-rose-50 hover:text-rose-950 transition font-medium">💖 100 Languages Projection Necklace</a>
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Gift Sets')" class="block px-3 py-2 rounded-xl hover:bg-rose-50 hover:text-rose-950 transition font-medium">🌹 Preserved Rose Luxury Hampers</a>
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'All')" class="block px-3 py-1.5 text-[11px] text-rose-800 font-bold border-t border-stone-100 mt-1">Explore All Gifts &rarr;</a>
+            </div>
+          </div>
+        </nav>
+
+        <div class="hidden sm:flex flex-1 max-w-xs mx-4 relative">
+          <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search shirts, gifts, jhumkas..." class="w-full bg-stone-100 border border-stone-200 rounded-full py-2.5 pl-9 pr-4 text-xs focus:outline-amber-900 focus:bg-white transition">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-stone-400 text-xs"></i>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3">
+          <button onclick="openMyOrdersModal()" class="flex items-center gap-1.5 text-xs font-bold text-amber-950 bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-full border border-amber-300 transition shadow-sm">
+            <i class="fa-solid fa-box-open text-amber-800"></i>
+            <span>My Orders</span>
+          </button>
+          <button onclick="toggleCart()" class="relative p-2.5 bg-stone-100 hover:bg-amber-100 rounded-full text-stone-800 transition">
+            <i class="fa-solid fa-bag-shopping text-base text-amber-950"></i>
+            <span id="cartCountBadge" class="absolute -top-1 -right-1 bg-amber-900 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Automatic Big Deal Slider Banner (3s Auto-slide) -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+      <div class="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-stone-900 border border-stone-800">
+        <div id="carouselSlide" onclick="handleDealBannerClick()" class="cursor-pointer relative h-52 sm:h-80 md:h-96 w-full overflow-hidden group">
+          <img id="carouselImg" src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=1200" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 fade-carousel">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex flex-col justify-end p-6 sm:p-10 space-y-2">
+            <span id="carouselTag" class="inline-block bg-amber-500 text-stone-950 text-[10px] sm:text-xs font-black uppercase px-3 py-1 rounded-full shadow-lg w-max tracking-wider">
+              GF & BF SPECIAL • FLAT 50% OFF
+            </span>
+            <h2 id="carouselTitle" class="text-xl sm:text-3xl md:text-4xl font-serif-lux font-bold text-white drop-shadow">
+              Magnetic Couple Heart Bracelets Set
+            </h2>
+            <div class="flex items-center gap-2 pt-1">
+              <span class="bg-white/20 backdrop-blur-md text-white text-xs px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 group-hover:bg-amber-600 transition">
+                <i class="fa-solid fa-bolt text-amber-300"></i> View Deal & Buy Now &rarr;
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div id="carouselDots" class="absolute bottom-3 right-6 flex items-center gap-1.5 z-20"></div>
+
+        <button onclick="prevDealSlide()" class="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black text-white flex items-center justify-center text-xs backdrop-blur-sm transition">
+          &#10094;
+        </button>
+        <button onclick="nextDealSlide()" class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black text-white flex items-center justify-center text-xs backdrop-blur-sm transition">
+          &#10095;
+        </button>
+      </div>
+    </section>
+
+    <!-- Main Store Products -->
+    <main id="catalogSection" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 border-b border-stone-200">
+        <div>
+          <h3 id="currentCategoryHeading" class="font-serif-lux font-bold text-2xl text-amber-950">All Collections</h3>
+          <p class="text-xs text-stone-500 mt-0.5">Showing <span id="countDisplay" class="font-bold text-stone-900">0</span> designs</p>
+        </div>
+        <div class="flex items-center gap-2 overflow-x-auto pb-1" id="categoryTabs">
+          <button onclick="setCategory('All', this)" class="cat-btn active bg-amber-950 text-white px-4 py-1.5 rounded-full text-xs font-medium transition">All</button>
+          <button onclick="filterBySection('Men', 'All', this)" class="cat-btn bg-white border border-stone-300 hover:border-amber-900 px-4 py-1.5 rounded-full text-xs font-medium text-stone-700 transition">Men</button>
+          <button onclick="filterBySection('Women', 'All', this)" class="cat-btn bg-white border border-stone-300 hover:border-amber-900 px-4 py-1.5 rounded-full text-xs font-medium text-stone-700 transition">Women</button>
+          <button onclick="filterBySection('Gifts', 'All', this)" class="cat-btn bg-white border border-rose-300 hover:border-rose-900 px-4 py-1.5 rounded-full text-xs font-bold text-rose-700 transition">🎁 GF & BF Gifts</button>
+        </div>
+      </div>
+      <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    </main>
+  </div>
+
+  <!-- Multi-Image & Multi-Variant Product Detail Modal -->
+  <div id="quickViewModal" class="fixed inset-0 bg-stone-950/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <button onclick="closeQuickView()" class="absolute top-4 right-5 text-stone-400 hover:text-black text-3xl font-bold">&times;</button>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        <div class="space-y-3">
+          <div class="rounded-2xl overflow-hidden aspect-square bg-stone-100 border border-stone-200 shadow-inner">
+            <img id="qvMainImage" src="" class="w-full h-full object-cover transition-all duration-300">
+          </div>
+          <div id="qvThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-2"></div>
+        </div>
+
+        <div class="space-y-4">
+          <span id="qvBadge" class="bg-amber-100 text-amber-900 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Badge</span>
+          <h3 id="qvTitle" class="font-serif-lux text-2xl font-bold text-amber-950">Product Title</h3>
+          
+          <div class="flex items-baseline gap-3">
+            <span id="qvPrice" class="text-3xl font-extrabold text-amber-950">₹0</span>
+            <span id="qvOrigPrice" class="text-sm line-through text-stone-400">₹0</span>
+            <span id="qvDiscount" class="text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded">0% OFF</span>
+          </div>
+
+          <!-- সাইজ বাটন -->
+          <div class="space-y-1.5 pt-2 border-t">
+            <label class="block text-xs font-bold text-stone-800">
+              Select Size: <span id="qvSelectedSizeDisplay" class="text-amber-900 font-extrabold ml-1"></span>
+            </label>
+            <div id="qvSizeContainer" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- কালার বাটন -->
+          <div class="space-y-1.5 pt-1">
+            <label class="block text-xs font-bold text-stone-800">
+              Select Color: <span id="qvSelectedColorDisplay" class="text-amber-900 font-extrabold ml-1"></span>
+            </label>
+            <div id="qvColorContainer" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <div class="pt-2">
+            <p id="qvDesc" class="text-xs text-stone-600 leading-relaxed"></p>
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button id="qvAddToCartBtn" class="flex-1 bg-stone-900 text-white py-3 rounded-xl text-xs font-bold hover:bg-stone-800 transition">Add to Bag</button>
+            <button id="qvBuyNowBtn" class="flex-1 bg-amber-950 text-white py-3 rounded-xl text-xs font-bold hover:bg-amber-900 transition shadow">⚡ Instant Buy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shopping Cart Slide Drawer -->
+  <div id="cartDrawer" class="fixed inset-0 bg-stone-950/60 backdrop-blur-sm hidden z-50 flex justify-end">
+    <div class="bg-white w-full max-w-md h-full flex flex-col p-6 shadow-2xl">
+      <div class="flex justify-between items-center pb-3 border-b border-stone-200">
+        <div>
+          <h3 class="font-serif-lux font-bold text-xl text-amber-950">Your Bag</h3>
+          <p class="text-[11px] text-stone-500">AURA Fine Store Collection</p>
+        </div>
+        <button onclick="toggleCart()" class="text-stone-400 hover:text-black text-2xl">&times;</button>
+      </div>
+
+      <div id="cartItemsList" class="flex-1 overflow-y-auto py-4 space-y-4"></div>
+
+      <!-- উপরে লাইভ কুপন ডিসপ্লে (ক্লিক করলেই বসে যাবে) -->
+      <div class="border-t border-stone-100 pt-3 space-y-1.5">
+        <p class="text-[11px] font-bold text-amber-900 flex items-center gap-1">
+          <i class="fa-solid fa-tags"></i> Available Discount Coupons (Click to Apply):
+        </p>
+        <div id="cartCouponsBadges" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1"></div>
+      </div>
+
+      <!-- কুপন ইনপুট বক্স (e.g. সরানো হয়েছে) -->
+      <div class="border-t border-stone-200 pt-3 space-y-3">
+        <div class="flex gap-2">
+          <input type="text" id="couponInput" placeholder="Enter Coupon Code" class="uppercase border rounded px-3 py-1.5 text-xs flex-1 font-mono font-bold focus:outline-amber-900">
+          <button onclick="applyCoupon()" class="bg-stone-800 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-black">Apply</button>
+        </div>
+        <div id="couponStatusMsg" class="text-[11px] hidden"></div>
+
+        <div class="space-y-1 text-xs">
+          <div class="flex justify-between text-stone-600"><span>Bag Total</span><span id="subTotalDisplay">₹0</span></div>
+          <div class="flex justify-between text-emerald-600 font-medium"><span>Discount Applied</span><span id="discountDisplay">-₹0</span></div>
+          <div class="flex justify-between text-stone-600"><span>Delivery Charge</span><span id="deliveryDisplay">₹0</span></div>
+          <div class="flex justify-between text-base font-bold text-amber-950 pt-2 border-t"><span>Final Amount</span><span id="finalTotalDisplay">₹0</span></div>
+        </div>
+
+        <button onclick="openCheckoutModal()" id="checkoutProceedBtn" class="w-full bg-amber-950 hover:bg-amber-900 text-white py-3 rounded-lg text-sm font-semibold tracking-wide shadow-md transition">
+          Proceed To Checkout
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2-Step Multi-Stage Checkout Modal (আগের মতো ফুল অ্যাড্রেস ফর্ম সহ) -->
+  <div id="checkoutModal" class="fixed inset-0 bg-stone-950/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b pb-3">
+        <div>
+          <h4 class="font-serif-lux font-bold text-lg text-amber-950">AURA Fine Store Checkout</h4>
+          <p id="checkoutStepIndicator" class="text-[11px] text-amber-800 font-bold">Step 1 of 2: Shipping Destination</p>
+        </div>
+        <button onclick="closeCheckoutModal()" class="text-stone-400 hover:text-black text-xl">&times;</button>
+      </div>
+
+      <form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="space-y-3 text-xs">
+        <!-- STEP 1: সম্পূর্ণ আগের মতো ফুল অ্যাড্রেস ফর্ম -->
+        <div id="checkoutStep1" class="space-y-3">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Full Customer Name *</label>
+            <input type="text" id="ordName" required placeholder="Customer Name" class="w-full border p-2.5 rounded-lg focus:outline-amber-900">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">WhatsApp / Contact Number *</label>
+            <input type="tel" id="ordPhone" maxlength="10" required placeholder="10-digit Mobile Number" class="w-full border p-2.5 rounded-lg focus:outline-amber-900 font-mono">
+          </div>
+
+          <!-- পিনকোড ভ্যালিডেশন সেকশন -->
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">6-Digit Indian Postal Pincode *</label>
+            <input type="text" id="ordPincode" oninput="validateAndLookupPincode(this.value)" required maxlength="6" placeholder="Postal Pincode" class="w-full border-2 border-stone-200 p-2.5 rounded-lg font-mono font-bold tracking-wider transition-colors duration-200">
+            <p id="pincodeErrorMsg" class="text-[11px] font-bold text-rose-600 hidden mt-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Invalid Indian Pincode! Must be a valid 6-digit Indian Postal Code.</p>
+            <p id="pincodeSuccessMsg" class="text-[11px] font-bold text-emerald-600 hidden mt-1"><i class="fa-solid fa-circle-check mr-1"></i> Deliverable Location Identified!</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-stone-700 mb-1">District / City *</label>
+              <input type="text" id="ordCity" required placeholder="District" class="w-full border p-2.5 rounded-lg bg-stone-50">
+            </div>
+            <div>
+              <label class="block font-semibold text-stone-700 mb-1">State *</label>
+              <input type="text" id="ordState" required placeholder="State" class="w-full border p-2.5 rounded-lg bg-stone-50">
+            </div>
+          </div>
+
+          <!-- আলাদা হাউস, ভিলেজ, পোস্ট অফিস, থানা ও ল্যান্ডমার্ক -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-stone-700 mb-1">House No. / Flat / Road *</label>
+              <input type="text" id="addrHouseStreet" required placeholder="House No, Road" class="w-full border p-2.5 rounded-lg">
+            </div>
+            <div>
+              <label class="block font-semibold text-stone-700 mb-1">Village / Town *</label>
+              <input type="text" id="addrVillage" required placeholder="Village or Town" class="w-full border p-2.5 rounded-lg">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-stone-700 mb-1">Post Office (P.O) *</label>
+              <input type="text" id="addrPostOffice" required placeholder="Post Office" class="w-full border p-2.5 rounded-lg">
+            </div>
+            <div>
+              <label class="block font-semibold text-stone-700 mb-1">Police Station (P.S)</label>
+              <input type="text" id="addrPoliceStation" placeholder="Police Station" class="w-full border p-2.5 rounded-lg">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Famous Landmark (Nearby)</label>
+            <input type="text" id="addrLandmark" placeholder="Near Temple / School / Hospital" class="w-full border p-2.5 rounded-lg">
+          </div>
+
+          <button type="button" onclick="goToStep2Payment()" class="w-full bg-amber-950 text-white py-3 rounded-lg font-bold text-xs hover:bg-amber-900 transition flex items-center justify-center gap-2 shadow mt-2">
+            Next: Proceed to Payment &rarr;
+          </button>
+        </div>
+
+        <!-- STEP 2: Payment Details with Coupon Input & Offer Breakdown -->
+        <div id="checkoutStep2" class="hidden space-y-3">
+          <div class="bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-xs flex justify-between items-center">
+            <div>
+              <p class="font-bold text-amber-950" id="step2SummaryName"></p>
+              <p class="text-[10px] text-stone-600 truncate max-w-[260px]" id="step2SummaryAddr"></p>
+            </div>
+            <button type="button" onclick="backToStep1Address()" class="text-[11px] text-amber-900 font-bold underline">Edit</button>
+          </div>
+
+          <!-- পেমেন্ট পেজে কুপন ইনপুট বক্স (e.g. সরানো হয়েছে) -->
+          <div class="bg-amber-50/70 border border-amber-200 p-2.5 rounded-xl space-y-1.5">
+            <label class="block font-bold text-amber-950 text-[11px]"><i class="fa-solid fa-ticket text-amber-700 mr-1"></i> Apply Coupon Code for Instant Discount:</label>
+            <div class="flex gap-2">
+              <input type="text" id="step2CouponInput" placeholder="Enter Coupon Code" class="uppercase border rounded-lg px-2.5 py-1.5 text-xs flex-1 font-mono font-bold bg-white focus:outline-amber-900">
+              <button type="button" onclick="applyCouponFromStep2()" class="bg-amber-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-950 transition">Apply</button>
+            </div>
+            <p id="step2CouponStatus" class="text-[10px] font-semibold hidden"></p>
+          </div>
+
+          <!-- অফার ও ডিসকাউন্ট সামারি বক্স -->
+          <div id="paymentOfferSummaryBox" class="bg-emerald-50 border border-emerald-300 p-3 rounded-xl space-y-1">
+            <p class="font-bold text-emerald-950 text-xs flex items-center gap-1.5">
+              <i class="fa-solid fa-tags text-emerald-700"></i> Offer & Discount Applied:
+            </p>
+            <div class="flex justify-between text-stone-600 text-[11px]">
+              <span>Original Bag Value:</span>
+              <span id="chkSubtotal" class="font-bold">₹0</span>
+            </div>
+            <div class="flex justify-between text-emerald-700 font-bold text-[11px]">
+              <span>Coupon Discount (<span id="chkCouponCodeName">None</span>):</span>
+              <span id="chkDiscountAmt">-₹0</span>
+            </div>
+            <div class="flex justify-between text-stone-600 text-[11px]">
+              <span>Delivery Charge:</span>
+              <span id="chkDeliveryAmt" class="font-bold">₹0</span>
+            </div>
+            <div class="flex justify-between text-amber-950 font-extrabold text-xs pt-1 border-t border-emerald-200">
+              <span>Payable After Discount:</span>
+              <span id="chkFinalPayable">₹0</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Select Payment Mode</label>
+            <select id="ordPaymentMethod" onchange="handlePaymentModeChange(this.value)" class="w-full border p-2.5 rounded-lg focus:outline-amber-900 bg-stone-50 font-bold text-amber-950">
+              <option value="UPI">⚡ 100% Prepaid via UPI (Fastest Priority Dispatch)</option>
+              <option value="COD">🛡️ Cash on Delivery (Advance Token Required)</option>
+            </select>
+          </div>
+
+          <div id="paymentDetailsContainer" class="bg-amber-50/80 p-4 rounded-xl border border-amber-300 space-y-3 text-center">
+            <div id="codNoticeBanner" class="hidden text-left bg-amber-100 border border-amber-300 p-2.5 rounded-lg space-y-1">
+              <p class="font-bold text-amber-950 text-xs">
+                <i class="fa-solid fa-shield-halved text-emerald-700 mr-1"></i> COD Confirmation Token:
+              </p>
+              <p class="text-[11px] text-stone-700 leading-tight">
+                To prevent bogus orders, please pay <b id="codAdvanceDisplay" class="text-emerald-800">Advance (₹0)</b> now via UPI. The balance <b id="codBalanceDisplay" class="text-amber-950">₹0</b> can be paid in cash at your doorstep!
+              </p>
+            </div>
+
+            <p id="qrBoxTitle" class="text-xs text-amber-950 font-bold">Scan QR with GooglePay / PhonePe / Paytm</p>
+            <div class="flex justify-center">
+              <img id="dynamicQRCode" src="" alt="UPI QR" class="w-36 h-36 bg-white p-2 rounded-xl shadow border border-amber-300">
+            </div>
+            <p class="text-[11px] text-stone-600">Merchant UPI: <span class="bg-white px-2 py-0.5 rounded border border-amber-300 font-mono font-bold select-all">6289145092@ptsbi</span></p>
+            
+            <div class="text-left pt-1">
+              <label class="block text-[11px] font-semibold text-stone-700 mb-1">Enter 12-Digit UPI Transaction ID (UTR) *</label>
+              <input type="text" id="ordUTR" required placeholder="12-digit UTR from your UPI payment" class="w-full border p-2 rounded bg-white text-xs font-mono">
+            </div>
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button type="button" onclick="backToStep1Address()" class="w-1/3 bg-stone-200 text-stone-800 py-3 rounded-lg font-bold text-xs hover:bg-stone-300 transition">
+              &larr; Back
+            </button>
+            <button type="submit" id="submitOrderBtn" class="flex-1 bg-amber-950 text-white py-3 rounded-lg font-bold text-sm hover:bg-amber-900 shadow-md transition">
+              Place Confirmed Order
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Customer "My Orders" Modal with Delivery Slip Download Option -->
+  <div id="myOrdersModal" class="fixed inset-0 bg-stone-950/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto text-xs">
+      <div class="flex justify-between items-center border-b pb-3">
+        <div>
+          <h4 class="font-serif-lux font-bold text-xl text-amber-950"><i class="fa-solid fa-boxes-packing mr-2 text-amber-800"></i>My Orders & Tracking</h4>
+          <p class="text-[11px] text-stone-500">Track progress & download your official delivery slips</p>
+        </div>
+        <button onclick="closeMyOrdersModal()" class="text-stone-400 hover:text-black text-2xl font-bold">&times;</button>
+      </div>
+
+      <div class="flex gap-2">
+        <input type="tel" id="myOrdersPhoneInput" placeholder="Enter your 10-digit mobile number" class="w-full border p-2.5 rounded-xl font-mono text-xs focus:outline-amber-900">
+        <button onclick="fetchMyOrders()" class="bg-amber-950 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-amber-900 transition whitespace-nowrap">Find Orders</button>
+      </div>
+
+      <div id="myOrdersListContainer" class="space-y-4 pt-2">
+        <div class="text-center py-8 text-stone-400">
+          <i class="fa-solid fa-receipt text-3xl mb-2 text-stone-300"></i>
+          <p>Enter your phone number to check your purchases and download slips.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- অরিজিনাল প্রিমিয়াম ফুটার বার -->
+  <footer class="bg-stone-950 text-stone-300 pt-16 pb-8 border-t border-amber-950/40 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-stone-800 text-xs">
+      <div class="space-y-4">
+        <a href="/" class="flex flex-col">
+          <span class="text-3xl font-extrabold font-serif-lux tracking-[0.2em] text-amber-100">AURA</span>
+          <span class="text-[10px] uppercase tracking-[0.35em] text-amber-500 font-bold -mt-1">Fine Store</span>
+        </a>
+        <p class="text-stone-400 leading-relaxed">
+          Premium lifestyle clothing, Oxford shirts, casual wear, and royal artisanal collections.
+        </p>
+      </div>
+
+      <div class="space-y-3">
+        <h4 class="font-bold text-white text-sm uppercase tracking-wider text-amber-400">Men Collections</h4>
+        <ul class="space-y-2 text-stone-400">
+          <li><a href="#catalogSection" onclick="filterBySection('Men', 'Shirts')" class="hover:text-white transition">Formal & Casual Shirts</a></li>
+          <li><a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts')" class="hover:text-white transition">Round Neck T-Shirts</a></li>
+          <li><a href="#catalogSection" onclick="filterBySection('Men', 'Watches')" class="hover:text-white transition">Luxury Watches</a></li>
+        </ul>
+      </div>
+
+      <div class="space-y-3">
+        <h4 class="font-bold text-white text-sm uppercase tracking-wider text-amber-400">Customer Support</h4>
+        <ul class="space-y-2 text-stone-400">
+          <li><a href="#" onclick="openMyOrdersModal()" class="hover:text-white transition">My Orders & Tracking</a></li>
+          <li><span class="text-stone-300 font-semibold"><i class="fa-solid fa-envelope mr-1 text-amber-500"></i> mahatosarita436@gmail.com</span></li>
+          <li><span class="text-stone-300 font-semibold"><i class="fa-brands fa-whatsapp mr-1 text-emerald-400"></i> +91 6289145092</span></li>
+          <li><a href="#" class="hover:text-white transition">7-Day Replacement Guarantee</a></li>
+        </ul>
+      </div>
+
+      <div class="space-y-3">
+        <h4 class="font-bold text-white text-sm uppercase tracking-wider text-amber-400">Safe Delivery</h4>
+        <p class="text-stone-400 leading-relaxed">
+          Dispatched from Bolpur, Birbhum, West Bengal. We partner with Delhivery, DTDC, and IndiaPost across India.
+        </p>
+        <div class="pt-2">
+          <span class="inline-flex items-center gap-1.5 bg-stone-900 border border-stone-800 px-3 py-1.5 rounded-lg text-emerald-400 font-semibold text-[11px]">
+            <i class="fa-solid fa-lock text-xs"></i> 100% Encrypted UPI Payments
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 flex flex-col sm:flex-row justify-between items-center text-[11px] text-stone-500 gap-2">
+      <p>&copy; 2026 AURA Fine Store. All Rights Reserved. Support: mahatosarita436@gmail.com</p>
+      <p>AURA Lifestyle & Fine Quality Products</p>
+    </div>
+  </footer>
+
+  <script>
+    const STORE_UPI_ID = "6289145092@ptsbi";
+
+    let allProducts = [];
+    let dealBanners = [];
+    let currentDealIndex = 0;
+    let dealSliderInterval = null;
+
+    let activeMainSection = 'All';
+    let activeSubCategory = 'All';
+    let cart = [];
+    let activeCoupons = [];
+    let appliedDiscountRate = 0;
+    let appliedCouponCode = "";
+    let appliedCouponMinSpend = 0;
+    let storeDeliveryCharge = 0;
+    let storeCodAdvancePct = 15;
+    let isPincodeValid = false;
+
+    let currentOpenedProduct = null;
+    let currentSelectedSize = "";
+    let currentSelectedColor = "";
+
+    function setupDealCarousel() {
+      if (!dealBanners.length) return;
+      renderCurrentDealSlide();
+
+      const dotsWrap = document.getElementById('carouselDots');
+      dotsWrap.innerHTML = dealBanners.map((_, idx) => `
+        <button onclick="goToDealSlide(${idx})" class="w-2.5 h-2.5 rounded-full transition-all ${idx === currentDealIndex ? 'bg-amber-400 w-5' : 'bg-white/50'}"></button>
+      `).join('');
+
+      if (dealSliderInterval) clearInterval(dealSliderInterval);
+      dealSliderInterval = setInterval(() => { nextDealSlide(); }, 3000);
+    }
+
+    function renderCurrentDealSlide() {
+      if (!dealBanners.length) return;
+      const banner = dealBanners[currentDealIndex];
+      const img = document.getElementById('carouselImg');
+      img.style.opacity = '0.3';
+      setTimeout(() => {
+        img.src = banner.image;
+        document.getElementById('carouselTag').innerText = banner.tag || 'SPECIAL DEAL';
+        document.getElementById('carouselTitle').innerText = banner.title;
+        img.style.opacity = '1';
+      }, 200);
+
+      const dots = document.querySelectorAll('#carouselDots button');
+      dots.forEach((d, idx) => {
+        d.className = `h-2.5 rounded-full transition-all ${idx === currentDealIndex ? 'bg-amber-400 w-5' : 'bg-white/50 w-2.5'}`;
+      });
+    }
+
+    function nextDealSlide() {
+      currentDealIndex = (currentDealIndex + 1) % dealBanners.length;
+      renderCurrentDealSlide();
+    }
+
+    function prevDealSlide() {
+      currentDealIndex = (currentDealIndex - 1 + dealBanners.length) % dealBanners.length;
+      renderCurrentDealSlide();
+    }
+
+    function goToDealSlide(idx) {
+      currentDealIndex = idx;
+      renderCurrentDealSlide();
+    }
+
+    function handleDealBannerClick() {
+      if (!dealBanners.length) return;
+      const banner = dealBanners[currentDealIndex];
+      if (banner && banner.productId) {
+        openQuickView(Number(banner.productId));
+      } else if (allProducts.length > 0) {
+        openQuickView(allProducts[0].id);
+      }
+    }
+
+    let timeRemaining = 4 * 3600 + 32 * 60 + 18;
+    setInterval(() => {
+      if (timeRemaining > 0) {
+        timeRemaining--;
+        const h = Math.floor(timeRemaining / 3600);
+        const m = Math.floor((timeRemaining % 3600) / 60);
+        const s = timeRemaining % 60;
+        document.getElementById('flashHours').innerText = String(h).padStart(2, '0');
+        document.getElementById('flashMinutes').innerText = String(m).padStart(2, '0');
+        document.getElementById('flashSeconds').innerText = String(s).padStart(2, '0');
+      }
+    }, 1000);
+
+    async function loadStore() {
+      try {
+        const res = await fetch('/api/store');
+        const data = await res.json();
+        allProducts = data.products || [];
+        activeCoupons = data.coupons || [];
+        dealBanners = data.dealBanners || [];
+        if (data.storeSettings) {
+          storeDeliveryCharge = data.storeSettings.deliveryCharge || 0;
+          storeCodAdvancePct = data.storeSettings.codAdvancePercent || 15;
+        }
+
+        renderStoreCoupons();
+        setupDealCarousel();
+        renderStore();
+      } catch (e) {
+        console.error("Store sync error:", e);
+      }
+    }
+
+    function renderStoreCoupons() {
+      const topWrap = document.getElementById('topCouponsContainer');
+      const cartBadges = document.getElementById('cartCouponsBadges');
+      const visible = activeCoupons.filter(c => c.showOnStore);
+
+      if (!visible.length) {
+        topWrap.innerHTML = `<span>Flat 20% OFF across store with code AURA20</span>`;
+        cartBadges.innerHTML = `<span class="text-xs text-stone-400">No active coupons right now.</span>`;
+        return;
+      }
+
+      topWrap.innerHTML = visible.map(c => `
+        <span class="inline-flex items-center gap-1 cursor-pointer bg-black/40 hover:bg-black/80 px-2 py-0.5 rounded border border-amber-600/40" onclick="quickApplyCoupon('${c.code}')">
+          <i class="fa-solid fa-tag text-[10px] text-amber-400"></i> ${c.code} (${c.discountPercent}% OFF${c.minSpend > 0 ? ` on ₹${c.minSpend}+` : ''})
+        </span>
+      `).join('');
+
+      cartBadges.innerHTML = visible.map(c => `
+        <div onclick="quickApplyCoupon('${c.code}')" class="cursor-pointer bg-amber-50 hover:bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-lg text-xs flex items-center justify-between gap-2 shadow-sm transition">
+          <div>
+            <span class="font-mono font-bold text-amber-950">${c.code}</span>
+            <span class="text-[10px] text-emerald-700 font-bold">(${c.discountPercent}% OFF)</span>
+            ${c.minSpend > 0 ? `<span class="text-[9px] text-stone-500 block">Min ₹${c.minSpend}</span>` : ''}
+          </div>
+          <span class="text-[10px] bg-amber-900 text-white px-2 py-0.5 rounded font-bold">APPLY</span>
+        </div>
+      `).join('');
+    }
+
+    function quickApplyCoupon(code) {
+      document.getElementById('couponInput').value = code;
+      applyCoupon();
+    }
+
+    function showAllCatalog() {
+      activeMainSection = 'All';
+      activeSubCategory = 'All';
+      document.getElementById('currentCategoryHeading').innerText = "All Collections";
+      renderStore();
+    }
+
+    function filterBySection(mainSec, subCat = 'All', btn = null) {
+      activeMainSection = mainSec;
+      activeSubCategory = subCat;
+
+      let title = mainSec;
+      if (subCat !== 'All') title += ` &rarr; ${subCat}`;
+      document.getElementById('currentCategoryHeading').innerHTML = title;
+
+      if (btn) {
+        document.querySelectorAll('.cat-btn').forEach(b => {
+          b.className = "cat-btn bg-white border border-stone-300 hover:border-amber-900 px-4 py-1.5 rounded-full text-xs font-medium text-stone-700 transition";
+        });
+        btn.className = "cat-btn active bg-amber-950 text-white px-4 py-1.5 rounded-full text-xs font-medium transition";
+      }
+
+      renderStore();
+    }
+
+    function setCategory(cat, btn) {
+      if (cat === 'All') showAllCatalog();
+      if (btn) {
+        document.querySelectorAll('.cat-btn').forEach(b => {
+          b.className = "cat-btn bg-white border border-stone-300 hover:border-amber-900 px-4 py-1.5 rounded-full text-xs font-medium text-stone-700 transition";
+        });
+        btn.className = "cat-btn active bg-amber-950 text-white px-4 py-1.5 rounded-full text-xs font-medium transition";
+      }
+    }
+
+    function filterProducts() { renderStore(); }
+
+    function renderStore() {
+      const search = (document.getElementById('searchInput').value || "").toLowerCase();
+      
+      const filtered = allProducts.filter(p => {
+        const matchMain = (activeMainSection === 'All' || p.mainCategory === activeMainSection);
+        const matchSub = (activeSubCategory === 'All' || p.category === activeSubCategory);
+        const matchSearch = p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search);
+        return matchMain && matchSub && matchSearch;
+      });
+
+      document.getElementById('countDisplay').innerText = filtered.length;
+      const grid = document.getElementById('productsGrid');
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full py-16 text-center text-stone-400 font-light">No designs found matching your selection.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => {
+        const discountPct = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
+        const isOut = p.inStock === false || p.stockQuantity <= 0;
+        const mainImage = (p.images && p.images[0]) || p.image || "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600";
+        const photosCount = (p.images && p.images.length) || 1;
+
+        return `
+          <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+            <div onclick="openQuickView(${p.id})" class="relative overflow-hidden aspect-square bg-stone-100 cursor-pointer">
+              <img src="${mainImage}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 ${isOut ? 'opacity-40 grayscale' : ''}">
+              ${isOut ? `
+                <div class="absolute inset-0 flex items-center justify-center bg-black/40">
+                  <span class="bg-red-600 text-white font-bold text-xs px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">Sold Out</span>
+                </div>
+              ` : `
+                <span class="absolute top-3 left-3 bg-amber-950 text-amber-50 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">
+                  ${p.badge}
+                </span>
+                <span class="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
+                  <i class="fa-regular fa-images"></i> ${photosCount} Photos
+                </span>
+              `}
+            </div>
+
+            <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+              <div onclick="openQuickView(${p.id})" class="cursor-pointer">
+                <div class="flex items-center gap-1 text-amber-500 text-xs">
+                  <span>★</span><span class="font-bold text-stone-900">${p.rating}</span>
+                  <span class="text-stone-400 text-[10px]">(${p.reviewsCount} reviews)</span>
+                </div>
+                <h3 class="font-serif-lux font-bold text-stone-900 text-base mt-1 line-clamp-1">${p.name}</h3>
+                <p class="text-stone-500 text-xs mt-1 line-clamp-2 leading-relaxed">${p.description}</p>
+              </div>
+
+              <div class="pt-3 border-t border-stone-100 space-y-2">
+                <div class="flex items-baseline justify-between">
+                  <div>
+                    <span class="text-xl font-extrabold text-amber-950">₹${p.price}</span>
+                    <span class="text-xs line-through text-stone-400 ml-1">₹${p.originalPrice}</span>
+                  </div>
+                  <span class="text-[10px] text-emerald-700 font-bold">${discountPct}% SAVED</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full ${isOut ? 'bg-stone-300 cursor-not-allowed text-stone-500' : 'bg-stone-900 hover:bg-stone-800 text-white'} py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-bag-shopping"></i> Add
+                  </button>
+                  <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full ${isOut ? 'bg-stone-300 cursor-not-allowed text-stone-500' : 'bg-amber-950 hover:bg-amber-900 text-white'} py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow">
+                    ⚡ View & Buy
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openQuickView(id) {
+      const prod = allProducts.find(p => p.id === id);
+      if (!prod) return;
+      currentOpenedProduct = prod;
+
+      const discountPct = Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100);
+      const images = (prod.images && prod.images.length > 0) ? prod.images : ["https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600"];
+      document.getElementById('qvMainImage').src = images[0];
+
+      renderThumbnails(images);
+
+      document.getElementById('qvBadge').innerText = prod.badge || prod.category;
+      document.getElementById('qvTitle').innerText = prod.name;
+      document.getElementById('qvPrice').innerText = `₹${prod.price}`;
+      document.getElementById('qvOrigPrice').innerText = `₹${prod.originalPrice}`;
+      document.getElementById('qvDiscount').innerText = `${discountPct}% OFF`;
+      document.getElementById('qvDesc').innerText = prod.description;
+
+      const sizes = prod.sizeOptions && prod.sizeOptions.length > 0 ? prod.sizeOptions : ["Standard Free Size"];
+      currentSelectedSize = sizes[0];
+      document.getElementById('qvSelectedSizeDisplay').innerText = currentSelectedSize;
+      document.getElementById('qvSizeContainer').innerHTML = sizes.map((s, idx) => `
+        <button type="button" onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3 py-1 text-xs border rounded-lg font-bold transition ${idx === 0 ? 'bg-amber-950 text-white border-amber-950' : 'bg-stone-50 border-stone-300 text-stone-700 hover:border-amber-900'}">
+          ${s}
+        </button>
+      `).join('');
+
+      const colors = prod.colorOptions && prod.colorOptions.length > 0 ? prod.colorOptions : ["Standard"];
+      currentSelectedColor = colors[0];
+      document.getElementById('qvSelectedColorDisplay').innerText = currentSelectedColor;
+      document.getElementById('qvColorContainer').innerHTML = colors.map((c, idx) => `
+        <button type="button" onclick="selectVariantColor('${c}', ${idx}, this)" class="color-pill-btn px-3 py-1 text-xs border rounded-lg font-medium transition ${idx === 0 ? 'bg-amber-950 text-white border-amber-950' : 'bg-stone-50 border-stone-300 text-stone-700 hover:border-amber-900'}">
+          ${c}
+        </button>
+      `).join('');
+
+      document.getElementById('qvAddToCartBtn').onclick = () => { addToCartWithVariant(prod); closeQuickView(); };
+      document.getElementById('qvBuyNowBtn').onclick = () => { closeQuickView(); instantBuyNowWithVariant(prod); };
+
+      document.getElementById('quickViewModal').classList.remove('hidden');
+    }
+
+    function renderThumbnails(images) {
+      const thumbsContainer = document.getElementById('qvThumbnailsContainer');
+      thumbsContainer.innerHTML = images.map((imgUrl, i) => `
+        <img id="thumb_img_${i}" src="${imgUrl}" onclick="setMainImage('${imgUrl}', ${i})" class="w-14 h-14 object-cover rounded-lg border-2 ${i === 0 ? 'border-amber-900' : 'border-transparent'} hover:border-amber-900 cursor-pointer shadow-sm transition hover:scale-105">
+      `).join('');
+    }
+
+    function setMainImage(imgUrl, idx = -1) {
+      document.getElementById('qvMainImage').src = imgUrl;
+      document.querySelectorAll('#qvThumbnailsContainer img').forEach(im => im.classList.replace('border-amber-900', 'border-transparent'));
+      if (idx >= 0) {
+        const selected = document.getElementById(`thumb_img_${idx}`);
+        if (selected) selected.classList.replace('border-transparent', 'border-amber-900');
+      }
+    }
+
+    function selectVariantSize(val, btn) {
+      currentSelectedSize = val;
+      document.getElementById('qvSelectedSizeDisplay').innerText = val;
+      document.querySelectorAll('.size-pill-btn').forEach(b => {
+        b.className = "size-pill-btn px-3 py-1 text-xs border rounded-lg font-bold transition bg-stone-50 border-stone-300 text-stone-700 hover:border-amber-900";
+      });
+      btn.className = "size-pill-btn px-3 py-1 text-xs border rounded-lg font-bold transition bg-amber-950 text-white border-amber-950";
+    }
+
+    function selectVariantColor(val, colorIndex, btn) {
+      currentSelectedColor = val;
+      document.getElementById('qvSelectedColorDisplay').innerText = val;
+      document.querySelectorAll('.color-pill-btn').forEach(b => {
+        b.className = "color-pill-btn px-3 py-1 text-xs border rounded-lg font-medium transition bg-stone-50 border-stone-300 text-stone-700 hover:border-amber-900";
+      });
+      btn.className = "color-pill-btn px-3 py-1 text-xs border rounded-lg font-medium transition bg-amber-950 text-white border-amber-950";
+
+      if (currentOpenedProduct && currentOpenedProduct.images && currentOpenedProduct.images.length > 0) {
+        const targetImgIndex = colorIndex < currentOpenedProduct.images.length ? colorIndex : 0;
+        setMainImage(currentOpenedProduct.images[targetImgIndex], targetImgIndex);
+      }
+    }
+
+    function addToCartWithVariant(prod) {
+      const itemKey = `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`;
+      const exist = cart.find(i => i.itemKey === itemKey);
+      if (exist) exist.qty += 1;
+      else {
+        cart.push({
+          ...prod,
+          itemKey,
+          selectedSize: currentSelectedSize,
+          selectedColor: currentSelectedColor,
+          qty: 1
+        });
+      }
+      updateCartUI();
+      toggleCart(true);
+    }
+
+    function instantBuyNowWithVariant(prod) {
+      cart = [{
+        ...prod,
+        itemKey: `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`,
+        selectedSize: currentSelectedSize,
+        selectedColor: currentSelectedColor,
+        qty: 1
+      }];
+      updateCartUI();
+      openCheckoutModal();
+    }
+
+    function closeQuickView() { document.getElementById('quickViewModal').classList.add('hidden'); }
+
+    function updateQty(idx, change) {
+      cart[idx].qty += change;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      updateCartUI();
+    }
+
+    function toggleCart(forceOpen = false) {
+      const drawer = document.getElementById('cartDrawer');
+      if (forceOpen) drawer.classList.remove('hidden');
+      else drawer.classList.toggle('hidden');
+    }
+
+    function calculateCartTotals() {
+      let subTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      let discountAmt = 0;
+
+      // কুপনের মিনিমাম কেনাকাটা লিমিট চেক
+      if (appliedDiscountRate > 0) {
+        if (subTotal >= appliedCouponMinSpend) {
+          discountAmt = Math.round((subTotal * appliedDiscountRate) / 100);
+        } else {
+          appliedDiscountRate = 0;
+          appliedCouponCode = "";
+          const msg = document.getElementById('couponStatusMsg');
+          msg.innerText = `Min cart ₹${appliedCouponMinSpend} required for this coupon!`;
+          msg.className = "text-[11px] text-rose-600 block font-semibold";
+          msg.classList.remove('hidden');
+        }
+      }
+
+      const deliveryCharge = storeDeliveryCharge;
+      let finalAmt = subTotal - discountAmt + deliveryCharge;
+      return { subTotal, discountAmt, finalAmt, deliveryCharge };
+    }
+
+    function updateCartUI() {
+      const totalCount = cart.reduce((sum, item) => sum + item.qty, 0);
+      document.getElementById('cartCountBadge').innerText = totalCount;
+      const list = document.getElementById('cartItemsList');
+
+      if (cart.length === 0) {
+        list.innerHTML = `<div class="text-center py-12 text-stone-400 text-xs">Your bag is empty.</div>`;
+        document.getElementById('subTotalDisplay').innerText = "₹0";
+        document.getElementById('discountDisplay').innerText = "-₹0";
+        document.getElementById('deliveryDisplay').innerText = "₹0";
+        document.getElementById('finalTotalDisplay').innerText = "₹0";
+        document.getElementById('checkoutProceedBtn').disabled = true;
+        return;
+      }
+
+      document.getElementById('checkoutProceedBtn').disabled = false;
+      const { subTotal, discountAmt, finalAmt, deliveryCharge } = calculateCartTotals();
+
+      list.innerHTML = cart.map((item, index) => {
+        const itemImg = (item.images && item.images[0]) || item.image || "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600";
+        return `
+          <div class="flex items-center gap-3 border-b border-stone-100 pb-3">
+            <img src="${itemImg}" class="w-14 h-14 object-cover rounded-lg border">
+            <div class="flex-1">
+              <h5 class="text-xs font-bold text-stone-800 line-clamp-1">${item.name}</h5>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="bg-amber-100 text-amber-900 text-[10px] px-1.5 py-0.2 rounded font-bold">${item.selectedSize}</span>
+                <span class="bg-stone-100 text-stone-700 text-[10px] px-1.5 py-0.2 rounded">${item.selectedColor}</span>
+              </div>
+              <p class="text-xs font-semibold text-amber-950 mt-1">₹${item.price}</p>
+              <div class="flex items-center gap-2 mt-1">
+                <button onclick="updateQty(${index}, -1)" class="w-5 h-5 bg-stone-200 text-xs rounded hover:bg-stone-300 font-bold">-</button>
+                <span class="text-xs font-bold">${item.qty}</span>
+                <button onclick="updateQty(${index}, 1)" class="w-5 h-5 bg-stone-200 text-xs rounded hover:bg-stone-300 font-bold">+</button>
+              </div>
+            </div>
+            <button onclick="cart.splice(${index}, 1); updateCartUI();" class="text-stone-400 hover:text-red-600 text-xs"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('subTotalDisplay').innerText = `₹${subTotal}`;
+      document.getElementById('discountDisplay').innerText = `-₹${discountAmt}`;
+      document.getElementById('deliveryDisplay').innerText = deliveryCharge > 0 ? `₹${deliveryCharge}` : 'FREE';
+      document.getElementById('finalTotalDisplay').innerText = `₹${finalAmt}`;
+    }
+
+    function applyCoupon() {
+      const code = (document.getElementById('couponInput').value || "").trim().toUpperCase();
+      const status = document.getElementById('couponStatusMsg');
+      const { subTotal } = calculateCartTotals();
+      const found = activeCoupons.find(c => c.code === code);
+
+      if (found) {
+        if (subTotal < (found.minSpend || 0)) {
+          appliedDiscountRate = 0;
+          appliedCouponCode = "";
+          status.innerText = `এই কুপনের জন্য কমপক্ষে ₹${found.minSpend} টাকার কেনাকাটা প্রয়োজন!`;
+          status.className = "text-[11px] text-rose-600 block font-semibold";
+          status.classList.remove('hidden');
+        } else {
+          appliedDiscountRate = found.discountPercent;
+          appliedCouponCode = found.code;
+          appliedCouponMinSpend = found.minSpend || 0;
+          status.innerText = `Success! ${found.discountPercent}% discount applied.`;
+          status.className = "text-[11px] text-emerald-600 block font-medium";
+          status.classList.remove('hidden');
+        }
+      } else {
+        appliedDiscountRate = 0;
+        appliedCouponCode = "";
+        status.innerText = "Invalid coupon code!";
+        status.className = "text-[11px] text-red-600 block font-medium";
+        status.classList.remove('hidden');
+      }
+      updateCartUI();
+    }
+
+    function applyCouponFromStep2() {
+      const code = (document.getElementById('step2CouponInput').value || "").trim().toUpperCase();
+      const status = document.getElementById('step2CouponStatus');
+      const { subTotal } = calculateCartTotals();
+      const found = activeCoupons.find(c => c.code === code);
+
+      if (found) {
+        if (subTotal < (found.minSpend || 0)) {
+          appliedDiscountRate = 0;
+          appliedCouponCode = "";
+          status.innerText = `এই কুপনের জন্য কমপক্ষে ₹${found.minSpend} টাকার কেনাকাটা প্রয়োজন!`;
+          status.className = "text-[11px] text-rose-600 block font-bold mt-1";
+          status.classList.remove('hidden');
+        } else {
+          appliedDiscountRate = found.discountPercent;
+          appliedCouponCode = found.code;
+          appliedCouponMinSpend = found.minSpend || 0;
+          status.innerText = `Success! ${found.discountPercent}% discount applied with ${found.code}.`;
+          status.className = "text-[11px] text-emerald-600 block font-bold mt-1";
+          status.classList.remove('hidden');
+        }
+      } else {
+        appliedDiscountRate = 0;
+        appliedCouponCode = "";
+        status.innerText = "Invalid coupon code!";
+        status.className = "text-[11px] text-rose-600 block font-bold mt-1";
+        status.classList.remove('hidden');
+      }
+
+      const { discountAmt, finalAmt, deliveryCharge } = calculateCartTotals();
+      document.getElementById('chkSubtotal').innerText = `₹${subTotal}`;
+      document.getElementById('chkDiscountAmt').innerText = `-₹${discountAmt}`;
+      document.getElementById('chkDeliveryAmt').innerText = deliveryCharge > 0 ? `₹${deliveryCharge}` : 'FREE';
+      document.getElementById('chkCouponCodeName').innerText = appliedCouponCode ? `${appliedCouponCode} (${appliedDiscountRate}%)` : "None";
+      document.getElementById('chkFinalPayable').innerText = `₹${finalAmt}`;
+
+      handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
+      updateCartUI();
+    }
+
+    function openCheckoutModal() {
+      toggleCart();
+      document.getElementById('checkoutModal').classList.remove('hidden');
+      backToStep1Address();
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('checkoutModal').classList.add('hidden');
+    }
+
+    function goToStep2Payment() {
+      const name = document.getElementById('ordName').value.trim();
+      const phone = document.getElementById('ordPhone').value.trim();
+      const pin = document.getElementById('ordPincode').value.trim();
+      const city = document.getElementById('ordCity').value.trim();
+      const state = document.getElementById('ordState').value.trim();
+      const house = document.getElementById('addrHouseStreet').value.trim();
+      const village = document.getElementById('addrVillage').value.trim();
+      const po = document.getElementById('addrPostOffice').value.trim();
+
+      if (!name || !phone || !pin || !city || !state || !house || !village || !po) {
+        return alert("Please fill all required address details!");
+      }
+
+      if (phone.length !== 10 || isNaN(phone)) {
+        return alert("Please provide a valid 10-digit mobile number!");
+      }
+
+      if (!isPincodeValid) {
+        alert("Please enter a valid 6-digit Indian Postal Pincode!");
+        document.getElementById('ordPincode').focus();
+        return;
+      }
+
+      document.getElementById('checkoutStep1').classList.add('hidden');
+      document.getElementById('checkoutStep2').classList.remove('hidden');
+      document.getElementById('checkoutStepIndicator').innerText = "Step 2 of 2: Payment & Offer Verification";
+
+      document.getElementById('step2SummaryName').innerText = `${name} (${phone})`;
+      document.getElementById('step2SummaryAddr').innerText = `${house}, ${village}, P.O: ${po}, ${city} - ${pin}`;
+
+      const { subTotal, discountAmt, finalAmt, deliveryCharge } = calculateCartTotals();
+      document.getElementById('chkSubtotal').innerText = `₹${subTotal}`;
+      document.getElementById('chkDiscountAmt').innerText = `-₹${discountAmt}`;
+      document.getElementById('chkDeliveryAmt').innerText = deliveryCharge > 0 ? `₹${deliveryCharge}` : 'FREE';
+      document.getElementById('chkCouponCodeName').innerText = appliedCouponCode ? `${appliedCouponCode} (${appliedDiscountRate}%)` : "None";
+      document.getElementById('chkFinalPayable').innerText = `₹${finalAmt}`;
+
+      handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
+    }
+
+    function backToStep1Address() {
+      document.getElementById('checkoutStep2').classList.add('hidden');
+      document.getElementById('checkoutStep1').classList.remove('hidden');
+      document.getElementById('checkoutStepIndicator').innerText = "Step 1 of 2: Shipping Destination";
+    }
+
+    async function validateAndLookupPincode(pin) {
+      const cleanPin = pin.trim();
+      const pinInput = document.getElementById('ordPincode');
+      const err = document.getElementById('pincodeErrorMsg');
+      const succ = document.getElementById('pincodeSuccessMsg');
+
+      if (cleanPin.length !== 6 || isNaN(cleanPin) || cleanPin.startsWith('0')) {
+        isPincodeValid = false;
+        pinInput.className = "w-full border-2 border-rose-500 bg-rose-50/40 p-2.5 rounded-lg font-mono font-bold tracking-wider text-rose-900";
+        err.classList.remove('hidden');
+        succ.classList.add('hidden');
+        return;
+      }
+
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${cleanPin}`);
+        const data = await res.json();
+        if (data && data[0] && data[0].Status === "Success") {
+          isPincodeValid = true;
+          pinInput.className = "w-full border-2 border-emerald-500 bg-emerald-50/40 p-2.5 rounded-lg font-mono font-bold tracking-wider text-emerald-900";
+          err.classList.add('hidden');
+          succ.classList.remove('hidden');
+          const po = data[0].PostOffice[0];
+          document.getElementById('ordCity').value = po.District;
+          document.getElementById('ordState').value = po.State;
+          document.getElementById('addrPostOffice').value = po.Name;
+        } else {
+          throw new Error("Invalid Pin");
+        }
+      } catch (e) {
+        isPincodeValid = false;
+        pinInput.className = "w-full border-2 border-rose-500 bg-rose-50/40 p-2.5 rounded-lg font-mono font-bold tracking-wider text-rose-900";
+        err.classList.remove('hidden');
+        succ.classList.add('hidden');
+      }
+    }
+
+    function handlePaymentModeChange(mode) {
+      const { finalAmt } = calculateCartTotals();
+      const banner = document.getElementById('codNoticeBanner');
+      const qrTitle = document.getElementById('qrBoxTitle');
+      const submitBtn = document.getElementById('submitOrderBtn');
+
+      let payableAmount = finalAmt;
+
+      if (mode === 'COD') {
+        const advanceToken = Math.max(1, Math.round((finalAmt * storeCodAdvancePct) / 100));
+        const balanceCash = finalAmt - advanceToken;
+        payableAmount = advanceToken;
+
+        banner.classList.remove('hidden');
+        document.getElementById('codAdvanceDisplay').innerText = `Advance Token: ₹${advanceToken} (${storeCodAdvancePct}%)`;
+        document.getElementById('codBalanceDisplay').innerText = `₹${balanceCash}`;
+        qrTitle.innerText = `Scan to Pay ₹${advanceToken} COD Advance Token`;
+        submitBtn.innerText = `Pay ₹${advanceToken} Advance & Place Order`;
+      } else {
+        banner.classList.add('hidden');
+        qrTitle.innerText = `Scan to Pay 100% Prepaid (₹${finalAmt})`;
+        submitBtn.innerText = `Pay ₹${finalAmt} via UPI & Place Order`;
+      }
+
+      const upiUrl = `upi://pay?pa=${STORE_UPI_ID}&pn=AURA_STORE&am=${payableAmount}&cu=INR`;
+      document.getElementById('dynamicQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+    }
+
+    async function handlePlaceOrder(e) {
+      e.preventDefault();
+
+      const utr = document.getElementById('ordUTR').value.trim();
+      if (!utr) return alert("Please enter the 12-digit UPI Transaction ID (UTR)!");
+
+      const btn = document.getElementById('submitOrderBtn');
+      btn.innerText = "Placing Order...";
+      btn.disabled = true;
+
+      const { subTotal, discountAmt, finalAmt, deliveryCharge } = calculateCartTotals();
+      const mode = document.getElementById('ordPaymentMethod').value;
+
+      let advancePaid = finalAmt;
+      let balanceDue = 0;
+
+      if (mode === 'COD') {
+        advancePaid = Math.max(1, Math.round((finalAmt * storeCodAdvancePct) / 100));
+        balanceDue = finalAmt - advancePaid;
+      }
+
+      const payload = {
+        customerName: document.getElementById('ordName').value,
+        phone: document.getElementById('ordPhone').value,
+        pincode: document.getElementById('ordPincode').value,
+        city: document.getElementById('ordCity').value,
+        state: document.getElementById('ordState').value,
+        houseNoStreet: document.getElementById('addrHouseStreet').value,
+        villageOrCity: document.getElementById('addrVillage').value,
+        postOffice: document.getElementById('addrPostOffice').value,
+        policeStation: document.getElementById('addrPoliceStation').value,
+        landmark: document.getElementById('addrLandmark').value,
+        items: [...cart],
+        subTotal,
+        discountApplied: discountAmt,
+        deliveryCharge,
+        couponCode: appliedCouponCode,
+        total: finalAmt,
+        paymentMethod: mode,
+        advancePaid,
+        balanceDue,
+        utrNumber: utr
+      };
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(`🎉 আপনার অর্ডারটি সফলভাবে সম্পন্ন হয়েছে!\n\nOrder ID: #${data.orderId}\n\nঅর্ডারের সম্পূর্ণ অফিশিয়াল PDF চালান আপনার টেলিগ্রামে চলে গেছে।`);
+
+          cart = [];
+          appliedDiscountRate = 0;
+          appliedCouponCode = "";
+          updateCartUI();
+          closeCheckoutModal();
+        } else {
+          alert(data.message || "Failed to place order.");
+        }
+      } catch (err) {
+        alert("Server error. Please try again.");
+      } finally {
+        btn.innerText = "Place Confirmed Order";
+        btn.disabled = false;
+      }
+    }
+
+    function openMyOrdersModal() {
+      document.getElementById('myOrdersModal').classList.remove('hidden');
+    }
+
+    function closeMyOrdersModal() {
+      document.getElementById('myOrdersModal').classList.add('hidden');
+    }
+
+    async function fetchMyOrders() {
+      const phone = document.getElementById('myOrdersPhoneInput').value.trim();
+      if (!phone) return alert("Please enter your mobile number!");
+
+      const res = await fetch(`/api/orders/track?q=${encodeURIComponent(phone)}`);
+      const data = await res.json();
+      const container = document.getElementById('myOrdersListContainer');
+
+      if (!data.orders || !data.orders.length) {
+        container.innerHTML = `<div class="text-center py-8 text-rose-500 font-bold"><p>No orders found with this number!</p></div>`;
+        return;
+      }
+
+      container.innerHTML = data.orders.map(o => {
+        const itemsHtml = (o.items || []).map(i => `
+          <div class="flex items-center gap-2 border-b border-stone-100 py-1.5">
+            <img src="${(i.images && i.images[0]) || i.image || ''}" class="w-10 h-10 object-cover rounded-lg border">
+            <div class="flex-1">
+              <p class="font-bold text-stone-900">${i.name} (x${i.qty})</p>
+              <p class="text-[10px] text-amber-900 font-bold">Size: ${i.selectedSize || 'N/A'} | Color: ${i.selectedColor || 'N/A'}</p>
+            </div>
+            <span class="font-bold text-stone-800">₹${i.price * i.qty}</span>
+          </div>
+        `).join('');
+
+        return `
+          <div class="border border-stone-200 bg-stone-50/70 p-4 rounded-2xl space-y-2.5 shadow-sm">
+            <div class="flex justify-between items-start border-b pb-2">
+              <div>
+                <p class="font-mono font-bold text-amber-950 text-sm">#${o.id}</p>
+                <p class="text-[10px] text-stone-400">${o.date}</p>
+              </div>
+              <span class="px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-emerald-100 text-emerald-800">
+                ${o.status}
+              </span>
+            </div>
+
+            <div class="bg-white p-2.5 rounded-xl border border-stone-200">
+              ${itemsHtml}
+            </div>
+
+            <div class="flex flex-wrap justify-between items-center text-[11px] pt-1 gap-2">
+              <p class="text-stone-600">Total: <b class="text-amber-950 text-xs">₹${o.total}</b> (${o.paymentMethod})</p>
+              ${o.deliverySlipFile ? `
+                <a href="${o.deliverySlipFile}" download="AURA_DeliverySlip_${o.id}" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 shadow">
+                  <i class="fa-solid fa-file-arrow-down"></i> Download Delivery Slip
+                </a>
+              ` : `
+                <span class="text-stone-400 italic">Delivery slip will be available after delivery</span>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    loadStore();
+  </script>
+</body>
+</html>
