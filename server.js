@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -12,9 +13,45 @@ const ADMIN_SECRET_PIN = "admin123";
 const ADMIN_EMAIL = "mahatosarita436@gmail.com";
 const ADMIN_PHONE = "916289145092";
 
-// আপনার টেলিগ্রাম বট কনফিগারেশন
+// টেলিগ্রাম বট কনফিগারেশন
 const TELEGRAM_BOT_TOKEN = "8818940415:AAHdq6roV4XDCF3sxtJdDSqw-Abq20i1KbQ";
 const TELEGRAM_CHAT_ID = "8836538477";
+
+// MongoDB Atlas কানেকশন
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://dm0919958_db_user:Debasish55@cluster0.dwaflpi.mongodb.net/aura_store?retryWrites=true&w=majority&appName=Cluster0";
+
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('🍃 MongoDB Atlas Connected Successfully!'))
+  .catch(err => console.error('❌ MongoDB Connection Error:', err));
+
+// MongoDB Order Schema
+const orderSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  customerName: String,
+  phone: String,
+  address: String,
+  pincode: String,
+  city: String,
+  state: String,
+  items: Array,
+  subTotal: Number,
+  discountApplied: Number,
+  deliveryCharge: Number,
+  couponCode: String,
+  total: Number,
+  paymentMethod: String,
+  advancePaid: Number,
+  balanceDue: Number,
+  utrNumber: String,
+  status: { type: String, default: "Pending Verification" },
+  courierPartner: { type: String, default: "Delhivery" },
+  awbNumber: { type: String, default: "" },
+  deliverySlipFile: { type: String, default: "" },
+  date: String,
+  orderDateRaw: String
+}, { timestamps: true });
+
+const Order = mongoose.model('Order', orderSchema);
 
 // জিমেইল ট্রান্সপোর্টার
 const transporter = nodemailer.createTransport({
@@ -336,11 +373,10 @@ let storeData = {
       ],
       description: "Sterling silver plated King & Queen crown couple promise rings with velvet box."
     }
-  ],
-  orders: []
+  ]
 };
 
-// সম্পূর্ণ প্রফেশনাল ট্যাক্স ইনভয়েস PDF জেনারেটর
+// প্রফেশনাল ট্যাক্স ইনভয়েস PDF জেনারেটর
 function createOrderPdfBuffer(order) {
   return new Promise((resolve, reject) => {
     try {
@@ -357,9 +393,7 @@ function createOrderPdfBuffer(order) {
       const lightBg = '#fcfbf9';
       const borderColor = '#e7e5e4';
 
-      // হেডার বার
       doc.rect(35, 35, 525, 6).fill(accentGold);
-
       doc.fontSize(24).font('Helvetica-Bold').fillColor(primaryColor).text('AURA FINE STORE', 35, 50, { letterSpacing: 2 });
       doc.fontSize(9).font('Helvetica').fillColor(mutedText).text('Premium Lifestyle, Ethnic Wear & Luxury Collections', 35, 76);
       doc.fontSize(8).fillColor(mutedText).text('Bolpur, Birbhum, West Bengal - 731204 | Support: +91 6289145092', 35, 88);
@@ -371,7 +405,6 @@ function createOrderPdfBuffer(order) {
 
       doc.strokeColor(borderColor).lineWidth(1).moveTo(35, 110).lineTo(560, 110).stroke();
 
-      // কাস্টমার ও লজিস্টিকস কার্ড
       const cardY = 120;
       const cardHeight = 90;
 
@@ -388,7 +421,6 @@ function createOrderPdfBuffer(order) {
       doc.fontSize(8).font('Helvetica').fillColor(darkText).text(`Courier Partner: ${order.courierPartner || 'Delhivery Express'}`, 315, cardY + 45);
       doc.fontSize(8).font('Helvetica').fillColor(mutedText).text(`AWB / Tracking: ${order.awbNumber || 'Post-Packing Dispatch'}`, 315, cardY + 57);
 
-      // আইটেম টেবিল হেডার
       const tableTop = 225;
       doc.roundedRect(35, tableTop, 525, 22, 4).fill(primaryColor);
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
@@ -415,7 +447,6 @@ function createOrderPdfBuffer(order) {
         curY += rowHeight;
       });
 
-      // পেমেন্ট ও সামারি
       const summaryTop = Math.max(curY + 15, 365);
 
       doc.roundedRect(35, summaryTop, 270, 115, 6).fillAndStroke(lightBg, borderColor);
@@ -450,7 +481,6 @@ function createOrderPdfBuffer(order) {
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff').text('TOTAL BILL AMOUNT:', calcX + 12, summaryTop + 90);
       doc.fontSize(12).font('Helvetica-Bold').fillColor('#fbbf24').text(`Rs. ${order.total}`, calcX + 130, summaryTop + 89, { width: 95, align: 'right' });
 
-      // ফুটার
       const footerY = 505;
       doc.strokeColor(borderColor).lineWidth(1).moveTo(35, footerY).lineTo(560, footerY).stroke();
 
@@ -516,7 +546,7 @@ app.get('/api/store', (req, res) => {
   });
 });
 
-// কুপন যোগ/ম্যানেজ (Min Spend যুক্ত)
+// কুপন যোগ/ম্যানেজ
 app.post('/api/admin/coupons', (req, res) => {
   const { pin, code, discountPercent, minSpend, title, description, showOnStore } = req.body;
   if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -561,20 +591,27 @@ app.post('/api/admin/store-settings', (req, res) => {
   res.json({ success: true, storeSettings: storeData.storeSettings });
 });
 
-// কাস্টমার ট্র্যাকিং API
-app.get('/api/orders/track', (req, res) => {
-  const query = (req.query.q || "").trim().toLowerCase();
-  if (!query) return res.status(400).json({ success: false, message: "Query required" });
+// কাস্টমার ট্র্যাকিং API (MongoDB থেকে খোঁজা)
+app.get('/api/orders/track', async (req, res) => {
+  try {
+    const query = (req.query.q || "").trim();
+    if (!query) return res.status(400).json({ success: false, message: "Query required" });
 
-  const cleanDigits = query.replace(/[^0-9]/g, '');
-  const matched = storeData.orders.filter(o => 
-    o.id.toLowerCase() === query || (cleanDigits.length >= 6 && o.phone.includes(cleanDigits))
-  );
+    const cleanDigits = query.replace(/[^0-9]/g, '');
+    const matched = await Order.find({
+      $or: [
+        { id: query },
+        { phone: { $regex: cleanDigits, $options: 'i' } }
+      ]
+    }).sort({ createdAt: -1 });
 
-  res.json({ success: true, orders: matched });
+    res.json({ success: true, orders: matched });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
-// কাস্টমার অর্ডার সাবমিট (ফুল অ্যাড্রেস ও ডেলিভারি চার্জ সহ)
+// কাস্টমার অর্ডার সাবমিট (MongoDB Atlas-এ পারমানেন্ট সেভ)
 app.post('/api/orders', async (req, res) => {
   try {
     const { 
@@ -631,7 +668,9 @@ app.post('/api/orders', async (req, res) => {
       orderDateRaw: todayStr
     };
 
-    storeData.orders.unshift(order);
+    // MongoDB-তে ডাটা সেভ
+    const newOrder = new Order(order);
+    await newOrder.save();
 
     // ইনভয়েস PDF তৈরি করে টেলিগ্রামে পাঠানো
     const pdfBuffer = await createOrderPdfBuffer(order);
@@ -652,54 +691,109 @@ app.post('/api/admin/login', (req, res) => {
   res.status(401).json({ success: false, message: "Invalid Passcode!" });
 });
 
-// অ্যাডমিন ডেটা ও লাইভ সেলস অ্যানালিটিক্স
-app.post('/api/admin/orders', (req, res) => {
+// অ্যাডমিন ডেটা ও লাইভ সেলস অ্যানালিটিক্স (MongoDB থেকে রিয়েলটাইম লোড)
+app.post('/api/admin/orders', async (req, res) => {
   const { pin } = req.body;
   if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-  const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+  try {
+    const allDbOrders = await Order.find().sort({ createdAt: -1 });
+    const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
 
-  // আজকের অর্ডার হিসাব
-  const todayOrders = storeData.orders.filter(o => o.orderDateRaw === todayStr || o.date.includes(todayStr));
-  const todayOrdersCount = todayOrders.length;
-  
-  // অনলাইন ও COD এর আলাদা হিসাব
-  const totalSales = storeData.orders.reduce((sum, o) => sum + (o.total || 0), 0);
-  const totalOnlineRevenue = storeData.orders
-    .filter(o => o.paymentMethod === 'UPI')
-    .reduce((sum, o) => sum + (o.total || 0), 0);
-  
-  const totalCodRevenue = storeData.orders
-    .filter(o => o.paymentMethod === 'COD')
-    .reduce((sum, o) => sum + (o.total || 0), 0);
+    const todayOrders = allDbOrders.filter(o => o.orderDateRaw === todayStr || (o.date && o.date.includes(todayStr)));
+    const todayOrdersCount = todayOrders.length;
+    
+    const totalSales = allDbOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    const totalOnlineRevenue = allDbOrders
+      .filter(o => o.paymentMethod === 'UPI')
+      .reduce((sum, o) => sum + (o.total || 0), 0);
+    
+    const totalCodRevenue = allDbOrders
+      .filter(o => o.paymentMethod === 'COD')
+      .reduce((sum, o) => sum + (o.total || 0), 0);
 
-  const pendingCount = storeData.orders.filter(o => o.status.includes('Pending')).length;
+    const pendingCount = allDbOrders.filter(o => o.status && o.status.includes('Pending')).length;
 
-  res.json({
-    success: true,
-    orders: storeData.orders,
-    coupons: storeData.coupons,
-    storeSettings: storeData.storeSettings,
-    analytics: {
-      totalOrders: storeData.orders.length,
-      todayOrdersCount,
-      totalSales,
-      totalOnlineRevenue,
-      totalCodRevenue,
-      pendingOrders: pendingCount
-    }
-  });
+    res.json({
+      success: true,
+      orders: allDbOrders,
+      coupons: storeData.coupons,
+      storeSettings: storeData.storeSettings,
+      analytics: {
+        totalOrders: allDbOrders.length,
+        todayOrdersCount,
+        totalSales,
+        totalOnlineRevenue,
+        totalCodRevenue,
+        pendingOrders: pendingCount
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
-app.post('/api/admin/orders/:id/status', (req, res) => {
+// অর্ডার স্ট্যাটাস আপডেট
+app.post('/api/admin/orders/:id/status', async (req, res) => {
   const { pin, status } = req.body;
   if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
-  const order = storeData.orders.find(o => o.id === req.params.id);
-  if (order) {
-    order.status = status;
-    return res.json({ success: true, status: order.status });
+
+  try {
+    const updated = await Order.findOneAndUpdate(
+      { id: req.params.id },
+      { status: status },
+      { new: true }
+    );
+    if (updated) return res.json({ success: true, status: updated.status });
+    res.status(404).json({ success: false, message: "Order not found" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-  res.status(404).json({ success: false });
+});
+
+// ডেলিভারি ট্র্যাকিং ও AWB আপডেট
+app.post('/api/admin/orders/:id/dispatch-tracking', async (req, res) => {
+  const { pin, courierPartner, awbNumber } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  try {
+    const updated = await Order.findOneAndUpdate(
+      { id: req.params.id },
+      { 
+        courierPartner, 
+        awbNumber, 
+        status: "Verified & Shipped" 
+      },
+      { new: true }
+    );
+
+    if (updated) {
+      const msg = encodeURIComponent(`Namaste ${updated.customerName}! Your AURA Fine Store order #${updated.id} is shipped via ${courierPartner}. Tracking AWB: ${awbNumber}`);
+      const waUrl = `https://api.whatsapp.com/send?phone=91${updated.phone}&text=${msg}`;
+      return res.json({ success: true, sendTrackingWhatsAppUrl: waUrl });
+    }
+    res.status(404).json({ success: false, message: "Order not found" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// অফিসিয়াল ডেলিভারি স্লিপ আপলোড
+app.post('/api/admin/orders/:id/upload-slip', async (req, res) => {
+  const { pin, slipFileBase64 } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  try {
+    const updated = await Order.findOneAndUpdate(
+      { id: req.params.id },
+      { deliverySlipFile: slipFileBase64 },
+      { new: true }
+    );
+    if (updated) return res.json({ success: true });
+    res.status(404).json({ success: false, message: "Order not found" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
