@@ -1,7 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const dns = require('dns');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
 const path = require('path');
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
@@ -19,12 +17,18 @@ const ADMIN_PHONE = "916289145092";
 const TELEGRAM_BOT_TOKEN = "8818940415:AAHdq6roV4XDCF3sxtJdDSqw-Abq20i1KbQ";
 const TELEGRAM_CHAT_ID = "8836538477";
 
-// MongoDB Atlas কানেকশন
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://dm0919958_db_user:Debasish55@cluster0.dwaflpi.mongodb.net/aura_store?retryWrites=true&w=majority&appName=Cluster0";
+// সরাসরি নন-SRV ক্লাস্টার সংযোগ (DNS এরর মুক্ত)
+const DIRECT_MONGO_URI = "mongodb://dm0919958_db_user:Debasish55@ac-flooa9m-shard-00-00.dwaflpi.mongodb.net:27017,ac-flooa9m-shard-00-01.dwaflpi.mongodb.net:27017,ac-flooa9m-shard-00-02.dwaflpi.mongodb.net:27017/aura_store?ssl=true&replicaSet=atlas-cxvzuq-shard-0&authSource=admin&retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGO_URI || DIRECT_MONGO_URI;
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log('🍃 MongoDB Atlas Connected Successfully!'))
-  .catch(err => console.error('❌ MongoDB Connection Error:', err));
+  .catch(err => {
+    console.error('⚠️ Direct Atlas fail, retrying fallback...', err.message);
+    mongoose.connect(DIRECT_MONGO_URI)
+      .then(() => console.log('🍃 MongoDB Atlas Connected via Fallback!'))
+      .catch(e => console.error('❌ Final Connection Error:', e.message));
+  });
 
 // MongoDB Order Schema
 const orderSchema = new mongoose.Schema({
@@ -593,7 +597,7 @@ app.post('/api/admin/store-settings', (req, res) => {
   res.json({ success: true, storeSettings: storeData.storeSettings });
 });
 
-// কাস্টমার ট্র্যাকিং API (MongoDB থেকে খোঁজা)
+// কাস্টমার ট্র্যাকিং API
 app.get('/api/orders/track', async (req, res) => {
   try {
     const query = (req.query.q || "").trim();
@@ -613,7 +617,7 @@ app.get('/api/orders/track', async (req, res) => {
   }
 });
 
-// কাস্টমার অর্ডার সাবমিট (MongoDB Atlas-এ পারমানেন্ট সেভ)
+// কাস্টমার অর্ডার সাবমিট
 app.post('/api/orders', async (req, res) => {
   try {
     const { 
@@ -670,11 +674,9 @@ app.post('/api/orders', async (req, res) => {
       orderDateRaw: todayStr
     };
 
-    // MongoDB-তে ডাটা সেভ
     const newOrder = new Order(order);
     await newOrder.save();
 
-    // ইনভয়েস PDF তৈরি করে টেলিগ্রামে পাঠানো
     const pdfBuffer = await createOrderPdfBuffer(order);
     sendTelegramPdfDocument(pdfBuffer, order);
 
@@ -693,7 +695,7 @@ app.post('/api/admin/login', (req, res) => {
   res.status(401).json({ success: false, message: "Invalid Passcode!" });
 });
 
-// অ্যাডমিন ডেটা ও লাইভ সেলস অ্যানালিটিক্স (MongoDB থেকে রিয়েলটাইম লোড)
+// অ্যাডমিন ডেটা ও লাইভ সেলস অ্যানালিটিক্স
 app.post('/api/admin/orders', async (req, res) => {
   const { pin } = req.body;
   if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
