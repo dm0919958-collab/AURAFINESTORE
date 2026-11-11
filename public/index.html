@@ -21,7 +21,6 @@
       color: #1c1917;
     }
 
-    /* প্রিমিয়াম শিমার ও গ্লাস ইফেক্ট */
     .glass-nav {
       background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(14px);
@@ -41,7 +40,6 @@
     }
     .fade-carousel { transition: opacity 0.6s ease-in-out; }
     
-    /* কাস্টম স্ক্রলবার */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1ede6; }
     ::-webkit-scrollbar-thumb { background: #b45309; border-radius: 999px; }
@@ -72,13 +70,11 @@
     <header class="glass-nav border-b border-amber-900/10 sticky top-[37px] z-40 transition-all">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
         
-        <!-- ব্র্যান্ড লোগো -->
         <a href="/" class="flex flex-col group">
           <span class="text-3xl font-extrabold font-cinzel tracking-[0.25em] text-stone-900 group-hover:text-amber-800 transition">AURA</span>
           <span class="text-[9px] uppercase tracking-[0.45em] text-amber-700 font-bold -mt-1 group-hover:tracking-[0.5em] transition-all">Fine Store</span>
         </a>
 
-        <!-- ডেক্সটপ ক্যাটাগরি মেনু -->
         <nav class="hidden md:flex items-center gap-8 text-xs font-bold tracking-wider text-stone-700 uppercase">
           <a href="#" onclick="showAllCatalog()" class="hover:text-amber-700 transition flex items-center gap-1.5">
             <i class="fa-solid fa-gem text-amber-600"></i> All Collection
@@ -152,13 +148,11 @@
           </div>
         </nav>
 
-        <!-- সার্চ বক্স -->
         <div class="hidden sm:flex flex-1 max-w-xs mx-3 relative">
           <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search jewellery, shirts, gifts..." class="w-full bg-stone-100/90 border border-stone-300 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:ring-2 focus:ring-amber-700/30 focus:bg-white transition">
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-stone-400 text-xs"></i>
         </div>
 
-        <!-- অ্যাকশন বোতাম -->
         <div class="flex items-center gap-2.5">
           <button onclick="openMyOrdersModal()" class="flex items-center gap-1.5 text-xs font-bold text-stone-800 bg-white hover:bg-amber-50 px-3.5 py-2 rounded-full border border-stone-200 transition shadow-sm hover:border-amber-400">
             <i class="fa-solid fa-bag-shopping text-amber-700"></i>
@@ -255,7 +249,6 @@
           <p class="text-xs text-stone-500 mt-1">Presenting <span id="countDisplay" class="font-bold text-amber-900">0</span> master creations</p>
         </div>
         
-        <!-- ফিল্টার পিল বোতাম -->
         <div class="flex items-center gap-2 overflow-x-auto pb-1" id="categoryTabs">
           <button onclick="setCategory('All', this)" class="cat-btn active bg-stone-950 text-amber-400 px-5 py-2 rounded-full text-xs font-bold tracking-wide transition shadow-sm border border-stone-900">All</button>
           <button onclick="filterBySection('Men', 'All', this)" class="cat-btn bg-white hover:bg-stone-50 border border-stone-300 hover:border-amber-800 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-700 transition">Men</button>
@@ -264,12 +257,11 @@
         </div>
       </div>
 
-      <!-- প্রোডাক্ট গ্রিড -->
       <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
     </main>
   </div>
 
-  <!-- ৬. প্রোডাক্ট ডিটেল মডাল (৪টি ছবির ভিউয়ার ও ভ্যারিয়েন্ট সিলেক্টর সহ) -->
+  <!-- ৬. প্রোডাক্ট ডিটেল মডাল -->
   <div id="quickViewModal" class="fixed inset-0 bg-stone-950/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto border border-stone-200">
       <button onclick="closeQuickView()" class="absolute top-5 right-5 text-stone-400 hover:text-black text-3xl font-bold transition">&times;</button>
@@ -279,7 +271,6 @@
           <div class="rounded-2xl overflow-hidden aspect-square bg-stone-100 border border-stone-200 shadow-inner">
             <img id="qvMainImage" src="" class="w-full h-full object-cover transition-all duration-300">
           </div>
-          <!-- ৪টি থাম্বনেইল কন্টেইনার -->
           <div id="qvThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-2"></div>
         </div>
 
@@ -293,7 +284,6 @@
             <span id="qvDiscount" class="text-xs text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">0% OFF</span>
           </div>
 
-          <!-- সাইজ বাটন -->
           <div class="space-y-1.5 pt-2 border-t">
             <label class="block text-xs font-bold text-stone-800">
               Select Size: <span id="qvSelectedSizeDisplay" class="text-amber-900 font-extrabold ml-1"></span>
@@ -301,7 +291,6 @@
             <div id="qvSizeContainer" class="flex flex-wrap gap-2"></div>
           </div>
 
-          <!-- কালার বাটন -->
           <div class="space-y-1.5 pt-1">
             <label class="block text-xs font-bold text-stone-800">
               Select Color: <span id="qvSelectedColorDisplay" class="text-amber-900 font-extrabold ml-1"></span>
@@ -335,7 +324,6 @@
 
       <div id="cartItemsList" class="flex-1 overflow-y-auto py-4 space-y-4"></div>
 
-      <!-- কুপন বাটন ডিসপ্লে -->
       <div class="border-t border-stone-100 pt-3 space-y-1.5">
         <p class="text-[11px] font-bold text-amber-900 flex items-center gap-1.5">
           <i class="fa-solid fa-tags"></i> Available Coupons (Click to apply):
@@ -343,7 +331,6 @@
         <div id="cartCouponsBadges" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1"></div>
       </div>
 
-      <!-- কুপন ইনপুট বক্স ও টোটাল সামারি -->
       <div class="border-t border-stone-200 pt-3 space-y-3">
         <div class="flex gap-2">
           <input type="text" id="couponInput" placeholder="Enter Coupon Code" class="uppercase border border-stone-300 rounded-xl px-3 py-2 text-xs flex-1 font-mono font-bold focus:outline-none focus:border-amber-800">
@@ -545,7 +532,7 @@
     </div>
   </div>
 
-  <!-- ১০. আলট্রা লাক্সারি ফুটার (হোয়াটসঅ্যাপ মোবাইল নম্বর সম্পূর্ণ রিমুভ করা হয়েছে) -->
+  <!-- ১০. ফুটার -->
   <footer class="bg-stone-950 text-stone-300 pt-16 pb-8 border-t border-amber-900/30 mt-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-stone-800/80 text-xs">
       <div class="space-y-4">
@@ -689,7 +676,6 @@
       }
     }, 1000);
 
-    // ২ সেকেন্ড অন্তর ক্যাশ-ফ্রি ডেটা রিসিভ
     async function loadStore() {
       try {
         const res = await fetch('/api/store?t=' + Date.now(), {
@@ -1393,7 +1379,6 @@
     }
 
     loadStore();
-    // প্রতি ২ সেকেন্ড অন্তর অটোমেটিক লাইভ সিঙ্ক
     setInterval(loadStore, 2000);
   </script>
 </body>
