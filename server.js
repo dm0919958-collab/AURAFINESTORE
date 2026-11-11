@@ -793,7 +793,9 @@ let storeData = {
   orders: []
 };
 
-// ১. অফিশিয়াল PDF ইনভয়েস স্লিপ তৈরি করার ফাংশন
+// =========================================================================
+// ১. প্রফেশনাল ও প্রিমিয়াম PDF ইনভয়েস স্লিপ জেনারেটর (image_ce2e86 এর অনুরূপ)
+// =========================================================================
 function generateOrderInvoicePDF(order) {
   return new Promise((resolve, reject) => {
     try {
@@ -806,90 +808,131 @@ function generateOrderInvoicePDF(order) {
         resolve(pdfData);
       });
 
-      // হেডার বার
-      doc.rect(40, 40, 515, 60).fill('#78350f');
-      doc.fillColor('#FFFFFF').fontSize(22).font('Helvetica-Bold').text('AURA FINE STORE', 55, 50);
-      doc.fontSize(9).font('Helvetica').text('Premium Lifestyle, Ethnic Wear & Luxury Collections', 55, 75);
-      doc.fontSize(8).text('Bolpur, Birbhum, West Bengal - 731204 | Support: +91 6289145092', 55, 87);
+      // ১. টপ ব্রাউন অ্যাকসেন্ট বার
+      doc.rect(40, 35, 515, 6).fill('#854d0e');
 
-      doc.fillColor('#FFFFFF').fontSize(14).font('Helvetica-Bold').text('TAX INVOICE / BILL', 360, 50, { align: 'right', width: 180 });
-      doc.fontSize(9).font('Helvetica').text(`Order ID: #${order.id}`, 360, 68, { align: 'right', width: 180 });
-      doc.text(`Date: ${order.date}`, 360, 80, { align: 'right', width: 180 });
+      // ২. বাম পাশের ব্র্যান্ডিং
+      doc.fillColor('#111827').fontSize(24).font('Helvetica-Bold').text('AURA FINE STORE', 40, 52);
+      doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text('Premium Lifestyle, Ethnic Wear & Luxury Collections', 40, 78);
+      doc.fillColor('#6b7280').fontSize(8).text('Bolpur, Birbhum, West Bengal - 731204 | Support: +91 6289145092', 40, 90);
 
-      // গ্রাহক ও শিপিং ডিটেলস
-      doc.rect(40, 115, 250, 95).strokeColor('#e5e7eb').stroke();
-      doc.fillColor('#78350f').fontSize(10).font('Helvetica-Bold').text('BILLED & DELIVERED TO:', 50, 125);
-      doc.fillColor('#111827').fontSize(9).font('Helvetica-Bold').text(order.customerName, 50, 140);
-      doc.font('Helvetica').fontSize(8).text(`Phone: +91 ${order.phone}`, 50, 153);
-      doc.text(order.address, 50, 166, { width: 230 });
+      // ৩. ডান পাশের ট্যাক্স ইনভয়েস ব্যাজ বক্স
+      doc.roundedRect(365, 48, 190, 52, 6).strokeColor('#e5e7eb').lineWidth(1).stroke();
+      doc.fillColor('#b45309').fontSize(10).font('Helvetica-Bold').text('TAX INVOICE / BILL', 375, 56);
+      doc.fillColor('#111827').fontSize(9).font('Helvetica-Bold').text(`Order ID: #${order.id}`, 375, 70);
+      doc.fillColor('#4b5563').fontSize(8).font('Helvetica').text(`Date: ${order.date}`, 375, 83);
 
-      doc.rect(305, 115, 250, 95).strokeColor('#e5e7eb').stroke();
-      doc.fillColor('#78350f').fontSize(10).font('Helvetica-Bold').text('DISPATCH LOGISTICS:', 315, 125);
-      doc.fillColor('#111827').fontSize(9).font('Helvetica-Bold').text('AURA Central Logistics Hub', 315, 140);
-      doc.font('Helvetica').fontSize(8).text('Bolpur, Birbhum, WB - 731204', 315, 153);
-      doc.text(`Courier Partner: ${order.courierPartner || 'Delhivery'}`, 315, 166);
-      doc.text(`AWB / Tracking: Post-Packing Dispatch`, 315, 179);
+      // ৪. ডিভাইডার লাইন
+      doc.moveTo(40, 114).lineTo(555, 114).strokeColor('#e5e7eb').lineWidth(1).stroke();
 
-      // আইটেমস টেবিল
-      const tableTop = 225;
-      doc.rect(40, tableTop, 515, 22).fill('#3b1a08');
-      doc.fillColor('#FFFFFF').fontSize(9).font('Helvetica-Bold');
-      doc.text('SL', 50, tableTop + 6);
-      doc.text('ITEM DESCRIPTION', 90, tableTop + 6);
-      doc.text('UNIT PRICE', 350, tableTop + 6, { width: 60, align: 'right' });
-      doc.text('QTY', 430, tableTop + 6, { width: 30, align: 'center' });
-      doc.text('TOTAL', 480, tableTop + 6, { width: 65, align: 'right' });
+      // ৫. কাস্টমার ও লজিস্টিকস ২-কলাম কার্ড
+      // --- বাম কার্ড: BILLED & DELIVERED TO ---
+      doc.roundedRect(40, 126, 250, 96, 6).strokeColor('#e5e7eb').stroke();
+      doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text('BILLED & DELIVERED TO:', 50, 136);
+      doc.fillColor('#111827').fontSize(10).font('Helvetica-Bold').text(order.customerName || 'Valued Customer', 50, 150);
+      doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text(`Phone: +91 ${order.phone}`, 50, 164);
+      doc.fillColor('#4b5563').fontSize(8).text(order.address, 50, 177, { width: 230, lineGap: 1.5 });
 
-      let y = tableTop + 30;
-      doc.fillColor('#1f2937').fontSize(8).font('Helvetica');
+      // --- ডান কার্ড: DISPATCH LOGISTICS ---
+      doc.roundedRect(305, 126, 250, 96, 6).strokeColor('#e5e7eb').stroke();
+      doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text('DISPATCH LOGISTICS:', 315, 136);
+      doc.fillColor('#111827').fontSize(9.5).font('Helvetica-Bold').text('AURA Central Logistics Hub', 315, 150);
+      doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text('Bolpur, Birbhum, WB - 731204', 315, 164);
+      doc.fillColor('#374151').fontSize(8.5).text(`Courier Partner: ${order.courierPartner || 'Delhivery'}`, 315, 177);
+      doc.fillColor('#4b5563').fontSize(8).text(`AWB / Tracking: ${order.awbNumber ? order.awbNumber : 'Post-Packing Dispatch'}`, 315, 190);
+
+      // ৬. অর্ডার আইটেমস টেবিল
+      const tableTop = 238;
+      doc.roundedRect(40, tableTop, 515, 24, 3).fill('#2b1105');
+      doc.fillColor('#FFFFFF').fontSize(8.5).font('Helvetica-Bold');
+      doc.text('SL', 52, tableTop + 7);
+      doc.text('ITEM DESCRIPTION', 85, tableTop + 7);
+      doc.text('UNIT PRICE', 335, tableTop + 7, { width: 70, align: 'right' });
+      doc.text('QTY', 420, tableTop + 7, { width: 35, align: 'center' });
+      doc.text('TOTAL', 470, tableTop + 7, { width: 75, align: 'right' });
+
+      let currentY = tableTop + 30;
 
       (order.items || []).forEach((item, idx) => {
-        doc.text(String(idx + 1), 50, y);
-        doc.font('Helvetica-Bold').text(item.name, 90, y);
-        doc.font('Helvetica').fontSize(7).fillColor('#6b7280');
-        doc.text(`Size: ${item.selectedSize || 'Standard'} | Color: ${item.selectedColor || 'Standard'}`, 90, y + 10);
+        doc.fillColor('#111827').fontSize(8.5).font('Helvetica');
+        doc.text(String(idx + 1), 52, currentY + 3);
 
-        doc.fillColor('#1f2937').fontSize(8);
-        doc.text(`Rs. ${item.price}`, 350, y, { width: 60, align: 'right' });
-        doc.text(String(item.qty || 1), 430, y, { width: 30, align: 'center' });
-        doc.text(`Rs. ${item.price * (item.qty || 1)}`, 480, y, { width: 65, align: 'right' });
+        // আইটেমের নাম
+        doc.fillColor('#111827').font('Helvetica-Bold').fontSize(9);
+        doc.text(item.name, 85, currentY);
 
-        y += 26;
+        // সাইজ ও কালার ভ্যারিয়েন্ট
+        doc.fillColor('#92400e').font('Helvetica').fontSize(7.5);
+        doc.text(`Size: ${item.selectedSize || 'Standard'} | Color: ${item.selectedColor || 'Standard'}`, 85, currentY + 12);
+
+        // মূল্য ও পরিমাণ
+        doc.fillColor('#111827').font('Helvetica').fontSize(8.5);
+        doc.text(`Rs. ${item.price}`, 335, currentY + 4, { width: 70, align: 'right' });
+        doc.text(String(item.qty || 1), 420, currentY + 4, { width: 35, align: 'center' });
+        doc.font('Helvetica-Bold').text(`Rs. ${(item.price || 0) * (item.qty || 1)}`, 470, currentY + 4, { width: 75, align: 'right' });
+
+        currentY += 30;
+        doc.moveTo(40, currentY).lineTo(555, currentY).strokeColor('#f3f4f6').lineWidth(0.5).stroke();
+        currentY += 4;
       });
 
-      // পেমেন্ট ও সামারি
-      const summaryTop = Math.max(y + 20, 360);
-      doc.rect(40, summaryTop, 250, 95).strokeColor('#e5e7eb').stroke();
-      doc.fillColor('#78350f').fontSize(9).font('Helvetica-Bold').text('PAYMENT VERIFICATION:', 50, summaryTop + 10);
-      doc.fillColor('#111827').fontSize(8).text(`Mode: ${order.paymentMethod}`, 50, summaryTop + 24);
-      doc.fillColor('#059669').font('Helvetica-Bold').text(
-        order.paymentMethod === 'UPI' ? 'Payment: 100% Fully Paid (Verified)' : `Advance: Rs. ${order.advancePaid} (Balance Due: Rs. ${order.balanceDue})`,
-        50, summaryTop + 37
+      // ৭. পেমেন্ট ও সামারি সেকশন
+      const summaryY = Math.max(currentY + 15, 360);
+
+      // --- বাম কার্ড: PAYMENT VERIFICATION ---
+      doc.roundedRect(40, summaryY, 250, 108, 6).strokeColor('#e5e7eb').stroke();
+      doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text('PAYMENT VERIFICATION:', 50, summaryY + 12);
+      doc.fillColor('#111827').fontSize(9).font('Helvetica-Bold').text(`Mode: ${order.paymentMethod}`, 50, summaryY + 28);
+      
+      const isPaid = order.paymentMethod === 'UPI';
+      doc.fillColor('#059669').fontSize(8.5).font('Helvetica-Bold').text(
+        isPaid ? 'Payment: 100% Fully Paid (Verified)' : `Advance Paid: Rs. ${order.advancePaid} (Balance Due: Rs. ${order.balanceDue})`,
+        50, summaryY + 44
       );
-      doc.fillColor('#374151').font('Helvetica').text(`Transaction UTR: ${order.utrNumber}`, 50, summaryTop + 52);
-      doc.fontSize(7).fillColor('#9ca3af').text('* 100% Safe & Authenticated Order', 50, summaryTop + 75);
 
-      doc.rect(305, summaryTop, 250, 95).strokeColor('#e5e7eb').stroke();
-      doc.fillColor('#374151').fontSize(8);
-      doc.text('Bag Subtotal:', 315, summaryTop + 10);
-      doc.text(`Rs. ${order.subTotal}`, 450, summaryTop + 10, { width: 95, align: 'right' });
+      doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text(`Transaction UTR: ${order.utrNumber || 'N/A'}`, 50, summaryY + 62);
+      doc.fillColor('#059669').fontSize(7.5).font('Helvetica-Oblique').text('* 100% Safe & Authenticated Order', 50, summaryY + 84);
 
-      doc.text(`Coupon Discount (${order.couponCode || 'None'}):`, 315, summaryTop + 24);
-      doc.fillColor('#059669').text(`- Rs. ${order.discountApplied || 0}`, 450, summaryTop + 24, { width: 95, align: 'right' });
+      // --- ডান কার্ড: ক্যালকুলেশন ও টোটাল বিল বার ---
+      doc.roundedRect(305, summaryY, 250, 108, 6).strokeColor('#e5e7eb').stroke();
+      
+      doc.fillColor('#374151').fontSize(8.5).font('Helvetica');
+      doc.text('Bag Subtotal:', 318, summaryY + 12);
+      doc.font('Helvetica-Bold').text(`Rs. ${order.subTotal}`, 440, summaryY + 12, { width: 105, align: 'right' });
 
-      doc.fillColor('#374151').text('Delivery Charge:', 315, summaryTop + 38);
-      doc.text(order.deliveryCharge > 0 ? `Rs. ${order.deliveryCharge}` : 'FREE', 450, summaryTop + 38, { width: 95, align: 'right' });
+      doc.font('Helvetica').text('Coupon Discount:', 318, summaryY + 26);
+      doc.fillColor('#059669').font('Helvetica-Bold').text(`- Rs. ${order.discountApplied || 0}`, 440, summaryY + 26, { width: 105, align: 'right' });
 
-      doc.rect(305, summaryTop + 65, 250, 30).fill('#3b1a08');
-      doc.fillColor('#FFFFFF').fontSize(10).font('Helvetica-Bold');
-      doc.text('TOTAL BILL AMOUNT:', 315, summaryTop + 75);
-      doc.text(`Rs. ${order.total}`, 450, summaryTop + 75, { width: 95, align: 'right' });
+      doc.fillColor('#374151').font('Helvetica').text('Delivery Charge:', 318, summaryY + 40);
+      doc.fillColor(order.deliveryCharge > 0 ? '#111827' : '#059669').font('Helvetica-Bold').text(
+        order.deliveryCharge > 0 ? `Rs. ${order.deliveryCharge}` : 'FREE', 
+        440, summaryY + 40, { width: 105, align: 'right' }
+      );
+
+      doc.fillColor('#6b7280').font('Helvetica').text('GST & Taxes Included:', 318, summaryY + 54);
+      doc.text('Rs. 0.00', 440, summaryY + 54, { width: 105, align: 'right' });
+
+      // ডার্ক টোটাল স্ট্রিপ
+      doc.roundedRect(305, summaryY + 71, 250, 37, 4).fill('#2b1105');
+      doc.fillColor('#FFFFFF').fontSize(9.5).font('Helvetica-Bold');
+      doc.text('TOTAL BILL AMOUNT:', 318, summaryY + 84);
+      doc.fontSize(12).font('Helvetica-Bold').text(`Rs. ${order.total}`, 430, summaryY + 82, { width: 115, align: 'right' });
+
+      // ৮. টার্মস পলিসি ও ডিজিটাল সিগনেচার স্ট্যাম্প
+      const footerY = summaryY + 125;
+      doc.moveTo(40, footerY - 8).lineTo(555, footerY - 8).strokeColor('#e5e7eb').stroke();
 
       // টার্মস
-      doc.fillColor('#6b7280').fontSize(7).font('Helvetica');
-      doc.text('TERMS & REPLACEMENT POLICY:', 40, summaryTop + 120);
-      doc.text('1. 7-Day Replacement: Report transit damage via WhatsApp (+91 6289145092) within 7 days.', 40, summaryTop + 130);
-      doc.text('2. Please keep unboxing video for transit guarantee coverage.', 40, summaryTop + 140);
+      doc.fillColor('#111827').fontSize(8).font('Helvetica-Bold').text('TERMS & REPLACEMENT POLICY:', 40, footerY + 5);
+      doc.fillColor('#4b5563').fontSize(7.5).font('Helvetica');
+      doc.text('1. 7-Day Replacement: Report transit damage via WhatsApp (+91 6289145092) within 7 days.', 40, footerY + 18);
+      doc.text('2. Please keep unboxing video for transit guarantee coverage.', 40, footerY + 28);
+
+      // অথরাইজড সিগনেচার বক্স
+      doc.roundedRect(385, footerY, 170, 52, 6).strokeColor('#e5e7eb').stroke();
+      doc.fillColor('#111827').fontSize(9).font('Helvetica-Bold').text('AURA FINE STORE', 385, footerY + 9, { width: 170, align: 'center' });
+      doc.fillColor('#6b7280').fontSize(7.5).font('Helvetica').text('Digitally Verified Bill', 385, footerY + 22, { width: 170, align: 'center' });
+      doc.fillColor('#b45309').fontSize(8).font('Helvetica-Bold').text('[ Authorized Signature ]', 385, footerY + 34, { width: 170, align: 'center' });
 
       doc.end();
     } catch (err) {
@@ -898,7 +941,9 @@ function generateOrderInvoicePDF(order) {
   });
 }
 
+// =========================================================================
 // ২. টেলিগ্রাম অ্যালার্ট এবং PDF স্লিপ সরাসরি পাঠানোর ফাংশন
+// =========================================================================
 async function sendTelegramAlert(order) {
   try {
     const text = `🧾 <b>AURA FINE STORE - NEW ORDER CONFIRMED</b>\n` +
@@ -915,7 +960,6 @@ async function sendTelegramAlert(order) {
 
     const pdfBuffer = await generateOrderInvoicePDF(order);
 
-    // Node.js Native FormData ব্যবহার করে sendDocument পাঠানো হচ্ছে
     const formData = new FormData();
     formData.append('chat_id', TELEGRAM_CHAT_ID);
     formData.append('caption', text);
@@ -938,7 +982,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// পাবলিক স্টোর API[cite: 3]
+// পাবলিক স্টোর API
 app.get('/api/store', (req, res) => {
   res.set({
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -955,7 +999,7 @@ app.get('/api/store', (req, res) => {
   });
 });
 
-// প্রোডাক্ট অ্যাড, এডিট ও ডিলিট API[cite: 3]
+// প্রোডাক্ট অ্যাড, এডিট ও ডিলিট API
 app.post('/api/admin/products', (req, res) => {
   const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, sizeOptions, colorOptions, badge, images, description } = req.body;
   if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -1012,7 +1056,7 @@ app.delete('/api/admin/products/:id', (req, res) => {
   res.json({ success: true, products: storeData.products });
 });
 
-// ব্যানার API[cite: 3]
+// ব্যানার API
 app.post('/api/admin/banners/add', (req, res) => {
   const { pin, title, tag, productId, image } = req.body;
   if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -1035,7 +1079,7 @@ app.delete('/api/admin/banners/:id', (req, res) => {
   res.json({ success: true, dealBanners: storeData.dealBanners });
 });
 
-// কুপন ও স্টোর সেটিংস API[cite: 3]
+// কুপন ও স্টোর সেটিংস API
 app.post('/api/admin/coupons', (req, res) => {
   const { pin, code, discountPercent, minSpend, title, description, showOnStore } = req.body;
   if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -1074,7 +1118,7 @@ app.post('/api/admin/store-settings', (req, res) => {
   res.json({ success: true, storeSettings: storeData.storeSettings });
 });
 
-// অর্ডার প্রসেসিং ও ট্র্যাকিং API[cite: 3]
+// অর্ডার প্রসেসিং ও ট্র্যাকিং API
 app.post('/api/orders', async (req, res) => {
   try {
     const { 
@@ -1145,7 +1189,7 @@ app.get('/api/orders/track', (req, res) => {
   res.json({ success: true, orders: matched });
 });
 
-// অ্যাডমিন প্যানেল কন্ট্রোল[cite: 3]
+// অ্যাডমিন লগইন ও অর্ডার কন্ট্রোল
 app.post('/api/admin/login', (req, res) => {
   const { pin } = req.body;
   if (pin === ADMIN_SECRET_PIN) return res.json({ success: true, token: "admin-active" });
@@ -1178,7 +1222,7 @@ app.post('/api/admin/orders', (req, res) => {
   });
 });
 
-// ৩. নতুন যুক্ত করা হলো: অ্যাডমিন প্যানেল থেকে অর্ডার ডিলিট করার API
+// অ্যাডমিন থেকে অর্ডার ডিলিট API
 app.delete('/api/admin/orders/:id', (req, res) => {
   const { pin } = req.body;
   if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
