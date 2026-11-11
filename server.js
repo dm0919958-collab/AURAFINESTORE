@@ -582,42 +582,111 @@ app.get('/api/store', (req, res) => {
   });
 });
 
-// [NEW] অ্যাডমিন থেকে প্রোডাক্ট আপলোড API (বড় ছবি Cloudinary দিয়ে ছোট হয়ে যাবে)
-app.post('/api/admin/products', upload.single('productImage'), (req, res) => {
-  const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, badge, description, sizeInfo } = req.body;
-  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+// [নতুন প্রোডাক্ট যোগ করার রাউট - সিঙ্গেল বা মাল্টিপল ছবি সাপোর্ট]
+const handleProductUpload = (req, res) => {
+  const { pin, title, name, mainCategory, mainSection, category, subCategory, price, cutPrice, originalPrice, stockQuantity, stockQty, badge, trustBadge, description, sizes, colors } = req.body;
+  if (pin && pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-  const uploadedImage = req.file ? req.file.path : (req.body.image || "https://images.unsplash.com/photo-1630019852942-f89202989a59?w=600");
+  let uploadedImages = [];
+  if (req.files && req.files.length > 0) {
+    uploadedImages = req.files.map(f => f.path);
+  } else if (req.file) {
+    uploadedImages.push(req.file.path);
+  } else if (req.body.image) {
+    uploadedImages.push(req.body.image);
+  }
+
+  if (uploadedImages.length === 0) {
+    uploadedImages.push("https://images.unsplash.com/photo-1630019852942-f89202989a59?w=600");
+  }
 
   const newId = storeData.products.length > 0 ? Math.max(...storeData.products.map(p => p.id || 0)) + 1 : 1;
 
   const newProduct = {
     id: newId,
-    name: name || "New Luxury Item",
-    mainCategory: mainCategory || "Women",
-    category: category || "Earrings",
+    name: title || name || "New Luxury Item",
+    mainCategory: mainSection || mainCategory || "Women",
+    category: subCategory || category || "Earrings",
     price: Number(price) || 499,
-    originalPrice: Number(originalPrice) || (Number(price) * 2),
-    stockQuantity: Number(stockQuantity) || 10,
-    badge: badge || "New Arrival",
+    originalPrice: Number(cutPrice) || Number(originalPrice) || ((Number(price) || 499) * 2),
+    stockQuantity: Number(stockQty) !== undefined ? Number(stockQty) : (Number(stockQuantity) || 10),
+    badge: trustBadge || badge || "New Arrival",
     rating: 5.0,
     reviewsCount: 1,
     inStock: true,
-    sizeInfo: sizeInfo || "Standard Size",
-    sizeOptions: ["Standard"],
-    colorOptions: ["Original Color"],
-    images: [uploadedImage],
+    sizeInfo: "Standard Size",
+    sizeOptions: sizes ? (typeof sizes === 'string' ? sizes.split(',').map(s => s.trim()) : sizes) : ["Standard"],
+    colorOptions: colors ? (typeof colors === 'string' ? colors.split(',').map(c => c.trim()) : colors) : ["Original Color"],
+    images: uploadedImages,
     description: description || "Handcrafted premium quality collection from AURA Fine Store."
   };
 
   storeData.products.unshift(newProduct);
-  res.json({ success: true, message: "Product added & image compressed successfully!", products: storeData.products });
-});
+  res.json({ success: true, message: "Product added successfully!", products: storeData.products });
+};
 
-// [NEW] অ্যাডমিন থেকে প্রোডাক্ট ডিলিট API
+app.post('/api/admin/products', upload.any(), handleProductUpload);
+
+// [প্রোডাক্ট এডিট ও ছবি আপডেট করার রাউট - Edit Catalog Product & Photos]
+const handleProductEdit = (req, res) => {
+  const { pin, title, name, mainCategory, mainSection, category, subCategory, price, cutPrice, originalPrice, stockQuantity, stockQty, badge, trustBadge, description, sizes, colors } = req.body;
+  if (pin && pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  const pId = Number(req.params.id);
+  const pIndex = storeData.products.findIndex(p => p.id === pId);
+
+  if (pIndex === -1) {
+    return res.status(404).json({ success: false, message: "Product not found!" });
+  }
+
+  // Cloudinary দিয়ে আপলোড হওয়া নতুন ছবি
+  let newImages = [];
+  if (req.files && req.files.length > 0) {
+    newImages = req.files.map(f => f.path);
+  } else if (req.file) {
+    newImages.push(req.file.path);
+  }
+
+  // আগের রাখা ছবিগুলো
+  let existingImages = storeData.products[pIndex].images || [];
+  if (req.body.existingImages) {
+    try {
+      existingImages = typeof req.body.existingImages === 'string' ? JSON.parse(req.body.existingImages) : req.body.existingImages;
+    } catch(e) {}
+  }
+
+  const finalImages = [...existingImages, ...newImages];
+
+  storeData.products[pIndex] = {
+    ...storeData.products[pIndex],
+    name: title || name || storeData.products[pIndex].name,
+    mainCategory: mainSection || mainCategory || storeData.products[pIndex].mainCategory,
+    category: subCategory || category || storeData.products[pIndex].category,
+    price: Number(price) !== undefined && !isNaN(Number(price)) ? Number(price) : storeData.products[pIndex].price,
+    originalPrice: Number(cutPrice) || Number(originalPrice) || storeData.products[pIndex].originalPrice,
+    stockQuantity: Number(stockQty) !== undefined ? Number(stockQty) : (Number(stockQuantity) !== undefined ? Number(stockQuantity) : storeData.products[pIndex].stockQuantity),
+    badge: trustBadge || badge || storeData.products[pIndex].badge,
+    description: description !== undefined ? description : storeData.products[pIndex].description,
+    images: finalImages.length > 0 ? finalImages : storeData.products[pIndex].images,
+    sizeOptions: sizes ? (typeof sizes === 'string' ? sizes.split(',').map(s => s.trim()) : sizes) : storeData.products[pIndex].sizeOptions,
+    colorOptions: colors ? (typeof colors === 'string' ? colors.split(',').map(c => c.trim()) : colors) : storeData.products[pIndex].colorOptions
+  };
+
+  res.json({
+    success: true,
+    message: "Product updated successfully!",
+    products: storeData.products
+  });
+};
+
+// POST এবং PUT উভয় মেথড সাপোর্ট দেওয়া হলো যাতে কোনোভাবেই মেথড এরর না আসে
+app.post('/api/admin/products/:id', upload.any(), handleProductEdit);
+app.put('/api/admin/products/:id', upload.any(), handleProductEdit);
+
+// অ্যাডমিন থেকে প্রোডাক্ট ডিলিট API
 app.delete('/api/admin/products/:id', (req, res) => {
   const { pin } = req.body;
-  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+  if (pin && pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
 
   const pId = Number(req.params.id);
   storeData.products = storeData.products.filter(p => p.id !== pId);
