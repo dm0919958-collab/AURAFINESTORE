@@ -260,12 +260,12 @@
       </div>
     </div>
 
-    <!-- 5. Orders Management Table -->
+    <!-- 5. Orders Management Table (Dispatched Desk with Delete Option) -->
     <div class="bg-slate-800/60 border border-slate-700 p-6 rounded-2xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-4">
         <div>
           <h3 class="font-bold text-base text-white"><i class="fa-solid fa-boxes-stacked mr-2 text-amber-500"></i>Orders Verification & Dispatch Desk</h3>
-          <p class="text-xs text-slate-400">Verify customer UTR, assign AWB, update status and upload official delivery slips.</p>
+          <p class="text-xs text-slate-400">Verify customer UTR, assign AWB, update status, upload delivery slips, or delete invalid orders.</p>
         </div>
       </div>
       <div class="overflow-x-auto">
@@ -280,6 +280,7 @@
               <th class="p-3 text-center">Change Status</th>
               <th class="p-3 text-center">Shipping Label</th>
               <th class="p-3 text-center">Delivery Slip Upload</th>
+              <th class="p-3 text-center">Action</th>
             </tr>
           </thead>
           <tbody id="ordersTableBody"></tbody>
@@ -455,7 +456,6 @@
       select.innerHTML = list.map(sub => `<option value="${sub}">${sub}</option>`).join('');
     }
 
-    // ছবি ৪০KB-র মধ্যে অপ্টিমাইজ ও কম্প্রেস করার ফাংশন
     function compressImageFile(file, maxWidth = 550, quality = 0.65) {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -476,7 +476,6 @@
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
             
-            // রেজোলিউশন ও সাইজ বজায় রেখে ৪০KB-র নিচে কম্প্রেস
             const dataUrl = canvas.toDataURL('image/jpeg', quality);
             resolve(dataUrl);
           };
@@ -908,11 +907,29 @@
       await loadAdminDashboard();
     }
 
+    // অ্যাডমিন প্যানেল থেকে অর্ডার সম্পূর্ণ মুছে ফেলার ফাংশন
+    async function deleteOrderById(orderId) {
+      if (!confirm(`Are you sure you want to delete Order #${orderId}? This cannot be undone.`)) return;
+
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: currentAdminPin })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`🗑️ Order #${orderId} deleted successfully!`);
+        await loadAdminDashboard();
+      } else {
+        alert(data.message || "Failed to delete order");
+      }
+    }
+
     function renderOrdersTable(orders) {
       const tbody = document.getElementById('ordersTableBody');
       if (!tbody) return;
       if (orders.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">No orders found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-500">No orders found.</td></tr>`;
         return;
       }
 
@@ -974,6 +991,12 @@
                   <i class="fa-solid fa-upload mr-1"></i> Upload Slip
                 </button>
               `}
+            </td>
+            <!-- নতুন যুক্ত করা ডিলিট বোতাম -->
+            <td class="p-3 text-center">
+              <button onclick="deleteOrderById('${o.id}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/40 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 mx-auto shadow">
+                <i class="fa-solid fa-trash-can"></i> Del
+              </button>
             </td>
           </tr>
         `;
@@ -1062,7 +1085,6 @@
       document.getElementById('printLabelModal').classList.add('hidden');
     }
 
-    // প্রতি ২ সেকেন্ড অন্তর অ্যাডমিন প্যানেল নিজে থেকে লাইভ সিঙ্ক হবে[cite: 1]
     setInterval(() => {
       if (currentAdminPin) loadAdminDashboard();
     }, 2000);
