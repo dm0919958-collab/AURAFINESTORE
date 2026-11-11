@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -5,10 +6,15 @@ const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const mongoose = require('mongoose');
 
+// ক্লাউডিনারি ও ফাইল আপলোড প্যাকেজ
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const multer = require('multer');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// অ্যাডমিন প্যানেল পাসওয়ার্ড (পিন)
+// অ্যাডমিন প্যানেল পাসওয়ার্ড (পিন)
 const ADMIN_SECRET_PIN = "admin123";
 const ADMIN_EMAIL = "mahatosarita436@gmail.com";
 const ADMIN_PHONE = "916289145092";
@@ -16,6 +22,30 @@ const ADMIN_PHONE = "916289145092";
 // টেলিগ্রাম বট কনফিগারেশন
 const TELEGRAM_BOT_TOKEN = "8818940415:AAHdq6roV4XDCF3sxtJdDSqw-Abq20i1KbQ";
 const TELEGRAM_CHAT_ID = "8836538477";
+
+// ক্লাউডিনারি কনফিগারেশন (অটো-রিসাইজ ও ৮০ KB কম্প্রেশন)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'txvafr7h',
+  api_key: process.env.CLOUDINARY_API_KEY || '757197326572662',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'shG26-qHpVEzSUpokfs3-xDnkyk'
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'aura_fine_store_products',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+    transformation: [
+      { width: 800, crop: 'limit' },
+      { quality: 'auto:eco', fetch_format: 'auto' }
+    ]
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // ১০ MB পর্যন্ত ফাইল সাপোর্ট করবে
+});
 
 // সরাসরি নন-SRV ক্লাস্টার সংযোগ (DNS এরর মুক্ত)
 const DIRECT_MONGO_URI = "mongodb://dm0919958_db_user:Debasish55@ac-flooa9m-shard-00-00.dwaflpi.mongodb.net:27017,ac-flooa9m-shard-00-01.dwaflpi.mongodb.net:27017,ac-flooa9m-shard-00-02.dwaflpi.mongodb.net:27017/aura_store?ssl=true&replicaSet=atlas-cxvzuq-shard-0&authSource=admin&retryWrites=true&w=majority";
@@ -119,15 +149,15 @@ let storeData = {
       discountPercent: 33,
       minSpend: 499,
       title: "শুভ দীপাবলি স্পেশাল অফার",
-      description: "কমপক্ষে ৪৯৯ টাকার কেনাকাটায় সরাসরি ৩৩% ছাড়!",
+      description: "কমপক্ষে ৪৯৯ টাকার কেনাকাটায় সরাসরি ৩৩% ছাড়!",
       showOnStore: true
     },
     {
       code: "AURA20",
       discountPercent: 20,
       minSpend: 0,
-      title: "মেগা ওয়েলকাম অফার",
-      description: "যেকোনো মূল্যের কেনাকাটায় সরাসরি ২০% ফ্ল্যাট ছাড় উপভোগ করুন।",
+      title: "মেগা ওয়েলকাম অফার",
+      description: "যেকোনো মূল্যের কেনাকাটায় সরাসরি ২০% ফ্ল্যাট ছাড় উপভোগ করুন।",
       showOnStore: true
     }
   ],
@@ -520,7 +550,7 @@ async function sendTelegramPdfDocument(pdfBuffer, order) {
       `🚚 <b>Delivery Fee:</b> ₹${order.deliveryCharge}\n` +
       `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `<i>অর্ডারের সম্পূর্ণ অফিশিয়াল PDF চালান নিচে সংযুক্ত করা হলো।</i>`;
+      `<i>অর্ডারের সম্পূর্ণ অফিশিয়াল PDF চালান নিচে সংযুক্ত করা হলো।</i>`;
 
     const formData = new FormData();
     formData.append('chat_id', TELEGRAM_CHAT_ID);
@@ -550,6 +580,48 @@ app.get('/api/store', (req, res) => {
     coupons: storeData.coupons,
     storeSettings: storeData.storeSettings
   });
+});
+
+// [NEW] অ্যাডমিন থেকে প্রোডাক্ট আপলোড API (বড় ছবি Cloudinary দিয়ে ছোট হয়ে যাবে)
+app.post('/api/admin/products', upload.single('productImage'), (req, res) => {
+  const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, badge, description, sizeInfo } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  const uploadedImage = req.file ? req.file.path : (req.body.image || "https://images.unsplash.com/photo-1630019852942-f89202989a59?w=600");
+
+  const newId = storeData.products.length > 0 ? Math.max(...storeData.products.map(p => p.id || 0)) + 1 : 1;
+
+  const newProduct = {
+    id: newId,
+    name: name || "New Luxury Item",
+    mainCategory: mainCategory || "Women",
+    category: category || "Earrings",
+    price: Number(price) || 499,
+    originalPrice: Number(originalPrice) || (Number(price) * 2),
+    stockQuantity: Number(stockQuantity) || 10,
+    badge: badge || "New Arrival",
+    rating: 5.0,
+    reviewsCount: 1,
+    inStock: true,
+    sizeInfo: sizeInfo || "Standard Size",
+    sizeOptions: ["Standard"],
+    colorOptions: ["Original Color"],
+    images: [uploadedImage],
+    description: description || "Handcrafted premium quality collection from AURA Fine Store."
+  };
+
+  storeData.products.unshift(newProduct);
+  res.json({ success: true, message: "Product added & image compressed successfully!", products: storeData.products });
+});
+
+// [NEW] অ্যাডমিন থেকে প্রোডাক্ট ডিলিট API
+app.delete('/api/admin/products/:id', (req, res) => {
+  const { pin } = req.body;
+  if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+  const pId = Number(req.params.id);
+  storeData.products = storeData.products.filter(p => p.id !== pId);
+  res.json({ success: true, message: "Product deleted successfully!", products: storeData.products });
 });
 
 // কুপন যোগ/ম্যানেজ
@@ -782,7 +854,7 @@ app.post('/api/admin/orders/:id/dispatch-tracking', async (req, res) => {
   }
 });
 
-// অফিসিয়াল ডেলিভারি স্লিপ আপলোড
+// অফিসিয়াল ডেলিভারি স্লিপ আপলোড
 app.post('/api/admin/orders/:id/upload-slip', async (req, res) => {
   const { pin, slipFileBase64 } = req.body;
   if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
