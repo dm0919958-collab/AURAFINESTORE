@@ -92,7 +92,8 @@ const couponSchema = new mongoose.Schema({
 const settingsSchema = new mongoose.Schema({
   key: { type: String, default: 'main', unique: true },
   deliveryCharge: { type: Number, default: 0 },
-  codAdvancePercent: { type: Number, default: 15 }
+  codAdvancePercent: { type: Number, default: 15 },
+  dealEndTime: { type: Number, default: 0 }
 });
 
 const orderSchema = new mongoose.Schema({
@@ -526,7 +527,7 @@ async function seedInitialData() {
     }
     const existingSettings = await Settings.findOne({ key: 'main' });
     if (!existingSettings) {
-      await Settings.create({ key: 'main', deliveryCharge: 0, codAdvancePercent: 15 });
+      await Settings.create({ key: 'main', deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0 });
     }
   } catch (err) {
     console.error('Seed error:', err.message);
@@ -727,14 +728,20 @@ app.get('/api/store', async (req, res) => {
       Banner.find().lean(),
       Product.find().sort({ _id: -1 }).lean(),
       Coupon.find().lean(),
-      Settings.findOne({ key: 'main' }).lean()
+      Settings.findOne({ key: 'main' })
     ]);
+
+    let activeSettings = settings || { deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0 };
+    if (activeSettings.dealEndTime && activeSettings.dealEndTime > 0 && Date.now() >= activeSettings.dealEndTime) {
+      await Settings.findOneAndUpdate({ key: 'main' }, { dealEndTime: 0 });
+      activeSettings.dealEndTime = 0;
+    }
 
     res.json({
       dealBanners,
       products,
       coupons,
-      storeSettings: settings || { deliveryCharge: 0, codAdvancePercent: 15 }
+      storeSettings: activeSettings
     });
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
@@ -1039,12 +1046,13 @@ app.delete('/api/admin/coupons/:code', async (req, res) => {
 
 app.post('/api/admin/store-settings', async (req, res) => {
   try {
-    const { pin, deliveryCharge, codAdvancePercent } = req.body;
+    const { pin, deliveryCharge, codAdvancePercent, dealEndTime } = req.body;
     if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const updateFields = {};
     if (deliveryCharge !== undefined) updateFields.deliveryCharge = Number(deliveryCharge) || 0;
     if (codAdvancePercent !== undefined) updateFields.codAdvancePercent = Number(codAdvancePercent) || 15;
+    if (dealEndTime !== undefined) updateFields.dealEndTime = Number(dealEndTime) || 0;
 
     const storeSettings = await Settings.findOneAndUpdate(
       { key: 'main' },
@@ -1148,8 +1156,14 @@ app.post('/api/admin/orders', async (req, res) => {
     const [orders, coupons, settings] = await Promise.all([
       Order.find().sort({ createdAt: -1 }).lean(),
       Coupon.find().lean(),
-      Settings.findOne({ key: 'main' }).lean()
+      Settings.findOne({ key: 'main' })
     ]);
+
+    let activeSettings = settings || { deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0 };
+    if (activeSettings.dealEndTime && activeSettings.dealEndTime > 0 && Date.now() >= activeSettings.dealEndTime) {
+      await Settings.findOneAndUpdate({ key: 'main' }, { dealEndTime: 0 });
+      activeSettings.dealEndTime = 0;
+    }
 
     const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
     const todayOrders = orders.filter(o => o.orderDateRaw === todayStr || (o.date && o.date.includes(todayStr)));
@@ -1161,7 +1175,7 @@ app.post('/api/admin/orders', async (req, res) => {
       success: true,
       orders,
       coupons,
-      storeSettings: settings || { deliveryCharge: 0, codAdvancePercent: 15 },
+      storeSettings: activeSettings,
       analytics: {
         totalOrders: orders.length,
         todayOrdersCount: todayOrders.length,
