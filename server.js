@@ -13,9 +13,6 @@ const ADMIN_SECRET_PIN = "admin123";
 const TELEGRAM_BOT_TOKEN = "8818940415:AAHdq6roV4XDCF3sxtJdDSqw-Abq20i1KbQ";
 const TELEGRAM_CHAT_ID = "8836538477";
 
-const SUPPORT_BOT_TOKEN = "9025873079:AAFiDAk_5FOGpNGRvjBtuVhwFHyfnn6pX1I";
-const SUPPORT_CHAT_ID = "8836538477";
-
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'txvafr7h',
   api_key: process.env.CLOUDINARY_API_KEY || '757197326572662',
@@ -664,25 +661,41 @@ function generateOrderInvoicePDF(order) {
 }
 
 async function sendTelegramAlert(order) {
+  const itemsSummary = (order.items || [])
+    .map((it, i) => `${i + 1}. ${it.name} (${it.selectedSize || 'Std'}, ${it.selectedColor || 'Std'}) x${it.qty || 1}`)
+    .join('\n');
+
+  const text = `🧾 <b>AURA FINE STORE - NEW ORDER CONFIRMED</b>\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `📦 <b>Order ID:</b> <code>#${order.id}</code>\n` +
+    `👤 <b>Customer:</b> ${order.customerName}\n` +
+    `📞 <b>Mobile:</b> <code>${order.phone}</code>\n` +
+    `📍 <b>Address:</b> ${order.address}\n` +
+    `🛍️ <b>Items:</b>\n${itemsSummary}\n` +
+    `💰 <b>Total Bill:</b> <b>₹${order.total}</b> (${order.paymentMethod})\n` +
+    `🚚 <b>Delivery Fee:</b> ₹${order.deliveryCharge}\n` +
+    `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
   try {
-    const text = `🧾 <b>AURA FINE STORE - NEW ORDER CONFIRMED</b>\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `📦 <b>Order ID:</b> <code>#${order.id}</code>\n` +
-      `👤 <b>Customer:</b> ${order.customerName}\n` +
-      `📞 <b>Mobile:</b> <code>${order.phone}</code>\n` +
-      `📍 <b>Address:</b> ${order.address}\n` +
-      `💰 <b>Total Bill:</b> <b>₹${order.total}</b> (${order.paymentMethod})\n` +
-      `🚚 <b>Delivery Fee:</b> ₹${order.deliveryCharge}\n` +
-      `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `<i>Official PDF Invoice is attached below.</i>`;
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: text,
+        parse_mode: 'HTML'
+      })
+    });
+  } catch (err) {
+    console.error("Telegram text alert error:", err.message);
+  }
 
+  try {
     const pdfBuffer = await generateOrderInvoicePDF(order);
-
     const formData = new FormData();
     formData.append('chat_id', TELEGRAM_CHAT_ID);
-    formData.append('caption', text);
-    formData.append('parse_mode', 'HTML');
+    formData.append('caption', `📄 Official Tax Invoice | Order #${order.id}`);
     
     const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
     formData.append('document', blob, `Invoice_${order.id}.pdf`);
@@ -692,22 +705,13 @@ async function sendTelegramAlert(order) {
       body: formData
     });
   } catch (err) {
-    console.error("Telegram alert error:", err.message);
+    console.error("Telegram PDF alert error:", err.message);
   }
 }
 
-function dataURLtoBuffer(dataUrl) {
-  const matches = dataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-  if (!matches || matches.length !== 3) return null;
-  return {
-    mimeType: matches[1],
-    buffer: Buffer.from(matches[2], 'base64')
-  };
-}
-
 app.use(cors());
-app.use(express.json({ limit: '150mb' }));
-app.use(express.urlencoded({ extended: true, limit: '150mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/store', async (req, res) => {
@@ -798,7 +802,7 @@ app.get('/api/support/search', async (req, res) => {
 
 app.post('/api/support/ticket', async (req, res) => {
   try {
-    const { orderId, issueText, photosBase64, videoBase64 } = req.body;
+    const { orderId, issueText } = req.body;
     const order = await Order.findOne({ id: orderId }).lean();
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
@@ -810,80 +814,15 @@ app.post('/api/support/ticket', async (req, res) => {
       orderId: order.id,
       customerName: order.customerName,
       phone: order.phone,
-      issueText: issueText.trim(),
+      issueText: (issueText || "").trim(),
       adminReply: "",
       repliedAt: "",
       createdAtStr: nowStr
     });
 
-    const itemsListText = (order.items || [])
-      .map((item, idx) => `${idx + 1}. ${item.name} (Size: ${item.selectedSize || 'N/A'}, Color: ${item.selectedColor || 'N/A'}) x${item.qty || 1} - ₹${(item.price || 0) * (item.qty || 1)}`)
-      .join('\n');
-
-    const supportMessage =
-      `🚨 <b>NEW SUPPORT COMPLAINT (${ticketId})</b>\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `📦 <b>Order ID:</b> <code>#${order.id}</code>\n` +
-      `📅 <b>Order Date:</b> ${order.date}\n` +
-      `📌 <b>Current Status:</b> ${order.status}\n` +
-      `👤 <b>Customer Name:</b> ${order.customerName}\n` +
-      `📞 <b>Mobile:</b> <code>+91 ${order.phone}</code>\n` +
-      `📍 <b>Address:</b> ${order.address}\n` +
-      `💰 <b>Total Paid:</b> ₹${order.total} (${order.paymentMethod})\n` +
-      `🔑 <b>UTR:</b> <code>${order.utrNumber || 'N/A'}</code>\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `🛍️ <b>ORDERED ITEMS:</b>\n${itemsListText}\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `⚠️ <b>CUSTOMER PROBLEM:</b>\n` +
-      `<i>"${issueText}"</i>`;
-
-    await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: SUPPORT_CHAT_ID,
-        text: supportMessage,
-        parse_mode: 'HTML'
-      })
-    });
-
-    if (Array.isArray(photosBase64) && photosBase64.length > 0) {
-      for (let i = 0; i < photosBase64.length; i++) {
-        const parsedPhoto = dataURLtoBuffer(photosBase64[i]);
-        if (parsedPhoto) {
-          const photoForm = new FormData();
-          photoForm.append('chat_id', SUPPORT_CHAT_ID);
-          photoForm.append('caption', `📸 Issue Photo ${i + 1} | Order #${order.id} (${order.customerName} - ${order.phone})`);
-          const photoBlob = new Blob([parsedPhoto.buffer], { type: parsedPhoto.mimeType });
-          photoForm.append('photo', photoBlob, `Support_${order.id}_${i + 1}.jpg`);
-
-          await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`, {
-            method: 'POST',
-            body: photoForm
-          });
-        }
-      }
-    }
-
-    if (videoBase64) {
-      const parsedVideo = dataURLtoBuffer(videoBase64);
-      if (parsedVideo) {
-        const videoForm = new FormData();
-        videoForm.append('chat_id', SUPPORT_CHAT_ID);
-        videoForm.append('caption', `🎥 Issue Video Proof | Order #${order.id} (${order.customerName} - ${order.phone})`);
-        const videoBlob = new Blob([parsedVideo.buffer], { type: parsedVideo.mimeType || 'video/mp4' });
-        videoForm.append('document', videoBlob, `Support_Video_${order.id}.mp4`);
-
-        await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendDocument`, {
-          method: 'POST',
-          body: videoForm
-        });
-      }
-    }
-
     res.json({ success: true, ticketId });
   } catch (err) {
-    console.error("Support ticket error:", err.message);
+    console.error("Support ticket save error:", err.message);
     res.status(500).json({ success: false, message: "Failed to submit support issue." });
   }
 });
@@ -1247,7 +1186,7 @@ app.delete('/api/admin/orders/:id', async (req, res) => {
     if (deleted.deletedCount === 0) {
       return res.status(404).json({ success: false, message: "Order not found" });
     }
-    res.json({ success: true, message: `Order #${orderId} deleted successfully` });
+    res.json({ success: true, message: `Order #${orderId} deleted from MongoDB` });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
