@@ -4,19 +4,45 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const mongoose = require('mongoose');
+const cloudinary = require('cloudinary').v2;
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// অ্যাডমিন প্যানেল ক্রেডেনশিয়াল
+// Admin Panel Credentials
 const ADMIN_SECRET_PIN = "admin123";
 const ADMIN_EMAIL = "mahatosarita436@gmail.com";
 
-// টেলিগ্রাম কনফিগারেশন
+// Telegram Configuration
 const TELEGRAM_BOT_TOKEN = "8818940415:AAHdq6roV4XDCF3sxtJdDSqw-Abq20i1KbQ";
 const TELEGRAM_CHAT_ID = "8836538477";
 
-// MongoDB Atlas কানেকশন
+// Cloudinary Configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'txvafr7h',
+  api_key: process.env.CLOUDINARY_API_KEY || '757197326572662',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'shG26-qHpVEzSUpokfs3-xDnkyk'
+});
+
+// Helper: Upload Base64 images to Cloudinary
+async function uploadToCloudinary(fileData, folder = 'aura_store') {
+  if (!fileData) return "";
+  if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
+    return fileData;
+  }
+  try {
+    const result = await cloudinary.uploader.upload(fileData, {
+      folder: folder,
+      resource_type: 'auto'
+    });
+    return result.secure_url;
+  } catch (err) {
+    console.error('Cloudinary Upload Error:', err.message);
+    return fileData;
+  }
+}
+
+// MongoDB Atlas Connection
 const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://din786584_db_user:UxrbgZntEhDU0vfx@cluster0.vstmeuy.mongodb.net/aura_store?retryWrites=true&w=majority";
 
 mongoose.connect(MONGO_URI)
@@ -109,7 +135,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// ডিফল্ট ডাটা (প্রথমবার ডাটাবেস খালি থাকলে অটোমেটিক সেভ হবে)
+// Default Initial Data
 const defaultBanners = [
   {
     id: 1,
@@ -903,7 +929,7 @@ async function seedInitialData() {
 }
 
 // =========================================================================
-// ১. প্রফেশনাল ও প্রিমিয়াম PDF ইনভয়েস স্লিপ জেনারেটর
+// 1. Professional PDF Invoice Generator
 // =========================================================================
 function generateOrderInvoicePDF(order) {
   return new Promise((resolve, reject) => {
@@ -1033,7 +1059,7 @@ function generateOrderInvoicePDF(order) {
 }
 
 // =========================================================================
-// ২. টেলিগ্রাম অ্যালার্ট এবং PDF স্লিপ সরাসরি পাঠানোর ফাংশন
+// 2. Telegram Alert & PDF Slip Sender
 // =========================================================================
 async function sendTelegramAlert(order) {
   try {
@@ -1073,7 +1099,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// পাবলিক স্টোর API (MongoDB থেকে ডাটা লোড করবে)
+// Public Store API
 app.get('/api/store', async (req, res) => {
   try {
     res.set({
@@ -1102,11 +1128,15 @@ app.get('/api/store', async (req, res) => {
   }
 });
 
-// প্রোডাক্ট অ্যাড, এডিট ও ডিলিট API
+// Product Add, Edit & Delete APIs (with Cloudinary upload)
 app.post('/api/admin/products', async (req, res) => {
   try {
     const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, sizeOptions, colorOptions, badge, images, description } = req.body;
     if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+    const uploadedUrls = await Promise.all(
+      (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
+    );
 
     const newProd = await Product.create({
       id: Date.now(),
@@ -1122,7 +1152,7 @@ app.post('/api/admin/products', async (req, res) => {
       rating: 5.0,
       reviewsCount: 1,
       inStock: Number(stockQuantity) > 0,
-      images: images || [],
+      images: uploadedUrls,
       description: description || ""
     });
     res.json({ success: true, product: newProd });
@@ -1135,6 +1165,10 @@ app.put('/api/admin/products/:id', async (req, res) => {
   try {
     const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, sizeOptions, colorOptions, badge, images, description } = req.body;
     if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+    const uploadedUrls = await Promise.all(
+      (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
+    );
 
     const prodId = Number(req.params.id);
     const updated = await Product.findOneAndUpdate(
@@ -1150,7 +1184,7 @@ app.put('/api/admin/products/:id', async (req, res) => {
         colorOptions,
         badge,
         description,
-        images,
+        images: uploadedUrls,
         inStock: Number(stockQuantity) > 0
       },
       { new: true }
@@ -1175,18 +1209,20 @@ app.delete('/api/admin/products/:id', async (req, res) => {
   }
 });
 
-// ব্যানার API
+// Banner APIs (with Cloudinary upload)
 app.post('/api/admin/banners/add', async (req, res) => {
   try {
     const { pin, title, tag, productId, image } = req.body;
     if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+    const bannerUrl = await uploadToCloudinary(image, 'aura_store/banners');
 
     await Banner.create({
       id: Date.now(),
       productId: Number(productId),
       title,
       tag,
-      image
+      image: bannerUrl
     });
     const dealBanners = await Banner.find().lean();
     res.json({ success: true, dealBanners });
@@ -1207,7 +1243,7 @@ app.delete('/api/admin/banners/:id', async (req, res) => {
   }
 });
 
-// কুপন ও স্টোর সেটিংস API
+// Coupons & Store Settings APIs
 app.post('/api/admin/coupons', async (req, res) => {
   try {
     const { pin, code, discountPercent, minSpend, title, description, showOnStore } = req.body;
@@ -1266,7 +1302,7 @@ app.post('/api/admin/store-settings', async (req, res) => {
   }
 });
 
-// অর্ডার প্রসেসিং ও ট্র্যাকিং API
+// Order Processing & Tracking APIs
 app.post('/api/orders', async (req, res) => {
   try {
     const { 
@@ -1342,7 +1378,7 @@ app.get('/api/orders/track', async (req, res) => {
   }
 });
 
-// অ্যাডমিন লগইন ও অর্ডার কন্ট্রোল
+// Admin Login & Order Control
 app.post('/api/admin/login', (req, res) => {
   const { pin } = req.body;
   if (pin === ADMIN_SECRET_PIN) return res.json({ success: true, token: "admin-active" });
@@ -1435,9 +1471,11 @@ app.post('/api/admin/orders/:id/upload-slip', async (req, res) => {
     const { pin, slipFileBase64 } = req.body;
     if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
 
+    const slipUrl = await uploadToCloudinary(slipFileBase64, 'aura_store/delivery_slips');
+
     const order = await Order.findOneAndUpdate(
       { id: req.params.id },
-      { deliverySlipFile: slipFileBase64 },
+      { deliverySlipFile: slipUrl },
       { new: true }
     );
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
