@@ -33,12 +33,15 @@
     
     <header class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-800 pb-4">
       <div>
-        <h1 class="text-2xl font-cinzel font-bold text-amber-400">AURA Fine Store Command</h1>
-        <p class="text-xs text-slate-400">Manage Featured Home Products, Support Replies & Orders</p>
+        <div class="flex items-center gap-2.5">
+          <h1 class="text-2xl font-cinzel font-bold text-amber-400">AURA Fine Store Command</h1>
+          <span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">● LIVE AUTO-SYNC</span>
+        </div>
+        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Home Catalog Controls & Customer Support Replies</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <a href="#supportDeskSection" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
-          <i class="fa-solid fa-headset"></i> Customer Support Desk
+          <i class="fa-solid fa-headset"></i> Support Desk (<span id="headerTicketsBadge">0</span>)
         </a>
         <a href="/" target="_blank" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs border border-slate-700">View Store &rarr;</a>
         <button onclick="logout()" class="bg-rose-600/20 text-rose-400 hover:bg-rose-600/30 px-4 py-2 rounded-xl text-xs border border-rose-600/30 font-semibold">Logout</button>
@@ -226,14 +229,14 @@
             <div class="pt-4">
               <label class="flex items-center gap-2 cursor-pointer bg-slate-800 border border-slate-700 p-2 rounded-xl">
                 <input type="checkbox" id="prodShowOnHome" checked class="w-4 h-4 accent-amber-500">
-                <span class="font-bold text-amber-300 text-[11px]">Show on Front Page</span>
+                <span class="font-bold text-amber-300 text-[11px]">Show on Home Page</span>
               </label>
             </div>
           </div>
 
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2.5">
             <div class="flex justify-between items-center">
-              <label class="text-amber-300 font-bold text-[11px]">📸 Product Photos (Add Any Number of Photos)</label>
+              <label class="text-amber-300 font-bold text-[11px]">📸 Product Photos (Add Unlimited Photos)</label>
               <label class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-3 py-1 rounded-lg text-[11px] cursor-pointer shadow transition">
                 + Add Photos
                 <input type="file" id="multiProdImgInput" accept="image/*" multiple onchange="handleAddMultipleProductPhotos(this)" class="hidden">
@@ -256,7 +259,7 @@
         <div class="flex flex-wrap justify-between items-center gap-2">
           <div>
             <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-boxes-stacked mr-1"></i> Store Catalog (<span id="adminCatalogCount">0</span>)</h3>
-            <p class="text-[10px] text-slate-400">Toggle "Show on Home" to choose which products appear on the front page.</p>
+            <p class="text-[10px] text-slate-400">Toggle "On Home: YES / NO" to choose which products appear on the Home page.</p>
           </div>
           <input type="text" id="adminProdSearch" oninput="renderAdminCatalog()" placeholder="Search product..." class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
         </div>
@@ -268,11 +271,11 @@
       <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-800 pb-3">
         <div>
           <h3 class="text-lg font-bold text-emerald-400"><i class="fa-solid fa-headset mr-2"></i>Customer Support & Reply Desk</h3>
-          <p class="text-xs text-slate-400">Search by Mobile Number or Order ID to view complaints and send replies.</p>
+          <p class="text-xs text-slate-400">Live auto-updating complaints. Search by Mobile Number or Order ID to reply or delete.</p>
         </div>
         <div class="flex items-center gap-2">
           <input type="text" id="adminSupportSearchInput" oninput="renderAdminSupportTickets()" placeholder="Search Mobile Number or Order ID..." class="bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 w-64">
-          <button onclick="loadAdminSupportTickets()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition">
+          <button onclick="loadAdminSupportTickets(true)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition">
             <i class="fa-solid fa-rotate mr-1"></i> Refresh
           </button>
         </div>
@@ -285,10 +288,13 @@
 
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
-        <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-truck-fast mr-1"></i> Customer Orders & Logistics</h3>
+        <div>
+          <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-truck-fast mr-1"></i> Customer Orders & Logistics</h3>
+          <p class="text-[10px] text-emerald-400">New customer orders appear here automatically within 3 seconds without refresh.</p>
+        </div>
         <div class="flex items-center gap-2">
           <input type="text" id="adminOrderSearch" oninput="renderAdminOrders()" placeholder="Search ID, Phone, UTR..." class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
-          <button onclick="loadAdminDashboard()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl border border-slate-700 font-semibold"><i class="fa-solid fa-rotate mr-1"></i> Refresh</button>
+          <button onclick="loadAdminDashboard(true)" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl border border-slate-700 font-semibold"><i class="fa-solid fa-rotate mr-1"></i> Refresh</button>
         </div>
       </div>
 
@@ -319,11 +325,12 @@
     let cachedBanners = [];
     let cachedSupportTickets = [];
     let currentFormImages = [];
+    let adminLiveTimer = null;
 
     const subCategoriesMap = {
-      "Men": ["Shirts", "T-Shirts", "Watches"],
-      "Women": ["Jhumka", "Studs", "Kurtis", "Sarees", "Handbags"],
-      "Gifts": ["Couples", "Romantic", "Gift Sets"]
+      "Men": ["Shirts", "T-Shirts", "Watches", "Trousers", "Perfumes"],
+      "Women": ["Jhumka", "Studs", "Kurtis", "Sarees", "Handbags", "Bangles"],
+      "Gifts": ["Couples", "Romantic", "Gift Sets", "Customized Lamps"]
     };
 
     function updateSubCategories() {
@@ -354,24 +361,64 @@
           sessionStorage.setItem('aura_admin_pin', pin);
           document.getElementById('loginScreen').classList.add('hidden');
           document.getElementById('dashboardContent').classList.remove('hidden');
-          loadAdminDashboard();
-          loadAdminSupportTickets();
+          loadAdminDashboard(true);
+          loadAdminSupportTickets(true);
+          startAdminLiveSync();
         } else {
           document.getElementById('loginError').classList.remove('hidden');
         }
       } catch (e) { console.error(e); }
     }
 
+    function startAdminLiveSync() {
+      if (adminLiveTimer) clearInterval(adminLiveTimer);
+      adminLiveTimer = setInterval(() => {
+        if (!currentPin) return;
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
+          return;
+        }
+        loadAdminOrdersOnlySilently();
+        loadAdminSupportTickets(false);
+      }, 3000);
+    }
+
     function logout() {
+      if (adminLiveTimer) clearInterval(adminLiveTimer);
       sessionStorage.removeItem('aura_admin_pin');
       location.reload();
     }
 
-    async function loadAdminDashboard() {
+    async function loadAdminOrdersOnlySilently() {
+      try {
+        const ordRes = await fetch('/api/admin/orders?t=' + Date.now(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: currentPin })
+        });
+        const ordData = await ordRes.json();
+        if (ordData.success) {
+          const newHash = JSON.stringify(ordData.orders);
+          if (window._lastOrdersHash !== newHash) {
+            window._lastOrdersHash = newHash;
+            cachedOrders = ordData.orders || [];
+            document.getElementById('statTodayOrders').innerText = ordData.analytics.todayOrdersCount;
+            document.getElementById('statTotalOrders').innerText = ordData.analytics.totalOrders;
+            document.getElementById('statTotalSales').innerText = `₹${ordData.analytics.totalSales}`;
+            document.getElementById('statOnlineSales').innerText = `₹${ordData.analytics.totalOnlineRevenue}`;
+            document.getElementById('statCodSales').innerText = `₹${ordData.analytics.totalCodRevenue}`;
+            document.getElementById('statPending').innerText = ordData.analytics.pendingOrders;
+            renderAdminOrders();
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function loadAdminDashboard(force = false) {
       try {
         const [ordRes, storeRes] = await Promise.all([
-          fetch('/api/admin/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: currentPin }) }),
-          fetch('/api/store')
+          fetch('/api/admin/orders?t=' + Date.now(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: currentPin }) }),
+          fetch('/api/store?t=' + Date.now())
         ]);
 
         const ordData = await ordRes.json();
@@ -379,6 +426,7 @@
 
         if (ordData.success) {
           cachedOrders = ordData.orders || [];
+          window._lastOrdersHash = JSON.stringify(cachedOrders);
           cachedCoupons = ordData.coupons || [];
           
           document.getElementById('statTodayOrders').innerText = ordData.analytics.todayOrdersCount;
@@ -407,17 +455,22 @@
       } catch (err) { console.error("Dashboard load error", err); }
     }
 
-    async function loadAdminSupportTickets() {
+    async function loadAdminSupportTickets(force = false) {
       try {
-        const res = await fetch('/api/admin/support/tickets', {
+        const res = await fetch('/api/admin/support/tickets?t=' + Date.now(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pin: currentPin })
         });
         const data = await res.json();
         if (data.success) {
-          cachedSupportTickets = data.tickets || [];
-          renderAdminSupportTickets();
+          const newHash = JSON.stringify(data.tickets);
+          if (force || window._lastTicketsHash !== newHash) {
+            window._lastTicketsHash = newHash;
+            cachedSupportTickets = data.tickets || [];
+            document.getElementById('headerTicketsBadge').innerText = cachedSupportTickets.length;
+            renderAdminSupportTickets();
+          }
         }
       } catch (err) { console.error(err); }
     }
@@ -444,9 +497,14 @@
               <span class="text-[10px] text-slate-400 ml-1.5">(${t.ticketId})</span>
               <p class="font-bold text-white mt-0.5"><i class="fa-solid fa-phone text-emerald-400 mr-1"></i>${t.phone} • ${t.customerName}</p>
             </div>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.adminReply ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">
-              ${t.adminReply ? 'Replied ✓' : 'Needs Reply'}
-            </span>
+            <div class="flex items-center gap-1.5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.adminReply ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">
+                ${t.adminReply ? 'Replied ✓' : 'Needs Reply'}
+              </span>
+              <button onclick="deleteAdminSupportTicket('${t.ticketId}')" title="Delete Ticket" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white px-2 py-1 rounded-lg text-[10px] font-bold transition">
+                <i class="fa-solid fa-trash"></i> Delete
+              </button>
+            </div>
           </div>
 
           <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700">
@@ -484,11 +542,28 @@
         });
         const data = await res.json();
         if (data.success) {
-          alert("Reply sent to customer!");
-          loadAdminSupportTickets();
+          alert("Reply sent! Customer will see it live within 3 seconds.");
+          loadAdminSupportTickets(true);
         }
       } catch (err) {
         alert("Server error while sending reply.");
+      }
+    }
+
+    async function deleteAdminSupportTicket(ticketId) {
+      if (!confirm(`Delete support ticket ${ticketId} permanently?`)) return;
+      try {
+        const res = await fetch(`/api/admin/support/tickets/${ticketId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: currentPin })
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadAdminSupportTickets(true);
+        }
+      } catch (err) {
+        alert("Failed to delete support ticket.");
       }
     }
 
@@ -746,7 +821,7 @@
       if (data.success) {
         alert(editId ? "Product Updated!" : "Product Published!");
         resetProductForm();
-        loadAdminDashboard();
+        loadAdminDashboard(true);
       }
       btn.innerText = "Publish to Store";
       btn.disabled = false;
@@ -824,7 +899,7 @@
       document.getElementById('adminCatalogCount').innerText = filtered.length;
 
       document.getElementById('adminCatalogList').innerHTML = filtered.map(p => {
-        const isHome = p.showOnHome !== false;
+        const isHome = p.showOnHome === true;
         return `
           <div class="bg-slate-800/70 border border-slate-700 p-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
             <div class="flex items-center gap-3">
@@ -919,7 +994,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin: currentPin, status })
       });
-      loadAdminDashboard();
+      loadAdminDashboard(true);
     }
 
     async function saveOrderTracking(orderId) {
@@ -930,7 +1005,7 @@
         body: JSON.stringify({ pin: currentPin, courierPartner: "Delhivery", awbNumber })
       });
       alert("Tracking updated & marked as Shipped!");
-      loadAdminDashboard();
+      loadAdminDashboard(true);
     }
 
     async function uploadDeliverySlip(orderId, input) {
@@ -946,7 +1021,7 @@
         const data = await res.json();
         if (data.success) {
           alert("Delivery Slip Uploaded!");
-          loadAdminDashboard();
+          loadAdminDashboard(true);
         }
       };
       reader.readAsDataURL(file);
@@ -962,7 +1037,7 @@
       const data = await res.json();
       if (data.success) {
         alert(`Order #${orderId} deleted!`);
-        loadAdminDashboard();
+        loadAdminDashboard(true);
       }
     }
   </script>
