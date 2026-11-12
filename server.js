@@ -662,51 +662,43 @@ function generateOrderInvoicePDF(order) {
 }
 
 async function sendTelegramAlert(order) {
-  const itemsSummary = (order.items || [])
-    .map((it, i) => `${i + 1}. ${it.name} (${it.selectedSize || 'Std'}, ${it.selectedColor || 'Std'}) x${it.qty || 1}`)
-    .join('\n');
-
-  const text = `🧾 <b>AURA FINE STORE - NEW ORDER CONFIRMED</b>\n` +
+  const captionText = `🧾 <b>AURA FINE STORE - NEW ORDER CONFIRMED</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `📦 <b>Order ID:</b> <code>#${order.id}</code>\n` +
     `👤 <b>Customer:</b> ${order.customerName}\n` +
     `📞 <b>Mobile:</b> <code>${order.phone}</code>\n` +
     `📍 <b>Address:</b> ${order.address}\n` +
-    `🛍️ <b>Items:</b>\n${itemsSummary}\n` +
     `💰 <b>Total Bill:</b> <b>₹${order.total}</b> (${order.paymentMethod})\n` +
     `🚚 <b>Delivery Fee:</b> ₹${order.deliveryCharge}\n` +
     `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>\n` +
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `<i>Official PDF Invoice is attached below.</i>`;
 
-  try {
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: text,
-        parse_mode: 'HTML'
-      })
-    });
-  } catch (err) {
-    console.error("Telegram text alert error:", err.message);
-  }
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const pdfBuffer = await generateOrderInvoicePDF(order);
+      const formData = new FormData();
+      formData.append('chat_id', TELEGRAM_CHAT_ID);
+      formData.append('caption', captionText);
+      formData.append('parse_mode', 'HTML');
 
-  try {
-    const pdfBuffer = await generateOrderInvoicePDF(order);
-    const formData = new FormData();
-    formData.append('chat_id', TELEGRAM_CHAT_ID);
-    formData.append('caption', `📄 Official Tax Invoice | Order #${order.id}`);
-    
-    const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
-    formData.append('document', blob, `Invoice_${order.id}.pdf`);
+      const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+      formData.append('document', blob, `Invoice_${order.id}.pdf`);
 
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, {
-      method: 'POST',
-      body: formData
-    });
-  } catch (err) {
-    console.error("Telegram PDF alert error:", err.message);
+      const resp = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, {
+        method: 'POST',
+        body: formData
+      });
+      const result = await resp.json();
+      if (result && result.ok) {
+        console.log(`✅ Telegram Invoice sent for #${order.id}`);
+        return;
+      }
+      console.error(`Telegram attempt ${attempt} failed:`, result);
+    } catch (err) {
+      console.error(`Telegram attempt ${attempt} error:`, err.message);
+    }
+    await new Promise(r => setTimeout(r, 1500));
   }
 }
 
@@ -1120,9 +1112,9 @@ app.post('/api/orders', async (req, res) => {
       orderDateRaw: todayStr
     });
 
-    await sendTelegramAlert(order);
-
     res.json({ success: true, orderId: order.id });
+
+    sendTelegramAlert(order).catch(e => console.error("Background Telegram error:", e.message));
   } catch (err) {
     res.status(500).json({ success: false, message: "Order creation failed" });
   }
