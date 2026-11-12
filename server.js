@@ -9,22 +9,25 @@ const cloudinary = require('cloudinary').v2;
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Admin Panel Credentials
+// অ্যাডমিন প্যানেল ক্রেডেনশিয়াল
 const ADMIN_SECRET_PIN = "admin123";
 const ADMIN_EMAIL = "mahatosarita436@gmail.com";
 
-// Telegram Configuration
+// অর্ডার টেলিগ্রাম বট কনফিগারেশন
 const TELEGRAM_BOT_TOKEN = "8818940415:AAHdq6roV4XDCF3sxtJdDSqw-Abq20i1KbQ";
 const TELEGRAM_CHAT_ID = "8836538477";
 
-// Cloudinary Configuration
+// নতুন কাস্টমার সাপোর্ট টেলিগ্রাম বট কনফিগারেশন (@aura_fine_support_bot)
+const SUPPORT_BOT_TOKEN = "9025873079:AAFiDAk_5FOGpNGRvjBtuVhwFHyfnn6pX1I";
+const SUPPORT_CHAT_ID = "8836538477";
+
+// Cloudinary কনফিগারেশন
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'txvafr7h',
   api_key: process.env.CLOUDINARY_API_KEY || '757197326572662',
   api_secret: process.env.CLOUDINARY_API_SECRET || 'shG26-qHpVEzSUpokfs3-xDnkyk'
 });
 
-// Helper: Upload Base64 images to Cloudinary
 async function uploadToCloudinary(fileData, folder = 'aura_store') {
   if (!fileData) return "";
   if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
@@ -42,7 +45,7 @@ async function uploadToCloudinary(fileData, folder = 'aura_store') {
   }
 }
 
-// MongoDB Atlas Connection
+// MongoDB Atlas কানেকশন
 const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://din786584_db_user:UxrbgZntEhDU0vfx@cluster0.vstmeuy.mongodb.net/aura_store?retryWrites=true&w=majority";
 
 mongoose.connect(MONGO_URI)
@@ -68,7 +71,15 @@ const productSchema = new mongoose.Schema({
   sizeOptions: [String],
   colorOptions: [String],
   images: [String],
-  description: String
+  description: String,
+  reviews: [
+    {
+      customerName: String,
+      rating: Number,
+      comment: String,
+      date: String
+    }
+  ]
 });
 
 const bannerSchema = new mongoose.Schema({
@@ -121,11 +132,25 @@ const orderSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// কাস্টমার সাপোর্ট কমপ্লেন ও অ্যাডমিন রিপ্লাই স্কিমা (শুধু টেক্সট সেভ হবে, ফটো/ভিডিও নয়)
+const supportTicketSchema = new mongoose.Schema({
+  ticketId: { type: String, unique: true },
+  orderId: String,
+  customerName: String,
+  phone: String,
+  issueText: String,
+  adminReply: { type: String, default: "" },
+  repliedAt: { type: String, default: "" },
+  createdAtStr: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
 const Product = mongoose.model('Product', productSchema);
 const Banner = mongoose.model('Banner', bannerSchema);
 const Coupon = mongoose.model('Coupon', couponSchema);
 const Settings = mongoose.model('Settings', settingsSchema);
 const Order = mongoose.model('Order', orderSchema);
+const SupportTicket = mongoose.model('SupportTicket', supportTicketSchema);
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -135,7 +160,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Default Initial Data
+// ডিফল্ট ডাটা
 const defaultBanners = [
   {
     id: 1,
@@ -193,7 +218,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1620012253295-c15c429f66bf?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "100% breathable pure combed Oxford cotton with formal spread collar and double-stitched durability."
+    description: "100% breathable pure combed Oxford cotton with formal spread collar and double-stitched durability.",
+    reviews: []
   },
   {
     id: 302,
@@ -215,7 +241,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1620012253295-c15c429f66bf?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Lightweight European linen blend casual shirt crafted for effortless summer and evening sophistication."
+    description: "Lightweight European linen blend casual shirt crafted for effortless summer and evening sophistication.",
+    reviews: []
   },
   {
     id: 303,
@@ -237,7 +264,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1589310243389-96a5483213a8?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Rich micro-brushed cotton woven with timeless tartan checks and a curved tailored hem."
+    description: "Rich micro-brushed cotton woven with timeless tartan checks and a curved tailored hem.",
+    reviews: []
   },
   {
     id: 304,
@@ -259,7 +287,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "240 GSM ultra-combed Supima cotton t-shirt with bio-wash finish and structured drop-shoulder fit."
+    description: "240 GSM ultra-combed Supima cotton t-shirt with bio-wash finish and structured drop-shoulder fit.",
+    reviews: []
   },
   {
     id: 305,
@@ -281,7 +310,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Streetwear aesthetic acid-washed crew neck t-shirt with fade-resistant artisanal typography."
+    description: "Streetwear aesthetic acid-washed crew neck t-shirt with fade-resistant artisanal typography.",
+    reviews: []
   },
   {
     id: 306,
@@ -303,7 +333,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Breathable textured honeycomb pique knit polo shirt finished with ribbed collar and genuine horn buttons."
+    description: "Breathable textured honeycomb pique knit polo shirt finished with ribbed collar and genuine horn buttons.",
+    reviews: []
   },
   {
     id: 307,
@@ -325,7 +356,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1533139502658-0198f920d8e8?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Multi-dial functional quartz chronograph watch with anti-scratch sapphire crystal and surgical stainless steel casing."
+    description: "Multi-dial functional quartz chronograph watch with anti-scratch sapphire crystal and surgical stainless steel casing.",
+    reviews: []
   },
   {
     id: 308,
@@ -347,7 +379,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1533139502658-0198f920d8e8?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Hand-stitched genuine calfskin leather watch paired with an ultra-slim satin metallic dial and Japanese movement."
+    description: "Hand-stitched genuine calfskin leather watch paired with an ultra-slim satin metallic dial and Japanese movement.",
+    reviews: []
   },
   {
     id: 309,
@@ -369,7 +402,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Ultra-modern ion-plated stealth black finish featuring magnetic Milanese mesh band and water resistance up to 5 ATM."
+    description: "Ultra-modern ion-plated stealth black finish featuring magnetic Milanese mesh band and water resistance up to 5 ATM.",
+    reviews: []
   },
   {
     id: 401,
@@ -391,7 +425,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "22K micron gold plated traditional handcrafted earrings with real freshwater river seed pearls."
+    description: "22K micron gold plated traditional handcrafted earrings with real freshwater river seed pearls.",
+    reviews: []
   },
   {
     id: 402,
@@ -413,7 +448,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Artisanal hand-painted Meenakari enamel peacock artwork suspended above micro-tinkle floral ghungroos."
+    description: "Artisanal hand-painted Meenakari enamel peacock artwork suspended above micro-tinkle floral ghungroos.",
+    reviews: []
   },
   {
     id: 403,
@@ -435,7 +471,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Bohemian silver oxidised finish inspired by temple motifs with lightweight hypoallergenic ear hooks."
+    description: "Bohemian silver oxidised finish inspired by temple motifs with lightweight hypoallergenic ear hooks.",
+    reviews: []
   },
   {
     id: 404,
@@ -457,7 +494,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "5A diamond-cut cubic zirconia surrounded by sparkling micro-pave crystals with push-back closures."
+    description: "5A diamond-cut cubic zirconia surrounded by sparkling micro-pave crystals with push-back closures.",
+    reviews: []
   },
   {
     id: 405,
@@ -479,7 +517,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Classy and skin-friendly cultured shell pearls mounted onto anti-tarnish rhodium plated stems."
+    description: "Classy and skin-friendly cultured shell pearls mounted onto anti-tarnish rhodium plated stems.",
+    reviews: []
   },
   {
     id: 406,
@@ -501,7 +540,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Contemporary bezel-set multi-faceted synthetic stones designed for modern office and party wear."
+    description: "Contemporary bezel-set multi-faceted synthetic stones designed for modern office and party wear.",
+    reviews: []
   },
   {
     id: 407,
@@ -523,7 +563,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Graceful flared Chanderi silk blend Anarkali kurti adorned with intricate sequin zari work and cotton lining."
+    description: "Graceful flared Chanderi silk blend Anarkali kurti adorned with intricate sequin zari work and cotton lining.",
+    reviews: []
   },
   {
     id: 408,
@@ -545,7 +586,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "100% pure lightweight Cambric cotton styled with Mandarin collar and three-quarter tailored sleeves."
+    description: "100% pure lightweight Cambric cotton styled with Mandarin collar and three-quarter tailored sleeves.",
+    reviews: []
   },
   {
     id: 409,
@@ -567,7 +609,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Authentic hand-embroidered Bakhiya and Phanda thread work crafted gracefully on butter-soft rayon fabric."
+    description: "Authentic hand-embroidered Bakhiya and Phanda thread work crafted gracefully on butter-soft rayon fabric.",
+    reviews: []
   },
   {
     id: 410,
@@ -589,7 +632,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Woven with gleaming golden Kadwa floral jaal along with heavy designer pallu and matching unstitched blouse."
+    description: "Woven with gleaming golden Kadwa floral jaal along with heavy designer pallu and matching unstitched blouse.",
+    reviews: []
   },
   {
     id: 411,
@@ -611,7 +655,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1635767798638-3e25273a8236?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Feather-light sheer organza saree with delicate floral motifs and scallop embroidery bordered in golden sequins."
+    description: "Feather-light sheer organza saree with delicate floral motifs and scallop embroidery bordered in golden sequins.",
+    reviews: []
   },
   {
     id: 412,
@@ -633,7 +678,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "100 count pure organic linen handloom weave featuring breathable drape, Jamdani motifs, and zari border."
+    description: "100 count pure organic linen handloom weave featuring breathable drape, Jamdani motifs, and zari border.",
+    reviews: []
   },
   {
     id: 413,
@@ -655,7 +701,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Plush diamond quilted velvet sling crafted with antique gold hardware curb chain and high-security twist lock."
+    description: "Plush diamond quilted velvet sling crafted with antique gold hardware curb chain and high-security twist lock.",
+    reviews: []
   },
   {
     id: 414,
@@ -677,7 +724,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Scratch-resistant vegan saffiano grain leather tote with triple spacious compartments and reinforced dual handles."
+    description: "Scratch-resistant vegan saffiano grain leather tote with triple spacious compartments and reinforced dual handles.",
+    reviews: []
   },
   {
     id: 415,
@@ -699,7 +747,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Artisanal party clutch embellished with intricate bullion zari embroidery and crystal magnetic lock."
+    description: "Artisanal party clutch embellished with intricate bullion zari embroidery and crystal magnetic lock.",
+    reviews: []
   },
   {
     id: 501,
@@ -721,7 +770,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "When brought close, the two heart halves automatically snap together via custom magnetic attraction bells."
+    description: "When brought close, the two heart halves automatically snap together via custom magnetic attraction bells.",
+    reviews: []
   },
   {
     id: 502,
@@ -743,7 +793,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Symbolizes eternal harmony. Delicate open adjustable bands that resize smoothly to fit any ring finger."
+    description: "Symbolizes eternal harmony. Delicate open adjustable bands that resize smoothly to fit any ring finger.",
+    reviews: []
   },
   {
     id: 503,
@@ -765,7 +816,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Luxury matching his and her watch pair presented inside an aesthetic premium velvet couple jewelry gift box."
+    description: "Luxury matching his and her watch pair presented inside an aesthetic premium velvet couple jewelry gift box.",
+    reviews: []
   },
   {
     id: 504,
@@ -787,7 +839,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Using phone light or holding close reveals 'I Love You' etched in 100 languages inside the central micro crystal."
+    description: "Using phone light or holding close reveals 'I Love You' etched in 100 languages inside the central micro crystal.",
+    reviews: []
   },
   {
     id: 505,
@@ -809,7 +862,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Real fresh rose preserved using bio-infusion lasting 3+ years, with a hidden pull-out jewelry compartment."
+    description: "Real fresh rose preserved using bio-infusion lasting 3+ years, with a hidden pull-out jewelry compartment.",
+    reviews: []
   },
   {
     id: 506,
@@ -831,7 +885,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Iridescent blooming flower encapsulated within an immaculate glass dome encircled by fairy string lights."
+    description: "Iridescent blooming flower encapsulated within an immaculate glass dome encircled by fairy string lights.",
+    reviews: []
   },
   {
     id: 507,
@@ -853,7 +908,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Includes Magnetic Bracelets, Projection Pendant, Velvet Rose Case, Scented Candle, and Love Message Scroll."
+    description: "Includes Magnetic Bracelets, Projection Pendant, Velvet Rose Case, Scented Candle, and Love Message Scroll.",
+    reviews: []
   },
   {
     id: 508,
@@ -875,7 +931,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "Handcrafted RFID-protected genuine leather wallet, matching reversible pin-buckle belt, and an executive metal pen."
+    description: "Handcrafted RFID-protected genuine leather wallet, matching reversible pin-buckle belt, and an executive metal pen.",
+    reviews: []
   },
   {
     id: 509,
@@ -897,7 +954,8 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=480&q=55",
       "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55"
     ],
-    description: "French floral artisanal perfume paired with a shimmering 925 sterling silver plated butterfly drop pendant."
+    description: "French floral artisanal perfume paired with a shimmering 925 sterling silver plated butterfly drop pendant.",
+    reviews: []
   }
 ];
 
@@ -929,7 +987,7 @@ async function seedInitialData() {
 }
 
 // =========================================================================
-// 1. Professional PDF Invoice Generator
+// ১. প্রফেশনাল ও প্রিমিয়াম PDF ইনভয়েস স্লিপ জেনারেটর
 // =========================================================================
 function generateOrderInvoicePDF(order) {
   return new Promise((resolve, reject) => {
@@ -1059,7 +1117,7 @@ function generateOrderInvoicePDF(order) {
 }
 
 // =========================================================================
-// 2. Telegram Alert & PDF Slip Sender
+// ২. অর্ডার টেলিগ্রাম অ্যালার্ট (পুরনো অর্ডার বটে যাবে)
 // =========================================================================
 async function sendTelegramAlert(order) {
   try {
@@ -1094,12 +1152,21 @@ async function sendTelegramAlert(order) {
   }
 }
 
+function dataURLtoBuffer(dataUrl) {
+  const matches = dataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+  if (!matches || matches.length !== 3) return null;
+  return {
+    mimeType: matches[1],
+    buffer: Buffer.from(matches[2], 'base64')
+  };
+}
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Public Store API
+// পাবলিক স্টোর API
 app.get('/api/store', async (req, res) => {
   try {
     res.set({
@@ -1128,7 +1195,195 @@ app.get('/api/store', async (req, res) => {
   }
 });
 
-// Product Add, Edit & Delete APIs (with Cloudinary upload)
+// কাস্টমার প্রোডাক্ট রিভিউ API
+app.post('/api/products/:id/reviews', async (req, res) => {
+  try {
+    const { customerName, rating, comment } = req.body;
+    const prodId = Number(req.params.id);
+    const product = await Product.findOne({ id: prodId });
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    const numRating = Math.min(5, Math.max(1, Number(rating) || 5));
+    const reviewDate = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+    if (!product.reviews) product.reviews = [];
+    product.reviews.unshift({
+      customerName: (customerName || "Verified Buyer").trim(),
+      rating: numRating,
+      comment: (comment || "").trim(),
+      date: reviewDate
+    });
+
+    const oldTotal = (product.rating || 5) * (product.reviewsCount || 1);
+    const newCount = (product.reviewsCount || 0) + 1;
+    product.reviewsCount = newCount;
+    product.rating = Number(((oldTotal + numRating) / newCount).toFixed(1));
+
+    await product.save();
+    res.json({ success: true, product });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// =========================================================================
+// ৩. Help & Support APIs (নতুন @aura_fine_support_bot ও অ্যাডমিন রিপ্লাই সিস্টেম)
+// =========================================================================
+app.get('/api/support/search', async (req, res) => {
+  try {
+    const query = (req.query.q || "").trim().toLowerCase();
+    if (!query || query.length < 2) {
+      return res.json({ success: true, orders: [], tickets: [] });
+    }
+    const cleanDigits = query.replace(/[^0-9]/g, '');
+    const [allOrders, allTickets] = await Promise.all([
+      Order.find().sort({ createdAt: -1 }).lean(),
+      SupportTicket.find().sort({ createdAt: -1 }).lean()
+    ]);
+
+    const matchedOrders = allOrders.filter(o =>
+      (o.customerName && o.customerName.toLowerCase().includes(query)) ||
+      (cleanDigits.length >= 6 && o.phone && o.phone.includes(cleanDigits)) ||
+      (o.id && o.id.toLowerCase() === query)
+    );
+
+    const matchedTickets = allTickets.filter(t =>
+      (t.customerName && t.customerName.toLowerCase().includes(query)) ||
+      (cleanDigits.length >= 6 && t.phone && t.phone.includes(cleanDigits)) ||
+      (t.orderId && t.orderId.toLowerCase() === query)
+    );
+
+    res.json({ success: true, orders: matchedOrders, tickets: matchedTickets });
+  } catch (err) {
+    res.status(500).json({ success: false, orders: [], tickets: [] });
+  }
+});
+
+app.post('/api/support/ticket', async (req, res) => {
+  try {
+    const { orderId, issueText, photoBase64, videoBase64 } = req.body;
+    const order = await Order.findOne({ id: orderId }).lean();
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+    const ticketId = 'TKT-' + Math.floor(100000 + Math.random() * 900000);
+    const nowStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+    // MongoDB-তে শুধু টেক্সট সেভ হবে (ফটো/ভিডিও সেভ হবে না, তাই স্টোরেজ খরচ হবে না)
+    await SupportTicket.create({
+      ticketId,
+      orderId: order.id,
+      customerName: order.customerName,
+      phone: order.phone,
+      issueText: issueText.trim(),
+      adminReply: "",
+      repliedAt: "",
+      createdAtStr: nowStr
+    });
+
+    const itemsListText = (order.items || [])
+      .map((item, idx) => `${idx + 1}. ${item.name} (Size: ${item.selectedSize || 'N/A'}, Color: ${item.selectedColor || 'N/A'}) x${item.qty || 1} - ₹${(item.price || 0) * (item.qty || 1)}`)
+      .join('\n');
+
+    const supportMessage =
+      `🚨 <b>NEW SUPPORT COMPLAINT (${ticketId})</b>\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `📦 <b>Order ID:</b> <code>#${order.id}</code>\n` +
+      `📅 <b>Order Date:</b> ${order.date}\n` +
+      `📌 <b>Current Status:</b> ${order.status}\n` +
+      `👤 <b>Customer Name:</b> ${order.customerName}\n` +
+      `📞 <b>Mobile:</b> <code>+91 ${order.phone}</code>\n` +
+      `📍 <b>Address:</b> ${order.address}\n` +
+      `💰 <b>Total Paid:</b> ₹${order.total} (${order.paymentMethod})\n` +
+      `🔑 <b>UTR:</b> <code>${order.utrNumber || 'N/A'}</code>\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🛍️ <b>ORDERED ITEMS:</b>\n${itemsListText}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `⚠️ <b>CUSTOMER PROBLEM:</b>\n` +
+      `<i>"${issueText}"</i>`;
+
+    // ১. নতুন Support Bot-এ সম্পূর্ণ অর্ডার ডিটেলস ও সমস্যা পাঠানো
+    await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: SUPPORT_CHAT_ID,
+        text: supportMessage,
+        parse_mode: 'HTML'
+      })
+    });
+
+    // ২. কাস্টমারের ছবি সরাসরি Support Bot-এ পাঠানো
+    if (photoBase64) {
+      const parsedPhoto = dataURLtoBuffer(photoBase64);
+      if (parsedPhoto) {
+        const photoForm = new FormData();
+        photoForm.append('chat_id', SUPPORT_CHAT_ID);
+        photoForm.append('caption', `📸 Issue Photo | Order #${order.id} (${order.customerName})`);
+        const photoBlob = new Blob([parsedPhoto.buffer], { type: parsedPhoto.mimeType });
+        photoForm.append('photo', photoBlob, `Support_${order.id}.jpg`);
+
+        await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`, {
+          method: 'POST',
+          body: photoForm
+        });
+      }
+    }
+
+    // ৩. কাস্টমারের ভিডিও সরাসরি Support Bot-এ পাঠানো
+    if (videoBase64) {
+      const parsedVideo = dataURLtoBuffer(videoBase64);
+      if (parsedVideo) {
+        const videoForm = new FormData();
+        videoForm.append('chat_id', SUPPORT_CHAT_ID);
+        videoForm.append('caption', `🎥 Issue Video | Order #${order.id} (${order.customerName})`);
+        const videoBlob = new Blob([parsedVideo.buffer], { type: parsedVideo.mimeType });
+        videoForm.append('video', videoBlob, `Support_${order.id}.mp4`);
+
+        await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendVideo`, {
+          method: 'POST',
+          body: videoForm
+        });
+      }
+    }
+
+    res.json({ success: true, ticketId });
+  } catch (err) {
+    console.error("Support ticket error:", err.message);
+    res.status(500).json({ success: false, message: "Failed to submit support issue." });
+  }
+});
+
+// অ্যাডমিন সাপোর্ট রিপ্লাই API
+app.post('/api/admin/support/tickets', async (req, res) => {
+  try {
+    const { pin } = req.body;
+    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const tickets = await SupportTicket.find().sort({ createdAt: -1 }).lean();
+    res.json({ success: true, tickets });
+  } catch (err) {
+    res.status(500).json({ success: false, tickets: [] });
+  }
+});
+
+app.post('/api/admin/support/reply', async (req, res) => {
+  try {
+    const { pin, ticketId, replyText } = req.body;
+    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+    const repliedAt = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+    const updated = await SupportTicket.findOneAndUpdate(
+      { ticketId },
+      { adminReply: replyText.trim(), repliedAt },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ success: false, message: "Ticket not found" });
+    res.json({ success: true, ticket: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// প্রোডাক্ট অ্যাড, এডিট ও ডিলিট API
 app.post('/api/admin/products', async (req, res) => {
   try {
     const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, sizeOptions, colorOptions, badge, images, description } = req.body;
@@ -1153,7 +1408,8 @@ app.post('/api/admin/products', async (req, res) => {
       reviewsCount: 1,
       inStock: Number(stockQuantity) > 0,
       images: uploadedUrls,
-      description: description || ""
+      description: description || "",
+      reviews: []
     });
     res.json({ success: true, product: newProd });
   } catch (err) {
@@ -1209,7 +1465,7 @@ app.delete('/api/admin/products/:id', async (req, res) => {
   }
 });
 
-// Banner APIs (with Cloudinary upload)
+// ব্যানার API
 app.post('/api/admin/banners/add', async (req, res) => {
   try {
     const { pin, title, tag, productId, image } = req.body;
@@ -1243,7 +1499,7 @@ app.delete('/api/admin/banners/:id', async (req, res) => {
   }
 });
 
-// Coupons & Store Settings APIs
+// কুপন ও স্টোর সেটিংস API
 app.post('/api/admin/coupons', async (req, res) => {
   try {
     const { pin, code, discountPercent, minSpend, title, description, showOnStore } = req.body;
@@ -1302,7 +1558,7 @@ app.post('/api/admin/store-settings', async (req, res) => {
   }
 });
 
-// Order Processing & Tracking APIs
+// অর্ডার প্রসেসিং ও ট্র্যাকিং API
 app.post('/api/orders', async (req, res) => {
   try {
     const { 
@@ -1378,7 +1634,7 @@ app.get('/api/orders/track', async (req, res) => {
   }
 });
 
-// Admin Login & Order Control
+// অ্যাডমিন লগইন ও অর্ডার কন্ট্রোল
 app.post('/api/admin/login', (req, res) => {
   const { pin } = req.body;
   if (pin === ADMIN_SECRET_PIN) return res.json({ success: true, token: "admin-active" });
