@@ -83,7 +83,7 @@
         </nav>
 
         <div class="hidden md:flex flex-1 max-w-[210px] mx-2 relative">
-          <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search jewellery, shirts..." class="w-full bg-stone-900 border border-stone-700 text-stone-200 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-amber-500">
+          <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search jewellery, shirts..." class="w-full bg-stone-900/90 border border-stone-700 text-stone-200 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-amber-500">
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-stone-500 text-xs"></i>
         </div>
 
@@ -232,7 +232,7 @@
       </div>
       <div class="border-t border-stone-800 pt-3 space-y-3">
         <div class="flex gap-2">
-          <input type="text" id="couponInput" placeholder="Enter Coupon Code" class="uppercase bg-stone-900 border border-stone-700 text-white rounded-xl px-3 py-2 text-xs flex-1 font-mono font-bold">
+          <input type="text" id="couponInput" placeholder="Enter Coupon Code" class="uppercase bg-stone-950 border border-stone-700 text-white rounded-xl px-3 py-2 text-xs flex-1 font-mono font-bold">
           <button onclick="applyCoupon()" class="bg-amber-500 text-stone-950 px-4 py-2 rounded-xl text-xs font-extrabold">Apply</button>
         </div>
         <div id="couponStatusMsg" class="text-[11px] hidden font-semibold"></div>
@@ -255,27 +255,27 @@
       </div>
       <form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="space-y-3 text-xs">
         <div id="checkoutStep1" class="space-y-3">
-          <div><label class="block font-semibold text-stone-300 mb-1">Full Customer Name *</label><input type="text" id="ordName" required placeholder="Customer Name" class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl focus:outline-none focus:border-amber-500"></div>
-          <div><label class="block font-semibold text-stone-300 mb-1">Contact Number *</label><input type="tel" id="ordPhone" maxlength="10" required placeholder="10-digit Mobile Number" class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl font-mono focus:outline-none focus:border-amber-500"></div>
+          <div><label class="block font-semibold text-stone-300 mb-1">Full Customer Name *</label><input type="text" id="ordName" required placeholder="Customer Name" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
+          <div><label class="block font-semibold text-stone-300 mb-1">Contact Number *</label><input type="tel" id="ordPhone" maxlength="10" required placeholder="10-digit Mobile Number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl font-mono"></div>
           <div>
             <label class="block font-semibold text-stone-300 mb-1">6-Digit Indian Postal Pincode *</label>
-            <input type="text" id="ordPincode" oninput="validateAndLookupPincode(this.value)" required maxlength="6" placeholder="Postal Pincode" class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl font-mono font-bold focus:outline-none focus:border-amber-500">
+            <input type="text" id="ordPincode" oninput="validateAndLookupPincode(this.value)" required maxlength="6" placeholder="Postal Pincode" class="w-full bg-stone-950 border-2 border-stone-700 text-white p-2.5 rounded-xl font-mono font-bold">
             <p id="pincodeErrorMsg" class="text-[11px] font-bold text-rose-400 hidden mt-1">Invalid Indian Pincode!</p>
             <p id="pincodeSuccessMsg" class="text-[11px] font-bold text-emerald-400 hidden mt-1">Deliverable Location Identified!</p>
           </div>
           <div class="grid grid-cols-2 gap-2">
-            <div><label class="block font-semibold text-stone-300 mb-1">District / City *</label><input type="text" id="ordCity" required class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl focus:outline-none focus:border-amber-500"></div>
-            <div><label class="block font-semibold text-stone-300 mb-1">State *</label><input type="text" id="ordState" required class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl focus:outline-none focus:border-amber-500"></div>
+            <div><label class="block font-semibold text-stone-300 mb-1">District / City *</label><input type="text" id="ordCity" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
+            <div><label class="block font-semibold text-stone-300 mb-1">State *</label><input type="text" id="ordState" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
           </div>
           <div class="grid grid-cols-2 gap-2">
-            <div><label class="block font-semibold text-stone-300 mb-1">House No. / Road *</label><input type="text" id="addrHouseStreet" required class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl focus:outline-none focus:border-amber-500"></div>
-            <div><label class="block font-semibold text-stone-300 mb-1">Village / Town *</label><input type="text" id="addrVillage" required class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl focus:outline-none focus:border-amber-500"></div>
+            <div><label class="block font-semibold text-stone-300 mb-1">House No. / Road *</label><input type="text" id="addrHouseStreet" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
+            <div><label class="block font-semibold text-stone-300 mb-1">Village / Town *</label><input type="text" id="addrVillage" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
           </div>
           <div class="grid grid-cols-2 gap-2">
-            <div><label class="block font-semibold text-stone-300 mb-1">Post Office (P.O) *</label><input type="text" id="addrPostOffice" required class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl focus:outline-none focus:border-amber-500"></div>
-            <div><label class="block font-semibold text-stone-300 mb-1">Police Station (P.S)</label><input type="text" id="addrPoliceStation" class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl focus:outline-none focus:border-amber-500"></div>
+            <div><label class="block font-semibold text-stone-300 mb-1">Post Office (P.O) *</label><input type="text" id="addrPostOffice" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
+            <div><label class="block font-semibold text-stone-300 mb-1">Police Station (P.S)</label><input type="text" id="addrPoliceStation" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
           </div>
-          <div><label class="block font-semibold text-stone-300 mb-1">Landmark</label><input type="text" id="addrLandmark" class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl focus:outline-none focus:border-amber-500"></div>
+          <div><label class="block font-semibold text-stone-300 mb-1">Landmark</label><input type="text" id="addrLandmark" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
           <button type="button" onclick="goToStep2Payment()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-3.5 rounded-xl font-extrabold text-xs shadow mt-2">Next &rarr;</button>
         </div>
 
@@ -287,14 +287,14 @@
           <div class="bg-stone-950 border border-stone-800 p-2.5 rounded-xl space-y-1.5">
             <label class="block font-bold text-amber-300 text-[11px]">Apply Coupon Code:</label>
             <div class="flex gap-2">
-              <input type="text" id="step2CouponInput" placeholder="Coupon Code" class="uppercase bg-stone-900 border border-stone-700 text-stone-100 rounded-lg px-2.5 py-1.5 text-xs flex-1 font-mono font-bold">
+              <input type="text" id="step2CouponInput" placeholder="Coupon Code" class="uppercase bg-stone-900 border border-stone-700 text-white rounded-lg px-2.5 py-1.5 text-xs flex-1 font-mono font-bold">
               <button type="button" onclick="applyCouponFromStep2()" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-lg text-xs font-extrabold">Apply</button>
             </div>
             <p id="step2CouponStatus" class="text-[10px] font-semibold hidden"></p>
           </div>
           <div>
             <label class="block font-semibold text-stone-300 mb-1">Select Payment Mode</label>
-            <select id="ordPaymentMethod" onchange="handlePaymentModeChange(this.value)" class="w-full bg-stone-900 border border-stone-700 p-2.5 rounded-xl font-bold text-amber-300">
+            <select id="ordPaymentMethod" onchange="handlePaymentModeChange(this.value)" class="w-full bg-stone-950 border border-stone-700 p-2.5 rounded-xl font-bold text-amber-300">
               <option value="UPI">⚡ 100% Prepaid via UPI (FREE Delivery)</option>
               <option value="COD">🛡️ Cash on Delivery (COD Charge + Advance Token)</option>
             </select>
@@ -315,7 +315,7 @@
             <p class="text-[11px] text-stone-400">Merchant UPI: <span class="bg-stone-900 text-amber-300 px-2.5 py-0.5 rounded font-mono font-bold select-all">6289145092@ptsbi</span></p>
             <div class="text-left pt-1">
               <label class="block text-[11px] font-semibold text-stone-300 mb-1">Enter 12-Digit UPI Transaction ID (UTR) *</label>
-              <input type="text" id="ordUTR" required placeholder="12-digit UTR" class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl text-xs font-mono">
+              <input type="text" id="ordUTR" required placeholder="12-digit UTR" class="w-full bg-stone-900 border border-stone-700 text-white p-2.5 rounded-xl text-xs font-mono">
             </div>
           </div>
           <div class="flex gap-2 pt-2">
@@ -334,7 +334,7 @@
         <button onclick="closeMyOrdersModal()" class="text-stone-400 hover:text-amber-400 text-2xl font-bold">&times;</button>
       </div>
       <div class="flex gap-2">
-        <input type="tel" id="myOrdersPhoneInput" placeholder="Enter your 10-digit mobile number" class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl font-mono text-xs">
+        <input type="tel" id="myOrdersPhoneInput" placeholder="Enter your 10-digit mobile number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl font-mono text-xs">
         <button onclick="fetchMyOrders()" class="bg-amber-500 text-stone-950 px-5 py-2.5 rounded-xl font-extrabold whitespace-nowrap">Find Orders</button>
       </div>
       <div id="myOrdersListContainer" class="space-y-4 pt-2"><p class="text-center py-8 text-stone-500">Enter your phone number to check your purchases.</p></div>
@@ -351,7 +351,7 @@
         <div class="space-y-1.5">
           <label class="block font-bold text-stone-300">Mobile Number *</label>
           <div class="flex gap-2">
-            <input type="tel" id="supportPhoneInput" maxlength="10" placeholder="Enter 10-digit Mobile Number" class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl text-xs font-mono">
+            <input type="tel" id="supportPhoneInput" maxlength="10" placeholder="Enter 10-digit Mobile Number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl text-xs font-mono">
             <button type="button" onclick="searchOrdersForSupport()" class="bg-emerald-500 text-stone-950 px-5 py-2.5 rounded-xl font-extrabold">Search</button>
           </div>
         </div>
@@ -368,7 +368,7 @@
           <div><span class="text-[10px] text-emerald-400 font-bold uppercase">Selected Order</span><p class="font-mono font-bold text-amber-400 text-sm" id="selectedSupportOrderId">#AUR-000000</p><p class="text-[11px] text-stone-300 line-clamp-1" id="selectedSupportOrderSummary"></p></div>
           <button type="button" onclick="backToSupportStep1()" class="text-xs text-amber-400 underline font-bold">Change</button>
         </div>
-        <div><label class="block font-bold text-stone-300 mb-1">Describe Your Issue in Detail *</label><textarea id="supportIssueText" rows="3" required placeholder="Describe your issue..." class="w-full bg-stone-900 border border-stone-700 text-stone-100 p-2.5 rounded-xl"></textarea></div>
+        <div><label class="block font-bold text-stone-300 mb-1">Describe Your Issue in Detail *</label><textarea id="supportIssueText" rows="3" required placeholder="Describe your issue..." class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></textarea></div>
         <div class="space-y-3">
           <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-2">
             <div class="flex justify-between items-center">
@@ -643,12 +643,12 @@
       const sizes = (prod.sizeOptions && prod.sizeOptions.length) ? prod.sizeOptions : ["Standard"];
       currentSelectedSize = sizes[0];
       document.getElementById('qvSelectedSizeDisplay').innerText = currentSelectedSize;
-      document.getElementById('qvSizeContainer').innerHTML = sizes.map((s, i) => `<button type="button" onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-900 border-stone-700 text-stone-300'}">${s}</button>`).join('');
+      document.getElementById('qvSizeContainer').innerHTML = sizes.map((s, i) => `<button type="button" onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300'}">${s}</button>`).join('');
 
       const colors = (prod.colorOptions && prod.colorOptions.length) ? prod.colorOptions : ["Standard"];
       currentSelectedColor = colors[0];
       document.getElementById('qvSelectedColorDisplay').innerText = currentSelectedColor;
-      document.getElementById('qvColorContainer').innerHTML = colors.map((c, i) => `<button type="button" onclick="selectVariantColor('${c}', ${i}, this)" class="color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-900 border-stone-700 text-stone-300'}">${c}</button>`).join('');
+      document.getElementById('qvColorContainer').innerHTML = colors.map((c, i) => `<button type="button" onclick="selectVariantColor('${c}', ${i}, this)" class="color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300'}">${c}</button>`).join('');
 
       document.getElementById('qvAddToCartBtn').onclick = () => { addToCartWithVariant(prod); closeQuickView(); };
       document.getElementById('qvBuyNowBtn').onclick = () => { closeQuickView(); instantBuyNowWithVariant(prod); };
@@ -688,13 +688,13 @@
 
     function selectVariantSize(val, btn) {
       currentSelectedSize = val; document.getElementById('qvSelectedSizeDisplay').innerText = val;
-      document.querySelectorAll('.size-pill-btn').forEach(b => { b.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-stone-900 border-stone-700 text-stone-300"; });
+      document.querySelectorAll('.size-pill-btn').forEach(b => { b.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-stone-950 border-stone-700 text-stone-300"; });
       btn.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-amber-500 text-stone-950 border-amber-400";
     }
 
     function selectVariantColor(val, idx, btn) {
       currentSelectedColor = val; document.getElementById('qvSelectedColorDisplay').innerText = val;
-      document.querySelectorAll('.color-pill-btn').forEach(b => { b.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-stone-900 border-stone-700 text-stone-300"; });
+      document.querySelectorAll('.color-pill-btn').forEach(b => { b.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-stone-950 border-stone-700 text-stone-300"; });
       btn.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-amber-500 text-stone-950 border-amber-400";
       if (currentOpenedProduct && currentOpenedProduct.images && currentOpenedProduct.images.length) setMainImage(currentOpenedProduct.images[idx < currentOpenedProduct.images.length ? idx : 0], idx);
     }
