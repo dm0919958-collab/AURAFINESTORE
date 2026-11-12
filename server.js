@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
@@ -10,7 +9,6 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const ADMIN_SECRET_PIN = "admin123";
-const ADMIN_EMAIL = "mahatosarita436@gmail.com";
 
 const TELEGRAM_BOT_TOKEN = "8818940415:AAHdq6roV4XDCF3sxtJdDSqw-Abq20i1KbQ";
 const TELEGRAM_CHAT_ID = "8836538477";
@@ -250,6 +248,50 @@ const defaultProducts = [
     reviews: []
   },
   {
+    id: 310,
+    name: "Tailored Stretch Chino Formal Trousers",
+    mainCategory: "Men",
+    category: "Trousers",
+    price: 1099,
+    originalPrice: 2199,
+    stockQuantity: 16,
+    badge: "Executive Fit",
+    rating: 4.8,
+    reviewsCount: 61,
+    inStock: true,
+    showOnHome: false,
+    sizeOptions: ["30", "32", "34", "36"],
+    colorOptions: ["Charcoal Grey", "Classic Navy", "Warm Khaki"],
+    images: [
+      "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=480&q=55",
+      "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=480&q=55"
+    ],
+    description: "Wrinkle-resistant cotton-lycra tailored formal trousers designed for all-day office and evening comfort.",
+    reviews: []
+  },
+  {
+    id: 311,
+    name: "AURA Noir Oud Royal Eau De Parfum (100ml)",
+    mainCategory: "Men",
+    category: "Perfumes",
+    price: 1299,
+    originalPrice: 2499,
+    stockQuantity: 20,
+    badge: "Long Lasting",
+    rating: 4.9,
+    reviewsCount: 112,
+    inStock: true,
+    showOnHome: false,
+    sizeOptions: ["100 ml Bottle"],
+    colorOptions: ["Royal Noir Oud"],
+    images: [
+      "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=480&q=55",
+      "https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=480&q=55"
+    ],
+    description: "Deep woody Arabian oud blended with amber, bergamot, and warm spices offering 12+ hours of sillage.",
+    reviews: []
+  },
+  {
     id: 401,
     name: "Royal Heritage Kundan Drop Jhumkas",
     mainCategory: "Women",
@@ -360,6 +402,28 @@ const defaultProducts = [
     reviews: []
   },
   {
+    id: 416,
+    name: "22K Gold Plated Temple Kundan Bangles Set",
+    mainCategory: "Women",
+    category: "Bangles",
+    price: 849,
+    originalPrice: 1699,
+    stockQuantity: 16,
+    badge: "Bridal Set",
+    rating: 4.9,
+    reviewsCount: 73,
+    inStock: true,
+    showOnHome: false,
+    sizeOptions: ["2.4", "2.6", "2.8"],
+    colorOptions: ["Antique Temple Gold", "Ruby Emerald Gold"],
+    images: [
+      "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=480&q=55",
+      "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55"
+    ],
+    description: "Intricately carved royal temple motif kadas encrusted with uncut Kundan stones and screw-lock clasp.",
+    reviews: []
+  },
+  {
     id: 501,
     name: "Magnetic Mutual Heart Couple Bracelets Set",
     mainCategory: "Gifts",
@@ -423,6 +487,28 @@ const defaultProducts = [
       "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55"
     ],
     description: "Includes Magnetic Bracelets, Projection Pendant, Velvet Rose Case, Scented Candle, and Love Message Scroll.",
+    reviews: []
+  },
+  {
+    id: 510,
+    name: "Crystal LED 3D Galaxy Rose Heart Lamp",
+    mainCategory: "Gifts",
+    category: "Customized Lamps",
+    price: 749,
+    originalPrice: 1499,
+    stockQuantity: 18,
+    badge: "Night Glow",
+    rating: 4.9,
+    reviewsCount: 95,
+    inStock: true,
+    showOnHome: false,
+    sizeOptions: ["Wooden LED Base (10cm)"],
+    colorOptions: ["Warm Golden Glow", "Multicolor Ambient"],
+    images: [
+      "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?auto=format&fit=crop&w=480&q=55",
+      "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55"
+    ],
+    description: "Laser-engraved K9 optical crystal sphere on natural beechwood LED base that illuminates any room with romantic warmth.",
     reviews: []
   }
 ];
@@ -620,8 +706,8 @@ function dataURLtoBuffer(dataUrl) {
 }
 
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '150mb' }));
+app.use(express.urlencoded({ extended: true, limit: '150mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/store', async (req, res) => {
@@ -712,7 +798,7 @@ app.get('/api/support/search', async (req, res) => {
 
 app.post('/api/support/ticket', async (req, res) => {
   try {
-    const { orderId, issueText, photoBase64, videoBase64 } = req.body;
+    const { orderId, issueText, photosBase64, videoBase64 } = req.body;
     const order = await Order.findOne({ id: orderId }).lean();
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
@@ -761,19 +847,21 @@ app.post('/api/support/ticket', async (req, res) => {
       })
     });
 
-    if (photoBase64) {
-      const parsedPhoto = dataURLtoBuffer(photoBase64);
-      if (parsedPhoto) {
-        const photoForm = new FormData();
-        photoForm.append('chat_id', SUPPORT_CHAT_ID);
-        photoForm.append('caption', `📸 Issue Photo | Order #${order.id} (${order.customerName} - ${order.phone})`);
-        const photoBlob = new Blob([parsedPhoto.buffer], { type: parsedPhoto.mimeType });
-        photoForm.append('photo', photoBlob, `Support_${order.id}.jpg`);
+    if (Array.isArray(photosBase64) && photosBase64.length > 0) {
+      for (let i = 0; i < photosBase64.length; i++) {
+        const parsedPhoto = dataURLtoBuffer(photosBase64[i]);
+        if (parsedPhoto) {
+          const photoForm = new FormData();
+          photoForm.append('chat_id', SUPPORT_CHAT_ID);
+          photoForm.append('caption', `📸 Issue Photo ${i + 1} | Order #${order.id} (${order.customerName} - ${order.phone})`);
+          const photoBlob = new Blob([parsedPhoto.buffer], { type: parsedPhoto.mimeType });
+          photoForm.append('photo', photoBlob, `Support_${order.id}_${i + 1}.jpg`);
 
-        await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`, {
-          method: 'POST',
-          body: photoForm
-        });
+          await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`, {
+            method: 'POST',
+            body: photoForm
+          });
+        }
       }
     }
 
@@ -782,11 +870,11 @@ app.post('/api/support/ticket', async (req, res) => {
       if (parsedVideo) {
         const videoForm = new FormData();
         videoForm.append('chat_id', SUPPORT_CHAT_ID);
-        videoForm.append('caption', `🎥 Issue Video | Order #${order.id} (${order.customerName} - ${order.phone})`);
-        const videoBlob = new Blob([parsedVideo.buffer], { type: parsedVideo.mimeType });
-        videoForm.append('video', videoBlob, `Support_${order.id}.mp4`);
+        videoForm.append('caption', `🎥 Issue Video Proof | Order #${order.id} (${order.customerName} - ${order.phone})`);
+        const videoBlob = new Blob([parsedVideo.buffer], { type: parsedVideo.mimeType || 'video/mp4' });
+        videoForm.append('document', videoBlob, `Support_Video_${order.id}.mp4`);
 
-        await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendVideo`, {
+        await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendDocument`, {
           method: 'POST',
           body: videoForm
         });
@@ -795,6 +883,7 @@ app.post('/api/support/ticket', async (req, res) => {
 
     res.json({ success: true, ticketId });
   } catch (err) {
+    console.error("Support ticket error:", err.message);
     res.status(500).json({ success: false, message: "Failed to submit support issue." });
   }
 });
@@ -823,6 +912,17 @@ app.post('/api/admin/support/reply', async (req, res) => {
     );
     if (!updated) return res.status(404).json({ success: false, message: "Ticket not found" });
     res.json({ success: true, ticket: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
+  try {
+    const { pin } = req.body;
+    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    await SupportTicket.deleteOne({ ticketId: req.params.ticketId });
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -912,7 +1012,6 @@ app.patch('/api/admin/products/:id/toggle-home', async (req, res) => {
   }
 });
 
-// প্রোডাক্ট ডিলিট করলে অটোমেটিক MongoDB থেকে প্রোডাক্ট ও লিংক করা ব্যানার সম্পূর্ণ ক্লিনআপ হবে
 app.delete('/api/admin/products/:id', async (req, res) => {
   try {
     const { pin } = req.body;
