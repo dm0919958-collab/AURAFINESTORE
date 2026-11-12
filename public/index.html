@@ -3,176 +3,167 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AURA Fine Store | Artisanal Couture & Lifestyle</title>
+  <title>AURA Fine Store | Artisanal Couture & Luxury</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
     
-    :root {
-      --lux-gold: #d4af37;
-      --lux-dark: #0f0d0e;
-    }
-
     .font-cinzel { font-family: 'Cinzel', serif; }
     body { 
       font-family: 'Plus Jakarta Sans', sans-serif; 
-      background: radial-gradient(circle at 10% 20%, #fbf9f5 0%, #f4ede4 90%);
-      color: #1c1917;
+      background: radial-gradient(circle at top center, #1c1917 0%, #0c0a09 65%, #090707 100%);
+      color: #f5f5f4;
     }
 
     .glass-nav {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      background: rgba(12, 10, 9, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
     }
     .lux-card {
+      background: linear-gradient(145deg, #1c1917 0%, #141210 100%);
       transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     }
     .lux-card:hover {
       transform: translateY(-6px);
-      box-shadow: 0 20px 30px -10px rgba(180, 83, 9, 0.15);
-    }
-    .gold-gradient-text {
-      background: linear-gradient(135deg, #78350f 0%, #b45309 50%, #d97706 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      box-shadow: 0 20px 35px -10px rgba(217, 119, 6, 0.25);
+      border-color: rgba(245, 158, 11, 0.45);
     }
     .fade-carousel { transition: opacity 0.6s ease-in-out; }
     
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #f1ede6; }
+    ::-webkit-scrollbar-track { background: #1c1917; }
     ::-webkit-scrollbar-thumb { background: #b45309; border-radius: 999px; }
   </style>
 </head>
-<body class="selection:bg-amber-200 selection:text-amber-950 relative min-h-screen flex flex-col justify-between">
+<body class="selection:bg-amber-500 selection:text-stone-950 relative min-h-screen flex flex-col justify-between">
 
   <div>
-    <!-- ১. প্রিমিয়াম টপ অ্যানাউন্সমেন্ট বার -->
-    <div class="bg-stone-950 text-stone-200 py-2.5 px-4 border-b border-amber-600/30 sticky top-0 z-50 shadow-md">
+    <div class="bg-black text-stone-200 py-2.5 px-4 border-b border-amber-500/25 sticky top-0 z-50 shadow-lg">
       <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs">
         <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto" id="topCouponsDisplayWrap">
-          <span class="bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 font-black text-[9px] px-2.5 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap shadow-sm">
+          <span class="bg-gradient-to-r from-amber-400 to-amber-600 text-stone-950 font-black text-[9px] px-2.5 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap shadow-sm">
             <i class="fa-solid fa-crown mr-1"></i> VIP PRIVILEGES
           </span>
-          <div id="topCouponsContainer" class="flex items-center gap-2 text-amber-200 font-semibold tracking-wide"></div>
+          <div id="topCouponsContainer" class="flex items-center gap-2 text-amber-300 font-semibold tracking-wide"></div>
         </div>
-        <div class="flex items-center gap-1.5 font-mono text-[11px] bg-stone-900/90 px-3 py-1 rounded-full border border-amber-600/40 whitespace-nowrap shadow-inner">
+        <div class="flex items-center gap-1.5 font-mono text-[11px] bg-stone-900/90 px-3 py-1 rounded-full border border-amber-500/30 whitespace-nowrap shadow-inner">
           <span class="text-amber-400 font-bold flex items-center gap-1"><i class="fa-solid fa-stopwatch animate-pulse"></i> Flash Deals End:</span>
-          <span id="flashHours" class="bg-black/60 px-1.5 py-0.5 rounded font-bold text-white border border-stone-800">04</span>h :
-          <span id="flashMinutes" class="bg-black/60 px-1.5 py-0.5 rounded font-bold text-white border border-stone-800">32</span>m :
-          <span id="flashSeconds" class="bg-black/60 px-1.5 py-0.5 rounded font-bold text-amber-400 border border-stone-800">18</span>s
+          <span id="flashHours" class="bg-black px-1.5 py-0.5 rounded font-bold text-white border border-stone-800">04</span>h :
+          <span id="flashMinutes" class="bg-black px-1.5 py-0.5 rounded font-bold text-white border border-stone-800">32</span>m :
+          <span id="flashSeconds" class="bg-black px-1.5 py-0.5 rounded font-bold text-amber-400 border border-stone-800">18</span>s
         </div>
       </div>
     </div>
 
-    <!-- ২. লাক্সারি হেডার ও মেগা-মেনু -->
-    <header class="glass-nav border-b border-amber-900/10 sticky top-[37px] z-40 transition-all">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
+    <header class="glass-nav border-b border-amber-500/15 sticky top-[37px] z-40 transition-all">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-3">
         
-        <a href="/" class="flex flex-col group">
-          <span class="text-3xl font-extrabold font-cinzel tracking-[0.25em] text-stone-900 group-hover:text-amber-800 transition">AURA</span>
-          <span class="text-[9px] uppercase tracking-[0.45em] text-amber-700 font-bold -mt-1 group-hover:tracking-[0.5em] transition-all">Fine Store</span>
+        <a href="/" class="flex flex-col group flex-shrink-0">
+          <span class="text-2xl sm:text-3xl font-extrabold font-cinzel tracking-[0.25em] text-amber-100 group-hover:text-amber-400 transition">AURA</span>
+          <span class="text-[9px] uppercase tracking-[0.45em] text-amber-500 font-bold -mt-1 group-hover:tracking-[0.5em] transition-all">Fine Store</span>
         </a>
 
-        <nav class="hidden md:flex items-center gap-8 text-xs font-bold tracking-wider text-stone-700 uppercase">
-          <a href="#" onclick="showAllCatalog()" class="hover:text-amber-700 transition flex items-center gap-1.5">
-            <i class="fa-solid fa-gem text-amber-600"></i> All Collection
+        <nav class="hidden lg:flex items-center gap-6 text-xs font-bold tracking-wider text-stone-300 uppercase">
+          <a href="#" onclick="showAllCatalog()" class="hover:text-amber-400 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-gem text-amber-500"></i> All Collection
           </a>
 
-          <!-- Men Menu -->
           <div class="relative group">
-            <button class="flex items-center gap-1.5 hover:text-amber-700 py-3 group-hover:text-amber-950 transition">
+            <button class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition">
               <span>Men</span>
               <i class="fa-solid fa-chevron-down text-[9px] transition-transform group-hover:rotate-180"></i>
             </button>
-            <div class="absolute left-0 top-full hidden group-hover:block w-52 bg-white/95 backdrop-blur-md border border-amber-900/10 rounded-2xl shadow-2xl p-2.5 space-y-1 z-50">
-              <a href="#catalogSection" onclick="filterBySection('Men', 'Shirts')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-amber-50/80 hover:text-amber-950 transition font-medium">
-                <span>👔 Oxford Shirts</span><span class="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded font-bold">3</span>
+            <div class="absolute left-0 top-full hidden group-hover:block w-52 bg-stone-900 border border-amber-500/20 rounded-2xl shadow-2xl p-2.5 space-y-1 z-50 text-stone-200">
+              <a href="#catalogSection" onclick="filterBySection('Men', 'Shirts')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
+                <span>👔 Oxford Shirts</span><span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-bold">3</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-amber-50/80 hover:text-amber-950 transition font-medium">
-                <span>👕 Supima Tees</span><span class="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded font-bold">3</span>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
+                <span>👕 Supima Tees</span><span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-bold">3</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'Watches')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-amber-50/80 hover:text-amber-950 transition font-medium">
-                <span>⌚ Chrono Watches</span><span class="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded font-bold">3</span>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'Watches')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
+                <span>⌚ Chrono Watches</span><span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-bold">3</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'All')" class="block px-3 py-2 text-[11px] text-amber-800 font-bold border-t border-stone-100 mt-1">Explore Men's &rarr;</a>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore Men's &rarr;</a>
             </div>
           </div>
 
-          <!-- Women Menu -->
           <div class="relative group">
-            <button class="flex items-center gap-1.5 hover:text-amber-700 py-3 group-hover:text-amber-950 transition">
+            <button class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition">
               <span>Women</span>
               <i class="fa-solid fa-chevron-down text-[9px] transition-transform group-hover:rotate-180"></i>
             </button>
-            <div class="absolute left-0 top-full hidden group-hover:block w-56 bg-white/95 backdrop-blur-md border border-amber-900/10 rounded-2xl shadow-2xl p-2.5 space-y-1 z-50">
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Jhumka')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">
-                <span>✨ Royal Jhumkas</span><span class="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded font-bold">3</span>
+            <div class="absolute left-0 top-full hidden group-hover:block w-56 bg-stone-900 border border-amber-500/20 rounded-2xl shadow-2xl p-2.5 space-y-1 z-50 text-stone-200">
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Jhumka')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
+                <span>✨ Royal Jhumkas</span><span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-bold">3</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Studs')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">
-                <span>💎 Solitaire Studs</span><span class="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded font-bold">3</span>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Studs')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
+                <span>💎 Solitaire Studs</span><span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-bold">3</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Kurtis')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">
-                <span>👗 Flared Kurtis</span><span class="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded font-bold">3</span>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Kurtis')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
+                <span>👗 Flared Kurtis</span><span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-bold">3</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Sarees')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">
-                <span>🥻 Banarasi Sarees</span><span class="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded font-bold">3</span>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Sarees')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
+                <span>🥻 Banarasi Sarees</span><span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-bold">3</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Handbags')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-amber-50 hover:text-amber-950 transition font-medium">
-                <span>👜 Handbags & Clutches</span><span class="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded font-bold">3</span>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Handbags')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
+                <span>👜 Handbags & Clutches</span><span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-bold">3</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'All')" class="block px-3 py-2 text-[11px] text-amber-800 font-bold border-t border-stone-100 mt-1">Explore Women's &rarr;</a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore Women's &rarr;</a>
             </div>
           </div>
 
-          <!-- GF & BF Special Gifts Menu -->
           <div class="relative group">
-            <button class="flex items-center gap-1.5 text-rose-700 hover:text-rose-900 py-1.5 px-3.5 rounded-full bg-rose-50/80 hover:bg-rose-100 border border-rose-200 transition font-extrabold shadow-sm">
+            <button class="flex items-center gap-1.5 text-rose-300 hover:text-rose-200 py-1.5 px-3 rounded-full bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 transition font-extrabold shadow-sm">
               <i class="fa-solid fa-heart text-rose-500 animate-pulse"></i>
-              <span>GF & BF Special Gifts</span>
+              <span>GF & BF Gifts</span>
               <i class="fa-solid fa-chevron-down text-[8px]"></i>
             </button>
-            <div class="absolute left-0 top-full hidden group-hover:block w-64 bg-white/95 backdrop-blur-md border border-rose-100 rounded-2xl shadow-2xl p-2.5 space-y-1 z-50">
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Couples')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-rose-50 hover:text-rose-950 transition font-medium">
-                <span>💑 Couple Sets & Rings</span><span class="text-[10px] bg-rose-100 text-rose-900 px-1.5 py-0.2 rounded font-bold">3</span>
+            <div class="absolute left-0 top-full hidden group-hover:block w-64 bg-stone-900 border border-rose-500/20 rounded-2xl shadow-2xl p-2.5 space-y-1 z-50 text-stone-200">
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Couples')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300 transition font-medium">
+                <span>💑 Couple Sets & Rings</span><span class="text-[10px] bg-rose-500/20 text-rose-300 px-1.5 py-0.2 rounded font-bold">3</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Romantic')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-rose-50 hover:text-rose-950 transition font-medium">
-                <span>💖 100 Languages & Rose</span><span class="text-[10px] bg-rose-100 text-rose-900 px-1.5 py-0.2 rounded font-bold">3</span>
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Romantic')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300 transition font-medium">
+                <span>💖 100 Languages & Rose</span><span class="text-[10px] bg-rose-500/20 text-rose-300 px-1.5 py-0.2 rounded font-bold">3</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Gift Sets')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-rose-50 hover:text-rose-950 transition font-medium">
-                <span>🌹 Luxury Gift Hampers</span><span class="text-[10px] bg-rose-100 text-rose-900 px-1.5 py-0.2 rounded font-bold">3</span>
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Gift Sets')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300 transition font-medium">
+                <span>🌹 Luxury Gift Hampers</span><span class="text-[10px] bg-rose-500/20 text-rose-300 px-1.5 py-0.2 rounded font-bold">3</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'All')" class="block px-3 py-2 text-[11px] text-rose-800 font-bold border-t border-rose-100 mt-1">Explore All Gifts &rarr;</a>
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'All')" class="block px-3 py-2 text-[11px] text-rose-400 font-bold border-t border-stone-800 mt-1">Explore All Gifts &rarr;</a>
             </div>
           </div>
         </nav>
 
-        <div class="hidden sm:flex flex-1 max-w-xs mx-3 relative">
-          <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search jewellery, shirts, gifts..." class="w-full bg-stone-100/90 border border-stone-300 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:ring-2 focus:ring-amber-700/30 focus:bg-white transition">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-stone-400 text-xs"></i>
+        <div class="hidden md:flex flex-1 max-w-[220px] mx-2 relative">
+          <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search jewellery, shirts..." class="w-full bg-stone-900 border border-stone-700 text-stone-200 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition placeholder:text-stone-500">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-stone-500 text-xs"></i>
         </div>
 
-        <div class="flex items-center gap-2.5">
-          <button onclick="openMyOrdersModal()" class="flex items-center gap-1.5 text-xs font-bold text-stone-800 bg-white hover:bg-amber-50 px-3.5 py-2 rounded-full border border-stone-200 transition shadow-sm hover:border-amber-400">
-            <i class="fa-solid fa-bag-shopping text-amber-700"></i>
+        <div class="flex items-center gap-2">
+          <button onclick="openSupportModal()" class="flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-950/70 hover:bg-emerald-900/80 px-3 py-2 rounded-full border border-emerald-500/40 transition shadow-sm">
+            <i class="fa-solid fa-headset text-emerald-400"></i>
+            <span class="hidden sm:inline">Help & Support</span>
+          </button>
+
+          <button onclick="openMyOrdersModal()" class="flex items-center gap-1.5 text-xs font-bold text-amber-200 bg-stone-900 hover:bg-stone-800 px-3 py-2 rounded-full border border-amber-500/30 transition shadow-sm">
+            <i class="fa-solid fa-bag-shopping text-amber-400"></i>
             <span class="hidden sm:inline">Track Orders</span>
           </button>
           
-          <button onclick="toggleCart()" class="relative p-2.5 bg-amber-950 hover:bg-amber-900 rounded-full text-white transition shadow-md group">
+          <button onclick="toggleCart()" class="relative p-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 rounded-full text-stone-950 transition shadow-md group">
             <i class="fa-solid fa-basket-shopping text-base group-hover:scale-110 transition"></i>
-            <span id="cartCountBadge" class="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow">0</span>
+            <span id="cartCountBadge" class="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-stone-950 shadow">0</span>
           </button>
         </div>
       </div>
     </header>
 
-    <!-- ৩. হিরো ব্যানার স্লাইডার -->
     <section class="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
-      <div class="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-stone-950 border border-amber-900/30">
+      <div class="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-stone-900 border border-amber-500/25">
         <div id="carouselSlide" onclick="handleDealBannerClick()" class="cursor-pointer relative h-60 sm:h-80 md:h-[420px] w-full overflow-hidden group">
           <img id="carouselImg" src="https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=600&q=60" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 fade-carousel">
-          <div class="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/40 to-transparent flex flex-col justify-end p-6 sm:p-12 space-y-2.5">
+          <div class="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/45 to-transparent flex flex-col justify-end p-6 sm:p-12 space-y-2.5">
             <span id="carouselTag" class="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-amber-500 text-stone-950 text-[10px] sm:text-xs font-black uppercase px-3.5 py-1 rounded-full shadow-lg w-max tracking-wider">
               <i class="fa-solid fa-fire text-stone-950"></i> SPECIAL CURATION
             </span>
@@ -180,7 +171,7 @@
               Men's Luxury Oxford Royal Shirt
             </h2>
             <div class="flex items-center gap-3 pt-2">
-              <span class="bg-white/10 backdrop-blur-md text-white border border-white/20 text-xs px-4 py-2 rounded-xl font-bold flex items-center gap-2 group-hover:bg-amber-600 group-hover:border-amber-600 transition shadow">
+              <span class="bg-white/10 backdrop-blur-md text-amber-200 border border-amber-400/30 text-xs px-4 py-2 rounded-xl font-bold flex items-center gap-2 group-hover:bg-amber-500 group-hover:text-stone-950 group-hover:border-amber-500 transition shadow">
                 <span>View Exclusives</span> <i class="fa-solid fa-arrow-right"></i>
               </span>
             </div>
@@ -189,71 +180,69 @@
 
         <div id="carouselDots" class="absolute bottom-4 right-8 flex items-center gap-2 z-20"></div>
 
-        <button onclick="prevDealSlide()" class="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 hover:bg-black/80 text-white flex items-center justify-center text-xs backdrop-blur-md border border-white/20 transition">
+        <button onclick="prevDealSlide()" class="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-amber-500 hover:text-stone-950 text-white flex items-center justify-center text-xs backdrop-blur-md border border-white/20 transition">
           &#10094;
         </button>
-        <button onclick="nextDealSlide()" class="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 hover:bg-black/80 text-white flex items-center justify-center text-xs backdrop-blur-md border border-white/20 transition">
+        <button onclick="nextDealSlide()" class="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-amber-500 hover:text-stone-950 text-white flex items-center justify-center text-xs backdrop-blur-md border border-white/20 transition">
           &#10095;
         </button>
       </div>
     </section>
 
-    <!-- ৪. ট্রাস্ট ও ভ্যালু প্রপোজিশন বার -->
     <section class="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="bg-white/80 backdrop-blur-sm border border-stone-200/80 p-3.5 rounded-2xl flex items-center gap-3 shadow-sm">
-          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center text-lg flex-shrink-0">
+        <div class="bg-stone-900/90 backdrop-blur-sm border border-stone-800 p-3.5 rounded-2xl flex items-center gap-3 shadow-md">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-lg flex-shrink-0 border border-amber-500/20">
             <i class="fa-solid fa-truck-fast"></i>
           </div>
           <div>
-            <h4 class="text-xs font-bold text-stone-900">Priority Dispatch</h4>
-            <p class="text-[10px] text-stone-500">Shipped via Delhivery & DTDC</p>
+            <h4 class="text-xs font-bold text-stone-100">Priority Dispatch</h4>
+            <p class="text-[10px] text-stone-400">Shipped via Delhivery & DTDC</p>
           </div>
         </div>
-        <div class="bg-white/80 backdrop-blur-sm border border-stone-200/80 p-3.5 rounded-2xl flex items-center gap-3 shadow-sm">
-          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center text-lg flex-shrink-0">
+        <div class="bg-stone-900/90 backdrop-blur-sm border border-stone-800 p-3.5 rounded-2xl flex items-center gap-3 shadow-md">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-lg flex-shrink-0 border border-emerald-500/20">
             <i class="fa-solid fa-shield-halved"></i>
           </div>
           <div>
-            <h4 class="text-xs font-bold text-stone-900">100% Verified UTR</h4>
-            <p class="text-[10px] text-stone-500">Safe UPI & Token Support</p>
+            <h4 class="text-xs font-bold text-stone-100">100% Verified UTR</h4>
+            <p class="text-[10px] text-stone-400">Safe UPI & Token Support</p>
           </div>
         </div>
-        <div class="bg-white/80 backdrop-blur-sm border border-stone-200/80 p-3.5 rounded-2xl flex items-center gap-3 shadow-sm">
-          <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-800 flex items-center justify-center text-lg flex-shrink-0">
+        <div class="bg-stone-900/90 backdrop-blur-sm border border-stone-800 p-3.5 rounded-2xl flex items-center gap-3 shadow-md">
+          <div class="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center text-lg flex-shrink-0 border border-rose-500/20">
             <i class="fa-solid fa-arrows-rotate"></i>
           </div>
           <div>
-            <h4 class="text-xs font-bold text-stone-900">7-Day Guarantee</h4>
-            <p class="text-[10px] text-stone-500">Easy Replacement Promise</p>
+            <h4 class="text-xs font-bold text-stone-100">7-Day Guarantee</h4>
+            <p class="text-[10px] text-stone-400">Easy Replacement Promise</p>
           </div>
         </div>
-        <div class="bg-white/80 backdrop-blur-sm border border-stone-200/80 p-3.5 rounded-2xl flex items-center gap-3 shadow-sm">
-          <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-800 flex items-center justify-center text-lg flex-shrink-0">
+        <div class="bg-stone-900/90 backdrop-blur-sm border border-stone-800 p-3.5 rounded-2xl flex items-center gap-3 shadow-md">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center text-lg flex-shrink-0 border border-purple-500/20">
             <i class="fa-solid fa-award"></i>
           </div>
           <div>
-            <h4 class="text-xs font-bold text-stone-900">Artisanal Finish</h4>
-            <p class="text-[10px] text-stone-500">Strict Quality Assurance</p>
+            <h4 class="text-xs font-bold text-stone-100">Artisanal Finish</h4>
+            <p class="text-[10px] text-stone-400">Strict Quality Assurance</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ৫. মূল প্রোডাক্ট ক্যাটালগ সেকশন -->
     <main id="catalogSection" class="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-      <div class="flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 border-b border-stone-200">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 border-b border-stone-800">
         <div>
-          <span class="text-[10px] font-bold tracking-widest text-amber-700 uppercase">Handpicked Catalog</span>
-          <h3 id="currentCategoryHeading" class="font-cinzel font-bold text-2xl sm:text-3xl text-stone-950 mt-0.5">All Collections</h3>
-          <p class="text-xs text-stone-500 mt-1">Presenting <span id="countDisplay" class="font-bold text-amber-900">0</span> master creations</p>
+          <span class="text-[10px] font-bold tracking-widest text-amber-400 uppercase">Handpicked Catalog</span>
+          <h3 id="currentCategoryHeading" class="font-cinzel font-bold text-2xl sm:text-3xl text-amber-50 mt-0.5">All Collections</h3>
+          <p class="text-xs text-stone-400 mt-1">Presenting <span id="countDisplay" class="font-bold text-amber-400">0</span> master creations</p>
         </div>
         
         <div class="flex items-center gap-2 overflow-x-auto pb-1" id="categoryTabs">
-          <button onclick="setCategory('All', this)" class="cat-btn active bg-stone-950 text-amber-400 px-5 py-2 rounded-full text-xs font-bold tracking-wide transition shadow-sm border border-stone-900">All</button>
-          <button onclick="filterBySection('Men', 'All', this)" class="cat-btn bg-white hover:bg-stone-50 border border-stone-300 hover:border-amber-800 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-700 transition">Men</button>
-          <button onclick="filterBySection('Women', 'All', this)" class="cat-btn bg-white hover:bg-stone-50 border border-stone-300 hover:border-amber-800 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-700 transition">Women</button>
-          <button onclick="filterBySection('Gifts', 'All', this)" class="cat-btn bg-rose-50/70 hover:bg-rose-100 border border-rose-300 hover:border-rose-800 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-rose-800 transition">🎁 GF & BF Gifts</button>
+          <button onclick="setCategory('All', this)" class="cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400">All</button>
+          <button onclick="filterBySection('Men', 'All', this)" class="cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition">Men</button>
+          <button onclick="filterBySection('Women', 'All', this)" class="cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition">Women</button>
+          <button onclick="filterBySection('Gifts', 'All', this)" class="cat-btn bg-rose-950/60 hover:bg-rose-900/70 border border-rose-500/40 hover:border-rose-400 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-rose-300 transition">🎁 GF & BF Gifts</button>
         </div>
       </div>
 
@@ -261,244 +250,268 @@
     </main>
   </div>
 
-  <!-- ৬. প্রোডাক্ট ডিটেল মডাল -->
-  <div id="quickViewModal" class="fixed inset-0 bg-stone-950/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto border border-stone-200">
-      <button onclick="closeQuickView()" class="absolute top-5 right-5 text-stone-400 hover:text-black text-3xl font-bold transition">&times;</button>
+  <div id="quickViewModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto border border-amber-500/25">
+      <button onclick="closeQuickView()" class="absolute top-5 right-5 text-stone-400 hover:text-amber-400 text-3xl font-bold transition">&times;</button>
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         <div class="space-y-3">
-          <div class="rounded-2xl overflow-hidden aspect-square bg-stone-100 border border-stone-200 shadow-inner">
+          <div class="rounded-2xl overflow-hidden aspect-square bg-stone-950 border border-stone-800 shadow-inner">
             <img id="qvMainImage" src="" class="w-full h-full object-cover transition-all duration-300">
           </div>
           <div id="qvThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-2"></div>
         </div>
 
         <div class="space-y-4">
-          <span id="qvBadge" class="inline-block bg-amber-100 text-amber-900 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Badge</span>
-          <h3 id="qvTitle" class="font-cinzel text-2xl font-bold text-stone-950 leading-snug">Product Title</h3>
+          <span id="qvBadge" class="inline-block bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Badge</span>
+          <h3 id="qvTitle" class="font-cinzel text-2xl font-bold text-white leading-snug">Product Title</h3>
           
           <div class="flex items-baseline gap-3">
-            <span id="qvPrice" class="text-3xl font-black text-amber-950">₹0</span>
-            <span id="qvOrigPrice" class="text-sm line-through text-stone-400 font-semibold">₹0</span>
-            <span id="qvDiscount" class="text-xs text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">0% OFF</span>
+            <span id="qvPrice" class="text-3xl font-black text-amber-400">₹0</span>
+            <span id="qvOrigPrice" class="text-sm line-through text-stone-500 font-semibold">₹0</span>
+            <span id="qvDiscount" class="text-xs text-emerald-300 font-bold bg-emerald-950 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">0% OFF</span>
           </div>
 
-          <div class="space-y-1.5 pt-2 border-t">
-            <label class="block text-xs font-bold text-stone-800">
-              Select Size: <span id="qvSelectedSizeDisplay" class="text-amber-900 font-extrabold ml-1"></span>
+          <div class="space-y-1.5 pt-2 border-t border-stone-800">
+            <label class="block text-xs font-bold text-stone-300">
+              Select Size: <span id="qvSelectedSizeDisplay" class="text-amber-400 font-extrabold ml-1"></span>
             </label>
             <div id="qvSizeContainer" class="flex flex-wrap gap-2"></div>
           </div>
 
           <div class="space-y-1.5 pt-1">
-            <label class="block text-xs font-bold text-stone-800">
-              Select Color: <span id="qvSelectedColorDisplay" class="text-amber-900 font-extrabold ml-1"></span>
+            <label class="block text-xs font-bold text-stone-300">
+              Select Color: <span id="qvSelectedColorDisplay" class="text-amber-400 font-extrabold ml-1"></span>
             </label>
             <div id="qvColorContainer" class="flex flex-wrap gap-2"></div>
           </div>
 
           <div class="pt-2">
-            <p id="qvDesc" class="text-xs text-stone-600 leading-relaxed"></p>
+            <p id="qvDesc" class="text-xs text-stone-400 leading-relaxed"></p>
           </div>
 
           <div class="flex gap-2 pt-3">
-            <button id="qvAddToCartBtn" class="flex-1 bg-stone-900 hover:bg-black text-white py-3.5 rounded-xl text-xs font-bold transition shadow-sm">Add to Bag</button>
-            <button id="qvBuyNowBtn" class="flex-1 bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-800 hover:to-amber-950 text-white py-3.5 rounded-xl text-xs font-bold transition shadow-md">⚡ Instant Checkout</button>
+            <button id="qvAddToCartBtn" class="flex-1 bg-stone-800 hover:bg-stone-700 text-white border border-stone-700 py-3.5 rounded-xl text-xs font-bold transition shadow-sm">Add to Bag</button>
+            <button id="qvBuyNowBtn" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 py-3.5 rounded-xl text-xs font-extrabold transition shadow-md">⚡ Instant Checkout</button>
           </div>
         </div>
+      </div>
+
+      <div class="mt-8 pt-6 border-t border-stone-800 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h4 class="font-cinzel font-bold text-lg text-amber-300"><i class="fa-solid fa-star text-amber-400 mr-1.5"></i>Customer Reviews & Ratings</h4>
+          <span id="qvReviewStats" class="text-xs text-stone-400 font-semibold"></span>
+        </div>
+
+        <form onsubmit="submitProductReview(event)" class="bg-stone-950/90 border border-stone-800 p-4 rounded-2xl space-y-3 text-xs">
+          <p class="font-bold text-amber-200">আপনার প্রোডাক্ট কেমন এসেছে লিখুন (Write a Review):</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <input type="text" id="revCustomerName" required placeholder="আপনার নাম (Your Name)" class="bg-stone-900 border border-stone-700 rounded-xl p-2.5 text-stone-100 focus:outline-none focus:border-amber-500">
+            <select id="revRatingSelect" class="bg-stone-900 border border-stone-700 rounded-xl p-2.5 text-amber-400 font-bold focus:outline-none focus:border-amber-500">
+              <option value="5">★★★★★ (5/5 - দারুণ প্রোডাক্ট!)</option>
+              <option value="4">★★★★☆ (4/5 - খুব ভালো)</option>
+              <option value="3">★★★☆☆ (3/5 - মোটামুটি ভালো)</option>
+              <option value="2">★★☆☆☆ (2/5 - আরও ভালো হতে পারতো)</option>
+              <option value="1">★☆☆☆☆ (1/5 - সন্তুষ্ট নই)</option>
+            </select>
+          </div>
+          <textarea id="revCommentInput" rows="2" required placeholder="প্রোডাক্টটির কোয়ালিটি কেমন লেগেছে লিখুন..." class="w-full bg-stone-900 border border-stone-700 rounded-xl p-2.5 text-stone-100 focus:outline-none focus:border-amber-500"></textarea>
+          <button type="submit" id="revSubmitBtn" class="bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold px-5 py-2 rounded-xl transition shadow">
+            Submit Review
+          </button>
+        </form>
+
+        <div id="qvReviewsList" class="space-y-2.5 max-h-56 overflow-y-auto pr-1"></div>
       </div>
     </div>
   </div>
 
-  <!-- ৭. শপিং ব্যাগ স্লাইড ড্রয়ার -->
-  <div id="cartDrawer" class="fixed inset-0 bg-stone-950/60 backdrop-blur-sm hidden z-50 flex justify-end">
-    <div class="bg-white w-full max-w-md h-full flex flex-col p-6 shadow-2xl">
-      <div class="flex justify-between items-center pb-3 border-b border-stone-200">
+  <div id="cartDrawer" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden z-50 flex justify-end">
+    <div class="bg-stone-900 text-stone-100 w-full max-w-md h-full flex flex-col p-6 shadow-2xl border-l border-amber-500/20">
+      <div class="flex justify-between items-center pb-3 border-b border-stone-800">
         <div>
-          <h3 class="font-cinzel font-bold text-xl text-stone-950">Your Bag</h3>
-          <p class="text-[11px] text-stone-500">AURA Fine Store Collection</p>
+          <h3 class="font-cinzel font-bold text-xl text-amber-200">Your Bag</h3>
+          <p class="text-[11px] text-stone-400">AURA Fine Store Collection</p>
         </div>
-        <button onclick="toggleCart()" class="text-stone-400 hover:text-black text-2xl font-bold transition">&times;</button>
+        <button onclick="toggleCart()" class="text-stone-400 hover:text-amber-400 text-2xl font-bold transition">&times;</button>
       </div>
 
       <div id="cartItemsList" class="flex-1 overflow-y-auto py-4 space-y-4"></div>
 
-      <div class="border-t border-stone-100 pt-3 space-y-1.5">
-        <p class="text-[11px] font-bold text-amber-900 flex items-center gap-1.5">
+      <div class="border-t border-stone-800 pt-3 space-y-1.5">
+        <p class="text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
           <i class="fa-solid fa-tags"></i> Available Coupons (Click to apply):
         </p>
         <div id="cartCouponsBadges" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1"></div>
       </div>
 
-      <div class="border-t border-stone-200 pt-3 space-y-3">
+      <div class="border-t border-stone-800 pt-3 space-y-3">
         <div class="flex gap-2">
-          <input type="text" id="couponInput" placeholder="Enter Coupon Code" class="uppercase border border-stone-300 rounded-xl px-3 py-2 text-xs flex-1 font-mono font-bold focus:outline-none focus:border-amber-800">
-          <button onclick="applyCoupon()" class="bg-stone-900 hover:bg-black text-white px-4 py-2 rounded-xl text-xs font-bold transition">Apply</button>
+          <input type="text" id="couponInput" placeholder="Enter Coupon Code" class="uppercase bg-stone-950 border border-stone-700 text-white rounded-xl px-3 py-2 text-xs flex-1 font-mono font-bold focus:outline-none focus:border-amber-500">
+          <button onclick="applyCoupon()" class="bg-amber-500 hover:bg-amber-400 text-stone-950 px-4 py-2 rounded-xl text-xs font-extrabold transition">Apply</button>
         </div>
         <div id="couponStatusMsg" class="text-[11px] hidden font-semibold"></div>
 
-        <div class="space-y-1 text-xs bg-stone-50 p-3 rounded-xl border border-stone-200">
-          <div class="flex justify-between text-stone-600"><span>Bag Total</span><span id="subTotalDisplay" class="font-bold">₹0</span></div>
-          <div class="flex justify-between text-emerald-700 font-bold"><span>Discount Applied</span><span id="discountDisplay">-₹0</span></div>
-          <div class="flex justify-between text-stone-600"><span>Delivery Charge</span><span id="deliveryDisplay" class="font-bold">₹0</span></div>
-          <div class="flex justify-between text-base font-extrabold text-amber-950 pt-2 border-t border-stone-200"><span>Final Payable</span><span id="finalTotalDisplay">₹0</span></div>
+        <div class="space-y-1 text-xs bg-stone-950 p-3 rounded-xl border border-stone-800">
+          <div class="flex justify-between text-stone-400"><span>Bag Total</span><span id="subTotalDisplay" class="font-bold text-stone-200">₹0</span></div>
+          <div class="flex justify-between text-emerald-400 font-bold"><span>Discount Applied</span><span id="discountDisplay">-₹0</span></div>
+          <div class="flex justify-between text-stone-400"><span>Delivery Charge</span><span id="deliveryDisplay" class="font-bold text-stone-200">₹0</span></div>
+          <div class="flex justify-between text-base font-extrabold text-amber-400 pt-2 border-t border-stone-800"><span>Final Payable</span><span id="finalTotalDisplay">₹0</span></div>
         </div>
 
-        <button onclick="openCheckoutModal()" id="checkoutProceedBtn" class="w-full bg-gradient-to-r from-amber-800 to-amber-950 hover:from-amber-900 hover:to-black text-white py-3.5 rounded-xl text-sm font-bold tracking-wide shadow-md transition">
+        <button onclick="openCheckoutModal()" id="checkoutProceedBtn" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 py-3.5 rounded-xl text-sm font-extrabold tracking-wide shadow-md transition">
           Proceed To Checkout &rarr;
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ৮. টু-স্টেপ চেকআউট মডাল -->
-  <div id="checkoutModal" class="fixed inset-0 bg-stone-950/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto border border-stone-200">
-      <div class="flex justify-between items-center border-b pb-3">
+  <div id="checkoutModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto border border-amber-500/25">
+      <div class="flex justify-between items-center border-b border-stone-800 pb-3">
         <div>
-          <h4 class="font-cinzel font-bold text-lg text-amber-950">AURA Fine Store Checkout</h4>
-          <p id="checkoutStepIndicator" class="text-[11px] text-amber-800 font-bold">Step 1 of 2: Shipping Destination</p>
+          <h4 class="font-cinzel font-bold text-lg text-amber-300">AURA Fine Store Checkout</h4>
+          <p id="checkoutStepIndicator" class="text-[11px] text-amber-400 font-bold">Step 1 of 2: Shipping Destination</p>
         </div>
-        <button onclick="closeCheckoutModal()" class="text-stone-400 hover:text-black text-xl font-bold transition">&times;</button>
+        <button onclick="closeCheckoutModal()" class="text-stone-400 hover:text-amber-400 text-xl font-bold transition">&times;</button>
       </div>
 
       <form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="space-y-3 text-xs">
         <div id="checkoutStep1" class="space-y-3">
           <div>
-            <label class="block font-semibold text-stone-700 mb-1">Full Customer Name *</label>
-            <input type="text" id="ordName" required placeholder="Customer Name" class="w-full border p-2.5 rounded-xl focus:outline-none focus:border-amber-800">
+            <label class="block font-semibold text-stone-300 mb-1">Full Customer Name *</label>
+            <input type="text" id="ordName" required placeholder="Customer Name" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-amber-500">
           </div>
           <div>
-            <label class="block font-semibold text-stone-700 mb-1">Contact Number *</label>
-            <input type="tel" id="ordPhone" maxlength="10" required placeholder="10-digit Mobile Number" class="w-full border p-2.5 rounded-xl focus:outline-none focus:border-amber-800 font-mono">
+            <label class="block font-semibold text-stone-300 mb-1">Contact Number *</label>
+            <input type="tel" id="ordPhone" maxlength="10" required placeholder="10-digit Mobile Number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-amber-500 font-mono">
           </div>
 
           <div>
-            <label class="block font-semibold text-stone-700 mb-1">6-Digit Indian Postal Pincode *</label>
-            <input type="text" id="ordPincode" oninput="validateAndLookupPincode(this.value)" required maxlength="6" placeholder="Postal Pincode" class="w-full border-2 border-stone-200 p-2.5 rounded-xl font-mono font-bold tracking-wider transition-colors duration-200">
-            <p id="pincodeErrorMsg" class="text-[11px] font-bold text-rose-600 hidden mt-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Invalid Indian Pincode! Must be a valid 6-digit code.</p>
-            <p id="pincodeSuccessMsg" class="text-[11px] font-bold text-emerald-600 hidden mt-1"><i class="fa-solid fa-circle-check mr-1"></i> Deliverable Location Identified!</p>
+            <label class="block font-semibold text-stone-300 mb-1">6-Digit Indian Postal Pincode *</label>
+            <input type="text" id="ordPincode" oninput="validateAndLookupPincode(this.value)" required maxlength="6" placeholder="Postal Pincode" class="w-full bg-stone-950 border-2 border-stone-700 text-white p-2.5 rounded-xl font-mono font-bold tracking-wider transition-colors duration-200">
+            <p id="pincodeErrorMsg" class="text-[11px] font-bold text-rose-400 hidden mt-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Invalid Indian Pincode! Must be a valid 6-digit code.</p>
+            <p id="pincodeSuccessMsg" class="text-[11px] font-bold text-emerald-400 hidden mt-1"><i class="fa-solid fa-circle-check mr-1"></i> Deliverable Location Identified!</p>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block font-semibold text-stone-700 mb-1">District / City *</label>
-              <input type="text" id="ordCity" required placeholder="District" class="w-full border p-2.5 rounded-xl bg-stone-50">
+              <label class="block font-semibold text-stone-300 mb-1">District / City *</label>
+              <input type="text" id="ordCity" required placeholder="District" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
             </div>
             <div>
-              <label class="block font-semibold text-stone-700 mb-1">State *</label>
-              <input type="text" id="ordState" required placeholder="State" class="w-full border p-2.5 rounded-xl bg-stone-50">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block font-semibold text-stone-700 mb-1">House No. / Flat / Road *</label>
-              <input type="text" id="addrHouseStreet" required placeholder="House No, Road" class="w-full border p-2.5 rounded-xl">
-            </div>
-            <div>
-              <label class="block font-semibold text-stone-700 mb-1">Village / Town *</label>
-              <input type="text" id="addrVillage" required placeholder="Village or Town" class="w-full border p-2.5 rounded-xl">
+              <label class="block font-semibold text-stone-300 mb-1">State *</label>
+              <input type="text" id="ordState" required placeholder="State" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block font-semibold text-stone-700 mb-1">Post Office (P.O) *</label>
-              <input type="text" id="addrPostOffice" required placeholder="Post Office" class="w-full border p-2.5 rounded-xl">
+              <label class="block font-semibold text-stone-300 mb-1">House No. / Flat / Road *</label>
+              <input type="text" id="addrHouseStreet" required placeholder="House No, Road" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
             </div>
             <div>
-              <label class="block font-semibold text-stone-700 mb-1">Police Station (P.S)</label>
-              <input type="text" id="addrPoliceStation" placeholder="Police Station" class="w-full border p-2.5 rounded-xl">
+              <label class="block font-semibold text-stone-300 mb-1">Village / Town *</label>
+              <input type="text" id="addrVillage" required placeholder="Village or Town" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-stone-300 mb-1">Post Office (P.O) *</label>
+              <input type="text" id="addrPostOffice" required placeholder="Post Office" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
+            </div>
+            <div>
+              <label class="block font-semibold text-stone-300 mb-1">Police Station (P.S)</label>
+              <input type="text" id="addrPoliceStation" placeholder="Police Station" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
             </div>
           </div>
 
           <div>
-            <label class="block font-semibold text-stone-700 mb-1">Famous Landmark (Nearby)</label>
-            <input type="text" id="addrLandmark" placeholder="Near Temple / School / Hospital" class="w-full border p-2.5 rounded-xl">
+            <label class="block font-semibold text-stone-300 mb-1">Famous Landmark (Nearby)</label>
+            <input type="text" id="addrLandmark" placeholder="Near Temple / School / Hospital" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
           </div>
 
-          <button type="button" onclick="goToStep2Payment()" class="w-full bg-stone-900 hover:bg-black text-white py-3.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 shadow mt-2">
+          <button type="button" onclick="goToStep2Payment()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 py-3.5 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-2 shadow mt-2">
             Next: Proceed to Payment &rarr;
           </button>
         </div>
 
         <div id="checkoutStep2" class="hidden space-y-3">
-          <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 text-xs flex justify-between items-center">
+          <div class="bg-stone-950 p-3 rounded-xl border border-amber-500/30 text-xs flex justify-between items-center">
             <div>
-              <p class="font-bold text-amber-950" id="step2SummaryName"></p>
-              <p class="text-[10px] text-stone-600 truncate max-w-[260px]" id="step2SummaryAddr"></p>
+              <p class="font-bold text-amber-300" id="step2SummaryName"></p>
+              <p class="text-[10px] text-stone-400 truncate max-w-[260px]" id="step2SummaryAddr"></p>
             </div>
-            <button type="button" onclick="backToStep1Address()" class="text-[11px] text-amber-900 font-bold underline">Edit</button>
+            <button type="button" onclick="backToStep1Address()" class="text-[11px] text-amber-400 font-bold underline">Edit</button>
           </div>
 
-          <div class="bg-amber-50/70 border border-amber-200 p-2.5 rounded-xl space-y-1.5">
-            <label class="block font-bold text-amber-950 text-[11px]"><i class="fa-solid fa-ticket text-amber-700 mr-1"></i> Apply Coupon Code for Instant Discount:</label>
+          <div class="bg-stone-950 border border-stone-800 p-2.5 rounded-xl space-y-1.5">
+            <label class="block font-bold text-amber-300 text-[11px]"><i class="fa-solid fa-ticket text-amber-400 mr-1"></i> Apply Coupon Code for Instant Discount:</label>
             <div class="flex gap-2">
-              <input type="text" id="step2CouponInput" placeholder="Enter Coupon Code" class="uppercase border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs flex-1 font-mono font-bold bg-white focus:outline-none focus:border-amber-900">
-              <button type="button" onclick="applyCouponFromStep2()" class="bg-amber-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-950 transition">Apply</button>
+              <input type="text" id="step2CouponInput" placeholder="Enter Coupon Code" class="uppercase bg-stone-900 border border-stone-700 text-white rounded-lg px-2.5 py-1.5 text-xs flex-1 font-mono font-bold focus:outline-none focus:border-amber-500">
+              <button type="button" onclick="applyCouponFromStep2()" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-lg text-xs font-extrabold hover:bg-amber-400 transition">Apply</button>
             </div>
             <p id="step2CouponStatus" class="text-[10px] font-semibold hidden"></p>
           </div>
 
-          <div id="paymentOfferSummaryBox" class="bg-emerald-50 border border-emerald-300 p-3 rounded-xl space-y-1">
-            <p class="font-bold text-emerald-950 text-xs flex items-center gap-1.5">
-              <i class="fa-solid fa-tags text-emerald-700"></i> Offer & Discount Breakdown:
+          <div id="paymentOfferSummaryBox" class="bg-emerald-950/60 border border-emerald-500/30 p-3 rounded-xl space-y-1">
+            <p class="font-bold text-emerald-300 text-xs flex items-center gap-1.5">
+              <i class="fa-solid fa-tags text-emerald-400"></i> Offer & Discount Breakdown:
             </p>
-            <div class="flex justify-between text-stone-600 text-[11px]">
+            <div class="flex justify-between text-stone-300 text-[11px]">
               <span>Original Bag Value:</span>
               <span id="chkSubtotal" class="font-bold">₹0</span>
             </div>
-            <div class="flex justify-between text-emerald-700 font-bold text-[11px]">
+            <div class="flex justify-between text-emerald-400 font-bold text-[11px]">
               <span>Coupon Discount (<span id="chkCouponCodeName">None</span>):</span>
               <span id="chkDiscountAmt">-₹0</span>
             </div>
-            <div class="flex justify-between text-stone-600 text-[11px]">
+            <div class="flex justify-between text-stone-300 text-[11px]">
               <span>Delivery Charge:</span>
               <span id="chkDeliveryAmt" class="font-bold">₹0</span>
             </div>
-            <div class="flex justify-between text-amber-950 font-extrabold text-xs pt-1 border-t border-emerald-200">
+            <div class="flex justify-between text-amber-400 font-extrabold text-xs pt-1 border-t border-emerald-500/20">
               <span>Payable After Discount:</span>
               <span id="chkFinalPayable">₹0</span>
             </div>
           </div>
 
           <div>
-            <label class="block font-semibold text-stone-700 mb-1">Select Payment Mode</label>
-            <select id="ordPaymentMethod" onchange="handlePaymentModeChange(this.value)" class="w-full border p-2.5 rounded-xl focus:outline-none bg-stone-50 font-bold text-amber-950">
+            <label class="block font-semibold text-stone-300 mb-1">Select Payment Mode</label>
+            <select id="ordPaymentMethod" onchange="handlePaymentModeChange(this.value)" class="w-full bg-stone-950 border border-stone-700 p-2.5 rounded-xl focus:outline-none font-bold text-amber-300">
               <option value="UPI">⚡ 100% Prepaid via UPI (Fastest Priority Dispatch)</option>
               <option value="COD">🛡️ Cash on Delivery (Advance Token Required)</option>
             </select>
           </div>
 
-          <div id="paymentDetailsContainer" class="bg-amber-50/80 p-4 rounded-2xl border border-amber-300 space-y-3 text-center">
-            <div id="codNoticeBanner" class="hidden text-left bg-amber-100 border border-amber-300 p-2.5 rounded-xl space-y-1">
-              <p class="font-bold text-amber-950 text-xs">
-                <i class="fa-solid fa-shield-halved text-emerald-700 mr-1"></i> COD Confirmation Token:
+          <div id="paymentDetailsContainer" class="bg-stone-950 p-4 rounded-2xl border border-amber-500/30 space-y-3 text-center">
+            <div id="codNoticeBanner" class="hidden text-left bg-amber-950/60 border border-amber-500/30 p-2.5 rounded-xl space-y-1">
+              <p class="font-bold text-amber-300 text-xs">
+                <i class="fa-solid fa-shield-halved text-emerald-400 mr-1"></i> COD Confirmation Token:
               </p>
-              <p class="text-[11px] text-stone-700 leading-tight">
-                To prevent bogus orders, please pay <b id="codAdvanceDisplay" class="text-emerald-800">Advance (₹0)</b> now via UPI. The balance <b id="codBalanceDisplay" class="text-amber-950">₹0</b> can be paid in cash at your doorstep!
+              <p class="text-[11px] text-stone-300 leading-tight">
+                To prevent bogus orders, please pay <b id="codAdvanceDisplay" class="text-emerald-400">Advance (₹0)</b> now via UPI. The balance <b id="codBalanceDisplay" class="text-amber-300">₹0</b> can be paid in cash at your doorstep!
               </p>
             </div>
 
-            <p id="qrBoxTitle" class="text-xs text-amber-950 font-bold">Scan QR with GooglePay / PhonePe / Paytm</p>
+            <p id="qrBoxTitle" class="text-xs text-amber-300 font-bold">Scan QR with GooglePay / PhonePe / Paytm</p>
             <div class="flex justify-center">
-              <img id="dynamicQRCode" src="" alt="UPI QR" class="w-36 h-36 bg-white p-2 rounded-2xl shadow-md border border-amber-300">
+              <img id="dynamicQRCode" src="" alt="UPI QR" class="w-36 h-36 bg-white p-2 rounded-2xl shadow-md border border-amber-400">
             </div>
-            <p class="text-[11px] text-stone-600">Merchant UPI: <span class="bg-white px-2.5 py-0.5 rounded border border-amber-300 font-mono font-bold select-all">6289145092@ptsbi</span></p>
+            <p class="text-[11px] text-stone-400">Merchant UPI: <span class="bg-stone-900 text-amber-300 px-2.5 py-0.5 rounded border border-amber-500/30 font-mono font-bold select-all">6289145092@ptsbi</span></p>
             
             <div class="text-left pt-1">
-              <label class="block text-[11px] font-semibold text-stone-700 mb-1">Enter 12-Digit UPI Transaction ID (UTR) *</label>
-              <input type="text" id="ordUTR" required placeholder="12-digit UTR from your UPI payment" class="w-full border border-stone-300 p-2.5 rounded-xl bg-white text-xs font-mono focus:outline-none focus:border-amber-800">
+              <label class="block text-[11px] font-semibold text-stone-300 mb-1">Enter 12-Digit UPI Transaction ID (UTR) *</label>
+              <input type="text" id="ordUTR" required placeholder="12-digit UTR from your UPI payment" class="w-full bg-stone-900 border border-stone-700 text-white p-2.5 rounded-xl text-xs font-mono focus:outline-none focus:border-amber-500">
             </div>
           </div>
 
           <div class="flex gap-2 pt-2">
-            <button type="button" onclick="backToStep1Address()" class="w-1/3 bg-stone-200 text-stone-800 py-3.5 rounded-xl font-bold text-xs hover:bg-stone-300 transition">
+            <button type="button" onclick="backToStep1Address()" class="w-1/3 bg-stone-800 text-stone-300 py-3.5 rounded-xl font-bold text-xs hover:bg-stone-700 transition">
               &larr; Back
             </button>
-            <button type="submit" id="submitOrderBtn" class="flex-1 bg-gradient-to-r from-amber-800 to-amber-950 hover:from-amber-900 hover:to-black text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition">
+            <button type="submit" id="submitOrderBtn" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 py-3.5 rounded-xl font-extrabold text-sm shadow-md transition">
               Place Confirmed Order
             </button>
           </div>
@@ -507,34 +520,108 @@
     </div>
   </div>
 
-  <!-- ৯. কাস্টমার "My Orders" ট্র্যাকিং মডাল -->
-  <div id="myOrdersModal" class="fixed inset-0 bg-stone-950/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto text-xs border border-stone-200">
-      <div class="flex justify-between items-center border-b pb-3">
+  <div id="myOrdersModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto text-xs border border-amber-500/25">
+      <div class="flex justify-between items-center border-b border-stone-800 pb-3">
         <div>
-          <h4 class="font-cinzel font-bold text-xl text-amber-950"><i class="fa-solid fa-boxes-packing mr-2 text-amber-800"></i>My Orders & Tracking</h4>
-          <p class="text-[11px] text-stone-500">Track shipment progress & download your official delivery slips</p>
+          <h4 class="font-cinzel font-bold text-xl text-amber-300"><i class="fa-solid fa-boxes-packing mr-2 text-amber-400"></i>My Orders & Tracking</h4>
+          <p class="text-[11px] text-stone-400">Track shipment progress & download your official delivery slips</p>
         </div>
-        <button onclick="closeMyOrdersModal()" class="text-stone-400 hover:text-black text-2xl font-bold transition">&times;</button>
+        <button onclick="closeMyOrdersModal()" class="text-stone-400 hover:text-amber-400 text-2xl font-bold transition">&times;</button>
       </div>
 
       <div class="flex gap-2">
-        <input type="tel" id="myOrdersPhoneInput" placeholder="Enter your 10-digit mobile number" class="w-full border border-stone-300 p-2.5 rounded-xl font-mono text-xs focus:outline-none focus:border-amber-800">
-        <button onclick="fetchMyOrders()" class="bg-stone-900 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-black transition whitespace-nowrap shadow">Find Orders</button>
+        <input type="tel" id="myOrdersPhoneInput" placeholder="Enter your 10-digit mobile number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl font-mono text-xs focus:outline-none focus:border-amber-500">
+        <button onclick="fetchMyOrders()" class="bg-amber-500 text-stone-950 px-5 py-2.5 rounded-xl font-extrabold hover:bg-amber-400 transition whitespace-nowrap shadow">Find Orders</button>
       </div>
 
       <div id="myOrdersListContainer" class="space-y-4 pt-2">
-        <div class="text-center py-8 text-stone-400">
-          <i class="fa-solid fa-receipt text-3xl mb-2 text-stone-300"></i>
+        <div class="text-center py-8 text-stone-500">
+          <i class="fa-solid fa-receipt text-3xl mb-2 text-stone-700"></i>
           <p>Enter your phone number to check your purchases and download slips.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ১০. ফুটার -->
-  <footer class="bg-stone-950 text-stone-300 pt-16 pb-8 border-t border-amber-900/30 mt-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-stone-800/80 text-xs">
+  <div id="supportModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto text-xs border border-emerald-500/30">
+      <div class="flex justify-between items-center border-b border-stone-800 pb-3">
+        <div>
+          <h4 class="font-cinzel font-bold text-xl text-emerald-400"><i class="fa-solid fa-headset mr-2"></i>Help & Customer Support</h4>
+          <p id="supportStepSubtitle" class="text-[11px] text-stone-400">Step 1: যে নামে অর্ডার করেছেন সেটি দিয়ে আপনার অর্ডার খুঁজুন</p>
+        </div>
+        <button onclick="closeSupportModal()" class="text-stone-400 hover:text-white text-2xl font-bold transition">&times;</button>
+      </div>
+
+      <div id="supportStep1" class="space-y-4">
+        <div class="space-y-1.5">
+          <label class="block font-bold text-stone-300">যে নামে অর্ডার করেছেন সেই নাম লিখুন (Customer Name) *</label>
+          <div class="flex gap-2">
+            <input type="text" id="supportCustomerNameInput" placeholder="যেমন: Rahul Das" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl text-xs focus:outline-none focus:border-emerald-500">
+            <button type="button" onclick="searchOrdersForSupport()" class="bg-emerald-500 hover:bg-emerald-400 text-stone-950 px-5 py-2.5 rounded-xl font-extrabold transition whitespace-nowrap shadow">
+              Search
+            </button>
+          </div>
+        </div>
+
+        <div id="customerPreviousTicketsWrap" class="hidden space-y-2">
+          <p class="text-[11px] font-bold text-amber-400 uppercase tracking-wider"><i class="fa-solid fa-comments mr-1"></i> আপনার আগের কমপ্লেন ও সাপোর্ট রিপ্লাই:</p>
+          <div id="customerPreviousTicketsList" class="space-y-2 max-h-44 overflow-y-auto pr-1"></div>
+        </div>
+
+        <div id="supportOrdersList" class="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+          <div class="text-center py-6 text-stone-500 bg-stone-950/60 rounded-2xl border border-stone-800">
+            <p>উপরে আপনার নাম লিখে Search বাটনে ক্লিক করলে আপনার অর্ডারগুলো এখানে দেখাবে।</p>
+          </div>
+        </div>
+
+        <button type="button" id="supportNextBtn" onclick="goToSupportStep2()" disabled class="w-full bg-stone-800 text-stone-500 py-3.5 rounded-xl font-extrabold text-xs transition cursor-not-allowed">
+          যে অর্ডারে সমস্যা সেটি সিলেক্ট করে Next চাপুন &rarr;
+        </button>
+      </div>
+
+      <form id="supportStep2Form" onsubmit="submitSupportTicket(event)" class="hidden space-y-3.5">
+        <div class="bg-stone-950 border border-emerald-500/30 p-3 rounded-xl flex justify-between items-center">
+          <div>
+            <span class="text-[10px] text-emerald-400 font-bold uppercase">Selected Order</span>
+            <p class="font-mono font-bold text-amber-400 text-sm" id="selectedSupportOrderId">#AUR-000000</p>
+            <p class="text-[11px] text-stone-300 line-clamp-1" id="selectedSupportOrderSummary"></p>
+          </div>
+          <button type="button" onclick="backToSupportStep1()" class="text-xs text-amber-400 underline font-bold">Change</button>
+        </div>
+
+        <div>
+          <label class="block font-bold text-stone-300 mb-1">আপনার কী কী সমস্যা হচ্ছে বিস্তারিত লিখুন *</label>
+          <textarea id="supportIssueText" rows="3" required placeholder="যেমন: প্রোডাক্ট ড্যামেজ এসেছে / সাইজ ভুল এসেছে / ডেলিভারি দেরি হচ্ছে..." class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-emerald-500"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl">
+            <label class="block font-bold text-amber-300 mb-1"><i class="fa-solid fa-camera mr-1"></i> ছবির প্রমাণ দিন (Photo)</label>
+            <input type="file" id="supportPhotoInput" accept="image/*" class="w-full text-[11px] text-stone-400 file:bg-amber-500 file:text-stone-950 file:font-bold file:border-0 file:rounded-lg file:px-2.5 file:py-1 cursor-pointer">
+          </div>
+
+          <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl">
+            <label class="block font-bold text-rose-400 mb-1"><i class="fa-solid fa-video mr-1"></i> ভিডিও দিন (Video, Max 15MB)</label>
+            <input type="file" id="supportVideoInput" accept="video/*" class="w-full text-[11px] text-stone-400 file:bg-rose-500 file:text-white file:font-bold file:border-0 file:rounded-lg file:px-2.5 file:py-1 cursor-pointer">
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="backToSupportStep1()" class="w-1/3 bg-stone-800 hover:bg-stone-700 text-stone-300 py-3 rounded-xl font-bold transition">
+            &larr; Back
+          </button>
+          <button type="submit" id="supportSubmitBtn" class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-stone-950 py-3 rounded-xl font-extrabold text-xs shadow-lg transition">
+            <i class="fa-brands fa-telegram mr-1.5 text-sm"></i> Send Issue to Support Team
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="bg-black text-stone-400 pt-16 pb-8 border-t border-amber-500/20 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-stone-900 text-xs">
       <div class="space-y-4">
         <a href="/" class="flex flex-col">
           <span class="text-3xl font-extrabold font-cinzel tracking-[0.25em] text-amber-100">AURA</span>
@@ -546,7 +633,7 @@
       </div>
 
       <div class="space-y-3">
-        <h4 class="font-bold text-white text-xs uppercase tracking-widest text-amber-400 font-cinzel">Exclusive Wardrobe</h4>
+        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">Exclusive Wardrobe</h4>
         <ul class="space-y-2 text-stone-400">
           <li><a href="#catalogSection" onclick="filterBySection('Men', 'Shirts')" class="hover:text-amber-300 transition">Formal & Casual Shirts</a></li>
           <li><a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts')" class="hover:text-amber-300 transition">Supima Heavyweight Tees</a></li>
@@ -556,22 +643,22 @@
       </div>
 
       <div class="space-y-3">
-        <h4 class="font-bold text-white text-xs uppercase tracking-widest text-amber-400 font-cinzel">Customer Concierge</h4>
+        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">Customer Concierge</h4>
         <ul class="space-y-2 text-stone-400">
           <li><a href="#" onclick="openMyOrdersModal()" class="hover:text-amber-300 transition">My Orders & Tracking Desk</a></li>
+          <li><a href="#" onclick="openSupportModal()" class="hover:text-emerald-400 transition font-bold text-emerald-400">Help & Support Desk</a></li>
           <li><span class="text-stone-300 font-semibold"><i class="fa-solid fa-envelope mr-1.5 text-amber-500"></i> mahatosarita436@gmail.com</span></li>
           <li><span class="text-stone-300 font-semibold"><i class="fa-solid fa-clock mr-1.5 text-amber-500"></i> 10:00 AM – 8:00 PM Support</span></li>
-          <li><a href="#" class="hover:text-amber-300 transition">7-Day Replacement Guarantee</a></li>
         </ul>
       </div>
 
       <div class="space-y-3">
-        <h4 class="font-bold text-white text-xs uppercase tracking-widest text-amber-400 font-cinzel">Express Logistics</h4>
+        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">Express Logistics</h4>
         <p class="text-stone-400 leading-relaxed">
           Dispatched from Bolpur, Birbhum, West Bengal. We partner with Delhivery, DTDC, and IndiaPost across India.
         </p>
         <div class="pt-2">
-          <span class="inline-flex items-center gap-1.5 bg-stone-900 border border-stone-800 px-3.5 py-1.5 rounded-xl text-emerald-400 font-semibold text-[11px] shadow">
+          <span class="inline-flex items-center gap-1.5 bg-stone-950 border border-stone-800 px-3.5 py-1.5 rounded-xl text-emerald-400 font-semibold text-[11px] shadow">
             <i class="fa-solid fa-lock text-xs"></i> 100% Encrypted UPI Payments
           </span>
         </div>
@@ -580,7 +667,7 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 flex flex-col sm:flex-row justify-between items-center text-[11px] text-stone-500 gap-2">
       <p>&copy; 2026 AURA Fine Store. All Rights Reserved. Support: mahatosarita436@gmail.com</p>
-      <p class="font-cinzel tracking-wider text-amber-600/80">Luxury • Elegance • Artisanal Heritage</p>
+      <p class="font-cinzel tracking-wider text-amber-500/80">Luxury • Elegance • Artisanal Heritage</p>
     </div>
   </footer>
 
@@ -607,13 +694,16 @@
     let currentSelectedSize = "";
     let currentSelectedColor = "";
 
+    let supportMatchedOrders = [];
+    let selectedSupportOrder = null;
+
     function setupDealCarousel() {
       if (!dealBanners.length) return;
       renderCurrentDealSlide();
 
       const dotsWrap = document.getElementById('carouselDots');
       dotsWrap.innerHTML = dealBanners.map((_, idx) => `
-        <button onclick="goToDealSlide(${idx})" class="h-2 rounded-full transition-all ${idx === currentDealIndex ? 'bg-amber-400 w-6' : 'bg-white/50 w-2'}"></button>
+        <button onclick="goToDealSlide(${idx})" class="h-2 rounded-full transition-all ${idx === currentDealIndex ? 'bg-amber-400 w-6' : 'bg-white/40 w-2'}"></button>
       `).join('');
 
       if (dealSliderInterval) clearInterval(dealSliderInterval);
@@ -634,7 +724,7 @@
 
       const dots = document.querySelectorAll('#carouselDots button');
       dots.forEach((d, idx) => {
-        d.className = `h-2 rounded-full transition-all ${idx === currentDealIndex ? 'bg-amber-400 w-6' : 'bg-white/50 w-2'}`;
+        d.className = `h-2 rounded-full transition-all ${idx === currentDealIndex ? 'bg-amber-400 w-6' : 'bg-white/40 w-2'}`;
       });
     }
 
@@ -712,24 +802,24 @@
 
       if (!visible.length) {
         topWrap.innerHTML = `<span>Flat 20% OFF storewide with code AURA20</span>`;
-        cartBadges.innerHTML = `<span class="text-xs text-stone-400">No active coupons right now.</span>`;
+        cartBadges.innerHTML = `<span class="text-xs text-stone-500">No active coupons right now.</span>`;
         return;
       }
 
       topWrap.innerHTML = visible.map(c => `
-        <span class="inline-flex items-center gap-1 cursor-pointer bg-stone-900/90 hover:bg-stone-800 px-2.5 py-0.5 rounded-full border border-amber-600/40 text-[11px] transition shadow-sm" onclick="quickApplyCoupon('${c.code}')">
+        <span class="inline-flex items-center gap-1 cursor-pointer bg-stone-900 hover:bg-stone-800 px-2.5 py-0.5 rounded-full border border-amber-500/30 text-[11px] transition shadow-sm" onclick="quickApplyCoupon('${c.code}')">
           <i class="fa-solid fa-tag text-[9px] text-amber-400"></i> ${c.code} (${c.discountPercent}% OFF${c.minSpend > 0 ? ` on ₹${c.minSpend}+` : ''})
         </span>
       `).join('');
 
       cartBadges.innerHTML = visible.map(c => `
-        <div onclick="quickApplyCoupon('${c.code}')" class="cursor-pointer bg-amber-50 hover:bg-amber-100/80 border border-amber-300 px-3 py-1.5 rounded-xl text-xs flex items-center justify-between gap-2 shadow-sm transition">
+        <div onclick="quickApplyCoupon('${c.code}')" class="cursor-pointer bg-stone-950 hover:bg-stone-800 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center justify-between gap-2 shadow-sm transition">
           <div>
-            <span class="font-mono font-bold text-amber-950">${c.code}</span>
-            <span class="text-[10px] text-emerald-700 font-bold">(${c.discountPercent}% OFF)</span>
-            ${c.minSpend > 0 ? `<span class="text-[9px] text-stone-500 block">Min Cart: ₹${c.minSpend}</span>` : ''}
+            <span class="font-mono font-bold text-amber-300">${c.code}</span>
+            <span class="text-[10px] text-emerald-400 font-bold">(${c.discountPercent}% OFF)</span>
+            ${c.minSpend > 0 ? `<span class="text-[9px] text-stone-400 block">Min Cart: ₹${c.minSpend}</span>` : ''}
           </div>
-          <span class="text-[10px] bg-amber-900 text-white px-2.5 py-0.5 rounded-full font-bold">APPLY</span>
+          <span class="text-[10px] bg-amber-500 text-stone-950 px-2.5 py-0.5 rounded-full font-extrabold">APPLY</span>
         </div>
       `).join('');
     }
@@ -756,9 +846,9 @@
 
       if (btn) {
         document.querySelectorAll('.cat-btn').forEach(b => {
-          b.className = "cat-btn bg-white hover:bg-stone-50 border border-stone-300 hover:border-amber-800 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-700 transition";
+          b.className = "cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition";
         });
-        btn.className = "cat-btn active bg-stone-950 text-amber-400 px-5 py-2 rounded-full text-xs font-bold tracking-wide transition shadow-sm border border-stone-900";
+        btn.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400";
       }
 
       renderStore();
@@ -768,9 +858,9 @@
       if (cat === 'All') showAllCatalog();
       if (btn) {
         document.querySelectorAll('.cat-btn').forEach(b => {
-          b.className = "cat-btn bg-white hover:bg-stone-50 border border-stone-300 hover:border-amber-800 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-700 transition";
+          b.className = "cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition";
         });
-        btn.className = "cat-btn active bg-stone-950 text-amber-400 px-5 py-2 rounded-full text-xs font-bold tracking-wide transition shadow-sm border border-stone-900";
+        btn.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400";
       }
     }
 
@@ -790,7 +880,7 @@
       const grid = document.getElementById('productsGrid');
 
       if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-full py-20 text-center text-stone-400 font-light">No designs found matching your selection.</div>`;
+        grid.innerHTML = `<div class="col-span-full py-20 text-center text-stone-500 font-light">No designs found matching your selection.</div>`;
         return;
       }
 
@@ -801,18 +891,18 @@
         const photosCount = (p.images && p.images.length) || 1;
 
         return `
-          <div class="bg-white rounded-3xl border border-stone-200/90 overflow-hidden shadow-sm lux-card flex flex-col justify-between group">
-            <div onclick="openQuickView(${p.id})" class="relative overflow-hidden aspect-square bg-stone-100 cursor-pointer">
+          <div class="rounded-3xl border border-stone-800 overflow-hidden shadow-lg lux-card flex flex-col justify-between group">
+            <div onclick="openQuickView(${p.id})" class="relative overflow-hidden aspect-square bg-stone-950 cursor-pointer">
               <img src="${mainImage}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isOut ? 'opacity-40 grayscale' : ''}">
               ${isOut ? `
-                <div class="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-xs">
+                <div class="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-xs">
                   <span class="bg-red-600 text-white font-bold text-xs px-4 py-1.5 rounded-full uppercase tracking-widest shadow-xl">Sold Out</span>
                 </div>
               ` : `
                 <span class="absolute top-3.5 left-3.5 bg-stone-950/90 backdrop-blur-sm text-amber-300 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full shadow border border-amber-500/30">
                   ${p.badge}
                 </span>
-                <span class="absolute bottom-3.5 right-3.5 bg-black/70 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow">
+                <span class="absolute bottom-3.5 right-3.5 bg-black/75 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow border border-white/10">
                   <i class="fa-regular fa-images text-amber-400"></i> ${photosCount} Photos
                 </span>
               `}
@@ -820,28 +910,31 @@
 
             <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
               <div onclick="openQuickView(${p.id})" class="cursor-pointer">
-                <div class="flex items-center gap-1.5 text-amber-500 text-xs">
-                  <span>★</span><span class="font-bold text-stone-900">${p.rating}</span>
-                  <span class="text-stone-400 text-[11px]">(${p.reviewsCount} reviews)</span>
+                <div class="flex items-center justify-between text-amber-400 text-xs">
+                  <div class="flex items-center gap-1.5">
+                    <span>★</span><span class="font-bold text-stone-100">${p.rating}</span>
+                    <span class="text-stone-400 text-[11px]">(${p.reviewsCount} reviews)</span>
+                  </div>
+                  <span class="text-[10px] text-amber-400/90 underline font-semibold">Write Review</span>
                 </div>
-                <h3 class="font-cinzel font-bold text-stone-950 text-base mt-1 line-clamp-1 group-hover:text-amber-800 transition">${p.name}</h3>
-                <p class="text-stone-500 text-xs mt-1 line-clamp-2 leading-relaxed">${p.description}</p>
+                <h3 class="font-cinzel font-bold text-stone-100 text-base mt-1.5 line-clamp-1 group-hover:text-amber-400 transition">${p.name}</h3>
+                <p class="text-stone-400 text-xs mt-1 line-clamp-2 leading-relaxed">${p.description}</p>
               </div>
 
-              <div class="pt-3 border-t border-stone-100 space-y-3">
+              <div class="pt-3 border-t border-stone-800 space-y-3">
                 <div class="flex items-baseline justify-between">
                   <div>
-                    <span class="text-2xl font-black text-amber-950">₹${p.price}</span>
-                    <span class="text-xs line-through text-stone-400 ml-1.5 font-medium">₹${p.originalPrice}</span>
+                    <span class="text-2xl font-black text-amber-400">₹${p.price}</span>
+                    <span class="text-xs line-through text-stone-500 ml-1.5 font-medium">₹${p.originalPrice}</span>
                   </div>
-                  <span class="text-[10px] text-emerald-800 font-extrabold bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">${discountPct}% SAVINGS</span>
+                  <span class="text-[10px] text-emerald-300 font-extrabold bg-emerald-950 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">${discountPct}% SAVINGS</span>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
-                  <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full ${isOut ? 'bg-stone-200 cursor-not-allowed text-stone-400' : 'bg-stone-900 hover:bg-black text-white'} py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                  <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full ${isOut ? 'bg-stone-800 cursor-not-allowed text-stone-600' : 'bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700'} py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
                     <i class="fa-solid fa-basket-shopping text-xs"></i> Add
                   </button>
-                  <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full ${isOut ? 'bg-stone-200 cursor-not-allowed text-stone-400' : 'bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-800 hover:to-black text-white'} py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow">
+                  <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full ${isOut ? 'bg-stone-800 cursor-not-allowed text-stone-600' : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950'} py-2.5 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5 shadow">
                     ⚡ View & Buy
                   </button>
                 </div>
@@ -874,7 +967,7 @@
       currentSelectedSize = sizes[0];
       document.getElementById('qvSelectedSizeDisplay').innerText = currentSelectedSize;
       document.getElementById('qvSizeContainer').innerHTML = sizes.map((s, idx) => `
-        <button type="button" onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold transition ${idx === 0 ? 'bg-amber-950 text-white border-amber-950 shadow-sm' : 'bg-stone-50 border-stone-300 text-stone-700 hover:border-amber-900'}">
+        <button type="button" onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold transition ${idx === 0 ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-sm' : 'bg-stone-950 border-stone-700 text-stone-300 hover:border-amber-500'}">
           ${s}
         </button>
       `).join('');
@@ -883,7 +976,7 @@
       currentSelectedColor = colors[0];
       document.getElementById('qvSelectedColorDisplay').innerText = currentSelectedColor;
       document.getElementById('qvColorContainer').innerHTML = colors.map((c, idx) => `
-        <button type="button" onclick="selectVariantColor('${c}', ${idx}, this)" class="color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-medium transition ${idx === 0 ? 'bg-amber-950 text-white border-amber-950 shadow-sm' : 'bg-stone-50 border-stone-300 text-stone-700 hover:border-amber-900'}">
+        <button type="button" onclick="selectVariantColor('${c}', ${idx}, this)" class="color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-medium transition ${idx === 0 ? 'bg-amber-500 text-stone-950 border-amber-400 font-bold shadow-sm' : 'bg-stone-950 border-stone-700 text-stone-300 hover:border-amber-500'}">
           ${c}
         </button>
       `).join('');
@@ -891,26 +984,91 @@
       document.getElementById('qvAddToCartBtn').onclick = () => { addToCartWithVariant(prod); closeQuickView(); };
       document.getElementById('qvBuyNowBtn').onclick = () => { closeQuickView(); instantBuyNowWithVariant(prod); };
 
+      renderProductReviews(prod);
       document.getElementById('quickViewModal').classList.remove('hidden');
+    }
+
+    function renderProductReviews(prod) {
+      document.getElementById('qvReviewStats').innerText = `★ ${prod.rating || 5.0} (${prod.reviewsCount || 0} Total Ratings)`;
+      const list = document.getElementById('qvReviewsList');
+      const reviews = prod.reviews || [];
+
+      if (reviews.length === 0) {
+        list.innerHTML = `<p class="text-xs text-stone-500 italic text-center py-3">এখনো কোনো কাস্টমার রিভিউ লেখা হয়নি। প্রথম রিভিউটি আপনিই দিন!</p>`;
+        return;
+      }
+
+      list.innerHTML = reviews.map(r => {
+        const stars = '★'.repeat(r.rating || 5) + '☆'.repeat(5 - (r.rating || 5));
+        return `
+          <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-1 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-stone-200"><i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i>${r.customerName}</span>
+              <span class="text-amber-400 font-bold">${stars}</span>
+            </div>
+            <p class="text-stone-300 leading-relaxed">${r.comment}</p>
+            <p class="text-[10px] text-stone-500">${r.date || ''}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function submitProductReview(e) {
+      e.preventDefault();
+      if (!currentOpenedProduct) return;
+
+      const btn = document.getElementById('revSubmitBtn');
+      btn.innerText = "Submitting...";
+      btn.disabled = true;
+
+      const payload = {
+        customerName: document.getElementById('revCustomerName').value,
+        rating: document.getElementById('revRatingSelect').value,
+        comment: document.getElementById('revCommentInput').value
+      };
+
+      try {
+        const res = await fetch(`/api/products/${currentOpenedProduct.id}/reviews`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success && data.product) {
+          alert("ধন্যবাদ! আপনার রিভিউটি সফলভাবে যুক্ত হয়েছে।");
+          document.getElementById('revCustomerName').value = "";
+          document.getElementById('revCommentInput').value = "";
+          currentOpenedProduct = data.product;
+          const idx = allProducts.findIndex(p => p.id === data.product.id);
+          if (idx > -1) allProducts[idx] = data.product;
+          renderProductReviews(data.product);
+          renderStore();
+        }
+      } catch (err) {
+        alert("Review submit failed!");
+      } finally {
+        btn.innerText = "Submit Review";
+        btn.disabled = false;
+      }
     }
 
     function renderThumbnails(images) {
       const thumbsContainer = document.getElementById('qvThumbnailsContainer');
       thumbsContainer.innerHTML = images.map((imgUrl, i) => `
-        <img id="thumb_img_${i}" src="${imgUrl}" onclick="setMainImage('${imgUrl}', ${i})" class="w-14 h-14 object-cover rounded-xl border-2 ${i === 0 ? 'border-amber-900 scale-105' : 'border-transparent'} hover:border-amber-900 cursor-pointer shadow-sm transition-all hover:scale-105">
+        <img id="thumb_img_${i}" src="${imgUrl}" onclick="setMainImage('${imgUrl}', ${i})" class="w-14 h-14 object-cover rounded-xl border-2 ${i === 0 ? 'border-amber-400 scale-105' : 'border-transparent'} hover:border-amber-400 cursor-pointer shadow-sm transition-all hover:scale-105">
       `).join('');
     }
 
     function setMainImage(imgUrl, idx = -1) {
       document.getElementById('qvMainImage').src = imgUrl;
       document.querySelectorAll('#qvThumbnailsContainer img').forEach(im => {
-        im.classList.replace('border-amber-900', 'border-transparent');
+        im.classList.replace('border-amber-400', 'border-transparent');
         im.classList.remove('scale-105');
       });
       if (idx >= 0) {
         const selected = document.getElementById(`thumb_img_${idx}`);
         if (selected) {
-          selected.classList.replace('border-transparent', 'border-amber-900');
+          selected.classList.replace('border-transparent', 'border-amber-400');
           selected.classList.add('scale-105');
         }
       }
@@ -920,18 +1078,18 @@
       currentSelectedSize = val;
       document.getElementById('qvSelectedSizeDisplay').innerText = val;
       document.querySelectorAll('.size-pill-btn').forEach(b => {
-        b.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold transition bg-stone-50 border-stone-300 text-stone-700 hover:border-amber-900";
+        b.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold transition bg-stone-950 border-stone-700 text-stone-300 hover:border-amber-500";
       });
-      btn.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold transition bg-amber-950 text-white border-amber-950 shadow-sm";
+      btn.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold transition bg-amber-500 text-stone-950 border-amber-400 shadow-sm";
     }
 
     function selectVariantColor(val, colorIndex, btn) {
       currentSelectedColor = val;
       document.getElementById('qvSelectedColorDisplay').innerText = val;
       document.querySelectorAll('.color-pill-btn').forEach(b => {
-        b.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-medium transition bg-stone-50 border-stone-300 text-stone-700 hover:border-amber-900";
+        b.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-medium transition bg-stone-950 border-stone-700 text-stone-300 hover:border-amber-500";
       });
-      btn.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-medium transition bg-amber-950 text-white border-amber-950 shadow-sm";
+      btn.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold transition bg-amber-500 text-stone-950 border-amber-400 shadow-sm";
 
       if (currentOpenedProduct && currentOpenedProduct.images && currentOpenedProduct.images.length > 0) {
         const targetImgIndex = colorIndex < currentOpenedProduct.images.length ? colorIndex : 0;
@@ -994,7 +1152,7 @@
           appliedCouponCode = "";
           const msg = document.getElementById('couponStatusMsg');
           msg.innerText = `Min cart ₹${appliedCouponMinSpend} required for this coupon!`;
-          msg.className = "text-[11px] text-rose-600 block font-semibold";
+          msg.className = "text-[11px] text-rose-400 block font-semibold";
           msg.classList.remove('hidden');
         }
       }
@@ -1010,7 +1168,7 @@
       const list = document.getElementById('cartItemsList');
 
       if (cart.length === 0) {
-        list.innerHTML = `<div class="text-center py-16 text-stone-400 text-xs"><i class="fa-solid fa-bag-shopping text-3xl mb-2 text-stone-300"></i><p>Your shopping bag is empty.</p></div>`;
+        list.innerHTML = `<div class="text-center py-16 text-stone-500 text-xs"><i class="fa-solid fa-bag-shopping text-3xl mb-2 text-stone-700"></i><p>Your shopping bag is empty.</p></div>`;
         document.getElementById('subTotalDisplay').innerText = "₹0";
         document.getElementById('discountDisplay').innerText = "-₹0";
         document.getElementById('deliveryDisplay').innerText = "₹0";
@@ -1025,22 +1183,22 @@
       list.innerHTML = cart.map((item, index) => {
         const itemImg = (item.images && item.images[0]) || item.image || "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55";
         return `
-          <div class="flex items-center gap-3 border-b border-stone-100 pb-3">
-            <img src="${itemImg}" class="w-14 h-14 object-cover rounded-xl border border-stone-200">
+          <div class="flex items-center gap-3 border-b border-stone-800 pb-3">
+            <img src="${itemImg}" class="w-14 h-14 object-cover rounded-xl border border-stone-700">
             <div class="flex-1">
-              <h5 class="text-xs font-bold text-stone-900 line-clamp-1">${item.name}</h5>
+              <h5 class="text-xs font-bold text-stone-100 line-clamp-1">${item.name}</h5>
               <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="bg-amber-100 text-amber-900 text-[10px] px-2 py-0.5 rounded-md font-bold">${item.selectedSize}</span>
-                <span class="bg-stone-100 text-stone-700 text-[10px] px-2 py-0.5 rounded-md">${item.selectedColor}</span>
+                <span class="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-md font-bold">${item.selectedSize}</span>
+                <span class="bg-stone-800 text-stone-300 text-[10px] px-2 py-0.5 rounded-md">${item.selectedColor}</span>
               </div>
-              <p class="text-xs font-black text-amber-950 mt-1">₹${item.price}</p>
+              <p class="text-xs font-black text-amber-400 mt-1">₹${item.price}</p>
               <div class="flex items-center gap-2 mt-1">
-                <button onclick="updateQty(${index}, -1)" class="w-6 h-6 bg-stone-100 text-xs rounded-lg hover:bg-stone-200 font-bold">-</button>
+                <button onclick="updateQty(${index}, -1)" class="w-6 h-6 bg-stone-800 text-xs rounded-lg hover:bg-stone-700 font-bold">-</button>
                 <span class="text-xs font-bold">${item.qty}</span>
-                <button onclick="updateQty(${index}, 1)" class="w-6 h-6 bg-stone-100 text-xs rounded-lg hover:bg-stone-200 font-bold">+</button>
+                <button onclick="updateQty(${index}, 1)" class="w-6 h-6 bg-stone-800 text-xs rounded-lg hover:bg-stone-700 font-bold">+</button>
               </div>
             </div>
-            <button onclick="cart.splice(${index}, 1); updateCartUI();" class="text-stone-400 hover:text-red-600 text-xs p-1"><i class="fa-solid fa-trash-can"></i></button>
+            <button onclick="cart.splice(${index}, 1); updateCartUI();" class="text-stone-500 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash-can"></i></button>
           </div>
         `;
       }).join('');
@@ -1062,21 +1220,21 @@
           appliedDiscountRate = 0;
           appliedCouponCode = "";
           status.innerText = `এই কুপনের জন্য কমপক্ষে ₹${found.minSpend} টাকার কেনাকাটা প্রয়োজন!`;
-          status.className = "text-[11px] text-rose-600 block font-semibold";
+          status.className = "text-[11px] text-rose-400 block font-semibold";
           status.classList.remove('hidden');
         } else {
           appliedDiscountRate = found.discountPercent;
           appliedCouponCode = found.code;
           appliedCouponMinSpend = found.minSpend || 0;
           status.innerText = `Success! ${found.discountPercent}% discount applied.`;
-          status.className = "text-[11px] text-emerald-700 block font-bold";
+          status.className = "text-[11px] text-emerald-400 block font-bold";
           status.classList.remove('hidden');
         }
       } else {
         appliedDiscountRate = 0;
         appliedCouponCode = "";
         status.innerText = "Invalid coupon code!";
-        status.className = "text-[11px] text-rose-600 block font-medium";
+        status.className = "text-[11px] text-rose-400 block font-medium";
         status.classList.remove('hidden');
       }
       updateCartUI();
@@ -1093,21 +1251,21 @@
           appliedDiscountRate = 0;
           appliedCouponCode = "";
           status.innerText = `এই কুপনের জন্য কমপক্ষে ₹${found.minSpend} টাকার কেনাকাটা প্রয়োজন!`;
-          status.className = "text-[11px] text-rose-600 block font-bold mt-1";
+          status.className = "text-[11px] text-rose-400 block font-bold mt-1";
           status.classList.remove('hidden');
         } else {
           appliedDiscountRate = found.discountPercent;
           appliedCouponCode = found.code;
           appliedCouponMinSpend = found.minSpend || 0;
           status.innerText = `Success! ${found.discountPercent}% discount applied with ${found.code}.`;
-          status.className = "text-[11px] text-emerald-700 block font-bold mt-1";
+          status.className = "text-[11px] text-emerald-400 block font-bold mt-1";
           status.classList.remove('hidden');
         }
       } else {
         appliedDiscountRate = 0;
         appliedCouponCode = "";
         status.innerText = "Invalid coupon code!";
-        status.className = "text-[11px] text-rose-600 block font-bold mt-1";
+        status.className = "text-[11px] text-rose-400 block font-bold mt-1";
         status.classList.remove('hidden');
       }
 
@@ -1187,7 +1345,7 @@
 
       if (cleanPin.length !== 6 || isNaN(cleanPin) || cleanPin.startsWith('0')) {
         isPincodeValid = false;
-        pinInput.className = "w-full border-2 border-rose-500 bg-rose-50/40 p-2.5 rounded-xl font-mono font-bold tracking-wider text-rose-900";
+        pinInput.className = "w-full bg-stone-950 border-2 border-rose-500 p-2.5 rounded-xl font-mono font-bold tracking-wider text-rose-300";
         err.classList.remove('hidden');
         succ.classList.add('hidden');
         return;
@@ -1198,7 +1356,7 @@
         const data = await res.json();
         if (data && data[0] && data[0].Status === "Success") {
           isPincodeValid = true;
-          pinInput.className = "w-full border-2 border-emerald-500 bg-emerald-50/40 p-2.5 rounded-xl font-mono font-bold tracking-wider text-emerald-900";
+          pinInput.className = "w-full bg-stone-950 border-2 border-emerald-500 p-2.5 rounded-xl font-mono font-bold tracking-wider text-emerald-300";
           err.classList.add('hidden');
           succ.classList.remove('hidden');
           const po = data[0].PostOffice[0];
@@ -1210,7 +1368,7 @@
         }
       } catch (e) {
         isPincodeValid = false;
-        pinInput.className = "w-full border-2 border-rose-500 bg-rose-50/40 p-2.5 rounded-xl font-mono font-bold tracking-wider text-rose-900";
+        pinInput.className = "w-full bg-stone-950 border-2 border-rose-500 p-2.5 rounded-xl font-mono font-bold tracking-wider text-rose-300";
         err.classList.remove('hidden');
         succ.classList.add('hidden');
       }
@@ -1331,51 +1489,234 @@
       const container = document.getElementById('myOrdersListContainer');
 
       if (!data.orders || !data.orders.length) {
-        container.innerHTML = `<div class="text-center py-8 text-rose-500 font-bold"><p>No orders found with this number!</p></div>`;
+        container.innerHTML = `<div class="text-center py-8 text-rose-400 font-bold"><p>No orders found with this number!</p></div>`;
         return;
       }
 
       container.innerHTML = data.orders.map(o => {
         const itemsHtml = (o.items || []).map(i => `
-          <div class="flex items-center gap-2 border-b border-stone-100 py-1.5">
-            <img src="${(i.images && i.images[0]) || i.image || ''}" class="w-10 h-10 object-cover rounded-lg border">
+          <div class="flex items-center gap-2 border-b border-stone-800 py-1.5">
+            <img src="${(i.images && i.images[0]) || i.image || ''}" class="w-10 h-10 object-cover rounded-lg border border-stone-700">
             <div class="flex-1">
-              <p class="font-bold text-stone-900">${i.name} (x${i.qty})</p>
-              <p class="text-[10px] text-amber-900 font-bold">Size: ${i.selectedSize || 'N/A'} | Color: ${i.selectedColor || 'N/A'}</p>
+              <p class="font-bold text-stone-100">${i.name} (x${i.qty})</p>
+              <p class="text-[10px] text-amber-400 font-bold">Size: ${i.selectedSize || 'N/A'} | Color: ${i.selectedColor || 'N/A'}</p>
             </div>
-            <span class="font-bold text-stone-800">₹${i.price * i.qty}</span>
+            <span class="font-bold text-stone-200">₹${i.price * i.qty}</span>
           </div>
         `).join('');
 
         return `
-          <div class="border border-stone-200 bg-stone-50/70 p-4 rounded-2xl space-y-2.5 shadow-sm">
-            <div class="flex justify-between items-start border-b pb-2">
+          <div class="border border-stone-800 bg-stone-950 p-4 rounded-2xl space-y-2.5 shadow-sm">
+            <div class="flex justify-between items-start border-b border-stone-800 pb-2">
               <div>
-                <p class="font-mono font-bold text-amber-950 text-sm">#${o.id}</p>
-                <p class="text-[10px] text-stone-400">${o.date}</p>
+                <p class="font-mono font-bold text-amber-400 text-sm">#${o.id}</p>
+                <p class="text-[10px] text-stone-500">${o.date}</p>
               </div>
-              <span class="px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-emerald-100 text-emerald-800">
+              <span class="px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/30">
                 ${o.status}
               </span>
             </div>
 
-            <div class="bg-white p-2.5 rounded-xl border border-stone-200">
+            <div class="bg-stone-900 p-2.5 rounded-xl border border-stone-800">
               ${itemsHtml}
             </div>
 
             <div class="flex flex-wrap justify-between items-center text-[11px] pt-1 gap-2">
-              <p class="text-stone-600">Total: <b class="text-amber-950 text-xs">₹${o.total}</b> (${o.paymentMethod})</p>
+              <p class="text-stone-400">Total: <b class="text-amber-400 text-xs">₹${o.total}</b> (${o.paymentMethod})</p>
               ${o.deliverySlipFile ? `
-                <a href="${o.deliverySlipFile}" download="AURA_DeliverySlip_${o.id}" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 shadow">
+                <a href="${o.deliverySlipFile}" download="AURA_DeliverySlip_${o.id}" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 shadow">
                   <i class="fa-solid fa-file-arrow-down"></i> Download Delivery Slip
                 </a>
               ` : `
-                <span class="text-stone-400 italic">Delivery slip will be available after delivery</span>
+                <span class="text-stone-500 italic">Delivery slip will be available after delivery</span>
               `}
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    function openSupportModal() {
+      document.getElementById('supportModal').classList.remove('hidden');
+      backToSupportStep1();
+    }
+
+    function closeSupportModal() {
+      document.getElementById('supportModal').classList.add('hidden');
+    }
+
+    async function searchOrdersForSupport() {
+      const nameQuery = document.getElementById('supportCustomerNameInput').value.trim();
+      if (nameQuery.length < 2) return alert("অনুগ্রহ করে আপনার নাম লিখুন!");
+
+      const listDiv = document.getElementById('supportOrdersList');
+      const prevWrap = document.getElementById('customerPreviousTicketsWrap');
+      const prevList = document.getElementById('customerPreviousTicketsList');
+      listDiv.innerHTML = `<div class="text-center py-6 text-amber-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> অর্ডার খোঁজা হচ্ছে...</div>`;
+
+      try {
+        const res = await fetch(`/api/support/search?q=${encodeURIComponent(nameQuery)}`);
+        const data = await res.json();
+        supportMatchedOrders = data.orders || [];
+        const tickets = data.tickets || [];
+
+        if (tickets.length > 0) {
+          prevWrap.classList.remove('hidden');
+          prevList.innerHTML = tickets.map(t => `
+            <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-1.5 text-xs">
+              <div class="flex justify-between items-center text-[10px]">
+                <span class="font-mono font-bold text-amber-400">Order #${t.orderId} (${t.ticketId})</span>
+                <span class="text-stone-500">${t.createdAtStr || ''}</span>
+              </div>
+              <p class="text-stone-300"><b class="text-rose-400">আপনার সমস্যা:</b> ${t.issueText}</p>
+              ${t.adminReply ? `
+                <div class="bg-emerald-950/70 border border-emerald-500/30 p-2 rounded-lg text-emerald-300">
+                  <p class="font-bold text-[11px]"><i class="fa-solid fa-reply mr-1"></i> AURA Support Reply:</p>
+                  <p class="mt-0.5">${t.adminReply}</p>
+                </div>
+              ` : `
+                <p class="text-[10px] text-amber-300/80 italic"><i class="fa-regular fa-clock mr-1"></i> সাপোর্ট টিম আপনার সমস্যাটি দেখছে, শীঘ্রই রিপ্লাই পাবেন।</p>
+              `}
+            </div>
+          `).join('');
+        } else {
+          prevWrap.classList.add('hidden');
+        }
+
+        if (supportMatchedOrders.length === 0) {
+          selectedSupportOrder = null;
+          updateSupportNextBtn();
+          listDiv.innerHTML = `
+            <div class="text-center py-6 text-rose-400 bg-rose-950/30 rounded-2xl border border-rose-500/30 font-bold">
+              <p>এই নামে কোনো অর্ডার পাওয়া যায়নি!</p>
+              <p class="text-[10px] text-stone-400 font-normal mt-1">অর্ডার করার সময় যে নাম দিয়েছিলেন ঠিক সেই নামটি লিখুন।</p>
+            </div>
+          `;
+          return;
+        }
+
+        selectedSupportOrder = null;
+        updateSupportNextBtn();
+
+        listDiv.innerHTML = supportMatchedOrders.map((o, idx) => {
+          const itemNames = (o.items || []).map(i => `${i.name} (x${i.qty})`).join(', ');
+          return `
+            <div onclick="selectOrderForSupport(${idx}, this)" class="support-order-card cursor-pointer bg-stone-950 hover:bg-stone-800/80 border-2 border-stone-800 p-3.5 rounded-2xl transition space-y-1">
+              <div class="flex justify-between items-center">
+                <span class="font-mono font-bold text-amber-400 text-xs">#${o.id}</span>
+                <span class="text-[10px] bg-stone-800 text-stone-300 px-2 py-0.5 rounded-full">${o.status}</span>
+              </div>
+              <p class="font-bold text-stone-100 text-xs">${o.customerName} (${o.phone})</p>
+              <p class="text-[11px] text-stone-400 line-clamp-1">${itemNames}</p>
+              <p class="text-[10px] text-emerald-400 font-bold">Total: ₹${o.total} • ${o.date}</p>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        listDiv.innerHTML = `<div class="text-center py-4 text-rose-400">Error searching orders.</div>`;
+      }
+    }
+
+    function selectOrderForSupport(index, cardEl) {
+      selectedSupportOrder = supportMatchedOrders[index];
+      document.querySelectorAll('.support-order-card').forEach(c => {
+        c.classList.remove('border-emerald-500', 'bg-emerald-950/30');
+        c.classList.add('border-stone-800');
+      });
+      cardEl.classList.remove('border-stone-800');
+      cardEl.classList.add('border-emerald-500', 'bg-emerald-950/30');
+      updateSupportNextBtn();
+    }
+
+    function updateSupportNextBtn() {
+      const btn = document.getElementById('supportNextBtn');
+      if (selectedSupportOrder) {
+        btn.disabled = false;
+        btn.className = "w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-stone-950 py-3.5 rounded-xl font-extrabold text-xs transition shadow cursor-pointer";
+        btn.innerHTML = `Next: অর্ডার #${selectedSupportOrder.id}-এর সমস্যা জানান &rarr;`;
+      } else {
+        btn.disabled = true;
+        btn.className = "w-full bg-stone-800 text-stone-500 py-3.5 rounded-xl font-extrabold text-xs transition cursor-not-allowed";
+        btn.innerHTML = `যে অর্ডারে সমস্যা সেটি সিলেক্ট করে Next চাপুন &rarr;`;
+      }
+    }
+
+    function goToSupportStep2() {
+      if (!selectedSupportOrder) return;
+      document.getElementById('supportStep1').classList.add('hidden');
+      document.getElementById('supportStep2Form').classList.remove('hidden');
+      document.getElementById('supportStepSubtitle').innerText = "Step 2: সমস্যার বিবরণ, ছবি বা ভিডিও দিন";
+
+      document.getElementById('selectedSupportOrderId').innerText = '#' + selectedSupportOrder.id;
+      const itemNames = (selectedSupportOrder.items || []).map(i => i.name).join(', ');
+      document.getElementById('selectedSupportOrderSummary').innerText = `${selectedSupportOrder.customerName} • ${itemNames}`;
+    }
+
+    function backToSupportStep1() {
+      document.getElementById('supportStep2Form').classList.add('hidden');
+      document.getElementById('supportStep1').classList.remove('hidden');
+      document.getElementById('supportStepSubtitle').innerText = "Step 1: যে নামে অর্ডার করেছেন সেটি দিয়ে আপনার অর্ডার খুঁজুন";
+    }
+
+    function fileToDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function submitSupportTicket(e) {
+      e.preventDefault();
+      if (!selectedSupportOrder) return;
+
+      const issueText = document.getElementById('supportIssueText').value.trim();
+      const photoFile = document.getElementById('supportPhotoInput').files[0];
+      const videoFile = document.getElementById('supportVideoInput').files[0];
+
+      if (videoFile && videoFile.size > 15 * 1024 * 1024) {
+        return alert("ভিডিও ফাইলটি ১৫ MB-র কম হতে হবে!");
+      }
+
+      const btn = document.getElementById('supportSubmitBtn');
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Sending to Support Bot...`;
+      btn.disabled = true;
+
+      try {
+        let photoBase64 = "";
+        let videoBase64 = "";
+
+        if (photoFile) photoBase64 = await fileToDataURL(photoFile);
+        if (videoFile) videoBase64 = await fileToDataURL(videoFile);
+
+        const res = await fetch('/api/support/ticket', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: selectedSupportOrder.id,
+            issueText,
+            photoBase64,
+            videoBase64
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(`✅ আপনার অভিযোগটি সফলভাবে পাঠানো হয়েছে!\nTicket ID: ${data.ticketId}\n\nআমাদের সাপোর্ট টিম শীঘ্রই রিপ্লাই দেবে। আপনি এখানে নাম লিখে রিপ্লাই চেক করতে পারবেন।`);
+          document.getElementById('supportIssueText').value = "";
+          document.getElementById('supportPhotoInput').value = "";
+          document.getElementById('supportVideoInput').value = "";
+          backToSupportStep1();
+          searchOrdersForSupport();
+        } else {
+          alert(data.message || "Failed to send support issue.");
+        }
+      } catch (err) {
+        alert("Network error! Please try again.");
+      } finally {
+        btn.innerHTML = `<i class="fa-brands fa-telegram mr-1.5 text-sm"></i> Send Issue to Support Team`;
+        btn.disabled = false;
+      }
     }
 
     loadStore();
