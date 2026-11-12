@@ -60,18 +60,18 @@
     <header class="glass-nav border-b border-amber-500/20 sticky top-[37px] z-40 transition-all">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-3">
         
-        <a href="/" class="flex flex-col group flex-shrink-0">
+        <a href="#catalogSection" onclick="showHomeCatalog()" class="flex flex-col group flex-shrink-0">
           <span class="text-2xl sm:text-3xl font-extrabold font-cinzel tracking-[0.25em] text-amber-100 group-hover:text-amber-400 transition">AURA</span>
           <span class="text-[9px] uppercase tracking-[0.45em] text-amber-500 font-bold -mt-1 group-hover:tracking-[0.5em] transition-all">Fine Store</span>
         </a>
 
         <nav class="hidden lg:flex items-center gap-6 text-xs font-bold tracking-wider text-stone-300 uppercase">
-          <a href="#" onclick="showAllCatalog()" class="hover:text-amber-400 transition flex items-center gap-1.5">
-            <i class="fa-solid fa-gem text-amber-500"></i> Featured
+          <a href="#catalogSection" onclick="showHomeCatalog()" class="text-amber-400 hover:text-amber-300 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-house text-amber-500"></i> Home
           </a>
 
           <div class="relative group">
-            <button class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition">
+            <button onclick="filterBySection('Men', 'All')" class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition uppercase">
               <span>Men</span>
               <i class="fa-solid fa-chevron-down text-[9px] transition-transform group-hover:rotate-180"></i>
             </button>
@@ -85,12 +85,18 @@
               <a href="#catalogSection" onclick="filterBySection('Men', 'Watches')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
                 <span>⌚ Chrono Watches</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore Men's &rarr;</a>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'Trousers')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
+                <span>👖 Formal Trousers</span>
+              </a>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'Perfumes')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
+                <span>✨ Royal Perfumes</span>
+              </a>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore All Men's &rarr;</a>
             </div>
           </div>
 
           <div class="relative group">
-            <button class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition">
+            <button onclick="filterBySection('Women', 'All')" class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition uppercase">
               <span>Women</span>
               <i class="fa-solid fa-chevron-down text-[9px] transition-transform group-hover:rotate-180"></i>
             </button>
@@ -110,12 +116,15 @@
               <a href="#catalogSection" onclick="filterBySection('Women', 'Handbags')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
                 <span>👜 Handbags & Clutches</span>
               </a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore Women's &rarr;</a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Bangles')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
+                <span>💫 Temple Bangles</span>
+              </a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore All Women's &rarr;</a>
             </div>
           </div>
 
           <div class="relative group">
-            <button class="flex items-center gap-1.5 text-rose-300 hover:text-rose-200 py-1.5 px-3 rounded-full bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 transition font-extrabold shadow-sm">
+            <button onclick="filterBySection('Gifts', 'All')" class="flex items-center gap-1.5 text-rose-300 hover:text-rose-200 py-1.5 px-3 rounded-full bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 transition font-extrabold shadow-sm uppercase">
               <i class="fa-solid fa-heart text-rose-500 animate-pulse"></i>
               <span>GF & BF Gifts</span>
               <i class="fa-solid fa-chevron-down text-[8px]"></i>
@@ -129,6 +138,9 @@
               </a>
               <a href="#catalogSection" onclick="filterBySection('Gifts', 'Gift Sets')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300 transition font-medium">
                 <span>🌹 Luxury Gift Hampers</span>
+              </a>
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Customized Lamps')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300 transition font-medium">
+                <span>💡 3D Galaxy Crystal Lamps</span>
               </a>
               <a href="#catalogSection" onclick="filterBySection('Gifts', 'All')" class="block px-3 py-2 text-[11px] text-rose-400 font-bold border-t border-stone-800 mt-1">Explore All Gifts &rarr;</a>
             </div>
@@ -231,19 +243,25 @@
     </section>
 
     <main id="catalogSection" class="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-      <div class="flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 border-b border-amber-500/15">
-        <div>
-          <span class="text-[10px] font-bold tracking-widest text-amber-400 uppercase">Handpicked Catalog</span>
-          <h3 id="currentCategoryHeading" class="font-cinzel font-bold text-2xl sm:text-3xl text-amber-50 mt-0.5">Featured Collections</h3>
-          <p class="text-xs text-stone-400 mt-1">Presenting <span id="countDisplay" class="font-bold text-amber-400">0</span> master creations</p>
+      <div class="flex flex-col gap-4 mb-8 pb-4 border-b border-amber-500/15">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-bold tracking-widest text-amber-400 uppercase">Handpicked Catalog</span>
+            <h3 id="currentCategoryHeading" class="font-cinzel font-bold text-2xl sm:text-3xl text-amber-50 mt-0.5">Home Collections</h3>
+            <p class="text-xs text-stone-400 mt-1">Presenting <span id="countDisplay" class="font-bold text-amber-400">0</span> master creations</p>
+          </div>
+          
+          <div class="flex items-center gap-2 overflow-x-auto pb-1" id="categoryTabs">
+            <button onclick="showHomeCatalog(this)" class="cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400">
+              <i class="fa-solid fa-house mr-1"></i> Home
+            </button>
+            <button onclick="filterBySection('Men', 'All', this)" class="cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition">Men</button>
+            <button onclick="filterBySection('Women', 'All', this)" class="cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition">Women</button>
+            <button onclick="filterBySection('Gifts', 'All', this)" class="cat-btn bg-rose-950/60 hover:bg-rose-900/70 border border-rose-500/40 hover:border-rose-400 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-rose-300 transition">🎁 GF & BF Gifts</button>
+          </div>
         </div>
-        
-        <div class="flex items-center gap-2 overflow-x-auto pb-1" id="categoryTabs">
-          <button onclick="setCategory('All', this)" class="cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400">Featured</button>
-          <button onclick="filterBySection('Men', 'All', this)" class="cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition">Men</button>
-          <button onclick="filterBySection('Women', 'All', this)" class="cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition">Women</button>
-          <button onclick="filterBySection('Gifts', 'All', this)" class="cat-btn bg-rose-950/60 hover:bg-rose-900/70 border border-rose-500/40 hover:border-rose-400 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-rose-300 transition">🎁 GF & BF Gifts</button>
-        </div>
+
+        <div id="subCategoryTabsBar" class="hidden flex items-center gap-2 overflow-x-auto pt-1 pb-1"></div>
       </div>
 
       <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
@@ -566,7 +584,10 @@
         </div>
 
         <div id="customerPreviousTicketsWrap" class="hidden space-y-2">
-          <p class="text-[11px] font-bold text-amber-400 uppercase tracking-wider"><i class="fa-solid fa-comments mr-1"></i> Previous Support Requests & Replies:</p>
+          <p class="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
+            <span><i class="fa-solid fa-comments mr-1"></i> Live Support Chat & Replies:</span>
+            <span class="text-[9px] text-emerald-400 font-mono">● LIVE AUTO-SYNC</span>
+          </p>
           <div id="customerPreviousTicketsList" class="space-y-2 max-h-44 overflow-y-auto pr-1"></div>
         </div>
 
@@ -592,15 +613,30 @@
           <textarea id="supportIssueText" rows="3" required placeholder="Write the issue you are facing with this order (e.g., damaged product, wrong item, size issue, delivery delay)..." class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-emerald-500"></textarea>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl">
-            <label class="block font-bold text-amber-300 mb-1"><i class="fa-solid fa-camera mr-1"></i> Upload Photo Proof</label>
-            <input type="file" id="supportPhotoInput" accept="image/*" class="w-full text-[11px] text-stone-400 file:bg-amber-500 file:text-stone-950 file:font-bold file:border-0 file:rounded-lg file:px-2.5 file:py-1 cursor-pointer">
+        <div class="space-y-3">
+          <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-2">
+            <div class="flex justify-between items-center">
+              <label class="block font-bold text-amber-300"><i class="fa-solid fa-camera mr-1"></i> Upload Photos (Max 10MB each, Multiple Allowed)</label>
+              <label class="bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold px-3 py-1 rounded-lg text-[11px] cursor-pointer shadow">
+                + Add Photos
+                <input type="file" id="supportPhotoInput" accept="image/*" multiple onchange="handleSupportPhotosSelect(this)" class="hidden">
+              </label>
+            </div>
+            <div id="supportSelectedPhotosPreview" class="flex flex-wrap gap-2"></div>
           </div>
 
-          <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl">
-            <label class="block font-bold text-rose-400 mb-1"><i class="fa-solid fa-video mr-1"></i> Upload Video Proof (Max 15MB)</label>
-            <input type="file" id="supportVideoInput" accept="video/*" class="w-full text-[11px] text-stone-400 file:bg-rose-500 file:text-white file:font-bold file:border-0 file:rounded-lg file:px-2.5 file:py-1 cursor-pointer">
+          <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-2">
+            <div class="flex justify-between items-center">
+              <label class="block font-bold text-rose-400"><i class="fa-solid fa-video mr-1"></i> Upload Video Proof (Max 50MB)</label>
+              <label class="bg-rose-500 hover:bg-rose-400 text-white font-extrabold px-3 py-1 rounded-lg text-[11px] cursor-pointer shadow">
+                Choose Video
+                <input type="file" id="supportVideoInput" accept="video/*" onchange="handleSupportVideoSelect(this)" class="hidden">
+              </label>
+            </div>
+            <div id="supportSelectedVideoPreview" class="hidden bg-stone-900 border border-stone-700 px-3 py-2 rounded-lg flex items-center justify-between">
+              <span id="supportVideoFileName" class="text-[11px] text-stone-200 truncate max-w-[320px]"></span>
+              <button type="button" onclick="clearSupportVideo()" title="Remove Video" class="bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center">&times;</button>
+            </div>
           </div>
         </div>
 
@@ -619,7 +655,7 @@
   <footer class="bg-black/90 text-stone-400 pt-16 pb-8 border-t border-amber-500/20 mt-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-stone-900 text-xs">
       <div class="space-y-4">
-        <a href="/" class="flex flex-col">
+        <a href="#catalogSection" onclick="showHomeCatalog(); return false;" class="flex flex-col">
           <span class="text-3xl font-extrabold font-cinzel tracking-[0.25em] text-amber-100">AURA</span>
           <span class="text-[10px] uppercase tracking-[0.45em] text-amber-500 font-bold -mt-1">Fine Store</span>
         </a>
@@ -675,7 +711,7 @@
     let currentDealIndex = 0;
     let dealSliderInterval = null;
 
-    let activeMainSection = 'All';
+    let activeMainSection = 'Home';
     let activeSubCategory = 'All';
     let cart = [];
     let activeCoupons = [];
@@ -692,6 +728,15 @@
 
     let supportMatchedOrders = [];
     let selectedSupportOrder = null;
+    let supportPhotosBase64 = [];
+    let supportVideoBase64 = "";
+    let supportLiveInterval = null;
+
+    const sectionSubCategories = {
+      "Men": ["Shirts", "T-Shirts", "Watches", "Trousers", "Perfumes"],
+      "Women": ["Jhumka", "Studs", "Kurtis", "Sarees", "Handbags", "Bangles"],
+      "Gifts": ["Couples", "Romantic", "Gift Sets", "Customized Lamps"]
+    };
 
     function setupDealCarousel() {
       if (!dealBanners.length) return;
@@ -825,39 +870,68 @@
       applyCoupon();
     }
 
-    function showAllCatalog() {
-      activeMainSection = 'All';
+    function showHomeCatalog(btn = null) {
+      activeMainSection = 'Home';
       activeSubCategory = 'All';
-      document.getElementById('currentCategoryHeading').innerText = "Featured Collections";
+      document.getElementById('currentCategoryHeading').innerText = "Home Collections";
+      document.getElementById('subCategoryTabsBar').classList.add('hidden');
+
+      document.querySelectorAll('.cat-btn').forEach(b => {
+        b.className = "cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition";
+      });
+      const homeBtn = btn || document.querySelector('#categoryTabs button');
+      if (homeBtn) {
+        homeBtn.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400";
+      }
       renderStore();
+    }
+
+    function renderSubCategoryBar(mainSec, activeSub) {
+      const subBar = document.getElementById('subCategoryTabsBar');
+      const subs = sectionSubCategories[mainSec] || [];
+      if (!subs.length) {
+        subBar.classList.add('hidden');
+        return;
+      }
+      subBar.classList.remove('hidden');
+      const allPill = `
+        <button onclick="filterBySection('${mainSec}', 'All')" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold transition whitespace-nowrap ${activeSub === 'All' ? 'bg-amber-500/25 text-amber-300 border border-amber-400' : 'bg-stone-950 text-stone-400 border border-stone-800 hover:border-amber-500/50'}">
+          All ${mainSec}
+        </button>
+      `;
+      const pills = subs.map(sub => `
+        <button onclick="filterBySection('${mainSec}', '${sub}')" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold transition whitespace-nowrap ${activeSub === sub ? 'bg-amber-500/25 text-amber-300 border border-amber-400' : 'bg-stone-950 text-stone-400 border border-stone-800 hover:border-amber-500/50'}">
+          ${sub}
+        </button>
+      `).join('');
+      subBar.innerHTML = allPill + pills;
     }
 
     function filterBySection(mainSec, subCat = 'All', btn = null) {
       activeMainSection = mainSec;
       activeSubCategory = subCat;
 
-      let title = mainSec;
+      let title = mainSec === 'Gifts' ? 'GF & BF Special Gifts' : mainSec;
       if (subCat !== 'All') title += ` &rarr; ${subCat}`;
       document.getElementById('currentCategoryHeading').innerHTML = title;
 
+      document.querySelectorAll('.cat-btn').forEach(b => {
+        b.className = "cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition";
+      });
+
       if (btn) {
-        document.querySelectorAll('.cat-btn').forEach(b => {
-          b.className = "cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition";
-        });
         btn.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400";
+      } else {
+        const tabBtns = document.querySelectorAll('#categoryTabs button');
+        tabBtns.forEach(b => {
+          if (b.innerText.includes(mainSec)) {
+            b.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400";
+          }
+        });
       }
 
+      renderSubCategoryBar(mainSec, subCat);
       renderStore();
-    }
-
-    function setCategory(cat, btn) {
-      if (cat === 'All') showAllCatalog();
-      if (btn) {
-        document.querySelectorAll('.cat-btn').forEach(b => {
-          b.className = "cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition";
-        });
-        btn.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400";
-      }
     }
 
     function filterProducts() { renderStore(); }
@@ -866,10 +940,10 @@
       const search = (document.getElementById('searchInput').value || "").toLowerCase();
       
       const filtered = allProducts.filter(p => {
-        const matchSearch = p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search);
+        const matchSearch = p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search) || (p.category && p.category.toLowerCase().includes(search));
         if (search.length > 0) return matchSearch;
-        if (activeMainSection === 'All') {
-          return p.showOnHome !== false;
+        if (activeMainSection === 'Home') {
+          return p.showOnHome === true;
         }
         const matchMain = p.mainCategory === activeMainSection;
         const matchSub = (activeSubCategory === 'All' || p.category === activeSubCategory);
@@ -1539,10 +1613,55 @@
     function openSupportModal() {
       document.getElementById('supportModal').classList.remove('hidden');
       backToSupportStep1();
+      if (supportLiveInterval) clearInterval(supportLiveInterval);
+      supportLiveInterval = setInterval(() => {
+        const phoneVal = (document.getElementById('supportPhoneInput').value || "").trim();
+        if (phoneVal.length >= 6 && !document.getElementById('supportModal').classList.contains('hidden')) {
+          refreshSupportTicketsSilently(phoneVal);
+        }
+      }, 3000);
     }
 
     function closeSupportModal() {
       document.getElementById('supportModal').classList.add('hidden');
+      if (supportLiveInterval) clearInterval(supportLiveInterval);
+    }
+
+    function renderCustomerTickets(tickets) {
+      const prevWrap = document.getElementById('customerPreviousTicketsWrap');
+      const prevList = document.getElementById('customerPreviousTicketsList');
+      if (tickets && tickets.length > 0) {
+        prevWrap.classList.remove('hidden');
+        prevList.innerHTML = tickets.map(t => `
+          <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-1.5 text-xs">
+            <div class="flex justify-between items-center text-[10px]">
+              <span class="font-mono font-bold text-amber-400">Order #${t.orderId} (${t.ticketId})</span>
+              <span class="text-stone-500">${t.createdAtStr || ''}</span>
+            </div>
+            <p class="text-stone-300"><b class="text-rose-400">Your Issue:</b> ${t.issueText}</p>
+            ${t.adminReply ? `
+              <div class="bg-emerald-950/70 border border-emerald-500/30 p-2 rounded-lg text-emerald-300">
+                <p class="font-bold text-[11px]"><i class="fa-solid fa-reply mr-1"></i> AURA Support Reply:</p>
+                <p class="mt-0.5">${t.adminReply}</p>
+              </div>
+            ` : `
+              <p class="text-[10px] text-amber-300/80 italic"><i class="fa-regular fa-clock mr-1"></i> Our support team is reviewing your request.</p>
+            `}
+          </div>
+        `).join('');
+      } else {
+        prevWrap.classList.add('hidden');
+      }
+    }
+
+    async function refreshSupportTicketsSilently(phoneQuery) {
+      try {
+        const res = await fetch(`/api/support/search?q=${encodeURIComponent(phoneQuery)}&t=${Date.now()}`);
+        const data = await res.json();
+        if (data.success) {
+          renderCustomerTickets(data.tickets || []);
+        }
+      } catch (e) {}
     }
 
     async function searchOrdersForSupport() {
@@ -1550,38 +1669,13 @@
       if (phoneQuery.length < 6) return alert("Please enter your 10-digit mobile number!");
 
       const listDiv = document.getElementById('supportOrdersList');
-      const prevWrap = document.getElementById('customerPreviousTicketsWrap');
-      const prevList = document.getElementById('customerPreviousTicketsList');
       listDiv.innerHTML = `<div class="text-center py-6 text-amber-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Searching orders...</div>`;
 
       try {
-        const res = await fetch(`/api/support/search?q=${encodeURIComponent(phoneQuery)}`);
+        const res = await fetch(`/api/support/search?q=${encodeURIComponent(phoneQuery)}&t=${Date.now()}`);
         const data = await res.json();
         supportMatchedOrders = data.orders || [];
-        const tickets = data.tickets || [];
-
-        if (tickets.length > 0) {
-          prevWrap.classList.remove('hidden');
-          prevList.innerHTML = tickets.map(t => `
-            <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-1.5 text-xs">
-              <div class="flex justify-between items-center text-[10px]">
-                <span class="font-mono font-bold text-amber-400">Order #${t.orderId} (${t.ticketId})</span>
-                <span class="text-stone-500">${t.createdAtStr || ''}</span>
-              </div>
-              <p class="text-stone-300"><b class="text-rose-400">Your Issue:</b> ${t.issueText}</p>
-              ${t.adminReply ? `
-                <div class="bg-emerald-950/70 border border-emerald-500/30 p-2 rounded-lg text-emerald-300">
-                  <p class="font-bold text-[11px]"><i class="fa-solid fa-reply mr-1"></i> AURA Support Reply:</p>
-                  <p class="mt-0.5">${t.adminReply}</p>
-                </div>
-              ` : `
-                <p class="text-[10px] text-amber-300/80 italic"><i class="fa-regular fa-clock mr-1"></i> Our support team is reviewing your request.</p>
-              `}
-            </div>
-          `).join('');
-        } else {
-          prevWrap.classList.add('hidden');
-        }
+        renderCustomerTickets(data.tickets || []);
 
         if (supportMatchedOrders.length === 0) {
           selectedSupportOrder = null;
@@ -1666,45 +1760,81 @@
       });
     }
 
+    async function handleSupportPhotosSelect(input) {
+      const files = Array.from(input.files || []);
+      for (const f of files) {
+        if (f.size > 10 * 1024 * 1024) {
+          alert(`Photo "${f.name}" exceeds 10MB limit and was skipped.`);
+          continue;
+        }
+        const b64 = await fileToDataURL(f);
+        supportPhotosBase64.push(b64);
+      }
+      input.value = "";
+      renderSupportPhotosPreview();
+    }
+
+    function removeSupportPhoto(idx) {
+      supportPhotosBase64.splice(idx, 1);
+      renderSupportPhotosPreview();
+    }
+
+    function renderSupportPhotosPreview() {
+      const wrap = document.getElementById('supportSelectedPhotosPreview');
+      wrap.innerHTML = supportPhotosBase64.map((src, idx) => `
+        <div class="relative w-14 h-14 rounded-lg overflow-hidden border border-stone-700">
+          <img src="${src}" class="w-full h-full object-cover">
+          <button type="button" onclick="removeSupportPhoto(${idx})" title="Remove Photo" class="absolute top-0.5 right-0.5 bg-rose-600 hover:bg-rose-500 text-white w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    async function handleSupportVideoSelect(input) {
+      const file = input.files[0];
+      if (!file) return;
+      if (file.size > 50 * 1024 * 1024) {
+        input.value = "";
+        return alert("Video file size must be under 50MB!");
+      }
+      supportVideoBase64 = await fileToDataURL(file);
+      document.getElementById('supportVideoFileName').innerText = `${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
+      document.getElementById('supportSelectedVideoPreview').classList.remove('hidden');
+      input.value = "";
+    }
+
+    function clearSupportVideo() {
+      supportVideoBase64 = "";
+      document.getElementById('supportSelectedVideoPreview').classList.add('hidden');
+      document.getElementById('supportVideoFileName').innerText = "";
+    }
+
     async function submitSupportTicket(e) {
       e.preventDefault();
       if (!selectedSupportOrder) return;
 
       const issueText = document.getElementById('supportIssueText').value.trim();
-      const photoFile = document.getElementById('supportPhotoInput').files[0];
-      const videoFile = document.getElementById('supportVideoInput').files[0];
-
-      if (videoFile && videoFile.size > 15 * 1024 * 1024) {
-        return alert("Video file size must be under 15 MB!");
-      }
-
       const btn = document.getElementById('supportSubmitBtn');
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Submitting...`;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Uploading & Submitting...`;
       btn.disabled = true;
 
       try {
-        let photoBase64 = "";
-        let videoBase64 = "";
-
-        if (photoFile) photoBase64 = await fileToDataURL(photoFile);
-        if (videoFile) videoBase64 = await fileToDataURL(videoFile);
-
         const res = await fetch('/api/support/ticket', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             orderId: selectedSupportOrder.id,
             issueText,
-            photoBase64,
-            videoBase64
+            photosBase64: supportPhotosBase64,
+            videoBase64: supportVideoBase64
           })
         });
         const data = await res.json();
         if (data.success) {
-          alert(`✅ Your support request has been submitted!\nTicket ID: ${data.ticketId}\n\nYou can check our support team's reply anytime using your mobile number.`);
+          alert(`✅ Your support request has been submitted!\nTicket ID: ${data.ticketId}\n\nKeep this window open or check back anytime for our support reply.`);
           document.getElementById('supportIssueText').value = "";
-          document.getElementById('supportPhotoInput').value = "";
-          document.getElementById('supportVideoInput').value = "";
+          supportPhotosBase64 = [];
+          renderSupportPhotosPreview();
+          clearSupportVideo();
           backToSupportStep1();
           searchOrdersForSupport();
         } else {
