@@ -37,7 +37,7 @@
           <h1 class="text-2xl font-cinzel font-bold text-amber-400">AURA Fine Store Command</h1>
           <span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">● LIVE AUTO-SYNC</span>
         </div>
-        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Home Catalog Controls & Customer Support Replies</p>
+        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Deal Timer Control, Home Catalog & Customer Support</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <a href="#supportDeskSection" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
@@ -77,23 +77,45 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
-        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-truck-fast mr-1.5"></i> COD Delivery & Token Settings</h3>
+        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-stopwatch mr-1.5"></i> Flash Deal Timer & Delivery Control</h3>
         
         <div class="space-y-3 text-xs">
+          <div class="bg-slate-800/90 p-3.5 rounded-2xl border border-amber-500/30 space-y-2.5">
+            <div class="flex justify-between items-center">
+              <label class="font-bold text-amber-300">Flash Deal Countdown Timer:</label>
+              <span id="adminDealTimerStatus" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-400">Deal End</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <span class="text-[10px] text-slate-400 block mb-0.5">Hours</span>
+                <input type="number" id="dealHoursInput" min="0" max="99" value="2" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-bold">
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block mb-0.5">Minutes</span>
+                <input type="number" id="dealMinsInput" min="0" max="59" value="30" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-bold">
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" onclick="setFlashDealTimer()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 py-2 rounded-xl font-extrabold transition shadow">Start Timer</button>
+              <button type="button" onclick="deleteFlashDealTimer()" class="bg-rose-600/25 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 px-3 py-2 rounded-xl font-bold transition">
+                <i class="fa-solid fa-trash mr-1"></i> Delete Timer
+              </button>
+            </div>
+          </div>
+
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2">
             <label class="block font-bold text-slate-200">COD Only Delivery Charge (₹):</label>
             <div class="flex gap-2">
-              <input type="number" id="deliveryChargeInput" min="0" placeholder="e.g. 49" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-bold">
-              <button onclick="saveDeliveryCharge()" class="bg-amber-500 text-slate-950 px-4 py-2 rounded-xl font-bold hover:bg-amber-400 transition whitespace-nowrap">Save Fee</button>
+              <input type="number" id="deliveryChargeInput" min="0" placeholder="e.g. 49" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
+              <button onclick="saveDeliveryCharge()" class="bg-amber-500 text-slate-950 px-3.5 py-2 rounded-xl font-bold hover:bg-amber-400 transition whitespace-nowrap">Save Fee</button>
             </div>
-            <p class="text-[10px] text-emerald-400">UPI Prepaid orders are always FREE. This fee applies only when customer selects COD.</p>
           </div>
 
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2">
             <label class="block font-bold text-slate-200">COD Advance Token (%):</label>
             <div class="flex gap-2">
-              <input type="number" id="codAdvanceInput" min="1" max="100" value="15" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-bold">
-              <button onclick="saveCodSettings()" class="bg-emerald-500 text-slate-950 px-4 py-2 rounded-xl font-bold hover:bg-emerald-400 transition whitespace-nowrap">Update %</button>
+              <input type="number" id="codAdvanceInput" min="1" max="100" value="15" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
+              <button onclick="saveCodSettings()" class="bg-emerald-500 text-slate-950 px-3.5 py-2 rounded-xl font-bold hover:bg-emerald-400 transition whitespace-nowrap">Update %</button>
             </div>
           </div>
         </div>
@@ -120,7 +142,7 @@
           </div>
         </form>
 
-        <div id="adminCouponsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-36 overflow-y-auto pr-1"></div>
+        <div id="adminCouponsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-44 overflow-y-auto pr-1"></div>
       </div>
     </div>
 
@@ -326,6 +348,7 @@
     let cachedSupportTickets = [];
     let currentFormImages = [];
     let adminLiveTimer = null;
+    let adminDealEndMs = 0;
 
     const subCategoriesMap = {
       "Men": ["Shirts", "T-Shirts", "Watches", "Trousers", "Perfumes"],
@@ -340,6 +363,58 @@
       subSelect.innerHTML = opts.map(o => `<option value="${o}">${o}</option>`).join('');
     }
     updateSubCategories();
+
+    function updateAdminTimerBadge() {
+      const badge = document.getElementById('adminDealTimerStatus');
+      if (!adminDealEndMs || adminDealEndMs <= Date.now()) {
+        adminDealEndMs = 0;
+        badge.innerText = "Deal End";
+        badge.className = "text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-400";
+        return;
+      }
+      const diff = Math.floor((adminDealEndMs - Date.now()) / 1000);
+      const h = String(Math.floor(diff / 3600)).padStart(2, '0');
+      const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+      const s = String(diff % 60).padStart(2, '0');
+      badge.innerText = `LIVE: ${h}h ${m}m ${s}s`;
+      badge.className = "text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400";
+    }
+    setInterval(updateAdminTimerBadge, 1000);
+
+    async function setFlashDealTimer() {
+      const h = Number(document.getElementById('dealHoursInput').value) || 0;
+      const m = Number(document.getElementById('dealMinsInput').value) || 0;
+      const totalMs = (h * 3600 + m * 60) * 1000;
+      if (totalMs <= 0) return alert("Please enter hours or minutes greater than 0!");
+      const endTime = Date.now() + totalMs;
+
+      const res = await fetch('/api/admin/store-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: currentPin, dealEndTime: endTime })
+      });
+      const data = await res.json();
+      if (data.success) {
+        adminDealEndMs = endTime;
+        updateAdminTimerBadge();
+        alert(`Flash Deal Timer started for ${h}h ${m}m!`);
+      }
+    }
+
+    async function deleteFlashDealTimer() {
+      if (!confirm("Stop and delete the active Flash Deal Timer?")) return;
+      const res = await fetch('/api/admin/store-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: currentPin, dealEndTime: 0 })
+      });
+      const data = await res.json();
+      if (data.success) {
+        adminDealEndMs = 0;
+        updateAdminTimerBadge();
+        alert("Deal Timer deleted! Store now shows 'Deal End'.");
+      }
+    }
 
     if (currentPin) verifyAndOpen(currentPin);
 
@@ -439,6 +514,8 @@
           if (ordData.storeSettings) {
             document.getElementById('deliveryChargeInput').value = ordData.storeSettings.deliveryCharge || 0;
             document.getElementById('codAdvanceInput').value = ordData.storeSettings.codAdvancePercent || 15;
+            adminDealEndMs = ordData.storeSettings.dealEndTime || 0;
+            updateAdminTimerBadge();
           }
 
           renderAdminCoupons();
@@ -1028,7 +1105,7 @@
     }
 
     async function deleteCustomerOrder(orderId) {
-      if (!confirm(`Delete Order #${orderId} permanently?`)) return;
+      if (!confirm(`Delete Order #${orderId} permanently from MongoDB?`)) return;
       const res = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -1036,7 +1113,7 @@
       });
       const data = await res.json();
       if (data.success) {
-        alert(`Order #${orderId} deleted!`);
+        alert(`Order #${orderId} deleted from MongoDB!`);
         loadAdminDashboard(true);
       }
     }
