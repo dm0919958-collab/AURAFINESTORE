@@ -7,165 +7,99 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-    
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     .font-cinzel { font-family: 'Cinzel', serif; }
-    body { 
-      font-family: 'Plus Jakarta Sans', sans-serif; 
-      background: radial-gradient(ellipse at top, #29211d 0%, #161318 45%, #0b0c12 100%);
-      color: #f5f5f4;
-    }
-
-    .glass-nav {
-      background: rgba(16, 15, 20, 0.85);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-    }
-    .lux-card {
-      background: linear-gradient(155deg, rgba(38, 33, 36, 0.95) 0%, rgba(20, 19, 25, 0.98) 100%);
-      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    }
-    .lux-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 22px 40px -10px rgba(245, 158, 11, 0.28);
-      border-color: rgba(251, 191, 36, 0.55);
-    }
-    .fade-carousel { transition: opacity 0.6s ease-in-out; }
-    
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(ellipse at top, #29211d 0%, #161318 45%, #0b0c12 100%); color: #f5f5f4; }
+    .glass-nav { background: rgba(16, 15, 20, 0.88); backdrop-filter: blur(18px); }
+    .lux-card { background: linear-gradient(155deg, rgba(38, 33, 36, 0.95) 0%, rgba(20, 19, 25, 0.98) 100%); transition: all 0.35s ease; }
+    .lux-card:hover { transform: translateY(-5px); box-shadow: 0 20px 35px -10px rgba(245, 158, 11, 0.28); border-color: rgba(251, 191, 36, 0.55); }
+    .fade-carousel { transition: opacity 0.5s ease-in-out; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #161318; }
     ::-webkit-scrollbar-thumb { background: #d97706; border-radius: 999px; }
   </style>
 </head>
 <body class="selection:bg-amber-500 selection:text-stone-950 relative min-h-screen flex flex-col justify-between">
-
   <div>
     <div class="bg-gradient-to-r from-stone-950 via-amber-950/40 to-stone-950 text-stone-200 py-2.5 px-4 border-b border-amber-500/30 sticky top-0 z-50 shadow-lg">
       <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs">
-        <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto" id="topCouponsDisplayWrap">
-          <span class="bg-gradient-to-r from-amber-400 to-amber-600 text-stone-950 font-black text-[9px] px-2.5 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap shadow-sm">
-            <i class="fa-solid fa-crown mr-1"></i> VIP PRIVILEGES
-          </span>
-          <div id="topCouponsContainer" class="flex items-center gap-2 text-amber-300 font-semibold tracking-wide"></div>
+        <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
+          <span class="bg-gradient-to-r from-amber-400 to-amber-600 text-stone-950 font-black text-[9px] px-2.5 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap"><i class="fa-solid fa-crown mr-1"></i> VIP PRIVILEGES</span>
+          <div id="topCouponsContainer" class="flex items-center gap-2 text-amber-300 font-semibold"></div>
         </div>
-        <div class="flex items-center gap-1.5 font-mono text-[11px] bg-stone-900/90 px-3 py-1 rounded-full border border-amber-500/30 whitespace-nowrap shadow-inner">
-          <span class="text-amber-400 font-bold flex items-center gap-1"><i class="fa-solid fa-stopwatch animate-pulse"></i> Flash Deals End:</span>
-          <span id="flashHours" class="bg-black px-1.5 py-0.5 rounded font-bold text-white border border-stone-800">04</span>h :
-          <span id="flashMinutes" class="bg-black px-1.5 py-0.5 rounded font-bold text-white border border-stone-800">32</span>m :
-          <span id="flashSeconds" class="bg-black px-1.5 py-0.5 rounded font-bold text-amber-400 border border-stone-800">18</span>s
+        <div class="flex items-center gap-1.5 font-mono text-[11px] bg-stone-900/90 px-3 py-1 rounded-full border border-amber-500/30 whitespace-nowrap">
+          <span class="text-amber-400 font-bold"><i class="fa-solid fa-stopwatch animate-pulse"></i> Flash Deals End:</span>
+          <span id="flashHours" class="bg-black px-1.5 py-0.5 rounded font-bold text-white">04</span>h :
+          <span id="flashMinutes" class="bg-black px-1.5 py-0.5 rounded font-bold text-white">32</span>m :
+          <span id="flashSeconds" class="bg-black px-1.5 py-0.5 rounded font-bold text-amber-400">18</span>s
         </div>
       </div>
     </div>
 
-    <header class="glass-nav border-b border-amber-500/20 sticky top-[37px] z-40 transition-all">
+    <header class="glass-nav border-b border-amber-500/20 sticky top-[37px] z-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-3">
-        
         <a href="#catalogSection" onclick="showHomeCatalog()" class="flex flex-col group flex-shrink-0">
           <span class="text-2xl sm:text-3xl font-extrabold font-cinzel tracking-[0.25em] text-amber-100 group-hover:text-amber-400 transition">AURA</span>
-          <span class="text-[9px] uppercase tracking-[0.45em] text-amber-500 font-bold -mt-1 group-hover:tracking-[0.5em] transition-all">Fine Store</span>
+          <span class="text-[9px] uppercase tracking-[0.45em] text-amber-500 font-bold -mt-1">Fine Store</span>
         </a>
 
         <nav class="hidden lg:flex items-center gap-6 text-xs font-bold tracking-wider text-stone-300 uppercase">
-          <a href="#catalogSection" onclick="showHomeCatalog()" class="text-amber-400 hover:text-amber-300 transition flex items-center gap-1.5">
-            <i class="fa-solid fa-house text-amber-500"></i> Home
-          </a>
+          <a href="#catalogSection" onclick="showHomeCatalog()" class="text-amber-400 hover:text-amber-300 transition flex items-center gap-1.5"><i class="fa-solid fa-house text-amber-500"></i> Home</a>
 
           <div class="relative group">
-            <button onclick="filterBySection('Men', 'All')" class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition uppercase">
-              <span>Men</span>
-              <i class="fa-solid fa-chevron-down text-[9px] transition-transform group-hover:rotate-180"></i>
-            </button>
-            <div class="absolute left-0 top-full hidden group-hover:block w-52 bg-stone-900 border border-amber-500/25 rounded-2xl shadow-2xl p-2.5 space-y-1 z-50 text-stone-200">
-              <a href="#catalogSection" onclick="filterBySection('Men', 'Shirts')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
-                <span>👔 Oxford Shirts</span>
-              </a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
-                <span>👕 Supima Tees</span>
-              </a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'Watches')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
-                <span>⌚ Chrono Watches</span>
-              </a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'Trousers')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
-                <span>👖 Formal Trousers</span>
-              </a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'Perfumes')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
-                <span>✨ Royal Perfumes</span>
-              </a>
+            <button onclick="filterBySection('Men', 'All')" class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition uppercase"><span>Men</span><i class="fa-solid fa-chevron-down text-[9px]"></i></button>
+            <div class="absolute left-0 top-full hidden group-hover:block w-52 bg-stone-900 border border-amber-500/25 rounded-2xl shadow-2xl p-2 space-y-1 z-50 text-stone-200">
+              <a href="#catalogSection" onclick="filterBySection('Men', 'Shirts')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">👔 Oxford Shirts</a>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">👕 Supima Tees</a>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'Watches')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">⌚ Chrono Watches</a>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'Trousers')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">👖 Formal Trousers</a>
+              <a href="#catalogSection" onclick="filterBySection('Men', 'Perfumes')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">✨ Royal Perfumes</a>
               <a href="#catalogSection" onclick="filterBySection('Men', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore All Men's &rarr;</a>
             </div>
           </div>
 
           <div class="relative group">
-            <button onclick="filterBySection('Women', 'All')" class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition uppercase">
-              <span>Women</span>
-              <i class="fa-solid fa-chevron-down text-[9px] transition-transform group-hover:rotate-180"></i>
-            </button>
-            <div class="absolute left-0 top-full hidden group-hover:block w-56 bg-stone-900 border border-amber-500/25 rounded-2xl shadow-2xl p-2.5 space-y-1 z-50 text-stone-200">
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Jhumka')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
-                <span>✨ Royal Jhumkas</span>
-              </a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Studs')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
-                <span>💎 Solitaire Studs</span>
-              </a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Kurtis')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
-                <span>👗 Flared Kurtis</span>
-              </a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Sarees')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
-                <span>🥻 Banarasi Sarees</span>
-              </a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Handbags')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
-                <span>👜 Handbags & Clutches</span>
-              </a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Bangles')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400 transition font-medium">
-                <span>💫 Temple Bangles</span>
-              </a>
+            <button onclick="filterBySection('Women', 'All')" class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition uppercase"><span>Women</span><i class="fa-solid fa-chevron-down text-[9px]"></i></button>
+            <div class="absolute left-0 top-full hidden group-hover:block w-56 bg-stone-900 border border-amber-500/25 rounded-2xl shadow-2xl p-2 space-y-1 z-50 text-stone-200">
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Jhumka')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">✨ Royal Jhumkas</a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Studs')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">💎 Solitaire Studs</a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Kurtis')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">👗 Flared Kurtis</a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Sarees')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">🥻 Banarasi Sarees</a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Handbags')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">👜 Handbags & Clutches</a>
+              <a href="#catalogSection" onclick="filterBySection('Women', 'Bangles')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">💫 Temple Bangles</a>
               <a href="#catalogSection" onclick="filterBySection('Women', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore All Women's &rarr;</a>
             </div>
           </div>
 
           <div class="relative group">
-            <button onclick="filterBySection('Gifts', 'All')" class="flex items-center gap-1.5 text-rose-300 hover:text-rose-200 py-1.5 px-3 rounded-full bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 transition font-extrabold shadow-sm uppercase">
-              <i class="fa-solid fa-heart text-rose-500 animate-pulse"></i>
-              <span>GF & BF Gifts</span>
-              <i class="fa-solid fa-chevron-down text-[8px]"></i>
+            <button onclick="filterBySection('Gifts', 'All')" class="flex items-center gap-1.5 text-rose-300 hover:text-rose-200 py-1.5 px-3 rounded-full bg-rose-950/60 border border-rose-500/30 font-extrabold uppercase">
+              <i class="fa-solid fa-heart text-rose-500 animate-pulse"></i><span>GF & BF Gifts</span><i class="fa-solid fa-chevron-down text-[8px]"></i>
             </button>
-            <div class="absolute left-0 top-full hidden group-hover:block w-64 bg-stone-900 border border-rose-500/25 rounded-2xl shadow-2xl p-2.5 space-y-1 z-50 text-stone-200">
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Couples')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300 transition font-medium">
-                <span>💑 Couple Sets & Rings</span>
-              </a>
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Romantic')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300 transition font-medium">
-                <span>💖 100 Languages & Rose</span>
-              </a>
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Gift Sets')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300 transition font-medium">
-                <span>🌹 Luxury Gift Hampers</span>
-              </a>
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Customized Lamps')" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300 transition font-medium">
-                <span>💡 3D Galaxy Crystal Lamps</span>
-              </a>
+            <div class="absolute left-0 top-full hidden group-hover:block w-64 bg-stone-900 border border-rose-500/25 rounded-2xl shadow-2xl p-2 space-y-1 z-50 text-stone-200">
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Couples')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300">💑 Couple Sets & Rings</a>
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Romantic')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300">💖 100 Languages & Rose</a>
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Gift Sets')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300">🌹 Luxury Gift Hampers</a>
+              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Customized Lamps')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300">💡 3D Galaxy Crystal Lamps</a>
               <a href="#catalogSection" onclick="filterBySection('Gifts', 'All')" class="block px-3 py-2 text-[11px] text-rose-400 font-bold border-t border-stone-800 mt-1">Explore All Gifts &rarr;</a>
             </div>
           </div>
         </nav>
 
-        <div class="hidden md:flex flex-1 max-w-[220px] mx-2 relative">
-          <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search jewellery, shirts..." class="w-full bg-stone-900/90 border border-stone-700 text-stone-200 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition placeholder:text-stone-500">
+        <div class="hidden md:flex flex-1 max-w-[210px] mx-2 relative">
+          <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search jewellery, shirts..." class="w-full bg-stone-900/90 border border-stone-700 text-stone-200 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-amber-500">
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-stone-500 text-xs"></i>
         </div>
 
         <div class="flex items-center gap-2">
-          <button onclick="openSupportModal()" class="flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-950/75 hover:bg-emerald-900/85 px-3 py-2 rounded-full border border-emerald-500/40 transition shadow-sm">
-            <i class="fa-solid fa-headset text-emerald-400"></i>
-            <span class="hidden sm:inline">Help & Support</span>
+          <button onclick="openSupportModal()" class="flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-950/75 hover:bg-emerald-900 px-3 py-2 rounded-full border border-emerald-500/40 transition">
+            <i class="fa-solid fa-headset text-emerald-400"></i><span class="hidden sm:inline">Help & Support</span>
           </button>
-
-          <button onclick="openMyOrdersModal()" class="flex items-center gap-1.5 text-xs font-bold text-amber-200 bg-stone-900 hover:bg-stone-800 px-3 py-2 rounded-full border border-amber-500/35 transition shadow-sm">
-            <i class="fa-solid fa-bag-shopping text-amber-400"></i>
-            <span class="hidden sm:inline">Track Orders</span>
+          <button onclick="openMyOrdersModal()" class="flex items-center gap-1.5 text-xs font-bold text-amber-200 bg-stone-900 hover:bg-stone-800 px-3 py-2 rounded-full border border-amber-500/35 transition">
+            <i class="fa-solid fa-bag-shopping text-amber-400"></i><span class="hidden sm:inline">Track Orders</span>
           </button>
-          
-          <button onclick="toggleCart()" class="relative p-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 rounded-full text-stone-950 transition shadow-md group">
-            <i class="fa-solid fa-basket-shopping text-base group-hover:scale-110 transition"></i>
-            <span id="cartCountBadge" class="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-stone-950 shadow">0</span>
+          <button onclick="toggleCart()" class="relative p-2.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full text-stone-950 shadow-md">
+            <i class="fa-solid fa-basket-shopping text-base"></i>
+            <span id="cartCountBadge" class="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-stone-950">0</span>
           </button>
         </div>
       </div>
@@ -173,71 +107,37 @@
 
     <section class="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
       <div class="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-stone-900 border border-amber-500/30">
-        <div id="carouselSlide" onclick="handleDealBannerClick()" class="cursor-pointer relative h-60 sm:h-80 md:h-[420px] w-full overflow-hidden group">
+        <div id="carouselSlide" onclick="handleDealBannerClick()" class="cursor-pointer relative h-60 sm:h-80 md:h-[400px] w-full overflow-hidden group">
           <img id="carouselImg" src="https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=600&q=60" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 fade-carousel">
-          <div class="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/40 to-transparent flex flex-col justify-end p-6 sm:p-12 space-y-2.5">
-            <span id="carouselTag" class="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-amber-500 text-stone-950 text-[10px] sm:text-xs font-black uppercase px-3.5 py-1 rounded-full shadow-lg w-max tracking-wider">
-              <i class="fa-solid fa-fire text-stone-950"></i> SPECIAL CURATION
-            </span>
-            <h2 id="carouselTitle" class="text-2xl sm:text-4xl md:text-5xl font-cinzel font-bold text-white drop-shadow-md leading-tight">
-              Men's Luxury Oxford Royal Shirt
-            </h2>
-            <div class="flex items-center gap-3 pt-2">
-              <span class="bg-white/10 backdrop-blur-md text-amber-200 border border-amber-400/35 text-xs px-4 py-2 rounded-xl font-bold flex items-center gap-2 group-hover:bg-amber-500 group-hover:text-stone-950 group-hover:border-amber-500 transition shadow">
-                <span>View Exclusives</span> <i class="fa-solid fa-arrow-right"></i>
-              </span>
-            </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/40 to-transparent flex flex-col justify-end p-6 sm:p-12 space-y-2">
+            <span id="carouselTag" class="bg-gradient-to-r from-amber-400 to-amber-500 text-stone-950 text-[10px] sm:text-xs font-black uppercase px-3.5 py-1 rounded-full w-max">SPECIAL CURATION</span>
+            <h2 id="carouselTitle" class="text-2xl sm:text-4xl md:text-5xl font-cinzel font-bold text-white leading-tight">Men's Luxury Oxford Royal Shirt</h2>
+            <span class="bg-white/10 backdrop-blur-md text-amber-200 border border-amber-400/35 text-xs px-4 py-2 rounded-xl font-bold w-max inline-flex items-center gap-2 group-hover:bg-amber-500 group-hover:text-stone-950 transition">View Exclusives <i class="fa-solid fa-arrow-right"></i></span>
           </div>
         </div>
-
         <div id="carouselDots" class="absolute bottom-4 right-8 flex items-center gap-2 z-20"></div>
-
-        <button onclick="prevDealSlide()" class="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-amber-500 hover:text-stone-950 text-white flex items-center justify-center text-xs backdrop-blur-md border border-white/20 transition">
-          &#10094;
-        </button>
-        <button onclick="nextDealSlide()" class="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-amber-500 hover:text-stone-950 text-white flex items-center justify-center text-xs backdrop-blur-md border border-white/20 transition">
-          &#10095;
-        </button>
+        <button onclick="prevDealSlide()" class="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-amber-500 text-white flex items-center justify-center text-xs">&#10094;</button>
+        <button onclick="nextDealSlide()" class="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-amber-500 text-white flex items-center justify-center text-xs">&#10095;</button>
       </div>
     </section>
 
     <section class="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="bg-stone-900/80 backdrop-blur-md border border-amber-500/15 p-3.5 rounded-2xl flex items-center gap-3 shadow-md">
-          <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-lg flex-shrink-0 border border-amber-500/20">
-            <i class="fa-solid fa-truck-fast"></i>
-          </div>
-          <div>
-            <h4 class="text-xs font-bold text-stone-100">Free UPI Delivery</h4>
-            <p class="text-[10px] text-stone-400">Zero Shipping on Prepaid</p>
-          </div>
+        <div class="bg-stone-900/80 border border-amber-500/15 p-3.5 rounded-2xl flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-lg"><i class="fa-solid fa-truck-fast"></i></div>
+          <div><h4 class="text-xs font-bold text-stone-100">Free UPI Delivery</h4><p class="text-[10px] text-stone-400">Zero Shipping on Prepaid</p></div>
         </div>
-        <div class="bg-stone-900/80 backdrop-blur-md border border-amber-500/15 p-3.5 rounded-2xl flex items-center gap-3 shadow-md">
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-lg flex-shrink-0 border border-emerald-500/20">
-            <i class="fa-solid fa-shield-halved"></i>
-          </div>
-          <div>
-            <h4 class="text-xs font-bold text-stone-100">100% Verified UTR</h4>
-            <p class="text-[10px] text-stone-400">Safe UPI & Token Support</p>
-          </div>
+        <div class="bg-stone-900/80 border border-amber-500/15 p-3.5 rounded-2xl flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-lg"><i class="fa-solid fa-shield-halved"></i></div>
+          <div><h4 class="text-xs font-bold text-stone-100">100% Verified UTR</h4><p class="text-[10px] text-stone-400">Safe UPI & Token Support</p></div>
         </div>
-        <div class="bg-stone-900/80 backdrop-blur-md border border-amber-500/15 p-3.5 rounded-2xl flex items-center gap-3 shadow-md">
-          <div class="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center text-lg flex-shrink-0 border border-rose-500/20">
-            <i class="fa-solid fa-arrows-rotate"></i>
-          </div>
-          <div>
-            <h4 class="text-xs font-bold text-stone-100">7-Day Guarantee</h4>
-            <p class="text-[10px] text-stone-400">Easy Replacement Promise</p>
-          </div>
+        <div class="bg-stone-900/80 border border-amber-500/15 p-3.5 rounded-2xl flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center text-lg"><i class="fa-solid fa-arrows-rotate"></i></div>
+          <div><h4 class="text-xs font-bold text-stone-100">7-Day Guarantee</h4><p class="text-[10px] text-stone-400">Easy Replacement Promise</p></div>
         </div>
-        <div class="bg-stone-900/80 backdrop-blur-md border border-amber-500/15 p-3.5 rounded-2xl flex items-center gap-3 shadow-md">
-          <div class="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center text-lg flex-shrink-0 border border-purple-500/20">
-            <i class="fa-solid fa-award"></i>
-          </div>
-          <div>
-            <h4 class="text-xs font-bold text-stone-100">Artisanal Finish</h4>
-            <p class="text-[10px] text-stone-400">Strict Quality Assurance</p>
-          </div>
+        <div class="bg-stone-900/80 border border-amber-500/15 p-3.5 rounded-2xl flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center text-lg"><i class="fa-solid fa-award"></i></div>
+          <div><h4 class="text-xs font-bold text-stone-100">Artisanal Finish</h4><p class="text-[10px] text-stone-400">Strict Quality Assurance</p></div>
         </div>
       </div>
     </section>
@@ -250,82 +150,63 @@
             <h3 id="currentCategoryHeading" class="font-cinzel font-bold text-2xl sm:text-3xl text-amber-50 mt-0.5">Home Collections</h3>
             <p class="text-xs text-stone-400 mt-1">Presenting <span id="countDisplay" class="font-bold text-amber-400">0</span> master creations</p>
           </div>
-          
           <div class="flex items-center gap-2 overflow-x-auto pb-1" id="categoryTabs">
-            <button onclick="showHomeCatalog(this)" class="cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400">
-              <i class="fa-solid fa-house mr-1"></i> Home
-            </button>
-            <button onclick="filterBySection('Men', 'All', this)" class="cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition">Men</button>
-            <button onclick="filterBySection('Women', 'All', this)" class="cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition">Women</button>
-            <button onclick="filterBySection('Gifts', 'All', this)" class="cat-btn bg-rose-950/60 hover:bg-rose-900/70 border border-rose-500/40 hover:border-rose-400 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-rose-300 transition">🎁 GF & BF Gifts</button>
+            <button onclick="showHomeCatalog(this)" class="cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold border border-amber-400"><i class="fa-solid fa-house mr-1"></i> Home</button>
+            <button onclick="filterBySection('Men', 'All', this)" class="cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 px-5 py-2 rounded-full text-xs font-bold text-stone-300">Men</button>
+            <button onclick="filterBySection('Women', 'All', this)" class="cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 px-5 py-2 rounded-full text-xs font-bold text-stone-300">Women</button>
+            <button onclick="filterBySection('Gifts', 'All', this)" class="cat-btn bg-rose-950/60 hover:bg-rose-900/70 border border-rose-500/40 px-5 py-2 rounded-full text-xs font-bold text-rose-300">🎁 GF & BF Gifts</button>
           </div>
         </div>
-
         <div id="subCategoryTabsBar" class="hidden flex items-center gap-2 overflow-x-auto pt-1 pb-1"></div>
       </div>
-
       <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
     </main>
   </div>
 
   <div id="quickViewModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto border border-amber-500/30">
-      <button onclick="closeQuickView()" class="absolute top-5 right-5 text-stone-400 hover:text-amber-400 text-3xl font-bold transition">&times;</button>
-      
+      <button onclick="closeQuickView()" class="absolute top-5 right-5 text-stone-400 hover:text-amber-400 text-3xl font-bold">&times;</button>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         <div class="space-y-3">
-          <div class="rounded-2xl overflow-hidden aspect-square bg-stone-950 border border-stone-800 shadow-inner">
-            <img id="qvMainImage" src="" class="w-full h-full object-cover transition-all duration-300">
+          <div class="rounded-2xl overflow-hidden aspect-square bg-stone-950 border border-stone-800">
+            <img id="qvMainImage" src="" class="w-full h-full object-cover">
           </div>
           <div id="qvThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-2"></div>
         </div>
-
         <div class="space-y-4">
-          <span id="qvBadge" class="inline-block bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Badge</span>
-          <h3 id="qvTitle" class="font-cinzel text-2xl font-bold text-white leading-snug">Product Title</h3>
-          
+          <span id="qvBadge" class="inline-block bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase">Badge</span>
+          <h3 id="qvTitle" class="font-cinzel text-2xl font-bold text-white">Product Title</h3>
           <div class="flex items-baseline gap-3">
             <span id="qvPrice" class="text-3xl font-black text-amber-400">₹0</span>
-            <span id="qvOrigPrice" class="text-sm line-through text-stone-500 font-semibold">₹0</span>
-            <span id="qvDiscount" class="text-xs text-emerald-300 font-bold bg-emerald-950 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">0% OFF</span>
+            <span id="qvOrigPrice" class="text-sm line-through text-stone-500">₹0</span>
+            <span id="qvDiscount" class="text-xs text-emerald-300 font-bold bg-emerald-950 px-2.5 py-0.5 rounded-full">0% OFF</span>
           </div>
-
           <div class="space-y-1.5 pt-2 border-t border-stone-800">
-            <label class="block text-xs font-bold text-stone-300">
-              Select Size: <span id="qvSelectedSizeDisplay" class="text-amber-400 font-extrabold ml-1"></span>
-            </label>
+            <label class="block text-xs font-bold text-stone-300">Select Size: <span id="qvSelectedSizeDisplay" class="text-amber-400 font-extrabold ml-1"></span></label>
             <div id="qvSizeContainer" class="flex flex-wrap gap-2"></div>
           </div>
-
           <div class="space-y-1.5 pt-1">
-            <label class="block text-xs font-bold text-stone-300">
-              Select Color: <span id="qvSelectedColorDisplay" class="text-amber-400 font-extrabold ml-1"></span>
-            </label>
+            <label class="block text-xs font-bold text-stone-300">Select Color: <span id="qvSelectedColorDisplay" class="text-amber-400 font-extrabold ml-1"></span></label>
             <div id="qvColorContainer" class="flex flex-wrap gap-2"></div>
           </div>
-
-          <div class="pt-2">
-            <p id="qvDesc" class="text-xs text-stone-400 leading-relaxed"></p>
-          </div>
-
+          <p id="qvDesc" class="text-xs text-stone-400 leading-relaxed pt-2"></p>
           <div class="flex gap-2 pt-3">
-            <button id="qvAddToCartBtn" class="flex-1 bg-stone-800 hover:bg-stone-700 text-white border border-stone-700 py-3.5 rounded-xl text-xs font-bold transition shadow-sm">Add to Bag</button>
-            <button id="qvBuyNowBtn" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 py-3.5 rounded-xl text-xs font-extrabold transition shadow-md">⚡ Instant Checkout</button>
+            <button id="qvAddToCartBtn" class="flex-1 bg-stone-800 hover:bg-stone-700 text-white border border-stone-700 py-3.5 rounded-xl text-xs font-bold">Add to Bag</button>
+            <button id="qvBuyNowBtn" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-3.5 rounded-xl text-xs font-extrabold">⚡ Instant Checkout</button>
           </div>
         </div>
       </div>
 
-      <div class="mt-8 pt-6 border-t border-stone-800 space-y-5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="mt-8 pt-6 border-t border-stone-800 space-y-4">
+        <div class="flex justify-between items-center">
           <h4 class="font-cinzel font-bold text-lg text-amber-300"><i class="fa-solid fa-star text-amber-400 mr-1.5"></i>Customer Reviews & Ratings</h4>
           <span id="qvReviewStats" class="text-xs text-stone-400 font-semibold"></span>
         </div>
-
-        <form onsubmit="submitProductReview(event)" class="bg-stone-950/90 border border-stone-800 p-4 rounded-2xl space-y-3 text-xs">
+        <form onsubmit="submitProductReview(event)" class="bg-stone-950 border border-stone-800 p-4 rounded-2xl space-y-3 text-xs">
           <p class="font-bold text-amber-200">Share Your Product Experience (Write a Review):</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <input type="text" id="revCustomerName" required placeholder="Your Full Name" class="bg-stone-900 border border-stone-700 rounded-xl p-2.5 text-stone-100 focus:outline-none focus:border-amber-500">
-            <select id="revRatingSelect" class="bg-stone-900 border border-stone-700 rounded-xl p-2.5 text-amber-400 font-bold focus:outline-none focus:border-amber-500">
+            <input type="text" id="revCustomerName" required placeholder="Your Full Name" class="bg-stone-900 border border-stone-700 rounded-xl p-2.5 text-stone-100">
+            <select id="revRatingSelect" class="bg-stone-900 border border-stone-700 rounded-xl p-2.5 text-amber-400 font-bold">
               <option value="5">★★★★★ (5/5 - Outstanding Quality)</option>
               <option value="4">★★★★☆ (4/5 - Very Good Product)</option>
               <option value="3">★★★☆☆ (3/5 - Good / Average)</option>
@@ -333,13 +214,10 @@
               <option value="1">★☆☆☆☆ (1/5 - Not Satisfied)</option>
             </select>
           </div>
-          <textarea id="revCommentInput" rows="2" required placeholder="Write your feedback about quality, fitting, or finish..." class="w-full bg-stone-900 border border-stone-700 rounded-xl p-2.5 text-stone-100 focus:outline-none focus:border-amber-500"></textarea>
-          <button type="submit" id="revSubmitBtn" class="bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold px-5 py-2 rounded-xl transition shadow">
-            Submit Review
-          </button>
+          <textarea id="revCommentInput" rows="2" required placeholder="Write your feedback..." class="w-full bg-stone-900 border border-stone-700 rounded-xl p-2.5 text-stone-100"></textarea>
+          <button type="submit" id="revSubmitBtn" class="bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold px-5 py-2 rounded-xl">Submit Review</button>
         </form>
-
-        <div id="qvReviewsList" class="space-y-2.5 max-h-56 overflow-y-auto pr-1"></div>
+        <div id="qvReviewsList" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
       </div>
     </div>
   </div>
@@ -347,39 +225,27 @@
   <div id="cartDrawer" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden z-50 flex justify-end">
     <div class="bg-stone-900 text-stone-100 w-full max-w-md h-full flex flex-col p-6 shadow-2xl border-l border-amber-500/20">
       <div class="flex justify-between items-center pb-3 border-b border-stone-800">
-        <div>
-          <h3 class="font-cinzel font-bold text-xl text-amber-200">Your Bag</h3>
-          <p class="text-[11px] text-stone-400">AURA Fine Store Collection</p>
-        </div>
-        <button onclick="toggleCart()" class="text-stone-400 hover:text-amber-400 text-2xl font-bold transition">&times;</button>
+        <div><h3 class="font-cinzel font-bold text-xl text-amber-200">Your Bag</h3><p class="text-[11px] text-stone-400">AURA Fine Store Collection</p></div>
+        <button onclick="toggleCart()" class="text-stone-400 hover:text-amber-400 text-2xl font-bold">&times;</button>
       </div>
-
       <div id="cartItemsList" class="flex-1 overflow-y-auto py-4 space-y-4"></div>
-
       <div class="border-t border-stone-800 pt-3 space-y-1.5">
-        <p class="text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
-          <i class="fa-solid fa-tags"></i> Available Coupons (Click to apply):
-        </p>
-        <div id="cartCouponsBadges" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1"></div>
+        <p class="text-[11px] font-bold text-amber-400"><i class="fa-solid fa-tags"></i> Available Coupons:</p>
+        <div id="cartCouponsBadges" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto"></div>
       </div>
-
       <div class="border-t border-stone-800 pt-3 space-y-3">
         <div class="flex gap-2">
-          <input type="text" id="couponInput" placeholder="Enter Coupon Code" class="uppercase bg-stone-950 border border-stone-700 text-white rounded-xl px-3 py-2 text-xs flex-1 font-mono font-bold focus:outline-none focus:border-amber-500">
-          <button onclick="applyCoupon()" class="bg-amber-500 hover:bg-amber-400 text-stone-950 px-4 py-2 rounded-xl text-xs font-extrabold transition">Apply</button>
+          <input type="text" id="couponInput" placeholder="Enter Coupon Code" class="uppercase bg-stone-950 border border-stone-700 text-white rounded-xl px-3 py-2 text-xs flex-1 font-mono font-bold">
+          <button onclick="applyCoupon()" class="bg-amber-500 text-stone-950 px-4 py-2 rounded-xl text-xs font-extrabold">Apply</button>
         </div>
         <div id="couponStatusMsg" class="text-[11px] hidden font-semibold"></div>
-
         <div class="space-y-1 text-xs bg-stone-950 p-3 rounded-xl border border-stone-800">
           <div class="flex justify-between text-stone-400"><span>Bag Total</span><span id="subTotalDisplay" class="font-bold text-stone-200">₹0</span></div>
           <div class="flex justify-between text-emerald-400 font-bold"><span>Discount Applied</span><span id="discountDisplay">-₹0</span></div>
           <div class="flex justify-between text-stone-400"><span>Delivery (UPI Prepaid)</span><span class="font-bold text-emerald-400">FREE</span></div>
           <div class="flex justify-between text-base font-extrabold text-amber-400 pt-2 border-t border-stone-800"><span>Payable (UPI)</span><span id="finalTotalDisplay">₹0</span></div>
         </div>
-
-        <button onclick="openCheckoutModal()" id="checkoutProceedBtn" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 py-3.5 rounded-xl text-sm font-extrabold tracking-wide shadow-md transition">
-          Proceed To Checkout &rarr;
-        </button>
+        <button onclick="openCheckoutModal()" id="checkoutProceedBtn" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-3.5 rounded-xl text-sm font-extrabold">Proceed To Checkout &rarr;</button>
       </div>
     </div>
   </div>
@@ -387,151 +253,77 @@
   <div id="checkoutModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto border border-amber-500/25">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
-        <div>
-          <h4 class="font-cinzel font-bold text-lg text-amber-300">AURA Fine Store Checkout</h4>
-          <p id="checkoutStepIndicator" class="text-[11px] text-amber-400 font-bold">Step 1 of 2: Shipping Destination</p>
-        </div>
-        <button onclick="closeCheckoutModal()" class="text-stone-400 hover:text-amber-400 text-xl font-bold transition">&times;</button>
+        <div><h4 class="font-cinzel font-bold text-lg text-amber-300">AURA Fine Store Checkout</h4><p id="checkoutStepIndicator" class="text-[11px] text-amber-400 font-bold">Step 1 of 2: Shipping Destination</p></div>
+        <button onclick="closeCheckoutModal()" class="text-stone-400 hover:text-amber-400 text-xl font-bold">&times;</button>
       </div>
-
       <form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="space-y-3 text-xs">
         <div id="checkoutStep1" class="space-y-3">
-          <div>
-            <label class="block font-semibold text-stone-300 mb-1">Full Customer Name *</label>
-            <input type="text" id="ordName" required placeholder="Customer Name" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-amber-500">
-          </div>
-          <div>
-            <label class="block font-semibold text-stone-300 mb-1">Contact Number *</label>
-            <input type="tel" id="ordPhone" maxlength="10" required placeholder="10-digit Mobile Number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-amber-500 font-mono">
-          </div>
-
+          <div><label class="block font-semibold text-stone-300 mb-1">Full Customer Name *</label><input type="text" id="ordName" required placeholder="Customer Name" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
+          <div><label class="block font-semibold text-stone-300 mb-1">Contact Number *</label><input type="tel" id="ordPhone" maxlength="10" required placeholder="10-digit Mobile Number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl font-mono"></div>
           <div>
             <label class="block font-semibold text-stone-300 mb-1">6-Digit Indian Postal Pincode *</label>
-            <input type="text" id="ordPincode" oninput="validateAndLookupPincode(this.value)" required maxlength="6" placeholder="Postal Pincode" class="w-full bg-stone-950 border-2 border-stone-700 text-white p-2.5 rounded-xl font-mono font-bold tracking-wider transition-colors duration-200">
-            <p id="pincodeErrorMsg" class="text-[11px] font-bold text-rose-400 hidden mt-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Invalid Indian Pincode! Must be a valid 6-digit code.</p>
-            <p id="pincodeSuccessMsg" class="text-[11px] font-bold text-emerald-400 hidden mt-1"><i class="fa-solid fa-circle-check mr-1"></i> Deliverable Location Identified!</p>
+            <input type="text" id="ordPincode" oninput="validateAndLookupPincode(this.value)" required maxlength="6" placeholder="Postal Pincode" class="w-full bg-stone-950 border-2 border-stone-700 text-white p-2.5 rounded-xl font-mono font-bold">
+            <p id="pincodeErrorMsg" class="text-[11px] font-bold text-rose-400 hidden mt-1">Invalid Indian Pincode!</p>
+            <p id="pincodeSuccessMsg" class="text-[11px] font-bold text-emerald-400 hidden mt-1">Deliverable Location Identified!</p>
           </div>
-
           <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block font-semibold text-stone-300 mb-1">District / City *</label>
-              <input type="text" id="ordCity" required placeholder="District" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
-            </div>
-            <div>
-              <label class="block font-semibold text-stone-300 mb-1">State *</label>
-              <input type="text" id="ordState" required placeholder="State" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
-            </div>
+            <div><label class="block font-semibold text-stone-300 mb-1">District / City *</label><input type="text" id="ordCity" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
+            <div><label class="block font-semibold text-stone-300 mb-1">State *</label><input type="text" id="ordState" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
           </div>
-
           <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block font-semibold text-stone-300 mb-1">House No. / Flat / Road *</label>
-              <input type="text" id="addrHouseStreet" required placeholder="House No, Road" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
-            </div>
-            <div>
-              <label class="block font-semibold text-stone-300 mb-1">Village / Town *</label>
-              <input type="text" id="addrVillage" required placeholder="Village or Town" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
-            </div>
+            <div><label class="block font-semibold text-stone-300 mb-1">House No. / Road *</label><input type="text" id="addrHouseStreet" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
+            <div><label class="block font-semibold text-stone-300 mb-1">Village / Town *</label><input type="text" id="addrVillage" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
           </div>
-
           <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block font-semibold text-stone-300 mb-1">Post Office (P.O) *</label>
-              <input type="text" id="addrPostOffice" required placeholder="Post Office" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
-            </div>
-            <div>
-              <label class="block font-semibold text-stone-300 mb-1">Police Station (P.S)</label>
-              <input type="text" id="addrPoliceStation" placeholder="Police Station" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
-            </div>
+            <div><label class="block font-semibold text-stone-300 mb-1">Post Office (P.O) *</label><input type="text" id="addrPostOffice" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
+            <div><label class="block font-semibold text-stone-300 mb-1">Police Station (P.S)</label><input type="text" id="addrPoliceStation" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
           </div>
-
-          <div>
-            <label class="block font-semibold text-stone-300 mb-1">Famous Landmark (Nearby)</label>
-            <input type="text" id="addrLandmark" placeholder="Near Temple / School / Hospital" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl">
-          </div>
-
-          <button type="button" onclick="goToStep2Payment()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 py-3.5 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-2 shadow mt-2">
-            Next &rarr;
-          </button>
+          <div><label class="block font-semibold text-stone-300 mb-1">Landmark</label><input type="text" id="addrLandmark" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
+          <button type="button" onclick="goToStep2Payment()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-3.5 rounded-xl font-extrabold text-xs shadow mt-2">Next &rarr;</button>
         </div>
 
         <div id="checkoutStep2" class="hidden space-y-3">
           <div class="bg-stone-950 p-3 rounded-xl border border-amber-500/30 text-xs flex justify-between items-center">
-            <div>
-              <p class="font-bold text-amber-300" id="step2SummaryName"></p>
-              <p class="text-[10px] text-stone-400 truncate max-w-[260px]" id="step2SummaryAddr"></p>
-            </div>
+            <div><p class="font-bold text-amber-300" id="step2SummaryName"></p><p class="text-[10px] text-stone-400 truncate max-w-[260px]" id="step2SummaryAddr"></p></div>
             <button type="button" onclick="backToStep1Address()" class="text-[11px] text-amber-400 font-bold underline">Edit</button>
           </div>
-
           <div class="bg-stone-950 border border-stone-800 p-2.5 rounded-xl space-y-1.5">
-            <label class="block font-bold text-amber-300 text-[11px]"><i class="fa-solid fa-ticket text-amber-400 mr-1"></i> Apply Coupon Code for Instant Discount:</label>
+            <label class="block font-bold text-amber-300 text-[11px]">Apply Coupon Code:</label>
             <div class="flex gap-2">
-              <input type="text" id="step2CouponInput" placeholder="Enter Coupon Code" class="uppercase bg-stone-900 border border-stone-700 text-white rounded-lg px-2.5 py-1.5 text-xs flex-1 font-mono font-bold focus:outline-none focus:border-amber-500">
-              <button type="button" onclick="applyCouponFromStep2()" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-lg text-xs font-extrabold hover:bg-amber-400 transition">Apply</button>
+              <input type="text" id="step2CouponInput" placeholder="Coupon Code" class="uppercase bg-stone-900 border border-stone-700 text-white rounded-lg px-2.5 py-1.5 text-xs flex-1 font-mono font-bold">
+              <button type="button" onclick="applyCouponFromStep2()" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-lg text-xs font-extrabold">Apply</button>
             </div>
             <p id="step2CouponStatus" class="text-[10px] font-semibold hidden"></p>
           </div>
-
           <div>
             <label class="block font-semibold text-stone-300 mb-1">Select Payment Mode</label>
-            <select id="ordPaymentMethod" onchange="handlePaymentModeChange(this.value)" class="w-full bg-stone-950 border border-stone-700 p-2.5 rounded-xl focus:outline-none font-bold text-amber-300">
+            <select id="ordPaymentMethod" onchange="handlePaymentModeChange(this.value)" class="w-full bg-stone-950 border border-stone-700 p-2.5 rounded-xl font-bold text-amber-300">
               <option value="UPI">⚡ 100% Prepaid via UPI (FREE Delivery)</option>
               <option value="COD">🛡️ Cash on Delivery (COD Charge + Advance Token)</option>
             </select>
           </div>
-
-          <div id="paymentOfferSummaryBox" class="bg-emerald-950/60 border border-emerald-500/30 p-3 rounded-xl space-y-1">
-            <p class="font-bold text-emerald-300 text-xs flex items-center gap-1.5">
-              <i class="fa-solid fa-tags text-emerald-400"></i> Bill & Delivery Breakdown:
-            </p>
-            <div class="flex justify-between text-stone-300 text-[11px]">
-              <span>Original Bag Value:</span>
-              <span id="chkSubtotal" class="font-bold">₹0</span>
-            </div>
-            <div class="flex justify-between text-emerald-400 font-bold text-[11px]">
-              <span>Coupon Discount (<span id="chkCouponCodeName">None</span>):</span>
-              <span id="chkDiscountAmt">-₹0</span>
-            </div>
-            <div class="flex justify-between text-stone-300 text-[11px]">
-              <span>Delivery Charge:</span>
-              <span id="chkDeliveryAmt" class="font-bold text-emerald-400">FREE</span>
-            </div>
-            <div class="flex justify-between text-amber-400 font-extrabold text-xs pt-1 border-t border-emerald-500/20">
-              <span>Total Order Value:</span>
-              <span id="chkFinalPayable">₹0</span>
-            </div>
+          <div class="bg-emerald-950/60 border border-emerald-500/30 p-3 rounded-xl space-y-1">
+            <div class="flex justify-between text-stone-300 text-[11px]"><span>Bag Value:</span><span id="chkSubtotal" class="font-bold">₹0</span></div>
+            <div class="flex justify-between text-emerald-400 font-bold text-[11px]"><span>Discount (<span id="chkCouponCodeName">None</span>):</span><span id="chkDiscountAmt">-₹0</span></div>
+            <div class="flex justify-between text-stone-300 text-[11px]"><span>Delivery Charge:</span><span id="chkDeliveryAmt" class="font-bold text-emerald-400">FREE</span></div>
+            <div class="flex justify-between text-amber-400 font-extrabold text-xs pt-1 border-t border-emerald-500/20"><span>Total Order Value:</span><span id="chkFinalPayable">₹0</span></div>
           </div>
-
-          <div id="paymentDetailsContainer" class="bg-stone-950 p-4 rounded-2xl border border-amber-500/30 space-y-3 text-center">
+          <div class="bg-stone-950 p-4 rounded-2xl border border-amber-500/30 space-y-3 text-center">
             <div id="codNoticeBanner" class="hidden text-left bg-amber-950/60 border border-amber-500/30 p-2.5 rounded-xl space-y-1">
-              <p class="font-bold text-amber-300 text-xs">
-                <i class="fa-solid fa-shield-halved text-emerald-400 mr-1"></i> COD Confirmation Token:
-              </p>
-              <p class="text-[11px] text-stone-300 leading-tight">
-                Please pay <b id="codAdvanceDisplay" class="text-emerald-400">Advance (₹0)</b> now via UPI. The remaining <b id="codBalanceDisplay" class="text-amber-300">₹0</b> is payable in cash on delivery.
-              </p>
+              <p class="font-bold text-amber-300 text-xs">COD Confirmation Token:</p>
+              <p class="text-[11px] text-stone-300">Please pay <b id="codAdvanceDisplay" class="text-emerald-400">Advance (₹0)</b> now via UPI. Remaining <b id="codBalanceDisplay" class="text-amber-300">₹0</b> is payable in cash on delivery.</p>
             </div>
-
             <p id="qrBoxTitle" class="text-xs text-amber-300 font-bold">Scan QR with GooglePay / PhonePe / Paytm</p>
-            <div class="flex justify-center">
-              <img id="dynamicQRCode" src="" alt="UPI QR" class="w-36 h-36 bg-white p-2 rounded-2xl shadow-md border border-amber-400">
-            </div>
-            <p class="text-[11px] text-stone-400">Merchant UPI: <span class="bg-stone-900 text-amber-300 px-2.5 py-0.5 rounded border border-amber-500/30 font-mono font-bold select-all">6289145092@ptsbi</span></p>
-            
+            <div class="flex justify-center"><img id="dynamicQRCode" src="" alt="UPI QR" class="w-36 h-36 bg-white p-2 rounded-2xl border border-amber-400"></div>
+            <p class="text-[11px] text-stone-400">Merchant UPI: <span class="bg-stone-900 text-amber-300 px-2.5 py-0.5 rounded font-mono font-bold select-all">6289145092@ptsbi</span></p>
             <div class="text-left pt-1">
               <label class="block text-[11px] font-semibold text-stone-300 mb-1">Enter 12-Digit UPI Transaction ID (UTR) *</label>
-              <input type="text" id="ordUTR" required placeholder="12-digit UTR from your UPI payment" class="w-full bg-stone-900 border border-stone-700 text-white p-2.5 rounded-xl text-xs font-mono focus:outline-none focus:border-amber-500">
+              <input type="text" id="ordUTR" required placeholder="12-digit UTR" class="w-full bg-stone-900 border border-stone-700 text-white p-2.5 rounded-xl text-xs font-mono">
             </div>
           </div>
-
           <div class="flex gap-2 pt-2">
-            <button type="button" onclick="backToStep1Address()" class="w-1/3 bg-stone-800 text-stone-300 py-3.5 rounded-xl font-bold text-xs hover:bg-stone-700 transition">
-              &larr; Back
-            </button>
-            <button type="submit" id="submitOrderBtn" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 py-3.5 rounded-xl font-extrabold text-sm shadow-md transition">
-              Place Confirmed Order
-            </button>
+            <button type="button" onclick="backToStep1Address()" class="w-1/3 bg-stone-800 text-stone-300 py-3.5 rounded-xl font-bold text-xs">&larr; Back</button>
+            <button type="submit" id="submitOrderBtn" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-3.5 rounded-xl font-extrabold text-sm">Place Confirmed Order</button>
           </div>
         </div>
       </form>
@@ -541,196 +333,92 @@
   <div id="myOrdersModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto text-xs border border-amber-500/25">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
-        <div>
-          <h4 class="font-cinzel font-bold text-xl text-amber-300"><i class="fa-solid fa-boxes-packing mr-2 text-amber-400"></i>My Orders & Tracking</h4>
-          <p class="text-[11px] text-stone-400">Track shipment progress & download your official delivery slips</p>
-        </div>
-        <button onclick="closeMyOrdersModal()" class="text-stone-400 hover:text-amber-400 text-2xl font-bold transition">&times;</button>
+        <div><h4 class="font-cinzel font-bold text-xl text-amber-300">My Orders & Tracking</h4><p class="text-[11px] text-stone-400">Track shipment & download delivery slips</p></div>
+        <button onclick="closeMyOrdersModal()" class="text-stone-400 hover:text-amber-400 text-2xl font-bold">&times;</button>
       </div>
-
       <div class="flex gap-2">
-        <input type="tel" id="myOrdersPhoneInput" placeholder="Enter your 10-digit mobile number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl font-mono text-xs focus:outline-none focus:border-amber-500">
-        <button onclick="fetchMyOrders()" class="bg-amber-500 text-stone-950 px-5 py-2.5 rounded-xl font-extrabold hover:bg-amber-400 transition whitespace-nowrap shadow">Find Orders</button>
+        <input type="tel" id="myOrdersPhoneInput" placeholder="Enter your 10-digit mobile number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl font-mono text-xs">
+        <button onclick="fetchMyOrders()" class="bg-amber-500 text-stone-950 px-5 py-2.5 rounded-xl font-extrabold whitespace-nowrap">Find Orders</button>
       </div>
-
-      <div id="myOrdersListContainer" class="space-y-4 pt-2">
-        <div class="text-center py-8 text-stone-500">
-          <i class="fa-solid fa-receipt text-3xl mb-2 text-stone-700"></i>
-          <p>Enter your phone number to check your purchases and download slips.</p>
-        </div>
-      </div>
+      <div id="myOrdersListContainer" class="space-y-4 pt-2"><p class="text-center py-8 text-stone-500">Enter your phone number to check your purchases.</p></div>
     </div>
   </div>
 
   <div id="supportModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto text-xs border border-emerald-500/30">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
-        <div>
-          <h4 class="font-cinzel font-bold text-xl text-emerald-400"><i class="fa-solid fa-headset mr-2"></i>Help & Customer Support</h4>
-          <p id="supportStepSubtitle" class="text-[11px] text-stone-400">Step 1: Search your orders using your registered mobile number</p>
-        </div>
-        <button onclick="closeSupportModal()" class="text-stone-400 hover:text-white text-2xl font-bold transition">&times;</button>
+        <div><h4 class="font-cinzel font-bold text-xl text-emerald-400"><i class="fa-solid fa-headset mr-2"></i>Help & Customer Support</h4><p id="supportStepSubtitle" class="text-[11px] text-stone-400">Step 1: Search your orders using your registered mobile number</p></div>
+        <button onclick="closeSupportModal()" class="text-stone-400 hover:text-white text-2xl font-bold">&times;</button>
       </div>
-
       <div id="supportStep1" class="space-y-4">
         <div class="space-y-1.5">
           <label class="block font-bold text-stone-300">Mobile Number *</label>
           <div class="flex gap-2">
-            <input type="tel" id="supportPhoneInput" maxlength="10" placeholder="Enter 10-digit Mobile Number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl text-xs font-mono focus:outline-none focus:border-emerald-500">
-            <button type="button" onclick="searchOrdersForSupport()" class="bg-emerald-500 hover:bg-emerald-400 text-stone-950 px-5 py-2.5 rounded-xl font-extrabold transition whitespace-nowrap shadow">
-              Search
-            </button>
+            <input type="tel" id="supportPhoneInput" maxlength="10" placeholder="Enter 10-digit Mobile Number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl text-xs font-mono">
+            <button type="button" onclick="searchOrdersForSupport()" class="bg-emerald-500 text-stone-950 px-5 py-2.5 rounded-xl font-extrabold">Search</button>
           </div>
         </div>
-
         <div id="customerPreviousTicketsWrap" class="hidden space-y-2">
-          <p class="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
-            <span><i class="fa-solid fa-comments mr-1"></i> Live Support Chat & Replies:</span>
-            <span class="text-[9px] text-emerald-400 font-mono">● LIVE AUTO-SYNC</span>
-          </p>
+          <p class="text-[11px] font-bold text-amber-400 uppercase flex justify-between"><span>Live Support Chat & Replies:</span><span class="text-[9px] text-emerald-400 font-mono">● LIVE</span></p>
           <div id="customerPreviousTicketsList" class="space-y-2 max-h-44 overflow-y-auto pr-1"></div>
         </div>
-
         <div id="supportOrdersList" class="space-y-2.5 max-h-56 overflow-y-auto pr-1"></div>
-
-        <button type="button" id="supportNextBtn" onclick="goToSupportStep2()" disabled class="w-full bg-stone-800 text-stone-500 py-3.5 rounded-xl font-extrabold text-xs transition cursor-not-allowed">
-          Next &rarr;
-        </button>
+        <button type="button" id="supportNextBtn" onclick="goToSupportStep2()" disabled class="w-full bg-stone-800 text-stone-500 py-3.5 rounded-xl font-extrabold text-xs cursor-not-allowed">Next &rarr;</button>
       </div>
 
       <form id="supportStep2Form" onsubmit="submitSupportTicket(event)" class="hidden space-y-3.5">
         <div class="bg-stone-950 border border-emerald-500/30 p-3 rounded-xl flex justify-between items-center">
-          <div>
-            <span class="text-[10px] text-emerald-400 font-bold uppercase">Selected Order</span>
-            <p class="font-mono font-bold text-amber-400 text-sm" id="selectedSupportOrderId">#AUR-000000</p>
-            <p class="text-[11px] text-stone-300 line-clamp-1" id="selectedSupportOrderSummary"></p>
-          </div>
+          <div><span class="text-[10px] text-emerald-400 font-bold uppercase">Selected Order</span><p class="font-mono font-bold text-amber-400 text-sm" id="selectedSupportOrderId">#AUR-000000</p><p class="text-[11px] text-stone-300 line-clamp-1" id="selectedSupportOrderSummary"></p></div>
           <button type="button" onclick="backToSupportStep1()" class="text-xs text-amber-400 underline font-bold">Change</button>
         </div>
-
-        <div>
-          <label class="block font-bold text-stone-300 mb-1">Describe Your Issue in Detail *</label>
-          <textarea id="supportIssueText" rows="3" required placeholder="Write the issue you are facing with this order (e.g., damaged product, wrong item, size issue, delivery delay)..." class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-emerald-500"></textarea>
-        </div>
-
+        <div><label class="block font-bold text-stone-300 mb-1">Describe Your Issue in Detail *</label><textarea id="supportIssueText" rows="3" required placeholder="Describe your issue..." class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></textarea></div>
         <div class="space-y-3">
           <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-2">
             <div class="flex justify-between items-center">
               <label class="block font-bold text-amber-300"><i class="fa-solid fa-camera mr-1"></i> Upload Photos (Max 10MB each, Multiple Allowed)</label>
-              <label class="bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold px-3 py-1 rounded-lg text-[11px] cursor-pointer shadow">
-                + Add Photos
-                <input type="file" id="supportPhotoInput" accept="image/*" multiple onchange="handleSupportPhotosSelect(this)" class="hidden">
-              </label>
+              <label class="bg-amber-500 text-stone-950 font-extrabold px-3 py-1 rounded-lg text-[11px] cursor-pointer">+ Add Photos<input type="file" id="supportPhotoInput" accept="image/*" multiple onchange="handleSupportPhotosSelect(this)" class="hidden"></label>
             </div>
             <div id="supportSelectedPhotosPreview" class="flex flex-wrap gap-2"></div>
           </div>
-
           <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-2">
             <div class="flex justify-between items-center">
               <label class="block font-bold text-rose-400"><i class="fa-solid fa-video mr-1"></i> Upload Video Proof (Max 50MB)</label>
-              <label class="bg-rose-500 hover:bg-rose-400 text-white font-extrabold px-3 py-1 rounded-lg text-[11px] cursor-pointer shadow">
-                Choose Video
-                <input type="file" id="supportVideoInput" accept="video/*" onchange="handleSupportVideoSelect(this)" class="hidden">
-              </label>
+              <label class="bg-rose-500 text-white font-extrabold px-3 py-1 rounded-lg text-[11px] cursor-pointer">Choose Video<input type="file" id="supportVideoInput" accept="video/*" onchange="handleSupportVideoSelect(this)" class="hidden"></label>
             </div>
             <div id="supportSelectedVideoPreview" class="hidden bg-stone-900 border border-stone-700 px-3 py-2 rounded-lg flex items-center justify-between">
               <span id="supportVideoFileName" class="text-[11px] text-stone-200 truncate max-w-[320px]"></span>
-              <button type="button" onclick="clearSupportVideo()" title="Remove Video" class="bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center">&times;</button>
+              <button type="button" onclick="clearSupportVideo()" class="bg-rose-600 text-white w-5 h-5 rounded-full text-xs font-bold">&times;</button>
             </div>
           </div>
         </div>
-
         <div class="flex gap-2 pt-2">
-          <button type="button" onclick="backToSupportStep1()" class="w-1/3 bg-stone-800 hover:bg-stone-700 text-stone-300 py-3 rounded-xl font-bold transition">
-            &larr; Back
-          </button>
-          <button type="submit" id="supportSubmitBtn" class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-stone-950 py-3 rounded-xl font-extrabold text-xs shadow-lg transition">
-            <i class="fa-brands fa-telegram mr-1.5 text-sm"></i> Submit Issue
-          </button>
+          <button type="button" onclick="backToSupportStep1()" class="w-1/3 bg-stone-800 text-stone-300 py-3 rounded-xl font-bold">&larr; Back</button>
+          <button type="submit" id="supportSubmitBtn" class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 text-stone-950 py-3 rounded-xl font-extrabold text-xs">Submit Issue</button>
         </div>
       </form>
     </div>
   </div>
 
-  <footer class="bg-black/90 text-stone-400 pt-16 pb-8 border-t border-amber-500/20 mt-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-stone-900 text-xs">
-      <div class="space-y-4">
-        <a href="#catalogSection" onclick="showHomeCatalog(); return false;" class="flex flex-col">
-          <span class="text-3xl font-extrabold font-cinzel tracking-[0.25em] text-amber-100">AURA</span>
-          <span class="text-[10px] uppercase tracking-[0.45em] text-amber-500 font-bold -mt-1">Fine Store</span>
-        </a>
-        <p class="text-stone-400 leading-relaxed">
-          Premium lifestyle clothing, Oxford shirts, casual wear, and royal artisanal collections tailored with bespoke perfection.
-        </p>
-      </div>
-
-      <div class="space-y-3">
-        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">Exclusive Wardrobe</h4>
-        <ul class="space-y-2 text-stone-400">
-          <li><a href="#catalogSection" onclick="filterBySection('Men', 'Shirts')" class="hover:text-amber-300 transition">Formal & Casual Shirts</a></li>
-          <li><a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts')" class="hover:text-amber-300 transition">Supima Heavyweight Tees</a></li>
-          <li><a href="#catalogSection" onclick="filterBySection('Men', 'Watches')" class="hover:text-amber-300 transition">Chronograph Master Watches</a></li>
-          <li><a href="#catalogSection" onclick="filterBySection('Women', 'All')" class="hover:text-amber-300 transition">Royal Jhumkas & Sarees</a></li>
-        </ul>
-      </div>
-
-      <div class="space-y-3">
-        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">Customer Concierge</h4>
-        <ul class="space-y-2 text-stone-400">
-          <li><a href="#" onclick="openMyOrdersModal()" class="hover:text-amber-300 transition">My Orders & Tracking Desk</a></li>
-          <li><a href="#" onclick="openSupportModal()" class="hover:text-emerald-400 transition font-bold text-emerald-400">Help & Support Desk</a></li>
-          <li><span class="text-stone-300 font-semibold"><i class="fa-solid fa-envelope mr-1.5 text-amber-500"></i> mahatosarita436@gmail.com</span></li>
-          <li><span class="text-stone-300 font-semibold"><i class="fa-solid fa-clock mr-1.5 text-amber-500"></i> 10:00 AM – 8:00 PM Support</span></li>
-        </ul>
-      </div>
-
-      <div class="space-y-3">
-        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">Express Logistics</h4>
-        <p class="text-stone-400 leading-relaxed">
-          Dispatched from Bolpur, Birbhum, West Bengal. We partner with Delhivery, DTDC, and IndiaPost across India.
-        </p>
-        <div class="pt-2">
-          <span class="inline-flex items-center gap-1.5 bg-stone-950 border border-stone-800 px-3.5 py-1.5 rounded-xl text-emerald-400 font-semibold text-[11px] shadow">
-            <i class="fa-solid fa-lock text-xs"></i> 100% Encrypted UPI Payments
-          </span>
-        </div>
-      </div>
+  <footer class="bg-black/90 text-stone-400 pt-12 pb-8 border-t border-amber-500/20 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-stone-900 text-xs">
+      <div><span class="text-2xl font-extrabold font-cinzel tracking-[0.25em] text-amber-100">AURA</span><p class="text-stone-400 mt-2">Premium lifestyle clothing, ethnic wear, and luxury artisanal collections.</p></div>
+      <div class="space-y-2"><h4 class="font-bold uppercase text-amber-400 font-cinzel">Customer Concierge</h4><p><a href="#" onclick="openMyOrdersModal()" class="hover:text-amber-300">My Orders & Tracking</a></p><p><a href="#" onclick="openSupportModal()" class="text-emerald-400 font-bold">Help & Support Desk</a></p></div>
+      <div class="space-y-2"><h4 class="font-bold uppercase text-amber-400 font-cinzel">Support & Dispatch</h4><p>Bolpur, Birbhum, West Bengal</p><p>Email: mahatosarita436@gmail.com</p></div>
     </div>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 flex flex-col sm:flex-row justify-between items-center text-[11px] text-stone-500 gap-2">
-      <p>&copy; 2026 AURA Fine Store. All Rights Reserved. Support: mahatosarita436@gmail.com</p>
-      <p class="font-cinzel tracking-wider text-amber-500/80">Luxury • Elegance • Artisanal Heritage</p>
-    </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-5 flex justify-between text-[11px] text-stone-500"><p>&copy; 2026 AURA Fine Store. All Rights Reserved.</p><p class="text-amber-500/80 font-cinzel">Luxury • Elegance</p></div>
   </footer>
 
   <script>
     const STORE_UPI_ID = "6289145092@ptsbi";
+    const SUPPORT_BOT_TOKEN = "9025873079:AAFiDAk_5FOGpNGRvjBtuVhwFHyfnn6pX1I";
+    const SUPPORT_CHAT_ID = "8836538477";
 
-    let allProducts = [];
-    let dealBanners = [];
-    let currentDealIndex = 0;
-    let dealSliderInterval = null;
-
-    let activeMainSection = 'Home';
-    let activeSubCategory = 'All';
-    let cart = [];
-    let activeCoupons = [];
-    let appliedDiscountRate = 0;
-    let appliedCouponCode = "";
-    let appliedCouponMinSpend = 0;
-    let storeDeliveryCharge = 0;
-    let storeCodAdvancePct = 15;
-    let isPincodeValid = false;
-
-    let currentOpenedProduct = null;
-    let currentSelectedSize = "";
-    let currentSelectedColor = "";
-
-    let supportMatchedOrders = [];
-    let selectedSupportOrder = null;
-    let supportPhotosBase64 = [];
-    let supportVideoBase64 = "";
-    let supportLiveInterval = null;
+    let allProducts = [], dealBanners = [], currentDealIndex = 0, dealSliderInterval = null;
+    let activeMainSection = 'Home', activeSubCategory = 'All', cart = [], activeCoupons = [];
+    let appliedDiscountRate = 0, appliedCouponCode = "", appliedCouponMinSpend = 0;
+    let storeDeliveryCharge = 0, storeCodAdvancePct = 15, isPincodeValid = false;
+    let currentOpenedProduct = null, currentSelectedSize = "", currentSelectedColor = "";
+    let supportMatchedOrders = [], selectedSupportOrder = null, supportPhotoFiles = [], supportVideoFile = null, supportLiveInterval = null;
 
     const sectionSubCategories = {
       "Men": ["Shirts", "T-Shirts", "Watches", "Trousers", "Perfumes"],
@@ -741,195 +429,89 @@
     function setupDealCarousel() {
       if (!dealBanners.length) return;
       renderCurrentDealSlide();
-
-      const dotsWrap = document.getElementById('carouselDots');
-      dotsWrap.innerHTML = dealBanners.map((_, idx) => `
-        <button onclick="goToDealSlide(${idx})" class="h-2 rounded-full transition-all ${idx === currentDealIndex ? 'bg-amber-400 w-6' : 'bg-white/40 w-2'}"></button>
-      `).join('');
-
+      document.getElementById('carouselDots').innerHTML = dealBanners.map((_, idx) => `<button onclick="goToDealSlide(${idx})" class="h-2 rounded-full transition-all ${idx === currentDealIndex ? 'bg-amber-400 w-6' : 'bg-white/40 w-2'}"></button>`).join('');
       if (dealSliderInterval) clearInterval(dealSliderInterval);
       dealSliderInterval = setInterval(() => { nextDealSlide(); }, 3000);
     }
 
     function renderCurrentDealSlide() {
       if (!dealBanners.length) return;
-      const banner = dealBanners[currentDealIndex];
+      const b = dealBanners[currentDealIndex];
       const img = document.getElementById('carouselImg');
       img.style.opacity = '0.3';
-      setTimeout(() => {
-        img.src = banner.image;
-        document.getElementById('carouselTag').innerText = banner.tag || 'SPECIAL CURATION';
-        document.getElementById('carouselTitle').innerText = banner.title;
-        img.style.opacity = '1';
-      }, 200);
-
-      const dots = document.querySelectorAll('#carouselDots button');
-      dots.forEach((d, idx) => {
-        d.className = `h-2 rounded-full transition-all ${idx === currentDealIndex ? 'bg-amber-400 w-6' : 'bg-white/40 w-2'}`;
-      });
+      setTimeout(() => { img.src = b.image; document.getElementById('carouselTag').innerText = b.tag || 'SPECIAL'; document.getElementById('carouselTitle').innerText = b.title; img.style.opacity = '1'; }, 200);
+      document.querySelectorAll('#carouselDots button').forEach((d, idx) => { d.className = `h-2 rounded-full transition-all ${idx === currentDealIndex ? 'bg-amber-400 w-6' : 'bg-white/40 w-2'}`; });
     }
 
-    function nextDealSlide() {
-      currentDealIndex = (currentDealIndex + 1) % dealBanners.length;
-      renderCurrentDealSlide();
-    }
-
-    function prevDealSlide() {
-      currentDealIndex = (currentDealIndex - 1 + dealBanners.length) % dealBanners.length;
-      renderCurrentDealSlide();
-    }
-
-    function goToDealSlide(idx) {
-      currentDealIndex = idx;
-      renderCurrentDealSlide();
-    }
-
+    function nextDealSlide() { currentDealIndex = (currentDealIndex + 1) % dealBanners.length; renderCurrentDealSlide(); }
+    function prevDealSlide() { currentDealIndex = (currentDealIndex - 1 + dealBanners.length) % dealBanners.length; renderCurrentDealSlide(); }
+    function goToDealSlide(idx) { currentDealIndex = idx; renderCurrentDealSlide(); }
     function handleDealBannerClick() {
       if (!dealBanners.length) return;
-      const banner = dealBanners[currentDealIndex];
-      if (banner && banner.productId) {
-        openQuickView(Number(banner.productId));
-      } else if (allProducts.length > 0) {
-        openQuickView(allProducts[0].id);
-      }
+      const b = dealBanners[currentDealIndex];
+      if (b && b.productId) openQuickView(Number(b.productId));
+      else if (allProducts.length > 0) openQuickView(allProducts[0].id);
     }
 
     let timeRemaining = 4 * 3600 + 32 * 60 + 18;
     setInterval(() => {
       if (timeRemaining > 0) {
         timeRemaining--;
-        const h = Math.floor(timeRemaining / 3600);
-        const m = Math.floor((timeRemaining % 3600) / 60);
-        const s = timeRemaining % 60;
-        document.getElementById('flashHours').innerText = String(h).padStart(2, '0');
-        document.getElementById('flashMinutes').innerText = String(m).padStart(2, '0');
-        document.getElementById('flashSeconds').innerText = String(s).padStart(2, '0');
+        document.getElementById('flashHours').innerText = String(Math.floor(timeRemaining / 3600)).padStart(2, '0');
+        document.getElementById('flashMinutes').innerText = String(Math.floor((timeRemaining % 3600) / 60)).padStart(2, '0');
+        document.getElementById('flashSeconds').innerText = String(timeRemaining % 60).padStart(2, '0');
       }
     }, 1000);
 
     async function loadStore() {
       try {
-        const res = await fetch('/api/store?t=' + Date.now(), {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-        });
+        const res = await fetch('/api/store?t=' + Date.now(), { cache: 'no-store' });
         const data = await res.json();
-        
-        const currentDataHash = JSON.stringify(data);
-        if (window._lastStoreHash === currentDataHash) return;
-        window._lastStoreHash = currentDataHash;
-
+        const hash = JSON.stringify(data);
+        if (window._lastStoreHash === hash) return;
+        window._lastStoreHash = hash;
         allProducts = data.products || [];
         activeCoupons = data.coupons || [];
         dealBanners = data.dealBanners || [];
-        if (data.storeSettings) {
-          storeDeliveryCharge = data.storeSettings.deliveryCharge || 0;
-          storeCodAdvancePct = data.storeSettings.codAdvancePercent || 15;
-        }
-
-        renderStoreCoupons();
-        setupDealCarousel();
-        renderStore();
-        if (typeof updateCartUI === 'function') updateCartUI();
-      } catch (e) {
-        console.error("Store sync error:", e);
-      }
+        if (data.storeSettings) { storeDeliveryCharge = data.storeSettings.deliveryCharge || 0; storeCodAdvancePct = data.storeSettings.codAdvancePercent || 15; }
+        renderStoreCoupons(); setupDealCarousel(); renderStore(); updateCartUI();
+      } catch (e) {}
     }
 
     function renderStoreCoupons() {
-      const topWrap = document.getElementById('topCouponsContainer');
-      const cartBadges = document.getElementById('cartCouponsBadges');
       const visible = activeCoupons.filter(c => c.showOnStore);
-
-      if (!visible.length) {
-        topWrap.innerHTML = `<span>Flat 20% OFF storewide with code AURA20</span>`;
-        cartBadges.innerHTML = `<span class="text-xs text-stone-500">No active coupons right now.</span>`;
-        return;
-      }
-
-      topWrap.innerHTML = visible.map(c => `
-        <span class="inline-flex items-center gap-1 cursor-pointer bg-stone-900 hover:bg-stone-800 px-2.5 py-0.5 rounded-full border border-amber-500/30 text-[11px] transition shadow-sm" onclick="quickApplyCoupon('${c.code}')">
-          <i class="fa-solid fa-tag text-[9px] text-amber-400"></i> ${c.code} (${c.discountPercent}% OFF${c.minSpend > 0 ? ` on ₹${c.minSpend}+` : ''})
-        </span>
-      `).join('');
-
-      cartBadges.innerHTML = visible.map(c => `
-        <div onclick="quickApplyCoupon('${c.code}')" class="cursor-pointer bg-stone-950 hover:bg-stone-800 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center justify-between gap-2 shadow-sm transition">
-          <div>
-            <span class="font-mono font-bold text-amber-300">${c.code}</span>
-            <span class="text-[10px] text-emerald-400 font-bold">(${c.discountPercent}% OFF)</span>
-            ${c.minSpend > 0 ? `<span class="text-[9px] text-stone-400 block">Min Cart: ₹${c.minSpend}</span>` : ''}
-          </div>
-          <span class="text-[10px] bg-amber-500 text-stone-950 px-2.5 py-0.5 rounded-full font-extrabold">APPLY</span>
-        </div>
-      `).join('');
+      document.getElementById('topCouponsContainer').innerHTML = visible.length ? visible.map(c => `<span class="cursor-pointer bg-stone-900 px-2.5 py-0.5 rounded-full border border-amber-500/30 text-[11px]" onclick="quickApplyCoupon('${c.code}')">${c.code} (${c.discountPercent}% OFF)</span>`).join('') : `<span>Flat 20% OFF with AURA20</span>`;
+      document.getElementById('cartCouponsBadges').innerHTML = visible.map(c => `<div onclick="quickApplyCoupon('${c.code}')" class="cursor-pointer bg-stone-950 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2"><span class="font-mono font-bold text-amber-300">${c.code}</span><span class="text-emerald-400 font-bold">(${c.discountPercent}% OFF)</span></div>`).join('');
     }
 
-    function quickApplyCoupon(code) {
-      document.getElementById('couponInput').value = code;
-      applyCoupon();
-    }
+    function quickApplyCoupon(code) { document.getElementById('couponInput').value = code; applyCoupon(); }
 
     function showHomeCatalog(btn = null) {
-      activeMainSection = 'Home';
-      activeSubCategory = 'All';
+      activeMainSection = 'Home'; activeSubCategory = 'All';
       document.getElementById('currentCategoryHeading').innerText = "Home Collections";
       document.getElementById('subCategoryTabsBar').classList.add('hidden');
-
-      document.querySelectorAll('.cat-btn').forEach(b => {
-        b.className = "cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition";
-      });
+      document.querySelectorAll('.cat-btn').forEach(b => { b.className = "cat-btn bg-stone-900 border border-stone-700 px-5 py-2 rounded-full text-xs font-bold text-stone-300"; });
       const homeBtn = btn || document.querySelector('#categoryTabs button');
-      if (homeBtn) {
-        homeBtn.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400";
-      }
+      if (homeBtn) homeBtn.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold border border-amber-400";
       renderStore();
     }
 
     function renderSubCategoryBar(mainSec, activeSub) {
       const subBar = document.getElementById('subCategoryTabsBar');
       const subs = sectionSubCategories[mainSec] || [];
-      if (!subs.length) {
-        subBar.classList.add('hidden');
-        return;
-      }
+      if (!subs.length) { subBar.classList.add('hidden'); return; }
       subBar.classList.remove('hidden');
-      const allPill = `
-        <button onclick="filterBySection('${mainSec}', 'All')" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold transition whitespace-nowrap ${activeSub === 'All' ? 'bg-amber-500/25 text-amber-300 border border-amber-400' : 'bg-stone-950 text-stone-400 border border-stone-800 hover:border-amber-500/50'}">
-          All ${mainSec}
-        </button>
-      `;
-      const pills = subs.map(sub => `
-        <button onclick="filterBySection('${mainSec}', '${sub}')" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold transition whitespace-nowrap ${activeSub === sub ? 'bg-amber-500/25 text-amber-300 border border-amber-400' : 'bg-stone-950 text-stone-400 border border-stone-800 hover:border-amber-500/50'}">
-          ${sub}
-        </button>
-      `).join('');
-      subBar.innerHTML = allPill + pills;
+      subBar.innerHTML = [`<button onclick="filterBySection('${mainSec}', 'All')" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap ${activeSub === 'All' ? 'bg-amber-500/25 text-amber-300 border border-amber-400' : 'bg-stone-950 text-stone-400 border border-stone-800'}">All ${mainSec}</button>`,
+        ...subs.map(sub => `<button onclick="filterBySection('${mainSec}', '${sub}')" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap ${activeSub === sub ? 'bg-amber-500/25 text-amber-300 border border-amber-400' : 'bg-stone-950 text-stone-400 border border-stone-800'}">${sub}</button>`)
+      ].join('');
     }
 
     function filterBySection(mainSec, subCat = 'All', btn = null) {
-      activeMainSection = mainSec;
-      activeSubCategory = subCat;
-
-      let title = mainSec === 'Gifts' ? 'GF & BF Special Gifts' : mainSec;
-      if (subCat !== 'All') title += ` &rarr; ${subCat}`;
-      document.getElementById('currentCategoryHeading').innerHTML = title;
-
-      document.querySelectorAll('.cat-btn').forEach(b => {
-        b.className = "cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 px-5 py-2 rounded-full text-xs font-bold tracking-wide text-stone-300 transition";
-      });
-
-      if (btn) {
-        btn.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400";
-      } else {
-        const tabBtns = document.querySelectorAll('#categoryTabs button');
-        tabBtns.forEach(b => {
-          if (b.innerText.includes(mainSec)) {
-            b.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold tracking-wide transition shadow-sm border border-amber-400";
-          }
-        });
-      }
-
+      activeMainSection = mainSec; activeSubCategory = subCat;
+      document.getElementById('currentCategoryHeading').innerHTML = (mainSec === 'Gifts' ? 'GF & BF Special Gifts' : mainSec) + (subCat !== 'All' ? ` &rarr; ${subCat}` : '');
+      document.querySelectorAll('.cat-btn').forEach(b => { b.className = "cat-btn bg-stone-900 border border-stone-700 px-5 py-2 rounded-full text-xs font-bold text-stone-300"; });
+      if (btn) btn.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold border border-amber-400";
+      else document.querySelectorAll('#categoryTabs button').forEach(b => { if (b.innerText.includes(mainSec)) b.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold border border-amber-400"; });
       renderSubCategoryBar(mainSec, subCat);
       renderStore();
     }
@@ -938,84 +520,44 @@
 
     function renderStore() {
       const search = (document.getElementById('searchInput').value || "").toLowerCase();
-      
       const filtered = allProducts.filter(p => {
-        const matchSearch = p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search) || (p.category && p.category.toLowerCase().includes(search));
-        if (search.length > 0) return matchSearch;
-        if (activeMainSection === 'Home') {
-          return p.showOnHome === true;
-        }
-        const matchMain = p.mainCategory === activeMainSection;
-        const matchSub = (activeSubCategory === 'All' || p.category === activeSubCategory);
-        return matchMain && matchSub;
+        if (search.length > 0) return p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search) || (p.category && p.category.toLowerCase().includes(search));
+        if (activeMainSection === 'Home') return p.showOnHome === true;
+        return p.mainCategory === activeMainSection && (activeSubCategory === 'All' || p.category === activeSubCategory);
       });
-
       document.getElementById('countDisplay').innerText = filtered.length;
       const grid = document.getElementById('productsGrid');
-
-      if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-full py-20 text-center text-stone-500 font-light">No designs found in this section. Explore other categories from the menu above.</div>`;
-        return;
-      }
+      if (!filtered.length) { grid.innerHTML = `<div class="col-span-full py-20 text-center text-stone-500">No designs found in this section.</div>`; return; }
 
       grid.innerHTML = filtered.map(p => {
         const discountPct = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
         const isOut = p.inStock === false || p.stockQuantity <= 0;
-        const mainImage = (p.images && p.images[0]) || p.image || "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55";
-        const photosCount = (p.images && p.images.length) || 1;
-
+        const mainImage = (p.images && p.images[0]) || "";
         return `
           <div class="rounded-3xl border border-amber-500/20 overflow-hidden shadow-lg lux-card flex flex-col justify-between group">
             <div onclick="openQuickView(${p.id})" class="relative overflow-hidden aspect-square bg-stone-950 cursor-pointer">
-              <img src="${mainImage}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isOut ? 'opacity-40 grayscale' : ''}">
-              ${isOut ? `
-                <div class="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-xs">
-                  <span class="bg-red-600 text-white font-bold text-xs px-4 py-1.5 rounded-full uppercase tracking-widest shadow-xl">Sold Out</span>
-                </div>
-              ` : `
-                <span class="absolute top-3.5 left-3.5 bg-stone-950/90 backdrop-blur-sm text-amber-300 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full shadow border border-amber-500/30">
-                  ${p.badge}
-                </span>
-                <span class="absolute bottom-3.5 right-3.5 bg-black/75 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow border border-white/10">
-                  <i class="fa-regular fa-images text-amber-400"></i> ${photosCount} Photos
-                </span>
-              `}
+              <img src="${mainImage}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isOut ? 'opacity-40 grayscale' : ''}">
+              <span class="absolute top-3.5 left-3.5 bg-stone-950/90 text-amber-300 text-[10px] font-extrabold uppercase px-3 py-1 rounded-full border border-amber-500/30">${isOut ? 'Sold Out' : p.badge}</span>
+              <span class="absolute bottom-3.5 right-3.5 bg-black/75 text-white text-[10px] font-bold px-2.5 py-1 rounded-full"><i class="fa-regular fa-images text-amber-400"></i> ${(p.images || []).length} Photos</span>
             </div>
-
             <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
               <div onclick="openQuickView(${p.id})" class="cursor-pointer">
-                <div class="flex items-center justify-between text-amber-400 text-xs">
-                  <div class="flex items-center gap-1.5">
-                    <span>★</span><span class="font-bold text-stone-100">${p.rating}</span>
-                    <span class="text-stone-400 text-[11px]">(${p.reviewsCount} reviews)</span>
-                  </div>
-                  <span class="text-[10px] text-amber-400/90 underline font-semibold">Write Review</span>
-                </div>
-                <h3 class="font-cinzel font-bold text-stone-100 text-base mt-1.5 line-clamp-1 group-hover:text-amber-400 transition">${p.name}</h3>
-                <p class="text-stone-400 text-xs mt-1 line-clamp-2 leading-relaxed">${p.description}</p>
+                <div class="flex justify-between text-amber-400 text-xs"><span>★ <b>${p.rating}</b> (${p.reviewsCount})</span><span class="underline text-[10px]">Write Review</span></div>
+                <h3 class="font-cinzel font-bold text-stone-100 text-base mt-1.5 line-clamp-1">${p.name}</h3>
+                <p class="text-stone-400 text-xs mt-1 line-clamp-2">${p.description}</p>
               </div>
-
               <div class="pt-3 border-t border-stone-800 space-y-3">
                 <div class="flex items-baseline justify-between">
-                  <div>
-                    <span class="text-2xl font-black text-amber-400">₹${p.price}</span>
-                    <span class="text-xs line-through text-stone-500 ml-1.5 font-medium">₹${p.originalPrice}</span>
-                  </div>
-                  <span class="text-[10px] text-emerald-300 font-extrabold bg-emerald-950 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">${discountPct}% SAVINGS</span>
+                  <div><span class="text-2xl font-black text-amber-400">₹${p.price}</span><span class="text-xs line-through text-stone-500 ml-1.5">₹${p.originalPrice}</span></div>
+                  <span class="text-[10px] text-emerald-300 font-extrabold bg-emerald-950 px-2.5 py-0.5 rounded-full">${discountPct}% OFF</span>
                 </div>
-
                 <div class="grid grid-cols-2 gap-2">
-                  <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full ${isOut ? 'bg-stone-800 cursor-not-allowed text-stone-600' : 'bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700'} py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
-                    <i class="fa-solid fa-basket-shopping text-xs"></i> Add
-                  </button>
-                  <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full ${isOut ? 'bg-stone-800 cursor-not-allowed text-stone-600' : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950'} py-2.5 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5 shadow">
-                    ⚡ View & Buy
-                  </button>
+                  <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700 py-2.5 rounded-xl text-xs font-bold">Add</button>
+                  <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-2.5 rounded-xl text-xs font-extrabold">⚡ View & Buy</button>
                 </div>
               </div>
             </div>
-          </div>
-        `;
+          </div>`;
       }).join('');
     }
 
@@ -1023,262 +565,110 @@
       const prod = allProducts.find(p => p.id === id);
       if (!prod) return;
       currentOpenedProduct = prod;
-
-      const discountPct = Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100);
-      const images = (prod.images && prod.images.length > 0) ? prod.images : ["https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55"];
+      const images = (prod.images && prod.images.length) ? prod.images : [""];
       document.getElementById('qvMainImage').src = images[0];
-
-      renderThumbnails(images);
-
+      document.getElementById('qvThumbnailsContainer').innerHTML = images.map((u, i) => `<img id="thumb_img_${i}" src="${u}" onclick="setMainImage('${u}', ${i})" class="w-14 h-14 object-cover rounded-xl border-2 ${i === 0 ? 'border-amber-400' : 'border-transparent'} cursor-pointer">`).join('');
       document.getElementById('qvBadge').innerText = prod.badge || prod.category;
       document.getElementById('qvTitle').innerText = prod.name;
       document.getElementById('qvPrice').innerText = `₹${prod.price}`;
       document.getElementById('qvOrigPrice').innerText = `₹${prod.originalPrice}`;
-      document.getElementById('qvDiscount').innerText = `${discountPct}% OFF`;
+      document.getElementById('qvDiscount').innerText = `${Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100)}% OFF`;
       document.getElementById('qvDesc').innerText = prod.description;
 
-      const sizes = prod.sizeOptions && prod.sizeOptions.length > 0 ? prod.sizeOptions : ["Standard Free Size"];
+      const sizes = (prod.sizeOptions && prod.sizeOptions.length) ? prod.sizeOptions : ["Standard"];
       currentSelectedSize = sizes[0];
       document.getElementById('qvSelectedSizeDisplay').innerText = currentSelectedSize;
-      document.getElementById('qvSizeContainer').innerHTML = sizes.map((s, idx) => `
-        <button type="button" onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold transition ${idx === 0 ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-sm' : 'bg-stone-950 border-stone-700 text-stone-300 hover:border-amber-500'}">
-          ${s}
-        </button>
-      `).join('');
+      document.getElementById('qvSizeContainer').innerHTML = sizes.map((s, i) => `<button type="button" onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300'}">${s}</button>`).join('');
 
-      const colors = prod.colorOptions && prod.colorOptions.length > 0 ? prod.colorOptions : ["Standard"];
+      const colors = (prod.colorOptions && prod.colorOptions.length) ? prod.colorOptions : ["Standard"];
       currentSelectedColor = colors[0];
       document.getElementById('qvSelectedColorDisplay').innerText = currentSelectedColor;
-      document.getElementById('qvColorContainer').innerHTML = colors.map((c, idx) => `
-        <button type="button" onclick="selectVariantColor('${c}', ${idx}, this)" class="color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-medium transition ${idx === 0 ? 'bg-amber-500 text-stone-950 border-amber-400 font-bold shadow-sm' : 'bg-stone-950 border-stone-700 text-stone-300 hover:border-amber-500'}">
-          ${c}
-        </button>
-      `).join('');
+      document.getElementById('qvColorContainer').innerHTML = colors.map((c, i) => `<button type="button" onclick="selectVariantColor('${c}', ${i}, this)" class="color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300'}">${c}</button>`).join('');
 
       document.getElementById('qvAddToCartBtn').onclick = () => { addToCartWithVariant(prod); closeQuickView(); };
       document.getElementById('qvBuyNowBtn').onclick = () => { closeQuickView(); instantBuyNowWithVariant(prod); };
-
       renderProductReviews(prod);
       document.getElementById('quickViewModal').classList.remove('hidden');
     }
 
     function renderProductReviews(prod) {
-      document.getElementById('qvReviewStats').innerText = `★ ${prod.rating || 5.0} (${prod.reviewsCount || 0} Total Ratings)`;
-      const list = document.getElementById('qvReviewsList');
-      const reviews = prod.reviews || [];
-
-      if (reviews.length === 0) {
-        list.innerHTML = `<p class="text-xs text-stone-500 italic text-center py-3">No customer reviews yet. Be the first to review this product!</p>`;
-        return;
-      }
-
-      list.innerHTML = reviews.map(r => {
-        const stars = '★'.repeat(r.rating || 5) + '☆'.repeat(5 - (r.rating || 5));
-        return `
-          <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-1 text-xs">
-            <div class="flex justify-between items-center">
-              <span class="font-bold text-stone-200"><i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i>${r.customerName}</span>
-              <span class="text-amber-400 font-bold">${stars}</span>
-            </div>
-            <p class="text-stone-300 leading-relaxed">${r.comment}</p>
-            <p class="text-[10px] text-stone-500">${r.date || ''}</p>
-          </div>
-        `;
-      }).join('');
+      document.getElementById('qvReviewStats').innerText = `★ ${prod.rating || 5.0} (${prod.reviewsCount || 0} Ratings)`;
+      const revs = prod.reviews || [];
+      document.getElementById('qvReviewsList').innerHTML = revs.length ? revs.map(r => `<div class="bg-stone-950 border border-stone-800 p-3 rounded-xl text-xs"><div class="flex justify-between font-bold"><span>${r.customerName}</span><span class="text-amber-400">${'★'.repeat(r.rating || 5)}</span></div><p class="text-stone-300 mt-1">${r.comment}</p></div>`).join('') : `<p class="text-xs text-stone-500 text-center py-2">No reviews yet.</p>`;
     }
 
     async function submitProductReview(e) {
       e.preventDefault();
       if (!currentOpenedProduct) return;
-
-      const btn = document.getElementById('revSubmitBtn');
-      btn.innerText = "Submitting...";
-      btn.disabled = true;
-
-      const payload = {
-        customerName: document.getElementById('revCustomerName').value,
-        rating: document.getElementById('revRatingSelect').value,
-        comment: document.getElementById('revCommentInput').value
-      };
-
-      try {
-        const res = await fetch(`/api/products/${currentOpenedProduct.id}/reviews`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success && data.product) {
-          alert("Thank you! Your review has been published.");
-          document.getElementById('revCustomerName').value = "";
-          document.getElementById('revCommentInput').value = "";
-          currentOpenedProduct = data.product;
-          const idx = allProducts.findIndex(p => p.id === data.product.id);
-          if (idx > -1) allProducts[idx] = data.product;
-          renderProductReviews(data.product);
-          renderStore();
-        }
-      } catch (err) {
-        alert("Failed to submit review.");
-      } finally {
-        btn.innerText = "Submit Review";
-        btn.disabled = false;
-      }
-    }
-
-    function renderThumbnails(images) {
-      const thumbsContainer = document.getElementById('qvThumbnailsContainer');
-      thumbsContainer.innerHTML = images.map((imgUrl, i) => `
-        <img id="thumb_img_${i}" src="${imgUrl}" onclick="setMainImage('${imgUrl}', ${i})" class="w-14 h-14 object-cover rounded-xl border-2 ${i === 0 ? 'border-amber-400 scale-105' : 'border-transparent'} hover:border-amber-400 cursor-pointer shadow-sm transition-all hover:scale-105">
-      `).join('');
-    }
-
-    function setMainImage(imgUrl, idx = -1) {
-      document.getElementById('qvMainImage').src = imgUrl;
-      document.querySelectorAll('#qvThumbnailsContainer img').forEach(im => {
-        im.classList.replace('border-amber-400', 'border-transparent');
-        im.classList.remove('scale-105');
+      const res = await fetch(`/api/products/${currentOpenedProduct.id}/reviews`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerName: document.getElementById('revCustomerName').value, rating: document.getElementById('revRatingSelect').value, comment: document.getElementById('revCommentInput').value })
       });
-      if (idx >= 0) {
-        const selected = document.getElementById(`thumb_img_${idx}`);
-        if (selected) {
-          selected.classList.replace('border-transparent', 'border-amber-400');
-          selected.classList.add('scale-105');
-        }
+      const data = await res.json();
+      if (data.success && data.product) {
+        alert("Review submitted!");
+        document.getElementById('revCustomerName').value = ""; document.getElementById('revCommentInput').value = "";
+        currentOpenedProduct = data.product;
+        const idx = allProducts.findIndex(p => p.id === data.product.id);
+        if (idx > -1) allProducts[idx] = data.product;
+        renderProductReviews(data.product); renderStore();
       }
+    }
+
+    function setMainImage(u, idx = -1) {
+      document.getElementById('qvMainImage').src = u;
+      document.querySelectorAll('#qvThumbnailsContainer img').forEach(im => im.classList.replace('border-amber-400', 'border-transparent'));
+      if (idx >= 0 && document.getElementById(`thumb_img_${idx}`)) document.getElementById(`thumb_img_${idx}`).classList.replace('border-transparent', 'border-amber-400');
     }
 
     function selectVariantSize(val, btn) {
-      currentSelectedSize = val;
-      document.getElementById('qvSelectedSizeDisplay').innerText = val;
-      document.querySelectorAll('.size-pill-btn').forEach(b => {
-        b.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold transition bg-stone-950 border-stone-700 text-stone-300 hover:border-amber-500";
-      });
-      btn.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold transition bg-amber-500 text-stone-950 border-amber-400 shadow-sm";
+      currentSelectedSize = val; document.getElementById('qvSelectedSizeDisplay').innerText = val;
+      document.querySelectorAll('.size-pill-btn').forEach(b => { b.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-stone-950 border-stone-700 text-stone-300"; });
+      btn.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-amber-500 text-stone-950 border-amber-400";
     }
 
-    function selectVariantColor(val, colorIndex, btn) {
-      currentSelectedColor = val;
-      document.getElementById('qvSelectedColorDisplay').innerText = val;
-      document.querySelectorAll('.color-pill-btn').forEach(b => {
-        b.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-medium transition bg-stone-950 border-stone-700 text-stone-300 hover:border-amber-500";
-      });
-      btn.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold transition bg-amber-500 text-stone-950 border-amber-400 shadow-sm";
-
-      if (currentOpenedProduct && currentOpenedProduct.images && currentOpenedProduct.images.length > 0) {
-        const targetImgIndex = colorIndex < currentOpenedProduct.images.length ? colorIndex : 0;
-        setMainImage(currentOpenedProduct.images[targetImgIndex], targetImgIndex);
-      }
+    function selectVariantColor(val, idx, btn) {
+      currentSelectedColor = val; document.getElementById('qvSelectedColorDisplay').innerText = val;
+      document.querySelectorAll('.color-pill-btn').forEach(b => { b.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-stone-950 border-stone-700 text-stone-300"; });
+      btn.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-amber-500 text-stone-950 border-amber-400";
+      if (currentOpenedProduct && currentOpenedProduct.images && currentOpenedProduct.images.length) setMainImage(currentOpenedProduct.images[idx < currentOpenedProduct.images.length ? idx : 0], idx);
     }
 
     function addToCartWithVariant(prod) {
-      const itemKey = `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`;
-      const exist = cart.find(i => i.itemKey === itemKey);
-      if (exist) exist.qty += 1;
-      else {
-        cart.push({
-          ...prod,
-          itemKey,
-          selectedSize: currentSelectedSize,
-          selectedColor: currentSelectedColor,
-          qty: 1
-        });
-      }
-      updateCartUI();
-      toggleCart(true);
+      const key = `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`;
+      const exist = cart.find(i => i.itemKey === key);
+      if (exist) exist.qty += 1; else cart.push({ ...prod, itemKey: key, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 });
+      updateCartUI(); toggleCart(true);
     }
 
     function instantBuyNowWithVariant(prod) {
-      cart = [{
-        ...prod,
-        itemKey: `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`,
-        selectedSize: currentSelectedSize,
-        selectedColor: currentSelectedColor,
-        qty: 1
-      }];
-      updateCartUI();
-      openCheckoutModal();
+      cart = [{ ...prod, itemKey: `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 }];
+      updateCartUI(); openCheckoutModal();
     }
 
     function closeQuickView() { document.getElementById('quickViewModal').classList.add('hidden'); }
+    function updateQty(idx, ch) { cart[idx].qty += ch; if (cart[idx].qty <= 0) cart.splice(idx, 1); updateCartUI(); }
+    function toggleCart(forceOpen = false) { const d = document.getElementById('cartDrawer'); if (forceOpen) d.classList.remove('hidden'); else d.classList.toggle('hidden'); }
 
-    function updateQty(idx, change) {
-      cart[idx].qty += change;
-      if (cart[idx].qty <= 0) cart.splice(idx, 1);
-      updateCartUI();
-    }
-
-    function toggleCart(forceOpen = false) {
-      const drawer = document.getElementById('cartDrawer');
-      if (forceOpen) drawer.classList.remove('hidden');
-      else drawer.classList.toggle('hidden');
-    }
-
-    function calculateCartTotals(paymentMode = 'UPI') {
-      let subTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-      let discountAmt = 0;
-
-      if (appliedDiscountRate > 0) {
-        if (subTotal >= appliedCouponMinSpend) {
-          discountAmt = Math.round((subTotal * appliedDiscountRate) / 100);
-        } else {
-          appliedDiscountRate = 0;
-          appliedCouponCode = "";
-          const msg = document.getElementById('couponStatusMsg');
-          msg.innerText = `Min cart ₹${appliedCouponMinSpend} required for this coupon!`;
-          msg.className = "text-[11px] text-rose-400 block font-semibold";
-          msg.classList.remove('hidden');
-        }
-      }
-
-      const deliveryCharge = paymentMode === 'COD' ? storeDeliveryCharge : 0;
-      let finalAmt = subTotal - discountAmt + deliveryCharge;
-      return { subTotal, discountAmt, finalAmt, deliveryCharge };
+    function calculateCartTotals(mode = 'UPI') {
+      let subTotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+      let discountAmt = (appliedDiscountRate > 0 && subTotal >= appliedCouponMinSpend) ? Math.round((subTotal * appliedDiscountRate) / 100) : 0;
+      const deliveryCharge = mode === 'COD' ? storeDeliveryCharge : 0;
+      return { subTotal, discountAmt, finalAmt: subTotal - discountAmt + deliveryCharge, deliveryCharge };
     }
 
     function updateCartUI() {
-      const totalCount = cart.reduce((sum, item) => sum + item.qty, 0);
-      document.getElementById('cartCountBadge').innerText = totalCount;
+      document.getElementById('cartCountBadge').innerText = cart.reduce((s, i) => s + i.qty, 0);
       const list = document.getElementById('cartItemsList');
-
-      if (cart.length === 0) {
-        list.innerHTML = `<div class="text-center py-16 text-stone-500 text-xs"><i class="fa-solid fa-bag-shopping text-3xl mb-2 text-stone-700"></i><p>Your shopping bag is empty.</p></div>`;
-        document.getElementById('subTotalDisplay').innerText = "₹0";
-        document.getElementById('discountDisplay').innerText = "-₹0";
-        document.getElementById('finalTotalDisplay').innerText = "₹0";
-        document.getElementById('checkoutProceedBtn').disabled = true;
-        return;
+      if (!cart.length) {
+        list.innerHTML = `<p class="text-center py-16 text-stone-500 text-xs">Your shopping bag is empty.</p>`;
+        document.getElementById('subTotalDisplay').innerText = "₹0"; document.getElementById('discountDisplay').innerText = "-₹0"; document.getElementById('finalTotalDisplay').innerText = "₹0";
+        document.getElementById('checkoutProceedBtn').disabled = true; return;
       }
-
       document.getElementById('checkoutProceedBtn').disabled = false;
       const { subTotal, discountAmt, finalAmt } = calculateCartTotals('UPI');
-
-      list.innerHTML = cart.map((item, index) => {
-        const itemImg = (item.images && item.images[0]) || item.image || "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=480&q=55";
-        return `
-          <div class="flex items-center gap-3 border-b border-stone-800 pb-3">
-            <img src="${itemImg}" class="w-14 h-14 object-cover rounded-xl border border-stone-700">
-            <div class="flex-1">
-              <h5 class="text-xs font-bold text-stone-100 line-clamp-1">${item.name}</h5>
-              <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-md font-bold">${item.selectedSize}</span>
-                <span class="bg-stone-800 text-stone-300 text-[10px] px-2 py-0.5 rounded-md">${item.selectedColor}</span>
-              </div>
-              <p class="text-xs font-black text-amber-400 mt-1">₹${item.price}</p>
-              <div class="flex items-center gap-2 mt-1">
-                <button onclick="updateQty(${index}, -1)" class="w-6 h-6 bg-stone-800 text-xs rounded-lg hover:bg-stone-700 font-bold">-</button>
-                <span class="text-xs font-bold">${item.qty}</span>
-                <button onclick="updateQty(${index}, 1)" class="w-6 h-6 bg-stone-800 text-xs rounded-lg hover:bg-stone-700 font-bold">+</button>
-              </div>
-            </div>
-            <button onclick="cart.splice(${index}, 1); updateCartUI();" class="text-stone-500 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash-can"></i></button>
-          </div>
-        `;
-      }).join('');
-
-      document.getElementById('subTotalDisplay').innerText = `₹${subTotal}`;
-      document.getElementById('discountDisplay').innerText = `-₹${discountAmt}`;
-      document.getElementById('finalTotalDisplay').innerText = `₹${finalAmt}`;
+      list.innerHTML = cart.map((item, idx) => `<div class="flex items-center gap-3 border-b border-stone-800 pb-3"><img src="${(item.images && item.images[0]) || ''}" class="w-14 h-14 object-cover rounded-xl"><div class="flex-1"><h5 class="text-xs font-bold line-clamp-1">${item.name}</h5><p class="text-[10px] text-amber-400">${item.selectedSize} | ${item.selectedColor}</p><p class="text-xs font-black text-amber-400">₹${item.price}</p><div class="flex items-center gap-2 mt-1"><button onclick="updateQty(${idx}, -1)" class="w-6 h-6 bg-stone-800 rounded">-</button><span>${item.qty}</span><button onclick="updateQty(${idx}, 1)" class="w-6 h-6 bg-stone-800 rounded">+</button></div></div><button onclick="cart.splice(${idx}, 1); updateCartUI();" class="text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button></div>`).join('');
+      document.getElementById('subTotalDisplay').innerText = `₹${subTotal}`; document.getElementById('discountDisplay').innerText = `-₹${discountAmt}`; document.getElementById('finalTotalDisplay').innerText = `₹${finalAmt}`;
     }
 
     function applyCoupon() {
@@ -1286,566 +676,244 @@
       const status = document.getElementById('couponStatusMsg');
       const { subTotal } = calculateCartTotals('UPI');
       const found = activeCoupons.find(c => c.code === code);
-
-      if (found) {
-        if (subTotal < (found.minSpend || 0)) {
-          appliedDiscountRate = 0;
-          appliedCouponCode = "";
-          status.innerText = `Minimum order of ₹${found.minSpend} required for this coupon!`;
-          status.className = "text-[11px] text-rose-400 block font-semibold";
-          status.classList.remove('hidden');
-        } else {
-          appliedDiscountRate = found.discountPercent;
-          appliedCouponCode = found.code;
-          appliedCouponMinSpend = found.minSpend || 0;
-          status.innerText = `Success! ${found.discountPercent}% discount applied.`;
-          status.className = "text-[11px] text-emerald-400 block font-bold";
-          status.classList.remove('hidden');
-        }
+      if (found && subTotal >= (found.minSpend || 0)) {
+        appliedDiscountRate = found.discountPercent; appliedCouponCode = found.code; appliedCouponMinSpend = found.minSpend || 0;
+        status.innerText = `Applied ${found.discountPercent}% OFF!`; status.className = "text-[11px] text-emerald-400 block font-bold";
       } else {
-        appliedDiscountRate = 0;
-        appliedCouponCode = "";
-        status.innerText = "Invalid coupon code!";
-        status.className = "text-[11px] text-rose-400 block font-medium";
-        status.classList.remove('hidden');
+        appliedDiscountRate = 0; appliedCouponCode = "";
+        status.innerText = found ? `Min order ₹${found.minSpend} required!` : "Invalid coupon code!"; status.className = "text-[11px] text-rose-400 block font-bold";
       }
-      updateCartUI();
+      status.classList.remove('hidden'); updateCartUI();
     }
 
     function applyCouponFromStep2() {
-      const code = (document.getElementById('step2CouponInput').value || "").trim().toUpperCase();
-      const status = document.getElementById('step2CouponStatus');
-      const mode = document.getElementById('ordPaymentMethod').value;
-      const { subTotal } = calculateCartTotals(mode);
-      const found = activeCoupons.find(c => c.code === code);
-
-      if (found) {
-        if (subTotal < (found.minSpend || 0)) {
-          appliedDiscountRate = 0;
-          appliedCouponCode = "";
-          status.innerText = `Minimum order of ₹${found.minSpend} required for this coupon!`;
-          status.className = "text-[11px] text-rose-400 block font-bold mt-1";
-          status.classList.remove('hidden');
-        } else {
-          appliedDiscountRate = found.discountPercent;
-          appliedCouponCode = found.code;
-          appliedCouponMinSpend = found.minSpend || 0;
-          status.innerText = `Success! ${found.discountPercent}% discount applied with ${found.code}.`;
-          status.className = "text-[11px] text-emerald-400 block font-bold mt-1";
-          status.classList.remove('hidden');
-        }
-      } else {
-        appliedDiscountRate = 0;
-        appliedCouponCode = "";
-        status.innerText = "Invalid coupon code!";
-        status.className = "text-[11px] text-rose-400 block font-bold mt-1";
-        status.classList.remove('hidden');
-      }
-
-      handlePaymentModeChange(mode);
-      updateCartUI();
-    }
-
-    function openCheckoutModal() {
-      toggleCart();
-      document.getElementById('checkoutModal').classList.remove('hidden');
-      backToStep1Address();
-    }
-
-    function closeCheckoutModal() {
-      document.getElementById('checkoutModal').classList.add('hidden');
-    }
-
-    function goToStep2Payment() {
-      const name = document.getElementById('ordName').value.trim();
-      const phone = document.getElementById('ordPhone').value.trim();
-      const pin = document.getElementById('ordPincode').value.trim();
-      const city = document.getElementById('ordCity').value.trim();
-      const state = document.getElementById('ordState').value.trim();
-      const house = document.getElementById('addrHouseStreet').value.trim();
-      const village = document.getElementById('addrVillage').value.trim();
-      const po = document.getElementById('addrPostOffice').value.trim();
-
-      if (!name || !phone || !pin || !city || !state || !house || !village || !po) {
-        return alert("Please fill all required address details!");
-      }
-
-      if (phone.length !== 10 || isNaN(phone)) {
-        return alert("Please provide a valid 10-digit mobile number!");
-      }
-
-      if (!isPincodeValid) {
-        alert("Please enter a valid 6-digit Indian Postal Pincode!");
-        document.getElementById('ordPincode').focus();
-        return;
-      }
-
-      document.getElementById('checkoutStep1').classList.add('hidden');
-      document.getElementById('checkoutStep2').classList.remove('hidden');
-      document.getElementById('checkoutStepIndicator').innerText = "Step 2 of 2: Payment & Offer Verification";
-
-      document.getElementById('step2SummaryName').innerText = `${name} (${phone})`;
-      document.getElementById('step2SummaryAddr').innerText = `${house}, ${village}, P.O: ${po}, ${city} - ${pin}`;
-
+      document.getElementById('couponInput').value = document.getElementById('step2CouponInput').value;
+      applyCoupon();
       handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
     }
 
-    function backToStep1Address() {
-      document.getElementById('checkoutStep2').classList.add('hidden');
-      document.getElementById('checkoutStep1').classList.remove('hidden');
-      document.getElementById('checkoutStepIndicator').innerText = "Step 1 of 2: Shipping Destination";
+    function openCheckoutModal() { toggleCart(); document.getElementById('checkoutModal').classList.remove('hidden'); backToStep1Address(); }
+    function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
+
+    function goToStep2Payment() {
+      const name = document.getElementById('ordName').value.trim(), phone = document.getElementById('ordPhone').value.trim(), pin = document.getElementById('ordPincode').value.trim();
+      const city = document.getElementById('ordCity').value.trim(), state = document.getElementById('ordState').value.trim(), house = document.getElementById('addrHouseStreet').value.trim(), village = document.getElementById('addrVillage').value.trim(), po = document.getElementById('addrPostOffice').value.trim();
+      if (!name || !phone || !pin || !city || !state || !house || !village || !po) return alert("Please fill all required address fields!");
+      if (phone.length !== 10 || isNaN(phone)) return alert("Enter valid 10-digit mobile number!");
+      if (!isPincodeValid) return alert("Enter valid 6-digit Indian Pincode!");
+      document.getElementById('checkoutStep1').classList.add('hidden'); document.getElementById('checkoutStep2').classList.remove('hidden');
+      document.getElementById('checkoutStepIndicator').innerText = "Step 2 of 2: Payment & Offer Verification";
+      document.getElementById('step2SummaryName').innerText = `${name} (${phone})`; document.getElementById('step2SummaryAddr').innerText = `${house}, ${village}, P.O: ${po}, ${city} - ${pin}`;
+      handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
     }
 
+    function backToStep1Address() { document.getElementById('checkoutStep2').classList.add('hidden'); document.getElementById('checkoutStep1').classList.remove('hidden'); }
+
     async function validateAndLookupPincode(pin) {
-      const cleanPin = pin.trim();
-      const pinInput = document.getElementById('ordPincode');
-      const err = document.getElementById('pincodeErrorMsg');
-      const succ = document.getElementById('pincodeSuccessMsg');
-
-      if (cleanPin.length !== 6 || isNaN(cleanPin) || cleanPin.startsWith('0')) {
-        isPincodeValid = false;
-        pinInput.className = "w-full bg-stone-950 border-2 border-rose-500 p-2.5 rounded-xl font-mono font-bold tracking-wider text-rose-300";
-        err.classList.remove('hidden');
-        succ.classList.add('hidden');
-        return;
-      }
-
+      const clean = pin.trim(), err = document.getElementById('pincodeErrorMsg'), succ = document.getElementById('pincodeSuccessMsg');
+      if (clean.length !== 6 || isNaN(clean)) { isPincodeValid = false; err.classList.remove('hidden'); succ.classList.add('hidden'); return; }
       try {
-        const res = await fetch(`https://api.postalpincode.in/pincode/${cleanPin}`);
-        const data = await res.json();
+        const res = await fetch(`https://api.postalpincode.in/pincode/${clean}`); const data = await res.json();
         if (data && data[0] && data[0].Status === "Success") {
-          isPincodeValid = true;
-          pinInput.className = "w-full bg-stone-950 border-2 border-emerald-500 p-2.5 rounded-xl font-mono font-bold tracking-wider text-emerald-300";
-          err.classList.add('hidden');
-          succ.classList.remove('hidden');
-          const po = data[0].PostOffice[0];
-          document.getElementById('ordCity').value = po.District;
-          document.getElementById('ordState').value = po.State;
-          document.getElementById('addrPostOffice').value = po.Name;
-        } else {
-          throw new Error("Invalid Pin");
-        }
-      } catch (e) {
-        isPincodeValid = false;
-        pinInput.className = "w-full bg-stone-950 border-2 border-rose-500 p-2.5 rounded-xl font-mono font-bold tracking-wider text-rose-300";
-        err.classList.remove('hidden');
-        succ.classList.add('hidden');
-      }
+          isPincodeValid = true; err.classList.add('hidden'); succ.classList.remove('hidden');
+          const po = data[0].PostOffice[0]; document.getElementById('ordCity').value = po.District; document.getElementById('ordState').value = po.State; document.getElementById('addrPostOffice').value = po.Name;
+        } else { isPincodeValid = false; err.classList.remove('hidden'); succ.classList.add('hidden'); }
+      } catch (e) { isPincodeValid = false; }
     }
 
     function handlePaymentModeChange(mode) {
       const { subTotal, discountAmt, finalAmt, deliveryCharge } = calculateCartTotals(mode);
-      const banner = document.getElementById('codNoticeBanner');
-      const qrTitle = document.getElementById('qrBoxTitle');
-      const submitBtn = document.getElementById('submitOrderBtn');
-
       document.getElementById('chkSubtotal').innerText = `₹${subTotal}`;
       document.getElementById('chkDiscountAmt').innerText = `-₹${discountAmt}`;
-      document.getElementById('chkCouponCodeName').innerText = appliedCouponCode ? `${appliedCouponCode} (${appliedDiscountRate}%)` : "None";
-      
+      document.getElementById('chkCouponCodeName').innerText = appliedCouponCode || "None";
       const delEl = document.getElementById('chkDeliveryAmt');
-      if (mode === 'COD' && deliveryCharge > 0) {
-        delEl.innerText = `+₹${deliveryCharge} (COD Charge)`;
-        delEl.className = "font-bold text-amber-400";
-      } else {
-        delEl.innerText = "FREE";
-        delEl.className = "font-bold text-emerald-400";
-      }
-
+      delEl.innerText = (mode === 'COD' && deliveryCharge > 0) ? `+₹${deliveryCharge} (COD Charge)` : "FREE";
+      delEl.className = (mode === 'COD' && deliveryCharge > 0) ? "font-bold text-amber-400" : "font-bold text-emerald-400";
       document.getElementById('chkFinalPayable').innerText = `₹${finalAmt}`;
 
-      let payableAmount = finalAmt;
-
+      let payAmt = finalAmt;
       if (mode === 'COD') {
-        const advanceToken = Math.max(1, Math.round((finalAmt * storeCodAdvancePct) / 100));
-        const balanceCash = finalAmt - advanceToken;
-        payableAmount = advanceToken;
-
-        banner.classList.remove('hidden');
-        document.getElementById('codAdvanceDisplay').innerText = `Advance Token: ₹${advanceToken} (${storeCodAdvancePct}%)`;
-        document.getElementById('codBalanceDisplay').innerText = `₹${balanceCash}`;
-        qrTitle.innerText = `Scan to Pay ₹${advanceToken} COD Advance Token`;
-        submitBtn.innerText = `Pay ₹${advanceToken} Advance & Place Order`;
+        const adv = Math.max(1, Math.round((finalAmt * storeCodAdvancePct) / 100)); payAmt = adv;
+        document.getElementById('codNoticeBanner').classList.remove('hidden');
+        document.getElementById('codAdvanceDisplay').innerText = `Advance Token: ₹${adv} (${storeCodAdvancePct}%)`;
+        document.getElementById('codBalanceDisplay').innerText = `₹${finalAmt - adv}`;
+        document.getElementById('qrBoxTitle').innerText = `Scan to Pay ₹${adv} COD Advance Token`;
+        document.getElementById('submitOrderBtn').innerText = `Pay ₹${adv} Advance & Place Order`;
       } else {
-        banner.classList.add('hidden');
-        qrTitle.innerText = `Scan to Pay 100% Prepaid (₹${finalAmt})`;
-        submitBtn.innerText = `Pay ₹${finalAmt} via UPI & Place Order`;
+        document.getElementById('codNoticeBanner').classList.add('hidden');
+        document.getElementById('qrBoxTitle').innerText = `Scan to Pay 100% Prepaid (₹${finalAmt})`;
+        document.getElementById('submitOrderBtn').innerText = `Pay ₹${finalAmt} via UPI & Place Order`;
       }
-
-      const upiUrl = `upi://pay?pa=${STORE_UPI_ID}&pn=AURA_STORE&am=${payableAmount}&cu=INR`;
-      document.getElementById('dynamicQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+      document.getElementById('dynamicQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=${STORE_UPI_ID}&pn=AURA_STORE&am=${payAmt}&cu=INR`)}`;
     }
 
     async function handlePlaceOrder(e) {
       e.preventDefault();
-
       const utr = document.getElementById('ordUTR').value.trim();
-      if (!utr) return alert("Please enter the 12-digit UPI Transaction ID (UTR)!");
-
-      const btn = document.getElementById('submitOrderBtn');
-      btn.innerText = "Placing Order...";
-      btn.disabled = true;
-
+      if (!utr) return alert("Please enter 12-digit UTR!");
+      const btn = document.getElementById('submitOrderBtn'); btn.innerText = "Placing Order..."; btn.disabled = true;
       const mode = document.getElementById('ordPaymentMethod').value;
       const { subTotal, discountAmt, finalAmt, deliveryCharge } = calculateCartTotals(mode);
-
-      let advancePaid = finalAmt;
-      let balanceDue = 0;
-
-      if (mode === 'COD') {
-        advancePaid = Math.max(1, Math.round((finalAmt * storeCodAdvancePct) / 100));
-        balanceDue = finalAmt - advancePaid;
-      }
-
-      const payload = {
-        customerName: document.getElementById('ordName').value,
-        phone: document.getElementById('ordPhone').value,
-        pincode: document.getElementById('ordPincode').value,
-        city: document.getElementById('ordCity').value,
-        state: document.getElementById('ordState').value,
-        houseNoStreet: document.getElementById('addrHouseStreet').value,
-        villageOrCity: document.getElementById('addrVillage').value,
-        postOffice: document.getElementById('addrPostOffice').value,
-        policeStation: document.getElementById('addrPoliceStation').value,
-        landmark: document.getElementById('addrLandmark').value,
-        items: [...cart],
-        subTotal,
-        discountApplied: discountAmt,
-        deliveryCharge,
-        couponCode: appliedCouponCode,
-        total: finalAmt,
-        paymentMethod: mode,
-        advancePaid,
-        balanceDue,
-        utrNumber: utr
-      };
-
-      try {
-        const res = await fetch('/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert(`🎉 Your order has been confirmed successfully!\n\nOrder ID: #${data.orderId}`);
-
-          cart = [];
-          appliedDiscountRate = 0;
-          appliedCouponCode = "";
-          updateCartUI();
-          closeCheckoutModal();
-        } else {
-          alert(data.message || "Failed to place order.");
-        }
-      } catch (err) {
-        alert("Server error. Please try again.");
-      } finally {
-        btn.innerText = "Place Confirmed Order";
-        btn.disabled = false;
-      }
+      const adv = mode === 'COD' ? Math.max(1, Math.round((finalAmt * storeCodAdvancePct) / 100)) : finalAmt;
+      const res = await fetch('/api/orders', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: document.getElementById('ordName').value, phone: document.getElementById('ordPhone').value, pincode: document.getElementById('ordPincode').value,
+          city: document.getElementById('ordCity').value, state: document.getElementById('ordState').value, houseNoStreet: document.getElementById('addrHouseStreet').value,
+          villageOrCity: document.getElementById('addrVillage').value, postOffice: document.getElementById('addrPostOffice').value, policeStation: document.getElementById('addrPoliceStation').value,
+          landmark: document.getElementById('addrLandmark').value, items: [...cart], subTotal, discountApplied: discountAmt, deliveryCharge, couponCode: appliedCouponCode,
+          total: finalAmt, paymentMethod: mode, advancePaid: adv, balanceDue: finalAmt - adv, utrNumber: utr
+        })
+      });
+      const data = await res.json();
+      if (data.success) { alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}`); cart = []; updateCartUI(); closeCheckoutModal(); }
+      else alert("Failed to place order.");
+      btn.disabled = false;
     }
 
-    function openMyOrdersModal() {
-      document.getElementById('myOrdersModal').classList.remove('hidden');
-    }
-
-    function closeMyOrdersModal() {
-      document.getElementById('myOrdersModal').classList.add('hidden');
-    }
+    function openMyOrdersModal() { document.getElementById('myOrdersModal').classList.remove('hidden'); }
+    function closeMyOrdersModal() { document.getElementById('myOrdersModal').classList.add('hidden'); }
 
     async function fetchMyOrders() {
       const phone = document.getElementById('myOrdersPhoneInput').value.trim();
-      if (!phone) return alert("Please enter your mobile number!");
-
+      if (!phone) return alert("Enter mobile number!");
       const res = await fetch(`/api/orders/track?q=${encodeURIComponent(phone)}`);
       const data = await res.json();
-      const container = document.getElementById('myOrdersListContainer');
-
-      if (!data.orders || !data.orders.length) {
-        container.innerHTML = `<div class="text-center py-8 text-rose-400 font-bold"><p>No orders found with this mobile number!</p></div>`;
-        return;
-      }
-
-      container.innerHTML = data.orders.map(o => {
-        const itemsHtml = (o.items || []).map(i => `
-          <div class="flex items-center gap-2 border-b border-stone-800 py-1.5">
-            <img src="${(i.images && i.images[0]) || i.image || ''}" class="w-10 h-10 object-cover rounded-lg border border-stone-700">
-            <div class="flex-1">
-              <p class="font-bold text-stone-100">${i.name} (x${i.qty})</p>
-              <p class="text-[10px] text-amber-400 font-bold">Size: ${i.selectedSize || 'N/A'} | Color: ${i.selectedColor || 'N/A'}</p>
-            </div>
-            <span class="font-bold text-stone-200">₹${i.price * i.qty}</span>
-          </div>
-        `).join('');
-
-        return `
-          <div class="border border-stone-800 bg-stone-950 p-4 rounded-2xl space-y-2.5 shadow-sm">
-            <div class="flex justify-between items-start border-b border-stone-800 pb-2">
-              <div>
-                <p class="font-mono font-bold text-amber-400 text-sm">#${o.id}</p>
-                <p class="text-[10px] text-stone-500">${o.date}</p>
-              </div>
-              <span class="px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/30">
-                ${o.status}
-              </span>
-            </div>
-
-            <div class="bg-stone-900 p-2.5 rounded-xl border border-stone-800">
-              ${itemsHtml}
-            </div>
-
-            <div class="flex flex-wrap justify-between items-center text-[11px] pt-1 gap-2">
-              <p class="text-stone-400">Total: <b class="text-amber-400 text-xs">₹${o.total}</b> (${o.paymentMethod})</p>
-              ${o.deliverySlipFile ? `
-                <a href="${o.deliverySlipFile}" download="AURA_DeliverySlip_${o.id}" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 shadow">
-                  <i class="fa-solid fa-file-arrow-down"></i> Download Delivery Slip
-                </a>
-              ` : `
-                <span class="text-stone-500 italic">Delivery slip will be available after delivery</span>
-              `}
-            </div>
-          </div>
-        `;
-      }).join('');
+      const box = document.getElementById('myOrdersListContainer');
+      if (!data.orders || !data.orders.length) { box.innerHTML = `<p class="text-center py-6 text-rose-400 font-bold">No orders found!</p>`; return; }
+      box.innerHTML = data.orders.map(o => `<div class="border border-stone-800 bg-stone-950 p-4 rounded-2xl space-y-2"><div class="flex justify-between font-bold"><span class="text-amber-400 font-mono">#${o.id}</span><span class="text-emerald-300">${o.status}</span></div><p class="text-stone-400 text-[11px]">${o.date} • Total: ₹${o.total} (${o.paymentMethod})</p>${o.deliverySlipFile ? `<a href="${o.deliverySlipFile}" download="Slip_${o.id}" class="inline-block bg-emerald-600 text-white px-3 py-1 rounded-lg font-bold">Download Slip</a>` : ''}</div>`).join('');
     }
 
     function openSupportModal() {
-      document.getElementById('supportModal').classList.remove('hidden');
-      backToSupportStep1();
+      document.getElementById('supportModal').classList.remove('hidden'); backToSupportStep1();
       if (supportLiveInterval) clearInterval(supportLiveInterval);
       supportLiveInterval = setInterval(() => {
-        const phoneVal = (document.getElementById('supportPhoneInput').value || "").trim();
-        if (phoneVal.length >= 6 && !document.getElementById('supportModal').classList.contains('hidden')) {
-          refreshSupportTicketsSilently(phoneVal);
-        }
+        const p = (document.getElementById('supportPhoneInput').value || "").trim();
+        if (p.length >= 6 && !document.getElementById('supportModal').classList.contains('hidden')) refreshSupportTicketsSilently(p);
       }, 3000);
     }
 
-    function closeSupportModal() {
-      document.getElementById('supportModal').classList.add('hidden');
-      if (supportLiveInterval) clearInterval(supportLiveInterval);
-    }
+    function closeSupportModal() { document.getElementById('supportModal').classList.add('hidden'); if (supportLiveInterval) clearInterval(supportLiveInterval); }
 
     function renderCustomerTickets(tickets) {
-      const prevWrap = document.getElementById('customerPreviousTicketsWrap');
-      const prevList = document.getElementById('customerPreviousTicketsList');
-      if (tickets && tickets.length > 0) {
-        prevWrap.classList.remove('hidden');
-        prevList.innerHTML = tickets.map(t => `
-          <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-1.5 text-xs">
-            <div class="flex justify-between items-center text-[10px]">
-              <span class="font-mono font-bold text-amber-400">Order #${t.orderId} (${t.ticketId})</span>
-              <span class="text-stone-500">${t.createdAtStr || ''}</span>
-            </div>
-            <p class="text-stone-300"><b class="text-rose-400">Your Issue:</b> ${t.issueText}</p>
-            ${t.adminReply ? `
-              <div class="bg-emerald-950/70 border border-emerald-500/30 p-2 rounded-lg text-emerald-300">
-                <p class="font-bold text-[11px]"><i class="fa-solid fa-reply mr-1"></i> AURA Support Reply:</p>
-                <p class="mt-0.5">${t.adminReply}</p>
-              </div>
-            ` : `
-              <p class="text-[10px] text-amber-300/80 italic"><i class="fa-regular fa-clock mr-1"></i> Our support team is reviewing your request.</p>
-            `}
-          </div>
-        `).join('');
-      } else {
-        prevWrap.classList.add('hidden');
-      }
+      const wrap = document.getElementById('customerPreviousTicketsWrap'), list = document.getElementById('customerPreviousTicketsList');
+      if (tickets && tickets.length) {
+        wrap.classList.remove('hidden');
+        list.innerHTML = tickets.map(t => `<div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-1 text-xs"><div class="flex justify-between text-[10px]"><span class="font-mono font-bold text-amber-400">#${t.orderId} (${t.ticketId})</span><span class="text-stone-500">${t.createdAtStr || ''}</span></div><p><b class="text-rose-400">Your Issue:</b> ${t.issueText}</p>${t.adminReply ? `<div class="bg-emerald-950/70 border border-emerald-500/30 p-2 rounded-lg text-emerald-300"><b>AURA Support Reply:</b> ${t.adminReply}</div>` : `<p class="text-[10px] text-amber-300 italic">Waiting for support reply...</p>`}</div>`).join('');
+      } else wrap.classList.add('hidden');
     }
 
-    async function refreshSupportTicketsSilently(phoneQuery) {
-      try {
-        const res = await fetch(`/api/support/search?q=${encodeURIComponent(phoneQuery)}&t=${Date.now()}`);
-        const data = await res.json();
-        if (data.success) {
-          renderCustomerTickets(data.tickets || []);
-        }
-      } catch (e) {}
+    async function refreshSupportTicketsSilently(p) {
+      try { const res = await fetch(`/api/support/search?q=${encodeURIComponent(p)}&t=${Date.now()}`); const d = await res.json(); if (d.success) renderCustomerTickets(d.tickets || []); } catch (e) {}
     }
 
     async function searchOrdersForSupport() {
-      const phoneQuery = document.getElementById('supportPhoneInput').value.trim();
-      if (phoneQuery.length < 6) return alert("Please enter your 10-digit mobile number!");
-
+      const p = document.getElementById('supportPhoneInput').value.trim();
+      if (p.length < 6) return alert("Enter 10-digit mobile number!");
+      const res = await fetch(`/api/support/search?q=${encodeURIComponent(p)}&t=${Date.now()}`);
+      const data = await res.json();
+      supportMatchedOrders = data.orders || [];
+      renderCustomerTickets(data.tickets || []);
       const listDiv = document.getElementById('supportOrdersList');
-      listDiv.innerHTML = `<div class="text-center py-6 text-amber-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Searching orders...</div>`;
-
-      try {
-        const res = await fetch(`/api/support/search?q=${encodeURIComponent(phoneQuery)}&t=${Date.now()}`);
-        const data = await res.json();
-        supportMatchedOrders = data.orders || [];
-        renderCustomerTickets(data.tickets || []);
-
-        if (supportMatchedOrders.length === 0) {
-          selectedSupportOrder = null;
-          updateSupportNextBtn();
-          listDiv.innerHTML = `
-            <div class="text-center py-6 text-rose-400 bg-rose-950/30 rounded-2xl border border-rose-500/30 font-bold">
-              <p>No orders found for this mobile number!</p>
-            </div>
-          `;
-          return;
-        }
-
-        selectedSupportOrder = null;
-        updateSupportNextBtn();
-
-        listDiv.innerHTML = supportMatchedOrders.map((o, idx) => {
-          const itemNames = (o.items || []).map(i => `${i.name} (x${i.qty})`).join(', ');
-          return `
-            <div onclick="selectOrderForSupport(${idx}, this)" class="support-order-card cursor-pointer bg-stone-950 hover:bg-stone-800/80 border-2 border-stone-800 p-3.5 rounded-2xl transition space-y-1">
-              <div class="flex justify-between items-center">
-                <span class="font-mono font-bold text-amber-400 text-xs">#${o.id}</span>
-                <span class="text-[10px] bg-stone-800 text-stone-300 px-2 py-0.5 rounded-full">${o.status}</span>
-              </div>
-              <p class="font-bold text-stone-100 text-xs">${o.customerName} (${o.phone})</p>
-              <p class="text-[11px] text-stone-400 line-clamp-1">${itemNames}</p>
-              <p class="text-[10px] text-emerald-400 font-bold">Total: ₹${o.total} • ${o.date}</p>
-            </div>
-          `;
-        }).join('');
-      } catch (err) {
-        listDiv.innerHTML = `<div class="text-center py-4 text-rose-400">Error searching orders.</div>`;
-      }
+      selectedSupportOrder = null; updateSupportNextBtn();
+      if (!supportMatchedOrders.length) { listDiv.innerHTML = `<p class="text-center py-4 text-rose-400 font-bold">No orders found!</p>`; return; }
+      listDiv.innerHTML = supportMatchedOrders.map((o, i) => `<div onclick="selectOrderForSupport(${i}, this)" class="support-order-card cursor-pointer bg-stone-950 border-2 border-stone-800 p-3 rounded-2xl"><div class="flex justify-between font-bold"><span class="font-mono text-amber-400">#${o.id}</span><span>${o.status}</span></div><p class="text-xs font-bold">${o.customerName}</p><p class="text-[11px] text-stone-400">${(o.items || []).map(x => x.name).join(', ')}</p></div>`).join('');
     }
 
-    function selectOrderForSupport(index, cardEl) {
-      selectedSupportOrder = supportMatchedOrders[index];
-      document.querySelectorAll('.support-order-card').forEach(c => {
-        c.classList.remove('border-emerald-500', 'bg-emerald-950/30');
-        c.classList.add('border-stone-800');
-      });
-      cardEl.classList.remove('border-stone-800');
-      cardEl.classList.add('border-emerald-500', 'bg-emerald-950/30');
+    function selectOrderForSupport(i, el) {
+      selectedSupportOrder = supportMatchedOrders[i];
+      document.querySelectorAll('.support-order-card').forEach(c => c.classList.replace('border-emerald-500', 'border-stone-800'));
+      el.classList.replace('border-stone-800', 'border-emerald-500');
       updateSupportNextBtn();
     }
 
     function updateSupportNextBtn() {
       const btn = document.getElementById('supportNextBtn');
-      if (selectedSupportOrder) {
-        btn.disabled = false;
-        btn.className = "w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-stone-950 py-3.5 rounded-xl font-extrabold text-xs transition shadow cursor-pointer";
-        btn.innerHTML = `Next &rarr;`;
-      } else {
-        btn.disabled = true;
-        btn.className = "w-full bg-stone-800 text-stone-500 py-3.5 rounded-xl font-extrabold text-xs transition cursor-not-allowed";
-        btn.innerHTML = `Next &rarr;`;
-      }
+      btn.disabled = !selectedSupportOrder;
+      btn.className = selectedSupportOrder ? "w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-stone-950 py-3.5 rounded-xl font-extrabold text-xs cursor-pointer" : "w-full bg-stone-800 text-stone-500 py-3.5 rounded-xl font-extrabold text-xs cursor-not-allowed";
     }
 
     function goToSupportStep2() {
       if (!selectedSupportOrder) return;
-      document.getElementById('supportStep1').classList.add('hidden');
-      document.getElementById('supportStep2Form').classList.remove('hidden');
-      document.getElementById('supportStepSubtitle').innerText = "Step 2: Describe your issue and attach photo or video proof";
-
+      document.getElementById('supportStep1').classList.add('hidden'); document.getElementById('supportStep2Form').classList.remove('hidden');
       document.getElementById('selectedSupportOrderId').innerText = '#' + selectedSupportOrder.id;
-      const itemNames = (selectedSupportOrder.items || []).map(i => i.name).join(', ');
-      document.getElementById('selectedSupportOrderSummary').innerText = `${selectedSupportOrder.customerName} • ${itemNames}`;
+      document.getElementById('selectedSupportOrderSummary').innerText = `${selectedSupportOrder.customerName} • ${(selectedSupportOrder.items || []).map(i => i.name).join(', ')}`;
     }
 
-    function backToSupportStep1() {
-      document.getElementById('supportStep2Form').classList.add('hidden');
-      document.getElementById('supportStep1').classList.remove('hidden');
-      document.getElementById('supportStepSubtitle').innerText = "Step 1: Search your orders using your registered mobile number";
-    }
-
-    function fileToDataURL(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    async function handleSupportPhotosSelect(input) {
-      const files = Array.from(input.files || []);
-      for (const f of files) {
-        if (f.size > 10 * 1024 * 1024) {
-          alert(`Photo "${f.name}" exceeds 10MB limit and was skipped.`);
-          continue;
-        }
-        const b64 = await fileToDataURL(f);
-        supportPhotosBase64.push(b64);
-      }
-      input.value = "";
-      renderSupportPhotosPreview();
-    }
-
-    function removeSupportPhoto(idx) {
-      supportPhotosBase64.splice(idx, 1);
-      renderSupportPhotosPreview();
-    }
+    function backToSupportStep1() { document.getElementById('supportStep2Form').classList.add('hidden'); document.getElementById('supportStep1').classList.remove('hidden'); }
 
     function renderSupportPhotosPreview() {
-      const wrap = document.getElementById('supportSelectedPhotosPreview');
-      wrap.innerHTML = supportPhotosBase64.map((src, idx) => `
-        <div class="relative w-14 h-14 rounded-lg overflow-hidden border border-stone-700">
-          <img src="${src}" class="w-full h-full object-cover">
-          <button type="button" onclick="removeSupportPhoto(${idx})" title="Remove Photo" class="absolute top-0.5 right-0.5 bg-rose-600 hover:bg-rose-500 text-white w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center">&times;</button>
-        </div>
-      `).join('');
+      document.getElementById('supportSelectedPhotosPreview').innerHTML = supportPhotoFiles.map((f, i) => {
+        const url = URL.createObjectURL(f);
+        return `<div class="relative w-14 h-14 rounded-lg overflow-hidden border border-stone-700"><img src="${url}" class="w-full h-full object-cover"><button type="button" onclick="supportPhotoFiles.splice(${i},1); renderSupportPhotosPreview();" class="absolute top-0.5 right-0.5 bg-rose-600 text-white w-4 h-4 rounded-full text-[10px] font-bold">&times;</button></div>`;
+      }).join('');
     }
 
-    async function handleSupportVideoSelect(input) {
-      const file = input.files[0];
-      if (!file) return;
-      if (file.size > 50 * 1024 * 1024) {
-        input.value = "";
-        return alert("Video file size must be under 50MB!");
+    function handleSupportPhotosSelect(inp) {
+      for (const f of Array.from(inp.files || [])) {
+        if (f.size > 10 * 1024 * 1024) { alert(`"${f.name}" exceeds 10MB.`); continue; }
+        supportPhotoFiles.push(f);
       }
-      supportVideoBase64 = await fileToDataURL(file);
-      document.getElementById('supportVideoFileName').innerText = `${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
-      document.getElementById('supportSelectedVideoPreview').classList.remove('hidden');
-      input.value = "";
+      inp.value = "";
+      renderSupportPhotosPreview();
     }
 
-    function clearSupportVideo() {
-      supportVideoBase64 = "";
-      document.getElementById('supportSelectedVideoPreview').classList.add('hidden');
-      document.getElementById('supportVideoFileName').innerText = "";
+    function handleSupportVideoSelect(inp) {
+      const f = inp.files[0]; if (!f) return;
+      if (f.size > 50 * 1024 * 1024) { inp.value = ""; return alert("Video must be under 50MB!"); }
+      supportVideoFile = f;
+      document.getElementById('supportVideoFileName').innerText = `${f.name} (${(f.size / (1024 * 1024)).toFixed(1)} MB)`;
+      document.getElementById('supportSelectedVideoPreview').classList.remove('hidden');
+      inp.value = "";
     }
+
+    function clearSupportVideo() { supportVideoFile = null; document.getElementById('supportSelectedVideoPreview').classList.add('hidden'); }
 
     async function submitSupportTicket(e) {
       e.preventDefault();
       if (!selectedSupportOrder) return;
-
+      const btn = document.getElementById('supportSubmitBtn'); btn.innerText = "Uploading to Support Desk..."; btn.disabled = true;
       const issueText = document.getElementById('supportIssueText').value.trim();
-      const btn = document.getElementById('supportSubmitBtn');
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Uploading & Submitting...`;
-      btn.disabled = true;
 
       try {
+        const itemsListText = (selectedSupportOrder.items || []).map((item, idx) => `${idx + 1}. ${item.name} (${item.selectedSize || 'Std'}, ${item.selectedColor || 'Std'}) x${item.qty || 1}`).join('\n');
+        const msg = `🚨 <b>NEW SUPPORT COMPLAINT</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>Order ID:</b> <code>#${selectedSupportOrder.id}</code>\n👤 <b>Customer:</b> ${selectedSupportOrder.customerName}\n📞 <b>Mobile:</b> <code>+91 ${selectedSupportOrder.phone}</code>\n📍 <b>Address:</b> ${selectedSupportOrder.address}\n💰 <b>Bill:</b> ₹${selectedSupportOrder.total} (${selectedSupportOrder.paymentMethod})\n🛍️ <b>Items:</b>\n${itemsListText}\n━━━━━━━━━━━━━━━━━━━━\n⚠️ <b>PROBLEM:</b>\n<i>"${issueText}"</i>`;
+
+        await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendMessage`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: SUPPORT_CHAT_ID, text: msg, parse_mode: 'HTML' })
+        });
+
+        for (let i = 0; i < supportPhotoFiles.length; i++) {
+          const pf = new FormData();
+          pf.append('chat_id', SUPPORT_CHAT_ID);
+          pf.append('caption', `📸 Photo ${i + 1} | Order #${selectedSupportOrder.id} (${selectedSupportOrder.customerName})`);
+          pf.append('photo', supportPhotoFiles[i]);
+          await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`, { method: 'POST', body: pf });
+        }
+
+        if (supportVideoFile) {
+          const vf = new FormData();
+          vf.append('chat_id', SUPPORT_CHAT_ID);
+          vf.append('caption', `🎥 Video Proof | Order #${selectedSupportOrder.id} (${selectedSupportOrder.customerName})`);
+          vf.append('document', supportVideoFile);
+          await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendDocument`, { method: 'POST', body: vf });
+        }
+
         const res = await fetch('/api/support/ticket', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: selectedSupportOrder.id,
-            issueText,
-            photosBase64: supportPhotosBase64,
-            videoBase64: supportVideoBase64
-          })
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: selectedSupportOrder.id, issueText })
         });
         const data = await res.json();
         if (data.success) {
-          alert(`✅ Your support request has been submitted!\nTicket ID: ${data.ticketId}\n\nKeep this window open or check back anytime for our support reply.`);
-          document.getElementById('supportIssueText').value = "";
-          supportPhotosBase64 = [];
-          renderSupportPhotosPreview();
-          clearSupportVideo();
-          backToSupportStep1();
-          searchOrdersForSupport();
-        } else {
-          alert(data.message || "Failed to send support issue.");
-        }
+          alert(`✅ Support request submitted!\nTicket ID: ${data.ticketId}`);
+          document.getElementById('supportIssueText').value = ""; supportPhotoFiles = []; renderSupportPhotosPreview(); clearSupportVideo();
+          backToSupportStep1(); searchOrdersForSupport();
+        } else alert("Failed to save ticket.");
       } catch (err) {
-        alert("Network error! Please try again.");
-      } finally {
-        btn.innerHTML = `<i class="fa-brands fa-telegram mr-1.5 text-sm"></i> Submit Issue`;
-        btn.disabled = false;
+        alert("Network error while uploading. Please try again.");
       }
+      btn.innerText = "Submit Issue"; btn.disabled = false;
     }
 
     loadStore();
