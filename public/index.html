@@ -27,11 +27,8 @@
           <span class="bg-gradient-to-r from-amber-400 to-amber-600 text-stone-950 font-black text-[9px] px-2.5 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap"><i class="fa-solid fa-crown mr-1"></i> VIP PRIVILEGES</span>
           <div id="topCouponsContainer" class="flex items-center gap-2 text-amber-300 font-semibold"></div>
         </div>
-        <div class="flex items-center gap-1.5 font-mono text-[11px] bg-stone-900/90 px-3 py-1 rounded-full border border-amber-500/30 whitespace-nowrap">
-          <span class="text-amber-400 font-bold"><i class="fa-solid fa-stopwatch animate-pulse"></i> Flash Deals End:</span>
-          <span id="flashHours" class="bg-black px-1.5 py-0.5 rounded font-bold text-white">04</span>h :
-          <span id="flashMinutes" class="bg-black px-1.5 py-0.5 rounded font-bold text-white">32</span>m :
-          <span id="flashSeconds" class="bg-black px-1.5 py-0.5 rounded font-bold text-amber-400">18</span>s
+        <div id="flashDealContainer" class="flex items-center gap-1.5 font-mono text-[11px] bg-stone-900/90 px-3.5 py-1 rounded-full border border-amber-500/30 whitespace-nowrap">
+          <span class="text-rose-400 font-bold tracking-wider uppercase"><i class="fa-solid fa-clock mr-1"></i> Deal End</span>
         </div>
       </div>
     </div>
@@ -391,6 +388,17 @@
             </div>
           </div>
         </div>
+
+        <div id="supportUploadProgressBox" class="hidden bg-stone-950 border border-emerald-500/40 p-3 rounded-xl space-y-1.5">
+          <div class="flex justify-between items-center text-[11px] font-bold">
+            <span id="supportUploadStatusLabel" class="text-emerald-400">Uploading files...</span>
+            <span id="supportUploadPercentText" class="text-amber-400 font-mono">0%</span>
+          </div>
+          <div class="w-full bg-stone-800 rounded-full h-2.5 overflow-hidden">
+            <div id="supportUploadProgressBar" class="bg-gradient-to-r from-emerald-500 to-amber-400 h-2.5 rounded-full transition-all duration-150" style="width: 0%"></div>
+          </div>
+        </div>
+
         <div class="flex gap-2 pt-2">
           <button type="button" onclick="backToSupportStep1()" class="w-1/3 bg-stone-800 text-stone-300 py-3 rounded-xl font-bold">&larr; Back</button>
           <button type="submit" id="supportSubmitBtn" class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 text-stone-950 py-3 rounded-xl font-extrabold text-xs">Submit Issue</button>
@@ -399,13 +407,55 @@
     </div>
   </div>
 
-  <footer class="bg-black/90 text-stone-400 pt-12 pb-8 border-t border-amber-500/20 mt-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-stone-900 text-xs">
-      <div><span class="text-2xl font-extrabold font-cinzel tracking-[0.25em] text-amber-100">AURA</span><p class="text-stone-400 mt-2">Premium lifestyle clothing, ethnic wear, and luxury artisanal collections.</p></div>
-      <div class="space-y-2"><h4 class="font-bold uppercase text-amber-400 font-cinzel">Customer Concierge</h4><p><a href="#" onclick="openMyOrdersModal()" class="hover:text-amber-300">My Orders & Tracking</a></p><p><a href="#" onclick="openSupportModal()" class="text-emerald-400 font-bold">Help & Support Desk</a></p></div>
-      <div class="space-y-2"><h4 class="font-bold uppercase text-amber-400 font-cinzel">Support & Dispatch</h4><p>Bolpur, Birbhum, West Bengal</p><p>Email: mahatosarita436@gmail.com</p></div>
+  <footer class="bg-black text-stone-400 pt-16 pb-8 border-t border-amber-500/20 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-stone-900 text-xs">
+      <div class="space-y-4">
+        <a href="#catalogSection" onclick="showHomeCatalog(); return false;" class="flex flex-col">
+          <span class="text-3xl font-extrabold font-cinzel tracking-[0.25em] text-amber-100">AURA</span>
+          <span class="text-[10px] uppercase tracking-[0.45em] text-amber-500 font-bold -mt-1">Fine Store</span>
+        </a>
+        <p class="text-stone-400 leading-relaxed">
+          Premium lifestyle clothing, Oxford shirts, casual wear, and royal artisanal collections tailored with bespoke perfection.
+        </p>
+      </div>
+
+      <div class="space-y-3">
+        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">EXCLUSIVE WARDROBE</h4>
+        <ul class="space-y-2 text-stone-400">
+          <li><a href="#catalogSection" onclick="filterBySection('Men', 'Shirts')" class="hover:text-amber-300 transition">Formal & Casual Shirts</a></li>
+          <li><a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts')" class="hover:text-amber-300 transition">Supima Heavyweight Tees</a></li>
+          <li><a href="#catalogSection" onclick="filterBySection('Men', 'Watches')" class="hover:text-amber-300 transition">Chronograph Master Watches</a></li>
+          <li><a href="#catalogSection" onclick="filterBySection('Women', 'All')" class="hover:text-amber-300 transition">Royal Jhumkas & Sarees</a></li>
+        </ul>
+      </div>
+
+      <div class="space-y-3">
+        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">CUSTOMER CONCIERGE</h4>
+        <ul class="space-y-2 text-stone-400">
+          <li><a href="#" onclick="openMyOrdersModal(); return false;" class="hover:text-amber-300 transition">My Orders & Tracking Desk</a></li>
+          <li><a href="#" onclick="openSupportModal(); return false;" class="hover:text-emerald-400 transition font-bold text-emerald-400">Help & Support Desk</a></li>
+          <li><span class="text-stone-300 font-semibold"><i class="fa-solid fa-envelope mr-1.5 text-amber-500"></i> mahatosarita436@gmail.com</span></li>
+          <li><span class="text-stone-300 font-semibold"><i class="fa-solid fa-clock mr-1.5 text-amber-500"></i> 10:00 AM – 8:00 PM Support</span></li>
+        </ul>
+      </div>
+
+      <div class="space-y-3">
+        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">EXPRESS LOGISTICS</h4>
+        <p class="text-stone-400 leading-relaxed">
+          Dispatched from Bolpur, Birbhum, West Bengal. We partner with Delhivery, DTDC, and IndiaPost across India.
+        </p>
+        <div class="pt-2">
+          <span class="inline-flex items-center gap-1.5 bg-stone-950 border border-stone-800 px-3.5 py-1.5 rounded-xl text-emerald-400 font-semibold text-[11px] shadow">
+            <i class="fa-solid fa-lock text-xs"></i> 100% Encrypted UPI Payments
+          </span>
+        </div>
+      </div>
     </div>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-5 flex justify-between text-[11px] text-stone-500"><p>&copy; 2026 AURA Fine Store. All Rights Reserved.</p><p class="text-amber-500/80 font-cinzel">Luxury • Elegance</p></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 flex flex-col sm:flex-row justify-between items-center text-[11px] text-stone-500 gap-2">
+      <p>&copy; 2026 AURA Fine Store. All Rights Reserved. Support: mahatosarita436@gmail.com</p>
+      <p class="font-cinzel tracking-wider text-amber-500/80 uppercase">LUXURY • ELEGANCE • ARTISANAL HERITAGE</p>
+    </div>
   </footer>
 
   <script>
@@ -416,7 +466,7 @@
     let allProducts = [], dealBanners = [], currentDealIndex = 0, dealSliderInterval = null;
     let activeMainSection = 'Home', activeSubCategory = 'All', cart = [], activeCoupons = [];
     let appliedDiscountRate = 0, appliedCouponCode = "", appliedCouponMinSpend = 0;
-    let storeDeliveryCharge = 0, storeCodAdvancePct = 15, isPincodeValid = false;
+    let storeDeliveryCharge = 0, storeCodAdvancePct = 15, dealEndTimeMs = 0, isPincodeValid = false;
     let currentOpenedProduct = null, currentSelectedSize = "", currentSelectedColor = "";
     let supportMatchedOrders = [], selectedSupportOrder = null, supportPhotoFiles = [], supportVideoFile = null, supportLiveInterval = null;
 
@@ -453,15 +503,25 @@
       else if (allProducts.length > 0) openQuickView(allProducts[0].id);
     }
 
-    let timeRemaining = 4 * 3600 + 32 * 60 + 18;
-    setInterval(() => {
-      if (timeRemaining > 0) {
-        timeRemaining--;
-        document.getElementById('flashHours').innerText = String(Math.floor(timeRemaining / 3600)).padStart(2, '0');
-        document.getElementById('flashMinutes').innerText = String(Math.floor((timeRemaining % 3600) / 60)).padStart(2, '0');
-        document.getElementById('flashSeconds').innerText = String(timeRemaining % 60).padStart(2, '0');
+    function updateFlashTimerUI() {
+      const box = document.getElementById('flashDealContainer');
+      if (!dealEndTimeMs || dealEndTimeMs <= Date.now()) {
+        dealEndTimeMs = 0;
+        box.innerHTML = `<span class="text-rose-400 font-bold tracking-wider uppercase"><i class="fa-solid fa-clock mr-1"></i> Deal End</span>`;
+        return;
       }
-    }, 1000);
+      const diffSec = Math.floor((dealEndTimeMs - Date.now()) / 1000);
+      const h = String(Math.floor(diffSec / 3600)).padStart(2, '0');
+      const m = String(Math.floor((diffSec % 3600) / 60)).padStart(2, '0');
+      const s = String(diffSec % 60).padStart(2, '0');
+      box.innerHTML = `
+        <span class="text-amber-400 font-bold"><i class="fa-solid fa-stopwatch animate-pulse"></i> Flash Deals End:</span>
+        <span class="bg-black px-1.5 py-0.5 rounded font-bold text-white">${h}</span>h :
+        <span class="bg-black px-1.5 py-0.5 rounded font-bold text-white">${m}</span>m :
+        <span class="bg-black px-1.5 py-0.5 rounded font-bold text-amber-400">${s}</span>s
+      `;
+    }
+    setInterval(updateFlashTimerUI, 1000);
 
     async function loadStore() {
       try {
@@ -473,7 +533,12 @@
         allProducts = data.products || [];
         activeCoupons = data.coupons || [];
         dealBanners = data.dealBanners || [];
-        if (data.storeSettings) { storeDeliveryCharge = data.storeSettings.deliveryCharge || 0; storeCodAdvancePct = data.storeSettings.codAdvancePercent || 15; }
+        if (data.storeSettings) {
+          storeDeliveryCharge = data.storeSettings.deliveryCharge || 0;
+          storeCodAdvancePct = data.storeSettings.codAdvancePercent || 15;
+          dealEndTimeMs = data.storeSettings.dealEndTime || 0;
+          updateFlashTimerUI();
+        }
         renderStoreCoupons(); setupDealCarousel(); renderStore(); updateCartUI();
       } catch (e) {}
     }
@@ -553,7 +618,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700 py-2.5 rounded-xl text-xs font-bold">Add</button>
-                  <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-2.5 rounded-xl text-xs font-extrabold">⚡ View & Buy</button>
+                  <button onclick="openQuickView(${p.id})" ${isOut ? 'disabled' : ''} class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-2.5 rounded-xl text-xs font-extrabold">⚡ View & Buy • ₹${p.price}</button>
                 </div>
               </div>
             </div>
@@ -869,10 +934,38 @@
 
     function clearSupportVideo() { supportVideoFile = null; document.getElementById('supportSelectedVideoPreview').classList.add('hidden'); }
 
+    function uploadFormDataWithProgress(url, formData, onProgress) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url, true);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable && onProgress) {
+            onProgress(Math.round((e.loaded / e.total) * 100), e.loaded, e.total);
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.responseText);
+          else reject(new Error('Upload failed'));
+        };
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send(formData);
+      });
+    }
+
     async function submitSupportTicket(e) {
       e.preventDefault();
       if (!selectedSupportOrder) return;
-      const btn = document.getElementById('supportSubmitBtn'); btn.innerText = "Uploading to Support Desk..."; btn.disabled = true;
+      const btn = document.getElementById('supportSubmitBtn');
+      const progBox = document.getElementById('supportUploadProgressBox');
+      const progLabel = document.getElementById('supportUploadStatusLabel');
+      const progPercent = document.getElementById('supportUploadPercentText');
+      const progBar = document.getElementById('supportUploadProgressBar');
+
+      btn.innerText = "Uploading..."; btn.disabled = true;
+      progBox.classList.remove('hidden');
+      progBar.style.width = "5%"; progPercent.innerText = "5%";
+      progLabel.innerText = "Sending complaint details...";
+
       const issueText = document.getElementById('supportIssueText').value.trim();
 
       try {
@@ -885,20 +978,31 @@
         });
 
         for (let i = 0; i < supportPhotoFiles.length; i++) {
+          progLabel.innerText = `Uploading Photo ${i + 1} of ${supportPhotoFiles.length}...`;
           const pf = new FormData();
           pf.append('chat_id', SUPPORT_CHAT_ID);
           pf.append('caption', `📸 Photo ${i + 1} | Order #${selectedSupportOrder.id} (${selectedSupportOrder.customerName})`);
           pf.append('photo', supportPhotoFiles[i]);
-          await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`, { method: 'POST', body: pf });
+          await uploadFormDataWithProgress(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`, pf, (pct) => {
+            progBar.style.width = `${pct}%`; progPercent.innerText = `${pct}%`;
+          });
         }
 
         if (supportVideoFile) {
+          const totalMB = (supportVideoFile.size / (1024 * 1024)).toFixed(1);
           const vf = new FormData();
           vf.append('chat_id', SUPPORT_CHAT_ID);
           vf.append('caption', `🎥 Video Proof | Order #${selectedSupportOrder.id} (${selectedSupportOrder.customerName})`);
           vf.append('document', supportVideoFile);
-          await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendDocument`, { method: 'POST', body: vf });
+          await uploadFormDataWithProgress(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendDocument`, vf, (pct, loaded) => {
+            const loadedMB = (loaded / (1024 * 1024)).toFixed(1);
+            progLabel.innerText = `Uploading Video (${loadedMB} MB / ${totalMB} MB)...`;
+            progBar.style.width = `${pct}%`; progPercent.innerText = `${pct}%`;
+          });
         }
+
+        progLabel.innerText = "Finalizing ticket...";
+        progBar.style.width = "100%"; progPercent.innerText = "100%";
 
         const res = await fetch('/api/support/ticket', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -912,8 +1016,10 @@
         } else alert("Failed to save ticket.");
       } catch (err) {
         alert("Network error while uploading. Please try again.");
+      } finally {
+        progBox.classList.add('hidden');
+        btn.innerText = "Submit Issue"; btn.disabled = false;
       }
-      btn.innerText = "Submit Issue"; btn.disabled = false;
     }
 
     loadStore();
