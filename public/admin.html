@@ -14,7 +14,6 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
-  <!-- লগইন পর্দা -->
   <div id="loginScreen" class="flex items-center justify-center min-h-screen p-4">
     <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-sm w-full space-y-5 shadow-2xl text-center">
       <div class="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mx-auto text-xl border border-amber-500/20">
@@ -30,13 +29,12 @@
     </div>
   </div>
 
-  <!-- মেইন ড্যাশবোর্ড -->
   <div id="dashboardContent" class="hidden max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
     
     <header class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-800 pb-4">
       <div>
         <h1 class="text-2xl font-cinzel font-bold text-amber-400">AURA Fine Store Command</h1>
-        <p class="text-xs text-slate-400">Manage Catalog, Customer Support Replies & Orders</p>
+        <p class="text-xs text-slate-400">Manage Featured Home Products, Support Replies & Orders</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <a href="#supportDeskSection" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
@@ -47,7 +45,6 @@
       </div>
     </header>
 
-    <!-- অ্যানালিটিক্স ও রেভিনিউ সামারি -->
     <div class="grid grid-cols-2 lg:grid-cols-6 gap-3">
       <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
         <p class="text-[11px] text-slate-400">Today's Orders</p>
@@ -75,21 +72,18 @@
       </div>
     </div>
 
-    <!-- সেটিংস: ডেলিভারি চার্জ, COD টোকেন এবং কুপন ম্যানেজার -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      
-      <!-- ডেলিভারি চার্জ ও COD সেটিংস -->
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
-        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-truck-fast mr-1.5"></i> Delivery & COD Settings</h3>
+        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-truck-fast mr-1.5"></i> COD Delivery & Token Settings</h3>
         
         <div class="space-y-3 text-xs">
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2">
-            <label class="block font-bold text-slate-200">Store Delivery Charge (₹):</label>
+            <label class="block font-bold text-slate-200">COD Only Delivery Charge (₹):</label>
             <div class="flex gap-2">
-              <input type="number" id="deliveryChargeInput" min="0" placeholder="0 = Free Delivery" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-bold">
+              <input type="number" id="deliveryChargeInput" min="0" placeholder="e.g. 49" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-bold">
               <button onclick="saveDeliveryCharge()" class="bg-amber-500 text-slate-950 px-4 py-2 rounded-xl font-bold hover:bg-amber-400 transition whitespace-nowrap">Save Fee</button>
             </div>
-            <p class="text-[10px] text-slate-400">0 দিলে ফ্রি ডেলিভারি দেখাবে, অন্যথায় প্রতি অর্ডারে চার্জ যোগ হবে।</p>
+            <p class="text-[10px] text-emerald-400">UPI Prepaid orders are always FREE. This fee applies only when customer selects COD.</p>
           </div>
 
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2">
@@ -102,7 +96,6 @@
         </div>
       </div>
 
-      <!-- কুপন কোড ম্যানেজমেন্ট -->
       <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
         <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-ticket mr-1.5"></i> Discount Coupons & Offer Manager</h3>
         
@@ -128,7 +121,6 @@
       </div>
     </div>
 
-    <!-- ব্যানার স্লাইডার কন্ট্রোল -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-2">
         <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-panorama mr-1.5"></i> Store Front Hero Deal Banners</h3>
@@ -164,19 +156,24 @@
       </div>
     </div>
 
-    <!-- নতুন প্রোডাক্ট যুক্ত করা ও এডিট করার সেকশন -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
         <div class="flex justify-between items-center">
           <h3 id="productFormHeading" class="text-base font-bold text-amber-400"><i class="fa-solid fa-plus-circle mr-1"></i> Add New Product</h3>
-          <button type="button" id="cancelEditBtn" onclick="resetProductForm()" class="hidden text-xs text-rose-400 hover:underline font-bold">Cancel Edit</button>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="resetProductForm()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg font-bold">Clear Form</button>
+            <button type="button" id="cancelEditBtn" onclick="resetProductForm()" class="hidden text-xs text-rose-400 hover:underline font-bold">Cancel Edit</button>
+          </div>
         </div>
 
         <form id="productForm" onsubmit="handleSaveProduct(event)" class="space-y-3 text-xs">
           <input type="hidden" id="editProdId" value="">
 
           <div>
-            <label class="text-slate-400 block mb-1">Product Name *</label>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-slate-400">Product Name *</label>
+              <button type="button" onclick="document.getElementById('prodName').value = ''" class="text-[10px] text-rose-400 hover:underline">Clear Name</button>
+            </div>
             <input type="text" id="prodName" required placeholder="e.g. Royal Oxford Cotton Shirt" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white">
           </div>
 
@@ -221,35 +218,29 @@
             </div>
           </div>
 
-          <div>
-            <label class="text-slate-400 block mb-1">Highlight Badge</label>
-            <input type="text" id="prodBadge" placeholder="Bestseller / Trending" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
+          <div class="grid grid-cols-2 gap-2 items-center">
+            <div>
+              <label class="text-slate-400 block mb-1">Highlight Badge</label>
+              <input type="text" id="prodBadge" placeholder="Bestseller / Trending" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
+            </div>
+            <div class="pt-4">
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-800 border border-slate-700 p-2 rounded-xl">
+                <input type="checkbox" id="prodShowOnHome" checked class="w-4 h-4 accent-amber-500">
+                <span class="font-bold text-amber-300 text-[11px]">Show on Front Page</span>
+              </label>
+            </div>
           </div>
 
-          <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2">
-            <label class="text-amber-300 font-bold block text-[11px]">📸 Product Gallery (Max 4 Photos, Auto-Compressed)</label>
-            <div class="grid grid-cols-2 gap-2">
-              <div class="bg-slate-900 p-2 rounded-xl border border-slate-700">
-                <span class="text-[10px] text-amber-400 block font-bold">Photo 1 (Main) *</span>
-                <input type="file" id="prodImgFile1" accept="image/*" onchange="previewSingleImg(1)" class="w-full text-[10px] text-slate-300 mt-1 cursor-pointer">
-                <img id="prevImg1" class="hidden w-full h-14 object-cover rounded-lg mt-1 border border-slate-600">
-              </div>
-              <div class="bg-slate-900 p-2 rounded-xl border border-slate-700">
-                <span class="text-[10px] text-slate-300 block font-bold">Photo 2</span>
-                <input type="file" id="prodImgFile2" accept="image/*" onchange="previewSingleImg(2)" class="w-full text-[10px] text-slate-300 mt-1 cursor-pointer">
-                <img id="prevImg2" class="hidden w-full h-14 object-cover rounded-lg mt-1 border border-slate-600">
-              </div>
-              <div class="bg-slate-900 p-2 rounded-xl border border-slate-700">
-                <span class="text-[10px] text-slate-300 block font-bold">Photo 3</span>
-                <input type="file" id="prodImgFile3" accept="image/*" onchange="previewSingleImg(3)" class="w-full text-[10px] text-slate-300 mt-1 cursor-pointer">
-                <img id="prevImg3" class="hidden w-full h-14 object-cover rounded-lg mt-1 border border-slate-600">
-              </div>
-              <div class="bg-slate-900 p-2 rounded-xl border border-slate-700">
-                <span class="text-[10px] text-slate-300 block font-bold">Photo 4</span>
-                <input type="file" id="prodImgFile4" accept="image/*" onchange="previewSingleImg(4)" class="w-full text-[10px] text-slate-300 mt-1 cursor-pointer">
-                <img id="prevImg4" class="hidden w-full h-14 object-cover rounded-lg mt-1 border border-slate-600">
-              </div>
+          <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2.5">
+            <div class="flex justify-between items-center">
+              <label class="text-amber-300 font-bold text-[11px]">📸 Product Photos (Add Any Number of Photos)</label>
+              <label class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-3 py-1 rounded-lg text-[11px] cursor-pointer shadow transition">
+                + Add Photos
+                <input type="file" id="multiProdImgInput" accept="image/*" multiple onchange="handleAddMultipleProductPhotos(this)" class="hidden">
+              </label>
             </div>
+            <div id="dynamicProdImagesPreview" class="grid grid-cols-3 gap-2"></div>
+            <p id="noPhotosHint" class="text-[10px] text-slate-400 text-center py-2">Click "+ Add Photos" to upload 1 or more photos. Click × on any photo to delete it.</p>
           </div>
 
           <div>
@@ -261,27 +252,26 @@
         </form>
       </div>
 
-      <!-- ক্যাটালগ লিস্ট -->
       <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
         <div class="flex flex-wrap justify-between items-center gap-2">
-          <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-boxes-stacked mr-1"></i> Active Store Catalog (<span id="adminCatalogCount">0</span>)</h3>
+          <div>
+            <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-boxes-stacked mr-1"></i> Store Catalog (<span id="adminCatalogCount">0</span>)</h3>
+            <p class="text-[10px] text-slate-400">Toggle "Show on Home" to choose which products appear on the front page.</p>
+          </div>
           <input type="text" id="adminProdSearch" oninput="renderAdminCatalog()" placeholder="Search product..." class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
         </div>
-        <div id="adminCatalogList" class="space-y-2.5 max-h-[620px] overflow-y-auto pr-1"></div>
+        <div id="adminCatalogList" class="space-y-2.5 max-h-[650px] overflow-y-auto pr-1"></div>
       </div>
     </div>
 
-    <!-- ========================================================================= -->
-    <!-- নতুন CUSTOMER SUPPORT & REPLY DESK (কাস্টমারের নাম দিয়ে অর্ডার/কমপ্লেন খুঁজে রিপ্লাই দেওয়া) -->
-    <!-- ========================================================================= -->
     <div id="supportDeskSection" class="bg-slate-900 border-2 border-emerald-500/40 p-5 rounded-3xl space-y-4 shadow-2xl">
       <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-800 pb-3">
         <div>
           <h3 class="text-lg font-bold text-emerald-400"><i class="fa-solid fa-headset mr-2"></i>Customer Support & Reply Desk</h3>
-          <p class="text-xs text-slate-400">কাস্টমারের নাম লিখে সার্চ করুন ➔ অর্ডার ও কমপ্লেন সিলেক্ট করুন ➔ রিপ্লাই পাঠান (কাস্টমার ওয়েবসাইটে রিপ্লাই দেখতে পাবে)</p>
+          <p class="text-xs text-slate-400">Search by Mobile Number or Order ID to view complaints and send replies.</p>
         </div>
         <div class="flex items-center gap-2">
-          <input type="text" id="adminSupportSearchInput" oninput="renderAdminSupportTickets()" placeholder="কাস্টমারের নাম বা Order ID লিখুন..." class="bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 w-64">
+          <input type="text" id="adminSupportSearchInput" oninput="renderAdminSupportTickets()" placeholder="Search Mobile Number or Order ID..." class="bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 w-64">
           <button onclick="loadAdminSupportTickets()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition">
             <i class="fa-solid fa-rotate mr-1"></i> Refresh
           </button>
@@ -293,7 +283,6 @@
       </div>
     </div>
 
-    <!-- অর্ডার ম্যানেজমেন্ট -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
         <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-truck-fast mr-1"></i> Customer Orders & Logistics</h3>
@@ -329,7 +318,7 @@
     let cachedCoupons = [];
     let cachedBanners = [];
     let cachedSupportTickets = [];
-    let existingEditingImages = [];
+    let currentFormImages = [];
 
     const subCategoriesMap = {
       "Men": ["Shirts", "T-Shirts", "Watches"],
@@ -418,9 +407,6 @@
       } catch (err) { console.error("Dashboard load error", err); }
     }
 
-    // =========================================================================
-    // CUSTOMER SUPPORT & REPLY DESK ফাংশনসমূহ
-    // =========================================================================
     async function loadAdminSupportTickets() {
       try {
         const res = await fetch('/api/admin/support/tickets', {
@@ -433,22 +419,20 @@
           cachedSupportTickets = data.tickets || [];
           renderAdminSupportTickets();
         }
-      } catch (err) {
-        console.error("Support tickets load error:", err);
-      }
+      } catch (err) { console.error(err); }
     }
 
     function renderAdminSupportTickets() {
       const query = (document.getElementById('adminSupportSearchInput').value || "").trim().toLowerCase();
       const filtered = cachedSupportTickets.filter(t =>
-        (t.customerName && t.customerName.toLowerCase().includes(query)) ||
+        (t.phone && t.phone.includes(query)) ||
         (t.orderId && t.orderId.toLowerCase().includes(query)) ||
-        (t.phone && t.phone.includes(query))
+        (t.customerName && t.customerName.toLowerCase().includes(query))
       );
 
       const container = document.getElementById('adminSupportTicketsList');
       if (filtered.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-6">কোনো কাস্টমার কমপ্লেন পাওয়া যায়নি।</p>`;
+        container.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-6">No customer support tickets found.</p>`;
         return;
       }
 
@@ -458,7 +442,7 @@
             <div>
               <span class="font-mono font-bold text-amber-400 text-sm">Order #${t.orderId}</span>
               <span class="text-[10px] text-slate-400 ml-1.5">(${t.ticketId})</span>
-              <p class="font-bold text-white mt-0.5"><i class="fa-solid fa-user text-emerald-400 mr-1"></i>${t.customerName} (${t.phone})</p>
+              <p class="font-bold text-white mt-0.5"><i class="fa-solid fa-phone text-emerald-400 mr-1"></i>${t.phone} • ${t.customerName}</p>
             </div>
             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.adminReply ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">
               ${t.adminReply ? 'Replied ✓' : 'Needs Reply'}
@@ -466,19 +450,19 @@
           </div>
 
           <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700">
-            <p class="text-[10px] text-rose-400 font-bold uppercase">Customer Complaint (${t.createdAtStr || ''}):</p>
+            <p class="text-[10px] text-rose-400 font-bold uppercase">Customer Issue (${t.createdAtStr || ''}):</p>
             <p class="text-slate-200 mt-1 leading-relaxed">${t.issueText}</p>
           </div>
 
           ${t.adminReply ? `
             <div class="bg-emerald-950/60 border border-emerald-500/30 p-2.5 rounded-xl">
-              <p class="text-[10px] text-emerald-400 font-bold">Your Sent Reply (${t.repliedAt || ''}):</p>
+              <p class="text-[10px] text-emerald-400 font-bold">Your Reply (${t.repliedAt || ''}):</p>
               <p class="text-emerald-200 mt-0.5">${t.adminReply}</p>
             </div>
           ` : ''}
 
           <div class="flex gap-2 pt-1">
-            <input type="text" id="reply_input_${t.ticketId}" value="${t.adminReply || ''}" placeholder="কাস্টমারকে কী রিপ্লাই দেবেন লিখুন..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <input type="text" id="reply_input_${t.ticketId}" value="${t.adminReply || ''}" placeholder="Write reply for customer..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
             <button onclick="sendAdminSupportReply('${t.ticketId}')" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl transition whitespace-nowrap shadow">
               Send Reply
             </button>
@@ -490,7 +474,7 @@
     async function sendAdminSupportReply(ticketId) {
       const replyInput = document.getElementById(`reply_input_${ticketId}`);
       const replyText = (replyInput.value || "").trim();
-      if (!replyText) return alert("অনুগ্রহ করে রিপ্লাই টেক্সট লিখুন!");
+      if (!replyText) return alert("Please write a reply message!");
 
       try {
         const res = await fetch('/api/admin/support/reply', {
@@ -500,17 +484,14 @@
         });
         const data = await res.json();
         if (data.success) {
-          alert("✅ কাস্টমারের কাছে রিপ্লাই পাঠানো হয়েছে!");
+          alert("Reply sent to customer!");
           loadAdminSupportTickets();
-        } else {
-          alert(data.message || "Failed to send reply");
         }
       } catch (err) {
         alert("Server error while sending reply.");
       }
     }
 
-    // ডেলিভারি চার্জ ও COD সেটিংস সেভ
     async function saveDeliveryCharge() {
       const fee = document.getElementById('deliveryChargeInput').value;
       const res = await fetch('/api/admin/store-settings', {
@@ -519,7 +500,7 @@
         body: JSON.stringify({ pin: currentPin, deliveryCharge: fee })
       });
       const data = await res.json();
-      if (data.success) alert(`ডেলিভারি চার্জ ₹${fee} সফলভাবে আপডেট হয়েছে!`);
+      if (data.success) alert(`COD Delivery Charge updated to ₹${fee}!`);
     }
 
     async function saveCodSettings() {
@@ -530,10 +511,9 @@
         body: JSON.stringify({ pin: currentPin, codAdvancePercent: pct })
       });
       const data = await res.json();
-      if (data.success) alert(`COD Advance Token ${pct}% সেভ হয়েছে!`);
+      if (data.success) alert(`COD Advance Token updated to ${pct}%!`);
     }
 
-    // কুপন তৈরি ও ডিলিট
     async function handleCreateCoupon(e) {
       e.preventDefault();
       const payload = {
@@ -554,7 +534,7 @@
         renderAdminCoupons();
         document.getElementById('cpCode').value = "";
         document.getElementById('cpDiscount').value = "";
-        alert("নতুন কুপন কোড চালু হয়েছে!");
+        alert("Coupon added!");
       }
     }
 
@@ -586,7 +566,6 @@
       `).join('');
     }
 
-    // ছবির সাইজ অটোমেটিক ৪০ KB-র নিচে আনার ফাংশন
     function compressImageFile(file, maxWidth = 550, targetKB = 38) {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -619,13 +598,40 @@
       });
     }
 
-    async function previewSingleImg(num) {
-      const file = document.getElementById(`prodImgFile${num}`).files[0];
-      if (!file) return;
-      const compressed = await compressImageFile(file);
-      const prev = document.getElementById(`prevImg${num}`);
-      prev.src = compressed;
-      prev.classList.remove('hidden');
+    async function handleAddMultipleProductPhotos(input) {
+      const files = Array.from(input.files || []);
+      if (!files.length) return;
+      for (const file of files) {
+        const compressed = await compressImageFile(file);
+        currentFormImages.push(compressed);
+      }
+      input.value = "";
+      renderFormImagesPreview();
+    }
+
+    function removeFormImageAt(idx) {
+      currentFormImages.splice(idx, 1);
+      renderFormImagesPreview();
+    }
+
+    function renderFormImagesPreview() {
+      const grid = document.getElementById('dynamicProdImagesPreview');
+      const hint = document.getElementById('noPhotosHint');
+      if (currentFormImages.length === 0) {
+        grid.innerHTML = "";
+        hint.classList.remove('hidden');
+        return;
+      }
+      hint.classList.add('hidden');
+      grid.innerHTML = currentFormImages.map((src, idx) => `
+        <div class="relative rounded-xl overflow-hidden border border-slate-600 aspect-square bg-slate-900 group">
+          <img src="${src}" class="w-full h-full object-cover">
+          ${idx === 0 ? `<span class="absolute bottom-1 left-1 bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded">MAIN</span>` : ''}
+          <button type="button" onclick="removeFormImageAt(${idx})" title="Delete Photo" class="absolute top-1 right-1 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center shadow">
+            &times;
+          </button>
+        </div>
+      `).join('');
     }
 
     function updateBannerProductDropdown() {
@@ -696,7 +702,6 @@
       `).join('');
     }
 
-    // প্রোডাক্ট সেভ ও এডিট
     async function handleSaveProduct(e) {
       e.preventDefault();
       const editId = document.getElementById('editProdId').value;
@@ -704,20 +709,10 @@
       btn.innerText = "Saving...";
       btn.disabled = true;
 
-      let finalImages = [...existingEditingImages];
-      for (let i = 1; i <= 4; i++) {
-        const file = document.getElementById(`prodImgFile${i}`).files[0];
-        if (file) {
-          const comp = await compressImageFile(file);
-          finalImages[i - 1] = comp;
-        }
-      }
-      finalImages = finalImages.filter(Boolean);
-
-      if (finalImages.length === 0) {
+      if (currentFormImages.length === 0) {
         btn.innerText = editId ? "Update Product" : "Publish to Store";
         btn.disabled = false;
-        return alert("কমপক্ষে ১টি প্রোডাক্ট ছবি দিন!");
+        return alert("Please add at least 1 product photo!");
       }
 
       const sizesRaw = document.getElementById('prodSizes').value;
@@ -731,10 +726,11 @@
         price: document.getElementById('prodPrice').value,
         originalPrice: document.getElementById('prodOrigPrice').value,
         stockQuantity: document.getElementById('prodStock').value,
+        showOnHome: document.getElementById('prodShowOnHome').checked,
         sizeOptions: sizesRaw ? sizesRaw.split(',').map(s => s.trim()).filter(Boolean) : ["Standard"],
         colorOptions: colorsRaw ? colorsRaw.split(',').map(c => c.trim()).filter(Boolean) : ["Standard"],
         badge: document.getElementById('prodBadge').value || "New",
-        images: finalImages,
+        images: [...currentFormImages],
         description: document.getElementById('prodDesc').value
       };
 
@@ -775,18 +771,11 @@
       document.getElementById('prodSizes').value = (p.sizeOptions || []).join(', ');
       document.getElementById('prodColors').value = (p.colorOptions || []).join(', ');
       document.getElementById('prodBadge').value = p.badge || "";
+      document.getElementById('prodShowOnHome').checked = p.showOnHome !== false;
       document.getElementById('prodDesc').value = p.description || "";
 
-      existingEditingImages = [...(p.images || [])];
-      for (let i = 1; i <= 4; i++) {
-        const prev = document.getElementById(`prevImg${i}`);
-        if (existingEditingImages[i - 1]) {
-          prev.src = existingEditingImages[i - 1];
-          prev.classList.remove('hidden');
-        } else {
-          prev.classList.add('hidden');
-        }
-      }
+      currentFormImages = [...(p.images || [])];
+      renderFormImagesPreview();
       window.scrollTo({ top: 300, behavior: 'smooth' });
     }
 
@@ -796,9 +785,22 @@
       document.getElementById('productFormHeading').innerHTML = `<i class="fa-solid fa-plus-circle mr-1"></i> Add New Product`;
       document.getElementById('cancelEditBtn').classList.add('hidden');
       document.getElementById('saveProdBtn').innerText = "Publish to Store";
-      existingEditingImages = [];
-      for (let i = 1; i <= 4; i++) {
-        document.getElementById(`prevImg${i}`).classList.add('hidden');
+      document.getElementById('prodShowOnHome').checked = true;
+      currentFormImages = [];
+      renderFormImagesPreview();
+    }
+
+    async function toggleShowOnHome(id, currentStatus) {
+      const res = await fetch(`/api/admin/products/${id}/toggle-home`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: currentPin, showOnHome: !currentStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const idx = cachedProducts.findIndex(p => p.id === id);
+        if (idx > -1) cachedProducts[idx].showOnHome = !currentStatus;
+        renderAdminCatalog();
       }
     }
 
@@ -821,25 +823,30 @@
       const filtered = cachedProducts.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
       document.getElementById('adminCatalogCount').innerText = filtered.length;
 
-      document.getElementById('adminCatalogList').innerHTML = filtered.map(p => `
-        <div class="bg-slate-800/70 border border-slate-700 p-3 rounded-2xl flex items-center justify-between gap-3 text-xs">
-          <div class="flex items-center gap-3">
-            <img src="${(p.images && p.images[0]) || ''}" class="w-12 h-12 rounded-xl object-cover border border-slate-600">
-            <div>
-              <p class="font-bold text-white">${p.name}</p>
-              <p class="text-[11px] text-slate-400">${p.mainCategory} &rarr; ${p.category} | Stock: <b class="text-amber-400">${p.stockQuantity}</b></p>
-              <p class="text-emerald-400 font-bold">₹${p.price} <span class="line-through text-slate-500 font-normal">₹${p.originalPrice}</span></p>
+      document.getElementById('adminCatalogList').innerHTML = filtered.map(p => {
+        const isHome = p.showOnHome !== false;
+        return `
+          <div class="bg-slate-800/70 border border-slate-700 p-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-3">
+              <img src="${(p.images && p.images[0]) || ''}" class="w-12 h-12 rounded-xl object-cover border border-slate-600">
+              <div>
+                <p class="font-bold text-white">${p.name}</p>
+                <p class="text-[11px] text-slate-400">${p.mainCategory} &rarr; ${p.category} | Photos: ${(p.images || []).length} | Stock: <b class="text-amber-400">${p.stockQuantity}</b></p>
+                <p class="text-emerald-400 font-bold">₹${p.price} <span class="line-through text-slate-500 font-normal">₹${p.originalPrice}</span></p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleShowOnHome(${p.id}, ${isHome})" class="px-3 py-1.5 rounded-xl font-bold transition ${isHome ? 'bg-emerald-500 text-slate-950' : 'bg-slate-700 text-slate-300'}">
+                <i class="fa-solid ${isHome ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i> ${isHome ? 'On Home: YES' : 'On Home: NO'}
+              </button>
+              <button onclick="editProduct(${p.id})" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-3 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
+              <button onclick="deleteProduct(${p.id})" class="bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 px-3 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
-          <div class="flex items-center gap-2">
-            <button onclick="editProduct(${p.id})" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-3 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
-            <button onclick="deleteProduct(${p.id})" class="bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 px-3 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
-    // অর্ডার লিস্ট, স্ট্যাটাস আপডেট এবং অর্ডার ডিলিট
     function renderAdminOrders() {
       const q = (document.getElementById('adminOrderSearch').value || "").toLowerCase();
       const filtered = cachedOrders.filter(o =>
@@ -877,7 +884,7 @@
             <td class="p-3 min-w-[180px]">${itemsText}</td>
             <td class="p-3">
               <p class="font-bold text-emerald-400 text-sm">₹${o.total}</p>
-              <p class="text-[10px] text-slate-400">Delivery: ₹${o.deliveryCharge || 0}</p>
+              <p class="text-[10px] text-slate-400">COD Delivery Fee: ₹${o.deliveryCharge || 0}</p>
               <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300">${o.paymentMethod}</span>
               <p class="text-[10px] font-mono text-slate-300 mt-1">UTR: ${o.utrNumber}</p>
             </td>
@@ -946,7 +953,7 @@
     }
 
     async function deleteCustomerOrder(orderId) {
-      if (!confirm(`আপনি কি নিশ্চিত যে অর্ডার #${orderId} স্থায়ীভাবে ডিলিট করতে চান?`)) return;
+      if (!confirm(`Delete Order #${orderId} permanently?`)) return;
       const res = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
