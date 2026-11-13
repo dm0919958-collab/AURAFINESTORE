@@ -8,16 +8,35 @@ const cloudinary = require('cloudinary').v2;
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const ADMIN_SECRET_PIN = "admin123";
-
-const TELEGRAM_BOT_TOKEN = "8818940415:AAHdq6roV4XDCF3sxtJdDSqw-Abq20i1KbQ";
-const TELEGRAM_CHAT_ID = "8836538477";
+const DEFAULT_ADMIN_PIN = process.env.ADMIN_PIN || "admin123";
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8818940415:AAHdq6roV4XDCF3sxtJdDSqw-Abq20i1KbQ";
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "8836538477";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'txvafr7h',
   api_key: process.env.CLOUDINARY_API_KEY || '757197326572662',
   api_secret: process.env.CLOUDINARY_API_SECRET || 'shG26-qHpVEzSUpokfs3-xDnkyk'
 });
+
+// Brute-force login protection tracker
+const loginAttempts = new Map();
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
+async function getActiveAdminPin() {
+  try {
+    const s = await Settings.findOne({ key: 'main' }).lean();
+    return (s && s.adminPin) ? s.adminPin : DEFAULT_ADMIN_PIN;
+  } catch (e) {
+    return DEFAULT_ADMIN_PIN;
+  }
+}
+
+async function verifyAdminPin(pin) {
+  if (!pin) return false;
+  const activePin = await getActiveAdminPin();
+  return String(pin).trim() === String(activePin).trim();
+}
 
 async function uploadToCloudinary(fileData, folder = 'aura_store') {
   if (!fileData) return "";
@@ -93,7 +112,8 @@ const settingsSchema = new mongoose.Schema({
   key: { type: String, default: 'main', unique: true },
   deliveryCharge: { type: Number, default: 0 },
   codAdvancePercent: { type: Number, default: 15 },
-  dealEndTime: { type: Number, default: 0 }
+  dealEndTime: { type: Number, default: 0 },
+  adminPin: { type: String, default: DEFAULT_ADMIN_PIN }
 });
 
 const orderSchema = new mongoose.Schema({
@@ -527,7 +547,16 @@ async function seedInitialData() {
     }
     const existingSettings = await Settings.findOne({ key: 'main' });
     if (!existingSettings) {
-      await Settings.create({ key: 'main', deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0 });
+      await Settings.create({
+        key: 'main',
+        deliveryCharge: 0,
+        codAdvancePercent: 15,
+        dealEndTime: 0,
+        adminPin: DEFAULT_ADMIN_PIN
+      });
+    } else if (!existingSettings.adminPin) {
+      existingSettings.adminPin = DEFAULT_ADMIN_PIN;
+      await existingSettings.save();
     }
   } catch (err) {
     console.error('Seed error:', err.message);
@@ -723,7 +752,10 @@ app.get('/api/store', async (req, res) => {
       Settings.findOne({ key: 'main' })
     ]);
 
-    let activeSettings = settings || { deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0 };
+    let activeSettings = settings
+      ? { deliveryCharge: settings.deliveryCharge, codAdvancePercent: settings.codAdvancePercent, dealEndTime: settings.dealEndTime }
+      : { deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0 };
+
     if (activeSettings.dealEndTime && activeSettings.dealEndTime > 0 && Date.now() >= activeSettings.dealEndTime) {
       await Settings.findOneAndUpdate({ key: 'main' }, { dealEndTime: 0 });
       activeSettings.dealEndTime = 0;
@@ -740,6 +772,7 @@ app.get('/api/store', async (req, res) => {
   }
 });
 
+// Add Customer Review
 app.post('/api/products/:id/reviews', async (req, res) => {
   try {
     const { customerName, rating, comment } = req.body;
@@ -762,6 +795,35 @@ app.post('/api/products/:id/reviews', async (req, res) => {
     const newCount = (product.reviewsCount || 0) + 1;
     product.reviewsCount = newCount;
     product.rating = Number(((oldTotal + numRating) / newCount).toFixed(1));
+
+    await product.save();
+    res.json({ success: true, product });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Admin Review Moderation: Delete a Review
+app.delete('/api/admin/products/:id/reviews/:reviewId', async (req, res) => {
+  try {
+    const { pin } = req.body;
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+    const prodId = Number(req.params.id);
+    const reviewId = req.params.reviewId;
+    const product = await Product.findOne({ id: prodId });
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    product.reviews = (product.reviews || []).filter(r => String(r._id) !== String(reviewId));
+
+    if (product.reviews.length > 0) {
+      const sum = product.reviews.reduce((acc, r) => acc + (r.rating || 5), 0);
+      product.reviewsCount = product.reviews.length;
+      product.rating = Number((sum / product.reviews.length).toFixed(1));
+    } else {
+      product.reviewsCount = 1;
+      product.rating = 5.0;
+    }
 
     await product.save();
     res.json({ success: true, product });
@@ -829,7 +891,7 @@ app.post('/api/support/ticket', async (req, res) => {
 app.post('/api/admin/support/tickets', async (req, res) => {
   try {
     const { pin } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
     const tickets = await SupportTicket.find().sort({ createdAt: -1 }).lean();
     res.json({ success: true, tickets });
   } catch (err) {
@@ -840,7 +902,7 @@ app.post('/api/admin/support/tickets', async (req, res) => {
 app.post('/api/admin/support/reply', async (req, res) => {
   try {
     const { pin, ticketId, replyText } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const repliedAt = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const updated = await SupportTicket.findOneAndUpdate(
@@ -858,7 +920,7 @@ app.post('/api/admin/support/reply', async (req, res) => {
 app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
   try {
     const { pin } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
     await SupportTicket.deleteOne({ ticketId: req.params.ticketId });
     res.json({ success: true });
   } catch (err) {
@@ -869,7 +931,7 @@ app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
 app.post('/api/admin/products', async (req, res) => {
   try {
     const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, showOnHome, sizeOptions, colorOptions, badge, images, description } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const uploadedUrls = await Promise.all(
       (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
@@ -903,7 +965,7 @@ app.post('/api/admin/products', async (req, res) => {
 app.put('/api/admin/products/:id', async (req, res) => {
   try {
     const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, showOnHome, sizeOptions, colorOptions, badge, images, description } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const uploadedUrls = await Promise.all(
       (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
@@ -940,7 +1002,7 @@ app.put('/api/admin/products/:id', async (req, res) => {
 app.patch('/api/admin/products/:id/toggle-home', async (req, res) => {
   try {
     const { pin, showOnHome } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
     const prodId = Number(req.params.id);
     const updated = await Product.findOneAndUpdate({ id: prodId }, { showOnHome: Boolean(showOnHome) }, { new: true });
     if (!updated) return res.status(404).json({ success: false });
@@ -953,7 +1015,7 @@ app.patch('/api/admin/products/:id/toggle-home', async (req, res) => {
 app.delete('/api/admin/products/:id', async (req, res) => {
   try {
     const { pin } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
     const prodId = Number(req.params.id);
     await Promise.all([
       Product.deleteOne({ id: prodId }),
@@ -969,7 +1031,7 @@ app.delete('/api/admin/products/:id', async (req, res) => {
 app.post('/api/admin/banners/add', async (req, res) => {
   try {
     const { pin, title, tag, productId, image } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const bannerUrl = await uploadToCloudinary(image, 'aura_store/banners');
 
@@ -990,7 +1052,7 @@ app.post('/api/admin/banners/add', async (req, res) => {
 app.delete('/api/admin/banners/:id', async (req, res) => {
   try {
     const { pin } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
     await Banner.deleteOne({ id: Number(req.params.id) });
     const dealBanners = await Banner.find().lean();
     res.json({ success: true, dealBanners });
@@ -1002,7 +1064,7 @@ app.delete('/api/admin/banners/:id', async (req, res) => {
 app.post('/api/admin/coupons', async (req, res) => {
   try {
     const { pin, code, discountPercent, minSpend, title, description, showOnStore } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const cleanCode = (code || "").trim().toUpperCase();
     await Coupon.findOneAndUpdate(
@@ -1027,7 +1089,7 @@ app.post('/api/admin/coupons', async (req, res) => {
 app.delete('/api/admin/coupons/:code', async (req, res) => {
   try {
     const { pin } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
     await Coupon.deleteOne({ code: req.params.code.toUpperCase() });
     const coupons = await Coupon.find().lean();
     res.json({ success: true, coupons });
@@ -1039,7 +1101,7 @@ app.delete('/api/admin/coupons/:code', async (req, res) => {
 app.post('/api/admin/store-settings', async (req, res) => {
   try {
     const { pin, deliveryCharge, codAdvancePercent, dealEndTime } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const updateFields = {};
     if (deliveryCharge !== undefined) updateFields.deliveryCharge = Number(deliveryCharge) || 0;
@@ -1058,6 +1120,25 @@ app.post('/api/admin/store-settings', async (req, res) => {
   }
 });
 
+// Change Admin PIN Endpoint
+app.post('/api/admin/change-pin', async (req, res) => {
+  try {
+    const { currentPin, newPin } = req.body;
+    if (!(await verifyAdminPin(currentPin))) {
+      return res.status(403).json({ success: false, message: "Current PIN is incorrect!" });
+    }
+    const cleanNew = String(newPin || "").trim();
+    if (cleanNew.length < 4) {
+      return res.status(400).json({ success: false, message: "New PIN must be at least 4 characters!" });
+    }
+    await Settings.findOneAndUpdate({ key: 'main' }, { adminPin: cleanNew }, { upsert: true });
+    res.json({ success: true, message: "Admin PIN updated successfully!" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Place Order with Duplicate UTR Validation
 app.post('/api/orders', async (req, res) => {
   try {
     const { 
@@ -1066,6 +1147,20 @@ app.post('/api/orders', async (req, res) => {
       items, total, subTotal, discountApplied, couponCode, deliveryCharge,
       paymentMethod, utrNumber, advancePaid, balanceDue
     } = req.body;
+
+    const cleanUtr = String(utrNumber || "").trim();
+    if (!cleanUtr || cleanUtr.length < 8) {
+      return res.status(400).json({ success: false, message: "Please enter a valid 12-digit UPI UTR number!" });
+    }
+
+    // Check Duplicate UTR
+    const existingUtrOrder = await Order.findOne({ utrNumber: cleanUtr }).lean();
+    if (existingUtrOrder) {
+      return res.status(400).json({
+        success: false,
+        message: `Duplicate UTR detected! This UTR (${cleanUtr}) was already used for Order #${existingUtrOrder.id}.`
+      });
+    }
 
     const structuredAddress = `${houseNoStreet}, ${villageOrCity}, P.O: ${postOffice}${policeStation ? ', P.S: ' + policeStation : ''}${landmark ? ' (Landmark: ' + landmark + ')' : ''}, ${city}, ${state} - ${pincode}`;
 
@@ -1103,7 +1198,7 @@ app.post('/api/orders', async (req, res) => {
       paymentMethod,
       advancePaid: Number(advancePaid) || 0,
       balanceDue: Number(balanceDue) || 0,
-      utrNumber: utrNumber || "N/A",
+      utrNumber: cleanUtr,
       status: "Pending Verification",
       courierPartner: "Delhivery",
       awbNumber: "",
@@ -1117,6 +1212,22 @@ app.post('/api/orders', async (req, res) => {
     sendTelegramAlert(order).catch(e => console.error("Background Telegram error:", e.message));
   } catch (err) {
     res.status(500).json({ success: false, message: "Order creation failed" });
+  }
+});
+
+// Download Customer Tax Invoice PDF
+app.get('/api/orders/:id/invoice', async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const order = await Order.findOne({ id: orderId }).lean();
+    if (!order) return res.status(404).send("Order not found");
+
+    const pdfBuffer = await generateOrderInvoicePDF(order);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="AURA_Invoice_${order.id}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    res.status(500).send("Failed to generate PDF invoice");
   }
 });
 
@@ -1134,24 +1245,57 @@ app.get('/api/orders/track', async (req, res) => {
   }
 });
 
-app.post('/api/admin/login', (req, res) => {
+// Admin Login with Lockout Security
+app.post('/api/admin/login', async (req, res) => {
+  const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+  const record = loginAttempts.get(clientIp);
+
+  if (record && record.lockUntil && Date.now() < record.lockUntil) {
+    const minsLeft = Math.ceil((record.lockUntil - Date.now()) / 60000);
+    return res.status(429).json({
+      success: false,
+      message: `Too many wrong attempts! Locked for ${minsLeft} minute(s).`
+    });
+  }
+
   const { pin } = req.body;
-  if (pin === ADMIN_SECRET_PIN) return res.json({ success: true, token: "admin-active" });
-  res.status(401).json({ success: false, message: "Invalid Passcode!" });
+  if (await verifyAdminPin(pin)) {
+    loginAttempts.delete(clientIp);
+    return res.json({ success: true, token: "admin-active" });
+  }
+
+  const currentCount = (record ? record.count : 0) + 1;
+  if (currentCount >= MAX_LOGIN_ATTEMPTS) {
+    loginAttempts.set(clientIp, { count: currentCount, lockUntil: Date.now() + LOCKOUT_DURATION_MS });
+    return res.status(429).json({
+      success: false,
+      message: "5 wrong attempts! Admin login locked for 5 minutes."
+    });
+  } else {
+    loginAttempts.set(clientIp, { count: currentCount, lockUntil: null });
+    return res.status(401).json({
+      success: false,
+      message: `Incorrect PIN! (${MAX_LOGIN_ATTEMPTS - currentCount} attempts remaining)`
+    });
+  }
 });
 
 app.post('/api/admin/orders', async (req, res) => {
   try {
     const { pin } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-    const [orders, coupons, settings] = await Promise.all([
+    const [orders, coupons, settings, products] = await Promise.all([
       Order.find().sort({ createdAt: -1 }).lean(),
       Coupon.find().lean(),
-      Settings.findOne({ key: 'main' })
+      Settings.findOne({ key: 'main' }),
+      Product.find().lean()
     ]);
 
-    let activeSettings = settings || { deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0 };
+    let activeSettings = settings
+      ? { deliveryCharge: settings.deliveryCharge, codAdvancePercent: settings.codAdvancePercent, dealEndTime: settings.dealEndTime }
+      : { deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0 };
+
     if (activeSettings.dealEndTime && activeSettings.dealEndTime > 0 && Date.now() >= activeSettings.dealEndTime) {
       await Settings.findOneAndUpdate({ key: 'main' }, { dealEndTime: 0 });
       activeSettings.dealEndTime = 0;
@@ -1162,19 +1306,22 @@ app.post('/api/admin/orders', async (req, res) => {
     const totalSales = orders.reduce((sum, o) => sum + (o.total || 0), 0);
     const totalOnlineRevenue = orders.filter(o => o.paymentMethod === 'UPI').reduce((sum, o) => sum + (o.total || 0), 0);
     const totalCodRevenue = orders.filter(o => o.paymentMethod === 'COD').reduce((sum, o) => sum + (o.total || 0), 0);
+    const lowStockProducts = products.filter(p => (p.stockQuantity || 0) < 3).map(p => ({ id: p.id, name: p.name, stockQuantity: p.stockQuantity || 0 }));
 
     res.json({
       success: true,
       orders,
       coupons,
       storeSettings: activeSettings,
+      lowStockProducts,
       analytics: {
         totalOrders: orders.length,
         todayOrdersCount: todayOrders.length,
         totalSales,
         totalOnlineRevenue,
         totalCodRevenue,
-        pendingOrders: orders.filter(o => o.status && o.status.includes('Pending')).length
+        pendingOrders: orders.filter(o => o.status && o.status.includes('Pending')).length,
+        lowStockCount: lowStockProducts.length
       }
     });
   } catch (err) {
@@ -1185,7 +1332,7 @@ app.post('/api/admin/orders', async (req, res) => {
 app.delete('/api/admin/orders/:id', async (req, res) => {
   try {
     const { pin } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const orderId = req.params.id;
     const deleted = await Order.deleteOne({ id: orderId });
@@ -1201,7 +1348,7 @@ app.delete('/api/admin/orders/:id', async (req, res) => {
 app.patch('/api/admin/orders/:id/status', async (req, res) => {
   try {
     const { pin, status } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
     const order = await Order.findOneAndUpdate({ id: req.params.id }, { status }, { new: true });
     if (order) return res.json({ success: true, status: order.status });
     res.status(404).json({ success: false });
@@ -1213,7 +1360,7 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
 app.post('/api/admin/orders/:id/dispatch-tracking', async (req, res) => {
   try {
     const { pin, courierPartner, awbNumber } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const order = await Order.findOneAndUpdate(
       { id: req.params.id },
@@ -1230,7 +1377,7 @@ app.post('/api/admin/orders/:id/dispatch-tracking', async (req, res) => {
 app.post('/api/admin/orders/:id/upload-slip', async (req, res) => {
   try {
     const { pin, slipFileBase64 } = req.body;
-    if (pin !== ADMIN_SECRET_PIN) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const slipUrl = await uploadToCloudinary(slipFileBase64, 'aura_store/delivery_slips');
 
