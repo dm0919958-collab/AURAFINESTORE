@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURA Fine Store | Artisanal Couture & Luxury</title>
+  <meta name="description" content="Shop luxury handcrafted jewellery, men's Oxford shirts, chronograph watches & romantic couple gifts at AURA Fine Store. Free UPI delivery across India.">
+  <meta property="og:title" content="AURA Fine Store | Artisanal Couture & Luxury">
+  <meta property="og:description" content="Discover exclusive Men's Wear, Royal Kundan Jewellery & Couple Gifts with Free UPI Delivery and 7-Day Replacement Guarantee.">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=1200&q=80">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -288,7 +294,7 @@
     </main>
   </div>
 
-  <!-- Quick View Modal (With WhatsApp Share + Related Products) -->
+  <!-- Quick View Modal -->
   <div id="quickViewModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto border border-amber-500/30">
       <button onclick="closeQuickView()" class="absolute top-5 right-5 text-stone-400 hover:text-amber-400 text-3xl font-bold">&times;</button>
@@ -571,6 +577,20 @@
     </div>
   </div>
 
+  <!-- Legal Policy Popup Modal (For Meta Ads Compliance) -->
+  <div id="legalPolicyModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-4 shadow-2xl max-h-[88vh] overflow-y-auto border border-amber-500/30">
+      <div class="flex justify-between items-center border-b border-stone-800 pb-3">
+        <h4 id="legalModalTitle" class="font-cinzel font-bold text-xl text-amber-300">Legal Policy</h4>
+        <button onclick="closeLegalModal()" class="text-stone-400 hover:text-white text-2xl font-bold">&times;</button>
+      </div>
+      <div id="legalModalBody" class="space-y-3 text-xs text-stone-300 leading-relaxed"></div>
+      <div class="pt-3 border-t border-stone-800 text-right">
+        <button onclick="closeLegalModal()" class="bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold px-5 py-2 rounded-xl text-xs">I Understand</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="bg-black text-stone-400 pt-16 pb-8 border-t border-amber-500/20 mt-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-stone-900 text-xs">
@@ -595,21 +615,23 @@
       </div>
 
       <div class="space-y-3">
-        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">CUSTOMER CONCIERGE</h4>
+        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">POLICIES & CONCIERGE</h4>
         <ul class="space-y-2 text-stone-400">
           <li><a href="#" onclick="openMyOrdersModal(); return false;" class="hover:text-amber-300 transition">My Orders & Tracking Desk</a></li>
-          <li><a href="#" onclick="openWishlistModal(); return false;" class="hover:text-rose-400 transition">My Saved Wishlist</a></li>
           <li><a href="#" onclick="openSupportModal(); return false;" class="hover:text-emerald-400 transition font-bold text-emerald-400">Help & Support Desk</a></li>
-          <li><span class="text-stone-300 font-semibold"><i class="fa-solid fa-envelope mr-1.5 text-amber-500"></i> mahatosarita436@gmail.com</span></li>
+          <li><a href="#" onclick="openLegalModal('privacy'); return false;" class="hover:text-amber-300 transition">Privacy Policy</a></li>
+          <li><a href="#" onclick="openLegalModal('terms'); return false;" class="hover:text-amber-300 transition">Terms & Conditions</a></li>
+          <li><a href="#" onclick="openLegalModal('refund'); return false;" class="hover:text-amber-300 transition">Refund & Replacement Policy</a></li>
         </ul>
       </div>
 
       <div class="space-y-3">
         <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">EXPRESS LOGISTICS</h4>
         <p class="text-stone-400 leading-relaxed">
-          Dispatched from Bolpur, Birbhum, West Bengal. We partner with Delhivery, DTDC, and IndiaPost across India.
+          Dispatched from Bolpur, Birbhum, West Bengal - 731204. We partner with Delhivery, DTDC, and IndiaPost across India.
         </p>
-        <div class="pt-2">
+        <p class="text-stone-300 font-semibold"><i class="fa-solid fa-envelope mr-1.5 text-amber-500"></i> mahatosarita436@gmail.com</p>
+        <div class="pt-1">
           <span class="inline-flex items-center gap-1.5 bg-stone-950 border border-stone-800 px-3.5 py-1.5 rounded-xl text-emerald-400 font-semibold text-[11px] shadow">
             <i class="fa-solid fa-lock text-xs"></i> 100% Encrypted UPI Payments
           </span>
@@ -618,8 +640,14 @@
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 flex flex-col sm:flex-row justify-between items-center text-[11px] text-stone-500 gap-2">
-      <p>&copy; 2026 AURA Fine Store. All Rights Reserved. Support: mahatosarita436@gmail.com</p>
-      <p class="font-cinzel tracking-wider text-amber-500/80 uppercase">LUXURY • ELEGANCE • ARTISANAL HERITAGE</p>
+      <p>&copy; 2026 AURA Fine Store (Bolpur, WB). All Rights Reserved.</p>
+      <div class="flex items-center gap-4">
+        <a href="#" onclick="openLegalModal('privacy'); return false;" class="hover:text-amber-400">Privacy</a>
+        <span>•</span>
+        <a href="#" onclick="openLegalModal('terms'); return false;" class="hover:text-amber-400">Terms</a>
+        <span>•</span>
+        <a href="#" onclick="openLegalModal('refund'); return false;" class="hover:text-amber-400">Refund Policy</a>
+      </div>
     </div>
   </footer>
 
@@ -635,6 +663,73 @@
     let storeDeliveryCharge = 0, storeCodAdvancePct = 15, dealEndTimeMs = 0, isPincodeValid = false;
     let currentOpenedProduct = null, currentSelectedSize = "", currentSelectedColor = "";
     let supportMatchedOrders = [], selectedSupportOrder = null, supportPhotoFiles = [], supportVideoFile = null, supportLiveInterval = null;
+    let initializedMetaPixelId = "";
+
+    // Meta Pixel Dynamic Loader & Event Tracker
+    function initMetaPixel(pixelId) {
+      if (!pixelId || initializedMetaPixelId === pixelId) return;
+      initializedMetaPixelId = pixelId;
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      window.fbq('init', pixelId);
+      window.fbq('track', 'PageView');
+    }
+
+    function trackMetaEvent(eventName, params = {}) {
+      if (typeof window.fbq === 'function' && initializedMetaPixelId) {
+        window.fbq('track', eventName, params);
+      }
+    }
+
+    // Legal Policy Modals Content
+    const legalPoliciesData = {
+      privacy: {
+        title: "Privacy Policy — AURA Fine Store",
+        html: `
+          <p>At <strong>AURA Fine Store</strong>, we value your trust and are committed to protecting your personal data.</p>
+          <p><strong>1. Information We Collect:</strong> When you place an order or contact support, we collect your name, mobile number, shipping address, pincode, and UPI transaction reference (UTR) solely to process and deliver your order.</p>
+          <p><strong>2. How We Use Information:</strong> Your details are used strictly for order confirmation, courier dispatch (Delhivery/DTDC/IndiaPost), customer support, and tax invoice generation. We never sell or rent customer data to third parties.</p>
+          <p><strong>3. Payment Security:</strong> All UPI payments are processed directly through verified banking channels. We do not store bank passwords, card numbers, or UPI PINs.</p>
+          <p><strong>4. Contact Us:</strong> For any privacy-related queries, email us at <strong>mahatosarita436@gmail.com</strong>.</p>
+        `
+      },
+      terms: {
+        title: "Terms & Conditions — AURA Fine Store",
+        html: `
+          <p>Welcome to <strong>AURA Fine Store</strong>. By accessing or purchasing from our website, you agree to the following terms:</p>
+          <p><strong>1. Order Verification:</strong> All prepaid UPI and COD token orders are verified against the submitted 12-digit UTR number before dispatch. Duplicate or invalid UTR submissions will result in automatic order cancellation.</p>
+          <p><strong>2. Shipping & Delivery:</strong> Orders are dispatched from our hub in Bolpur, Birbhum, West Bengal within 24–48 hours of verification. Standard delivery takes 4–7 business days depending on your Indian postal pincode.</p>
+          <p><strong>3. Product Representation:</strong> Slight color variations may occur due to photographic lighting or screen display settings.</p>
+        `
+      },
+      refund: {
+        title: "Refund & 7-Day Replacement Policy",
+        html: `
+          <p><strong>AURA Fine Store</strong> stands behind the craftsmanship and quality of every product we ship.</p>
+          <p><strong>1. 7-Day Easy Replacement:</strong> If you receive a damaged, defective, or incorrect product, you can raise a replacement request within <strong>7 days of delivery</strong> via our <em>Help & Support Desk</em>.</p>
+          <p><strong>2. Mandatory Unboxing Video:</strong> To claim transit damage or missing item replacement, a clear, uncut 360-degree parcel unboxing video from opening the sealed package is mandatory.</p>
+          <p><strong>3. Refunds:</strong> If an approved replacement item is out of stock, a 100% refund of your paid amount will be credited to your original UPI account within 3–5 business days.</p>
+        `
+      }
+    };
+
+    function openLegalModal(type) {
+      const data = legalPoliciesData[type];
+      if (!data) return;
+      document.getElementById('legalModalTitle').innerText = data.title;
+      document.getElementById('legalModalBody').innerHTML = data.html;
+      document.getElementById('legalPolicyModal').classList.remove('hidden');
+    }
+
+    function closeLegalModal() {
+      document.getElementById('legalPolicyModal').classList.add('hidden');
+    }
 
     const sectionSubCategories = {
       "Men": ["Shirts", "T-Shirts", "Watches", "Trousers", "Perfumes"],
@@ -642,7 +737,6 @@
       "Gifts": ["Couples", "Romantic", "Gift Sets", "Customized Lamps"]
     };
 
-    // Mobile Drawer Controls
     function toggleMobileDrawer(open) {
       const drawer = document.getElementById('mobileMenuDrawer');
       if (open) drawer.classList.remove('hidden');
@@ -662,7 +756,6 @@
       renderStore();
     }
 
-    // Wishlist Functions
     function updateWishlistBadges() {
       const count = wishlistIds.length;
       const b1 = document.getElementById('wishlistCountBadge');
@@ -725,7 +818,6 @@
       document.getElementById('wishlistModal').classList.add('hidden');
     }
 
-    // WhatsApp Product Share
     function shareCurrentProductWhatsApp() {
       if (!currentOpenedProduct) return;
       const p = currentOpenedProduct;
@@ -795,6 +887,9 @@
           storeDeliveryCharge = data.storeSettings.deliveryCharge || 0;
           storeCodAdvancePct = data.storeSettings.codAdvancePercent || 15;
           dealEndTimeMs = data.storeSettings.dealEndTime || 0;
+          if (data.storeSettings.metaPixelId) {
+            initMetaPixel(data.storeSettings.metaPixelId);
+          }
           updateFlashTimerUI();
         }
         updateWishlistBadges();
@@ -851,19 +946,14 @@
           : (activeMainSection === 'Home' ? p.showOnHome === true : (p.mainCategory === activeMainSection && (activeSubCategory === 'All' || p.category === activeSubCategory)));
 
         if (!matchesSearch) return false;
-
         if (priceFilter === 'under500' && p.price >= 500) return false;
         if (priceFilter === '500to1500' && (p.price < 500 || p.price > 1500)) return false;
         if (priceFilter === 'above1500' && p.price <= 1500) return false;
-
         return true;
       });
 
-      if (sortMode === 'lowToHigh') {
-        filtered = [...filtered].sort((a, b) => a.price - b.price);
-      } else if (sortMode === 'highToLow') {
-        filtered = [...filtered].sort((a, b) => b.price - a.price);
-      }
+      if (sortMode === 'lowToHigh') filtered = [...filtered].sort((a, b) => a.price - b.price);
+      else if (sortMode === 'highToLow') filtered = [...filtered].sort((a, b) => b.price - a.price);
 
       document.getElementById('countDisplay').innerText = filtered.length;
       const grid = document.getElementById('productsGrid');
@@ -909,6 +999,7 @@
       const prod = allProducts.find(p => p.id === id);
       if (!prod) return;
       currentOpenedProduct = prod;
+      trackMetaEvent('ViewContent', { content_name: prod.name, value: prod.price, currency: 'INR' });
       updateQuickViewWishlistBtn(prod.id);
       const images = (prod.images && prod.images.length) ? prod.images : [""];
       document.getElementById('qvMainImage').src = images[0];
@@ -941,10 +1032,7 @@
       const relSection = document.getElementById('qvRelatedSection');
       const relGrid = document.getElementById('qvRelatedGrid');
       const related = allProducts.filter(p => p.id !== prod.id && (p.category === prod.category || p.mainCategory === prod.mainCategory)).slice(0, 3);
-      if (!related.length) {
-        relSection.classList.add('hidden');
-        return;
-      }
+      if (!related.length) { relSection.classList.add('hidden'); return; }
       relSection.classList.remove('hidden');
       relGrid.innerHTML = related.map(r => `
         <div onclick="openQuickView(${r.id})" class="cursor-pointer bg-stone-950 border border-stone-800 hover:border-amber-500/40 rounded-2xl p-2.5 flex items-center gap-2.5 transition">
@@ -1004,11 +1092,13 @@
       const key = `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`;
       const exist = cart.find(i => i.itemKey === key);
       if (exist) exist.qty += 1; else cart.push({ ...prod, itemKey: key, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 });
+      trackMetaEvent('AddToCart', { content_name: prod.name, value: prod.price, currency: 'INR' });
       updateCartUI(); toggleCart(true);
     }
 
     function instantBuyNowWithVariant(prod) {
       cart = [{ ...prod, itemKey: `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 }];
+      trackMetaEvent('InitiateCheckout', { content_name: prod.name, value: prod.price, currency: 'INR' });
       updateCartUI(); openCheckoutModal();
     }
 
@@ -1132,8 +1222,11 @@
         })
       });
       const data = await res.json();
-      if (data.success) { alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}`); cart = []; updateCartUI(); closeCheckoutModal(); }
-      else alert(data.message || "Failed to place order.");
+      if (data.success) {
+        trackMetaEvent('Purchase', { value: finalAmt, currency: 'INR', order_id: data.orderId });
+        alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}`);
+        cart = []; updateCartUI(); closeCheckoutModal();
+      } else alert(data.message || "Failed to place order.");
       btn.disabled = false;
     }
 
