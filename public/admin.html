@@ -39,7 +39,7 @@
           <h1 class="text-2xl font-cinzel font-bold text-amber-400">AURA Fine Store Command</h1>
           <span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">● LIVE AUTO-SYNC</span>
         </div>
-        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Deal Timer Control, Low Stock Alerts, Reviews & Customer Support</p>
+        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Deal Timer Control, Meta Pixel, Low Stock Alerts, Reviews & Support</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <a href="#reviewModerationSection" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
@@ -53,7 +53,7 @@
       </div>
     </header>
 
-    <!-- Low Stock Alert Banner (Visible when stock < 3) -->
+    <!-- Low Stock Alert Banner -->
     <div id="lowStockAlertBox" class="hidden bg-rose-950/70 border border-rose-500/50 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
       <div class="flex items-center gap-3">
         <span class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center text-sm animate-pulse"><i class="fa-solid fa-triangle-exclamation"></i></span>
@@ -65,7 +65,7 @@
       <a href="#adminCatalogSection" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-1.5 rounded-xl font-bold">Restock Now &darr;</a>
     </div>
 
-    <!-- Analytics Cards (7 Cards including Low Stock) -->
+    <!-- Analytics Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
       <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
         <p class="text-[11px] text-slate-400">Today's Orders</p>
@@ -97,10 +97,10 @@
       </div>
     </div>
 
-    <!-- Timer, Delivery, Security PIN & Coupons Section -->
+    <!-- Store Controls, Meta Pixel, PIN & Coupons Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
-        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-sliders mr-1.5"></i> Store Controls & Security</h3>
+        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-sliders mr-1.5"></i> Store Controls, Meta Pixel & Security</h3>
         
         <div class="space-y-3 text-xs">
           <!-- Flash Deal Timer -->
@@ -125,6 +125,16 @@
                 <i class="fa-solid fa-trash mr-1"></i> Delete
               </button>
             </div>
+          </div>
+
+          <!-- Meta Pixel ID Setting -->
+          <div class="bg-slate-800/80 p-3 rounded-2xl border border-blue-500/30 space-y-2">
+            <label class="block font-bold text-blue-300"><i class="fa-brands fa-meta mr-1"></i> Meta (Facebook) Pixel ID:</label>
+            <div class="flex gap-2">
+              <input type="text" id="metaPixelIdInput" placeholder="e.g. 123456789012345" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-mono">
+              <button onclick="saveMetaPixelId()" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl font-bold transition whitespace-nowrap">Save Pixel</button>
+            </div>
+            <p class="text-[10px] text-slate-400">Tracks PageView, ViewContent, AddToCart & Purchase automatically.</p>
           </div>
 
           <!-- COD Delivery Charge -->
@@ -178,7 +188,7 @@
           </div>
         </form>
 
-        <div id="adminCouponsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1"></div>
+        <div id="adminCouponsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-80 overflow-y-auto pr-1"></div>
       </div>
     </div>
 
@@ -358,7 +368,7 @@
       </div>
     </div>
 
-    <!-- Customer Orders & Logistics Table (With 1-Click WhatsApp Update Button) -->
+    <!-- Customer Orders & Logistics Table -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
         <div>
@@ -464,6 +474,19 @@
         adminDealEndMs = 0;
         updateAdminTimerBadge();
         alert("Deal Timer deleted! Store now shows 'Deal End'.");
+      }
+    }
+
+    async function saveMetaPixelId() {
+      const pixelId = (document.getElementById('metaPixelIdInput').value || "").trim();
+      const res = await fetch('/api/admin/store-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: currentPin, metaPixelId: pixelId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(pixelId ? `✅ Meta Pixel ID (${pixelId}) saved and active on Store!` : "Meta Pixel ID cleared!");
       }
     }
 
@@ -604,6 +627,7 @@
           if (ordData.storeSettings) {
             document.getElementById('deliveryChargeInput').value = ordData.storeSettings.deliveryCharge || 0;
             document.getElementById('codAdvanceInput').value = ordData.storeSettings.codAdvancePercent || 15;
+            document.getElementById('metaPixelIdInput').value = ordData.storeSettings.metaPixelId || "";
             adminDealEndMs = ordData.storeSettings.dealEndTime || 0;
             updateAdminTimerBadge();
           }
@@ -623,7 +647,6 @@
       } catch (err) { console.error("Dashboard load error", err); }
     }
 
-    // Customer Reviews Moderation
     function renderAdminReviewsModeration() {
       const container = document.getElementById('adminReviewsModerationList');
       const allRevs = [];
@@ -1143,7 +1166,6 @@
       }).join('');
     }
 
-    // 1-Click WhatsApp Order Update Sender
     function sendWhatsAppOrderUpdate(orderId) {
       const o = cachedOrders.find(item => item.id === orderId);
       if (!o) return;
