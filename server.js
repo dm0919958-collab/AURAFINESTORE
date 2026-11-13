@@ -135,6 +135,7 @@ const orderSchema = new mongoose.Schema({
   city: String,
   state: String,
   items: Array,
+  giftNote: { type: String, default: "" },
   subTotal: Number,
   discountApplied: Number,
   deliveryCharge: Number,
@@ -151,6 +152,16 @@ const orderSchema = new mongoose.Schema({
   date: String,
   orderDateRaw: String,
   createdAt: { type: Date, default: Date.now }
+});
+
+const abandonedCartSchema = new mongoose.Schema({
+  phone: { type: String, unique: true },
+  customerName: String,
+  address: String,
+  items: Array,
+  totalAmount: Number,
+  updatedAtStr: String,
+  updatedAt: { type: Date, default: Date.now }
 });
 
 const supportTicketSchema = new mongoose.Schema({
@@ -170,6 +181,7 @@ const Banner = mongoose.model('Banner', bannerSchema);
 const Coupon = mongoose.model('Coupon', couponSchema);
 const Settings = mongoose.model('Settings', settingsSchema);
 const Order = mongoose.model('Order', orderSchema);
+const AbandonedCart = mongoose.model('AbandonedCart', abandonedCartSchema);
 const SupportTicket = mongoose.model('SupportTicket', supportTicketSchema);
 
 const defaultBanners = [
@@ -643,6 +655,11 @@ function generateOrderInvoicePDF(order) {
         currentY += 4;
       });
 
+      if (order.giftNote && order.giftNote.trim()) {
+        doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text(`Free Gift Message: "${order.giftNote.trim()}"`, 40, currentY + 6, { width: 515 });
+        currentY += 22;
+      }
+
       const summaryY = Math.max(currentY + 15, 360);
 
       doc.roundedRect(40, summaryY, 250, 108, 6).strokeColor('#e5e7eb').stroke();
@@ -703,6 +720,7 @@ function generateOrderInvoicePDF(order) {
 
 async function sendTelegramAlert(order) {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+  const giftLine = order.giftNote ? `\n🎁 <b>Gift Message:</b> <i>"${order.giftNote}"</i>` : '';
   const captionText = `🧾 <b>AURA FINE STORE - NEW ORDER CONFIRMED</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `📦 <b>Order ID:</b> <code>#${order.id}</code>\n` +
@@ -711,7 +729,7 @@ async function sendTelegramAlert(order) {
     `📍 <b>Address:</b> ${order.address}\n` +
     `💰 <b>Total Bill:</b> <b>₹${order.total}</b> (${order.paymentMethod})\n` +
     `🚚 <b>Delivery Fee:</b> ₹${order.deliveryCharge}\n` +
-    `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>\n` +
+    `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>${giftLine}\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `<i>Official PDF Invoice is attached below.</i>`;
 
@@ -825,6 +843,34 @@ app.get('/api/store', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
+  }
+});
+
+// Save Abandoned / Incomplete Cart when user fills Step 1 Address
+app.post('/api/abandoned-cart', async (req, res) => {
+  try {
+    const { customerName, phone, address, items, totalAmount } = req.body;
+    const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
+    if (cleanPhone.length !== 10 || !items || items.length === 0) {
+      return res.json({ success: false });
+    }
+    const updatedAtStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+    await AbandonedCart.findOneAndUpdate(
+      { phone: cleanPhone },
+      {
+        phone: cleanPhone,
+        customerName: (customerName || 'Customer').trim(),
+        address: (address || '').trim(),
+        items,
+        totalAmount: Number(totalAmount) || 0,
+        updatedAtStr,
+        updatedAt: new Date()
+      },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.json({ success: false });
   }
 });
 
@@ -1199,7 +1245,7 @@ app.post('/api/orders', async (req, res) => {
     const { 
       customerName, phone, pincode, city, state, 
       villageOrCity, houseNoStreet, postOffice, policeStation, landmark,
-      items, total, subTotal, discountApplied, couponCode, deliveryCharge,
+      items, giftNote, total, subTotal, discountApplied, couponCode, deliveryCharge,
       paymentMethod, utrNumber, advancePaid, balanceDue
     } = req.body;
 
@@ -1232,18 +1278,20 @@ app.post('/api/orders', async (req, res) => {
     const orderId = 'AUR-' + Math.floor(100000 + Math.random() * 900000);
     const orderDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+    const cleanPhone = String(phone).replace(/[^0-9]/g, '');
 
     const appliedDelivery = paymentMethod === 'COD' ? (Number(deliveryCharge) || 0) : 0;
 
     const order = await Order.create({
       id: orderId,
       customerName,
-      phone: String(phone).replace(/[^0-9]/g, ''),
+      phone: cleanPhone,
       address: structuredAddress,
       pincode,
       city,
       state,
       items: items || [],
+      giftNote: (giftNote || "").trim(),
       subTotal: Number(subTotal) || Number(total),
       discountApplied: Number(discountApplied) || 0,
       deliveryCharge: appliedDelivery,
@@ -1260,6 +1308,9 @@ app.post('/api/orders', async (req, res) => {
       date: orderDate,
       orderDateRaw: todayStr
     });
+
+    // Remove from Abandoned Cart once confirmed
+    await AbandonedCart.deleteOne({ phone: cleanPhone }).catch(() => {});
 
     res.json({ success: true, orderId: order.id });
 
@@ -1337,11 +1388,12 @@ app.post('/api/admin/orders', async (req, res) => {
     const { pin } = req.body;
     if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-    const [orders, coupons, settings, products] = await Promise.all([
+    const [orders, coupons, settings, products, abandonedCarts] = await Promise.all([
       Order.find().sort({ createdAt: -1 }).lean(),
       Coupon.find().lean(),
       Settings.findOne({ key: 'main' }),
-      Product.find().lean()
+      Product.find().lean(),
+      AbandonedCart.find().sort({ updatedAt: -1 }).lean()
     ]);
 
     let activeSettings = settings
@@ -1369,6 +1421,7 @@ app.post('/api/admin/orders', async (req, res) => {
       success: true,
       orders,
       coupons,
+      abandonedCarts,
       storeSettings: activeSettings,
       lowStockProducts,
       analytics: {
@@ -1383,6 +1436,17 @@ app.post('/api/admin/orders', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/admin/abandoned-carts/:phone', async (req, res) => {
+  try {
+    const { pin } = req.body;
+    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    await AbandonedCart.deleteOne({ phone: req.params.phone });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
   }
 });
 
@@ -1402,13 +1466,39 @@ app.delete('/api/admin/orders/:id', async (req, res) => {
   }
 });
 
+// Auto Stock Restore when Cancelled & Deduct again if Un-cancelled
 app.patch('/api/admin/orders/:id/status', async (req, res) => {
   try {
     const { pin, status } = req.body;
     if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const order = await Order.findOneAndUpdate({ id: req.params.id }, { status }, { new: true });
-    if (order) return res.json({ success: true, status: order.status });
-    res.status(404).json({ success: false });
+
+    const order = await Order.findOne({ id: req.params.id });
+    if (!order) return res.status(404).json({ success: false });
+
+    const prevStatus = order.status;
+    if (prevStatus !== 'Cancelled' && status === 'Cancelled') {
+      for (const item of (order.items || [])) {
+        const p = await Product.findOne({ id: item.id });
+        if (p) {
+          p.stockQuantity = (p.stockQuantity || 0) + (item.qty || 1);
+          p.inStock = p.stockQuantity > 0;
+          await p.save();
+        }
+      }
+    } else if (prevStatus === 'Cancelled' && status !== 'Cancelled') {
+      for (const item of (order.items || [])) {
+        const p = await Product.findOne({ id: item.id });
+        if (p) {
+          p.stockQuantity = Math.max(0, (p.stockQuantity || 0) - (item.qty || 1));
+          p.inStock = p.stockQuantity > 0;
+          await p.save();
+        }
+      }
+    }
+
+    order.status = status;
+    await order.save();
+    res.json({ success: true, status: order.status });
   } catch (err) {
     res.status(500).json({ success: false });
   }
