@@ -4,18 +4,26 @@ const path = require('path');
 const PDFDocument = require('pdfkit');
 const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 const DEFAULT_ADMIN_PIN = process.env.ADMIN_PIN || "admin123";
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8818940415:AAHdq6roV4XDCF3sxtJdDSqw-Abq20i1KbQ";
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "8836538477";
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const SUPPORT_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN;
+const MONGO_URI = process.env.MONGO_URI;
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'txvafr7h',
-  api_key: process.env.CLOUDINARY_API_KEY || '757197326572662',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'shG26-qHpVEzSUpokfs3-xDnkyk'
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const uploadMemory = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 55 * 1024 * 1024 }
 });
 
 const loginAttempts = new Map();
@@ -54,14 +62,16 @@ async function uploadToCloudinary(fileData, folder = 'aura_store') {
   }
 }
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://din786584_db_user:UxrbgZntEhDU0vfx@cluster0.vstmeuy.mongodb.net/aura_store?retryWrites=true&w=majority";
-
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    console.log('✅ MongoDB Connected Successfully to aura_store');
-    seedInitialData();
-  })
-  .catch(err => console.error('❌ MongoDB Connection Error:', err.message));
+if (!MONGO_URI) {
+  console.error('❌ CRITICAL: MONGO_URI is missing in Environment Variables!');
+} else {
+  mongoose.connect(MONGO_URI)
+    .then(() => {
+      console.log('✅ MongoDB Connected Successfully to aura_store');
+      seedInitialData();
+    })
+    .catch(err => console.error('❌ MongoDB Connection Error:', err.message));
+}
 
 const productSchema = new mongoose.Schema({
   id: { type: Number, unique: true },
@@ -692,6 +702,7 @@ function generateOrderInvoicePDF(order) {
 }
 
 async function sendTelegramAlert(order) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
   const captionText = `🧾 <b>AURA FINE STORE - NEW ORDER CONFIRMED</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `📦 <b>Order ID:</b> <code>#${order.id}</code>\n` +
@@ -729,6 +740,45 @@ async function sendTelegramAlert(order) {
       console.error(`Telegram attempt ${attempt} error:`, err.message);
     }
     await new Promise(r => setTimeout(r, 1500));
+  }
+}
+
+async function forwardSupportToTelegram(order, issueText, files) {
+  if (!SUPPORT_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+  try {
+    const itemsListText = (order.items || [])
+      .map((item, idx) => `${idx + 1}. ${item.name} (${item.selectedSize || 'Std'}, ${item.selectedColor || 'Std'}) x${item.qty || 1}`)
+      .join('\n');
+
+    const msg = `🚨 <b>NEW SUPPORT COMPLAINT</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>Order ID:</b> <code>#${order.id}</code>\n👤 <b>Customer:</b> ${order.customerName}\n📞 <b>Mobile:</b> <code>+91 ${order.phone}</code>\n📍 <b>Address:</b> ${order.address}\n💰 <b>Bill:</b> ₹${order.total} (${order.paymentMethod})\n🛍️ <b>Items:</b>\n${itemsListText}\n━━━━━━━━━━━━━━━━━━━━\n⚠️ <b>PROBLEM:</b>\n<i>"${issueText}"</i>`;
+
+    await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg, parse_mode: 'HTML' })
+    });
+
+    if (files && files.photos) {
+      for (let i = 0; i < files.photos.length; i++) {
+        const f = files.photos[i];
+        const pf = new FormData();
+        pf.append('chat_id', TELEGRAM_CHAT_ID);
+        pf.append('caption', `📸 Photo ${i + 1} | Order #${order.id} (${order.customerName})`);
+        pf.append('photo', new Blob([f.buffer], { type: f.mimetype }), f.originalname || `photo_${i + 1}.jpg`);
+        await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`, { method: 'POST', body: pf });
+      }
+    }
+
+    if (files && files.video && files.video[0]) {
+      const v = files.video[0];
+      const vf = new FormData();
+      vf.append('chat_id', TELEGRAM_CHAT_ID);
+      vf.append('caption', `🎥 Video Proof | Order #${order.id} (${order.customerName})`);
+      vf.append('document', new Blob([v.buffer], { type: v.mimetype }), v.originalname || 'proof_video.mp4');
+      await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendDocument`, { method: 'POST', body: vf });
+    }
+  } catch (err) {
+    console.error('Support Telegram forward error:', err.message);
   }
 }
 
@@ -865,7 +915,7 @@ app.get('/api/support/search', async (req, res) => {
   }
 });
 
-app.post('/api/support/ticket', async (req, res) => {
+app.post('/api/support/ticket', uploadMemory.fields([{ name: 'photos', maxCount: 6 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
   try {
     const { orderId, issueText } = req.body;
     const order = await Order.findOne({ id: orderId }).lean();
@@ -884,6 +934,8 @@ app.post('/api/support/ticket', async (req, res) => {
       repliedAt: "",
       createdAtStr: nowStr
     });
+
+    await forwardSupportToTelegram(order, (issueText || "").trim(), req.files);
 
     res.json({ success: true, ticketId });
   } catch (err) {
