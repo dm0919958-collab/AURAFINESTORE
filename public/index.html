@@ -21,6 +21,7 @@
 </head>
 <body class="selection:bg-amber-500 selection:text-stone-950 relative min-h-screen flex flex-col justify-between">
   <div>
+    <!-- Top VIP & Flash Deal Bar -->
     <div class="bg-gradient-to-r from-stone-950 via-amber-950/40 to-stone-950 text-stone-200 py-2.5 px-4 border-b border-amber-500/30 sticky top-0 z-50 shadow-lg">
       <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs">
         <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
@@ -33,13 +34,21 @@
       </div>
     </div>
 
+    <!-- Main Sticky Header -->
     <header class="glass-nav border-b border-amber-500/20 sticky top-[37px] z-40">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-3">
-        <a href="#catalogSection" onclick="showHomeCatalog()" class="flex flex-col group flex-shrink-0">
-          <span class="text-2xl sm:text-3xl font-extrabold font-cinzel tracking-[0.25em] text-amber-100 group-hover:text-amber-400 transition">AURA</span>
-          <span class="text-[9px] uppercase tracking-[0.45em] text-amber-500 font-bold -mt-1">Fine Store</span>
-        </a>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-2 sm:gap-3">
+        <!-- Mobile Hamburger + Brand Logo -->
+        <div class="flex items-center gap-2.5">
+          <button onclick="toggleMobileDrawer(true)" class="lg:hidden p-2.5 rounded-xl bg-stone-900 border border-amber-500/30 text-amber-400 hover:bg-stone-800 transition" aria-label="Open Menu">
+            <i class="fa-solid fa-bars text-base"></i>
+          </button>
+          <a href="#catalogSection" onclick="showHomeCatalog()" class="flex flex-col group flex-shrink-0">
+            <span class="text-2xl sm:text-3xl font-extrabold font-cinzel tracking-[0.25em] text-amber-100 group-hover:text-amber-400 transition">AURA</span>
+            <span class="text-[9px] uppercase tracking-[0.45em] text-amber-500 font-bold -mt-1">Fine Store</span>
+          </a>
+        </div>
 
+        <!-- Desktop Navigation -->
         <nav class="hidden lg:flex items-center gap-6 text-xs font-bold tracking-wider text-stone-300 uppercase">
           <a href="#catalogSection" onclick="showHomeCatalog()" class="text-amber-400 hover:text-amber-300 transition flex items-center gap-1.5"><i class="fa-solid fa-house text-amber-500"></i> Home</a>
 
@@ -82,26 +91,121 @@
           </div>
         </nav>
 
-        <div class="hidden md:flex flex-1 max-w-[210px] mx-2 relative">
-          <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search jewellery, shirts..." class="w-full bg-stone-900/90 border border-stone-700 text-stone-200 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-amber-500">
+        <!-- Desktop Search Input -->
+        <div class="hidden md:flex flex-1 max-w-[200px] mx-2 relative">
+          <input type="text" id="searchInput" oninput="syncSearchInputs(this.value)" placeholder="Search jewellery, shirts..." class="w-full bg-stone-900/90 border border-stone-700 text-stone-200 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-amber-500">
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-stone-500 text-xs"></i>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button onclick="openSupportModal()" class="flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-950/75 hover:bg-emerald-900 px-3 py-2 rounded-full border border-emerald-500/40 transition">
+        <!-- Right Action Buttons -->
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <button onclick="openSupportModal()" title="Help & Support" class="flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-950/75 hover:bg-emerald-900 px-2.5 sm:px-3 py-2 rounded-full border border-emerald-500/40 transition">
             <i class="fa-solid fa-headset text-emerald-400"></i><span class="hidden sm:inline">Help & Support</span>
           </button>
-          <button onclick="openMyOrdersModal()" class="flex items-center gap-1.5 text-xs font-bold text-amber-200 bg-stone-900 hover:bg-stone-800 px-3 py-2 rounded-full border border-amber-500/35 transition">
+          <button onclick="openMyOrdersModal()" title="Track Orders" class="flex items-center gap-1.5 text-xs font-bold text-amber-200 bg-stone-900 hover:bg-stone-800 px-2.5 sm:px-3 py-2 rounded-full border border-amber-500/35 transition">
             <i class="fa-solid fa-bag-shopping text-amber-400"></i><span class="hidden sm:inline">Track Orders</span>
           </button>
-          <button onclick="toggleCart()" class="relative p-2.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full text-stone-950 shadow-md">
+          <button onclick="openWishlistModal()" title="My Wishlist" class="relative p-2.5 bg-stone-900 hover:bg-stone-800 rounded-full text-rose-400 border border-rose-500/35 transition">
+            <i class="fa-solid fa-heart text-sm"></i>
+            <span id="wishlistCountBadge" class="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-stone-950">0</span>
+          </button>
+          <button onclick="toggleCart()" title="Shopping Bag" class="relative p-2.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full text-stone-950 shadow-md">
             <i class="fa-solid fa-basket-shopping text-base"></i>
             <span id="cartCountBadge" class="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-stone-950">0</span>
           </button>
         </div>
       </div>
+
+      <!-- Mobile Search Bar -->
+      <div class="md:hidden px-4 pb-3">
+        <div class="relative">
+          <input type="text" id="mobileSearchInput" oninput="syncSearchInputs(this.value)" placeholder="Search shirts, jhumkas, watches, gifts..." class="w-full bg-stone-900/95 border border-stone-700 text-stone-200 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-amber-500">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-2.5 text-stone-500 text-xs"></i>
+        </div>
+      </div>
     </header>
 
+    <!-- Mobile Slide-Out Navigation Drawer -->
+    <div id="mobileMenuDrawer" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex">
+      <div class="bg-stone-950 border-r border-amber-500/30 w-80 max-w-[85vw] h-full flex flex-col justify-between p-5 overflow-y-auto shadow-2xl">
+        <div class="space-y-5">
+          <div class="flex justify-between items-center border-b border-stone-800 pb-3">
+            <div>
+              <span class="text-2xl font-extrabold font-cinzel tracking-[0.2em] text-amber-100">AURA</span>
+              <span class="block text-[9px] uppercase tracking-[0.35em] text-amber-500 font-bold">Fine Store Menu</span>
+            </div>
+            <button onclick="toggleMobileDrawer(false)" class="text-stone-400 hover:text-amber-400 text-2xl font-bold">&times;</button>
+          </div>
+
+          <div class="space-y-2 text-xs font-bold">
+            <a href="#catalogSection" onclick="showHomeCatalog(); toggleMobileDrawer(false);" class="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              <i class="fa-solid fa-house"></i> Home Collections
+            </a>
+
+            <div class="bg-stone-900/80 border border-stone-800 rounded-xl overflow-hidden">
+              <button onclick="toggleMobileSub('mobSubMen')" class="w-full flex justify-between items-center p-3 text-stone-200 hover:text-amber-400">
+                <span>👔 MEN'S COLLECTION</span>
+                <i class="fa-solid fa-chevron-down text-[10px]"></i>
+              </button>
+              <div id="mobSubMen" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">
+                <a href="#catalogSection" onclick="filterBySection('Men', 'Shirts'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Oxford Shirts</a>
+                <a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Supima Tees</a>
+                <a href="#catalogSection" onclick="filterBySection('Men', 'Watches'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Chrono Watches</a>
+                <a href="#catalogSection" onclick="filterBySection('Men', 'Trousers'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Formal Trousers</a>
+                <a href="#catalogSection" onclick="filterBySection('Men', 'Perfumes'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Royal Perfumes</a>
+                <a href="#catalogSection" onclick="filterBySection('Men', 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All Men's &rarr;</a>
+              </div>
+            </div>
+
+            <div class="bg-stone-900/80 border border-stone-800 rounded-xl overflow-hidden">
+              <button onclick="toggleMobileSub('mobSubWomen')" class="w-full flex justify-between items-center p-3 text-stone-200 hover:text-amber-400">
+                <span>✨ WOMEN'S COLLECTION</span>
+                <i class="fa-solid fa-chevron-down text-[10px]"></i>
+              </button>
+              <div id="mobSubWomen" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">
+                <a href="#catalogSection" onclick="filterBySection('Women', 'Jhumka'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Royal Jhumkas</a>
+                <a href="#catalogSection" onclick="filterBySection('Women', 'Studs'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Solitaire Studs</a>
+                <a href="#catalogSection" onclick="filterBySection('Women', 'Kurtis'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Flared Kurtis</a>
+                <a href="#catalogSection" onclick="filterBySection('Women', 'Sarees'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Banarasi Sarees</a>
+                <a href="#catalogSection" onclick="filterBySection('Women', 'Handbags'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Handbags & Clutches</a>
+                <a href="#catalogSection" onclick="filterBySection('Women', 'Bangles'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Temple Bangles</a>
+                <a href="#catalogSection" onclick="filterBySection('Women', 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All Women's &rarr;</a>
+              </div>
+            </div>
+
+            <div class="bg-rose-950/30 border border-rose-500/30 rounded-xl overflow-hidden">
+              <button onclick="toggleMobileSub('mobSubGifts')" class="w-full flex justify-between items-center p-3 text-rose-300">
+                <span>🎁 GF & BF SPECIAL GIFTS</span>
+                <i class="fa-solid fa-chevron-down text-[10px]"></i>
+              </button>
+              <div id="mobSubGifts" class="hidden px-3 pb-3 space-y-1.5 text-rose-200/80 font-semibold border-t border-rose-500/20 pt-2">
+                <a href="#catalogSection" onclick="filterBySection('Gifts', 'Couples'); toggleMobileDrawer(false);" class="block py-1 hover:text-rose-300">• Couple Sets & Rings</a>
+                <a href="#catalogSection" onclick="filterBySection('Gifts', 'Romantic'); toggleMobileDrawer(false);" class="block py-1 hover:text-rose-300">• 100 Languages & Rose</a>
+                <a href="#catalogSection" onclick="filterBySection('Gifts', 'Gift Sets'); toggleMobileDrawer(false);" class="block py-1 hover:text-rose-300">• Luxury Gift Hampers</a>
+                <a href="#catalogSection" onclick="filterBySection('Gifts', 'Customized Lamps'); toggleMobileDrawer(false);" class="block py-1 hover:text-rose-300">• 3D Galaxy Crystal Lamps</a>
+                <a href="#catalogSection" onclick="filterBySection('Gifts', 'All'); toggleMobileDrawer(false);" class="block py-1 text-rose-400 font-bold">All Gifts &rarr;</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-stone-800 space-y-2 text-xs">
+          <button onclick="toggleMobileDrawer(false); openWishlistModal();" class="w-full py-2.5 px-3 rounded-xl bg-stone-900 border border-rose-500/30 text-rose-300 font-bold flex items-center justify-between">
+            <span><i class="fa-solid fa-heart mr-1.5"></i> Saved Wishlist</span>
+            <span id="mobDrawerWishCount" class="bg-rose-600 text-white px-2 py-0.5 rounded-full text-[10px]">0</span>
+          </button>
+          <button onclick="toggleMobileDrawer(false); openMyOrdersModal();" class="w-full py-2.5 px-3 rounded-xl bg-stone-900 border border-amber-500/30 text-amber-300 font-bold text-left">
+            <i class="fa-solid fa-truck-fast mr-1.5"></i> Track My Orders
+          </button>
+          <button onclick="toggleMobileDrawer(false); openSupportModal();" class="w-full py-2.5 px-3 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 font-bold text-left">
+            <i class="fa-solid fa-headset mr-1.5"></i> Help & Customer Support
+          </button>
+        </div>
+      </div>
+      <div class="flex-1" onclick="toggleMobileDrawer(false)"></div>
+    </div>
+
+    <!-- Hero Deal Banner Carousel -->
     <section class="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
       <div class="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-stone-900 border border-amber-500/30">
         <div id="carouselSlide" onclick="handleDealBannerClick()" class="cursor-pointer relative h-60 sm:h-80 md:h-[400px] w-full overflow-hidden group">
@@ -118,6 +222,7 @@
       </div>
     </section>
 
+    <!-- Trust Badges -->
     <section class="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div class="bg-stone-900/80 border border-amber-500/15 p-3.5 rounded-2xl flex items-center gap-3">
@@ -139,6 +244,7 @@
       </div>
     </section>
 
+    <!-- Main Catalog Section -->
     <main id="catalogSection" class="max-w-7xl mx-auto px-4 sm:px-6 py-12">
       <div class="flex flex-col gap-4 mb-8 pb-4 border-b border-amber-500/15">
         <div class="flex flex-wrap items-center justify-between gap-4">
@@ -154,12 +260,35 @@
             <button onclick="filterBySection('Gifts', 'All', this)" class="cat-btn bg-rose-950/60 hover:bg-rose-900/70 border border-rose-500/40 px-5 py-2 rounded-full text-xs font-bold text-rose-300">🎁 GF & BF Gifts</button>
           </div>
         </div>
+
+        <!-- Sort & Price Range Filter Controls -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-stone-900/75 border border-stone-800 p-3 rounded-2xl text-xs">
+          <div class="flex items-center gap-2 overflow-x-auto">
+            <span class="text-stone-400 font-bold whitespace-nowrap"><i class="fa-solid fa-filter text-amber-400 mr-1"></i> Price:</span>
+            <select id="priceRangeFilter" onchange="renderStore()" class="bg-stone-950 border border-stone-700 text-stone-200 rounded-xl px-3 py-1.5 font-semibold focus:outline-none focus:border-amber-500">
+              <option value="all">All Prices</option>
+              <option value="under500">Under ₹500</option>
+              <option value="500to1500">₹500 – ₹1,500</option>
+              <option value="above1500">Above ₹1,500</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-stone-400 font-bold whitespace-nowrap"><i class="fa-solid fa-arrow-up-wide-short text-amber-400 mr-1"></i> Sort By:</span>
+            <select id="sortProductsSelect" onchange="renderStore()" class="bg-stone-950 border border-stone-700 text-amber-300 rounded-xl px-3 py-1.5 font-bold focus:outline-none focus:border-amber-500">
+              <option value="newest">Newest First</option>
+              <option value="lowToHigh">Price: Low to High</option>
+              <option value="highToLow">Price: High to Low</option>
+            </select>
+          </div>
+        </div>
+
         <div id="subCategoryTabsBar" class="hidden flex items-center gap-2 overflow-x-auto pt-1 pb-1"></div>
       </div>
       <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
     </main>
   </div>
 
+  <!-- Quick View Modal (With WhatsApp Share + Related Products) -->
   <div id="quickViewModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto border border-amber-500/30">
       <button onclick="closeQuickView()" class="absolute top-5 right-5 text-stone-400 hover:text-amber-400 text-3xl font-bold">&times;</button>
@@ -171,7 +300,17 @@
           <div id="qvThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-2"></div>
         </div>
         <div class="space-y-4">
-          <span id="qvBadge" class="inline-block bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase">Badge</span>
+          <div class="flex items-center justify-between gap-2">
+            <span id="qvBadge" class="inline-block bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase">Badge</span>
+            <div class="flex items-center gap-2">
+              <button id="qvWishlistBtn" onclick="toggleWishlistFromQuickView()" class="px-3 py-1.5 rounded-full text-xs font-bold border border-rose-500/40 bg-rose-950/50 text-rose-300 hover:bg-rose-900 transition">
+                <i class="fa-regular fa-heart mr-1"></i> Save
+              </button>
+              <button onclick="shareCurrentProductWhatsApp()" class="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition flex items-center gap-1.5">
+                <i class="fa-brands fa-whatsapp text-sm"></i> Share
+              </button>
+            </div>
+          </div>
           <h3 id="qvTitle" class="font-cinzel text-2xl font-bold text-white">Product Title</h3>
           <div class="flex items-baseline gap-3">
             <span id="qvPrice" class="text-3xl font-black text-amber-400">₹0</span>
@@ -194,6 +333,7 @@
         </div>
       </div>
 
+      <!-- Customer Reviews Section -->
       <div class="mt-8 pt-6 border-t border-stone-800 space-y-4">
         <div class="flex justify-between items-center">
           <h4 class="font-cinzel font-bold text-lg text-amber-300"><i class="fa-solid fa-star text-amber-400 mr-1.5"></i>Customer Reviews & Ratings</h4>
@@ -216,9 +356,30 @@
         </form>
         <div id="qvReviewsList" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
       </div>
+
+      <!-- Related Products Section -->
+      <div id="qvRelatedSection" class="mt-8 pt-6 border-t border-stone-800 space-y-3 hidden">
+        <h4 class="font-cinzel font-bold text-base text-amber-300"><i class="fa-solid fa-sparkles text-amber-400 mr-1.5"></i>You May Also Like</h4>
+        <div id="qvRelatedGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+      </div>
     </div>
   </div>
 
+  <!-- Wishlist Modal -->
+  <div id="wishlistModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[88vh] overflow-y-auto border border-rose-500/30">
+      <div class="flex justify-between items-center border-b border-stone-800 pb-3">
+        <div>
+          <h4 class="font-cinzel font-bold text-xl text-rose-300"><i class="fa-solid fa-heart text-rose-500 mr-2"></i>My Saved Wishlist</h4>
+          <p class="text-[11px] text-stone-400">Your favorite luxury pieces saved for later</p>
+        </div>
+        <button onclick="closeWishlistModal()" class="text-stone-400 hover:text-white text-2xl font-bold">&times;</button>
+      </div>
+      <div id="wishlistItemsContainer" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- Cart Drawer -->
   <div id="cartDrawer" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden z-50 flex justify-end">
     <div class="bg-stone-900 text-stone-100 w-full max-w-md h-full flex flex-col p-6 shadow-2xl border-l border-amber-500/20">
       <div class="flex justify-between items-center pb-3 border-b border-stone-800">
@@ -247,6 +408,7 @@
     </div>
   </div>
 
+  <!-- 2-Step Checkout Modal -->
   <div id="checkoutModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto border border-amber-500/25">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
@@ -327,20 +489,22 @@
     </div>
   </div>
 
+  <!-- My Orders & Visual Timeline + Live Courier + PDF Invoice Modal -->
   <div id="myOrdersModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto text-xs border border-amber-500/25">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
-        <div><h4 class="font-cinzel font-bold text-xl text-amber-300">My Orders & Tracking</h4><p class="text-[11px] text-stone-400">Track shipment & download delivery slips</p></div>
+        <div><h4 class="font-cinzel font-bold text-xl text-amber-300">My Orders & Tracking</h4><p class="text-[11px] text-stone-400">Live status timeline, courier tracking & official PDF invoice</p></div>
         <button onclick="closeMyOrdersModal()" class="text-stone-400 hover:text-amber-400 text-2xl font-bold">&times;</button>
       </div>
       <div class="flex gap-2">
-        <input type="tel" id="myOrdersPhoneInput" placeholder="Enter your 10-digit mobile number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl font-mono text-xs">
+        <input type="tel" id="myOrdersPhoneInput" placeholder="Enter 10-digit mobile number or Order ID" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl font-mono text-xs">
         <button onclick="fetchMyOrders()" class="bg-amber-500 text-stone-950 px-5 py-2.5 rounded-xl font-extrabold whitespace-nowrap">Find Orders</button>
       </div>
       <div id="myOrdersListContainer" class="space-y-4 pt-2"><p class="text-center py-8 text-stone-500">Enter your phone number to check your purchases.</p></div>
     </div>
   </div>
 
+  <!-- Help & Customer Support Modal -->
   <div id="supportModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto text-xs border border-emerald-500/30">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
@@ -407,6 +571,7 @@
     </div>
   </div>
 
+  <!-- Footer -->
   <footer class="bg-black text-stone-400 pt-16 pb-8 border-t border-amber-500/20 mt-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-stone-900 text-xs">
       <div class="space-y-4">
@@ -433,9 +598,9 @@
         <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">CUSTOMER CONCIERGE</h4>
         <ul class="space-y-2 text-stone-400">
           <li><a href="#" onclick="openMyOrdersModal(); return false;" class="hover:text-amber-300 transition">My Orders & Tracking Desk</a></li>
+          <li><a href="#" onclick="openWishlistModal(); return false;" class="hover:text-rose-400 transition">My Saved Wishlist</a></li>
           <li><a href="#" onclick="openSupportModal(); return false;" class="hover:text-emerald-400 transition font-bold text-emerald-400">Help & Support Desk</a></li>
           <li><span class="text-stone-300 font-semibold"><i class="fa-solid fa-envelope mr-1.5 text-amber-500"></i> mahatosarita436@gmail.com</span></li>
-          <li><span class="text-stone-300 font-semibold"><i class="fa-solid fa-clock mr-1.5 text-amber-500"></i> 10:00 AM – 8:00 PM Support</span></li>
         </ul>
       </div>
 
@@ -465,6 +630,7 @@
 
     let allProducts = [], dealBanners = [], currentDealIndex = 0, dealSliderInterval = null;
     let activeMainSection = 'Home', activeSubCategory = 'All', cart = [], activeCoupons = [];
+    let wishlistIds = JSON.parse(localStorage.getItem('aura_wishlist') || '[]');
     let appliedDiscountRate = 0, appliedCouponCode = "", appliedCouponMinSpend = 0;
     let storeDeliveryCharge = 0, storeCodAdvancePct = 15, dealEndTimeMs = 0, isPincodeValid = false;
     let currentOpenedProduct = null, currentSelectedSize = "", currentSelectedColor = "";
@@ -475,6 +641,98 @@
       "Women": ["Jhumka", "Studs", "Kurtis", "Sarees", "Handbags", "Bangles"],
       "Gifts": ["Couples", "Romantic", "Gift Sets", "Customized Lamps"]
     };
+
+    // Mobile Drawer Controls
+    function toggleMobileDrawer(open) {
+      const drawer = document.getElementById('mobileMenuDrawer');
+      if (open) drawer.classList.remove('hidden');
+      else drawer.classList.add('hidden');
+    }
+
+    function toggleMobileSub(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('hidden');
+    }
+
+    function syncSearchInputs(val) {
+      const desk = document.getElementById('searchInput');
+      const mob = document.getElementById('mobileSearchInput');
+      if (desk && desk.value !== val) desk.value = val;
+      if (mob && mob.value !== val) mob.value = val;
+      renderStore();
+    }
+
+    // Wishlist Functions
+    function updateWishlistBadges() {
+      const count = wishlistIds.length;
+      const b1 = document.getElementById('wishlistCountBadge');
+      const b2 = document.getElementById('mobDrawerWishCount');
+      if (b1) b1.innerText = count;
+      if (b2) b2.innerText = count;
+    }
+
+    function toggleWishlist(prodId, event = null) {
+      if (event) event.stopPropagation();
+      const idx = wishlistIds.indexOf(prodId);
+      if (idx > -1) wishlistIds.splice(idx, 1);
+      else wishlistIds.push(prodId);
+      localStorage.setItem('aura_wishlist', JSON.stringify(wishlistIds));
+      updateWishlistBadges();
+      renderStore();
+      if (currentOpenedProduct && currentOpenedProduct.id === prodId) {
+        updateQuickViewWishlistBtn(prodId);
+      }
+    }
+
+    function toggleWishlistFromQuickView() {
+      if (!currentOpenedProduct) return;
+      toggleWishlist(currentOpenedProduct.id);
+    }
+
+    function updateQuickViewWishlistBtn(prodId) {
+      const btn = document.getElementById('qvWishlistBtn');
+      if (!btn) return;
+      const isSaved = wishlistIds.includes(prodId);
+      btn.innerHTML = isSaved ? `<i class="fa-solid fa-heart text-rose-500 mr-1"></i> Saved` : `<i class="fa-regular fa-heart mr-1"></i> Save`;
+    }
+
+    function openWishlistModal() {
+      const box = document.getElementById('wishlistItemsContainer');
+      const savedProducts = allProducts.filter(p => wishlistIds.includes(p.id));
+      if (!savedProducts.length) {
+        box.innerHTML = `<p class="text-center py-10 text-stone-500 text-xs">Your wishlist is empty. Tap the ❤️ icon on any design to save it here!</p>`;
+      } else {
+        box.innerHTML = savedProducts.map(p => `
+          <div class="flex items-center justify-between gap-3 bg-stone-950 border border-stone-800 p-3 rounded-2xl">
+            <div onclick="closeWishlistModal(); openQuickView(${p.id});" class="flex items-center gap-3 cursor-pointer flex-1">
+              <img src="${(p.images && p.images[0]) || ''}" class="w-14 h-14 rounded-xl object-cover border border-stone-700">
+              <div>
+                <h5 class="font-bold text-xs text-stone-100 line-clamp-1">${p.name}</h5>
+                <p class="text-[11px] text-amber-400 font-extrabold mt-0.5">₹${p.price} <span class="line-through text-stone-500 font-normal ml-1">₹${p.originalPrice}</span></p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="closeWishlistModal(); openQuickView(${p.id});" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-xl text-[11px] font-extrabold">Buy</button>
+              <button onclick="toggleWishlist(${p.id}); openWishlistModal();" class="text-rose-400 hover:text-rose-300 p-1.5 text-xs"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+        `).join('');
+      }
+      document.getElementById('wishlistModal').classList.remove('hidden');
+    }
+
+    function closeWishlistModal() {
+      document.getElementById('wishlistModal').classList.add('hidden');
+    }
+
+    // WhatsApp Product Share
+    function shareCurrentProductWhatsApp() {
+      if (!currentOpenedProduct) return;
+      const p = currentOpenedProduct;
+      const storeUrl = window.location.origin;
+      const text = `✨ *AURA Fine Store* ✨\nCheck out this luxury design:\n\n*${p.name}*\nPrice: *₹${p.price}* (MRP ₹${p.originalPrice})\n\nOrder here: ${storeUrl}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
 
     function setupDealCarousel() {
       if (!dealBanners.length) return;
@@ -539,6 +797,7 @@
           dealEndTimeMs = data.storeSettings.dealEndTime || 0;
           updateFlashTimerUI();
         }
+        updateWishlistBadges();
         renderStoreCoupons(); setupDealCarousel(); renderStore(); updateCartUI();
       } catch (e) {}
     }
@@ -581,28 +840,48 @@
       renderStore();
     }
 
-    function filterProducts() { renderStore(); }
-
     function renderStore() {
-      const search = (document.getElementById('searchInput').value || "").toLowerCase();
-      const filtered = allProducts.filter(p => {
-        if (search.length > 0) return p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search) || (p.category && p.category.toLowerCase().includes(search));
-        if (activeMainSection === 'Home') return p.showOnHome === true;
-        return p.mainCategory === activeMainSection && (activeSubCategory === 'All' || p.category === activeSubCategory);
+      const search = (document.getElementById('searchInput')?.value || document.getElementById('mobileSearchInput')?.value || "").toLowerCase();
+      const priceFilter = document.getElementById('priceRangeFilter')?.value || 'all';
+      const sortMode = document.getElementById('sortProductsSelect')?.value || 'newest';
+
+      let filtered = allProducts.filter(p => {
+        const matchesSearch = search.length > 0
+          ? (p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search) || (p.category && p.category.toLowerCase().includes(search)))
+          : (activeMainSection === 'Home' ? p.showOnHome === true : (p.mainCategory === activeMainSection && (activeSubCategory === 'All' || p.category === activeSubCategory)));
+
+        if (!matchesSearch) return false;
+
+        if (priceFilter === 'under500' && p.price >= 500) return false;
+        if (priceFilter === '500to1500' && (p.price < 500 || p.price > 1500)) return false;
+        if (priceFilter === 'above1500' && p.price <= 1500) return false;
+
+        return true;
       });
+
+      if (sortMode === 'lowToHigh') {
+        filtered = [...filtered].sort((a, b) => a.price - b.price);
+      } else if (sortMode === 'highToLow') {
+        filtered = [...filtered].sort((a, b) => b.price - a.price);
+      }
+
       document.getElementById('countDisplay').innerText = filtered.length;
       const grid = document.getElementById('productsGrid');
-      if (!filtered.length) { grid.innerHTML = `<div class="col-span-full py-20 text-center text-stone-500">No designs found in this section.</div>`; return; }
+      if (!filtered.length) { grid.innerHTML = `<div class="col-span-full py-20 text-center text-stone-500">No designs found matching your filter.</div>`; return; }
 
       grid.innerHTML = filtered.map(p => {
         const discountPct = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
         const isOut = p.inStock === false || p.stockQuantity <= 0;
         const mainImage = (p.images && p.images[0]) || "";
+        const isWished = wishlistIds.includes(p.id);
         return `
           <div class="rounded-3xl border border-amber-500/20 overflow-hidden shadow-lg lux-card flex flex-col justify-between group">
             <div onclick="openQuickView(${p.id})" class="relative overflow-hidden aspect-square bg-stone-950 cursor-pointer">
               <img src="${mainImage}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isOut ? 'opacity-40 grayscale' : ''}">
               <span class="absolute top-3.5 left-3.5 bg-stone-950/90 text-amber-300 text-[10px] font-extrabold uppercase px-3 py-1 rounded-full border border-amber-500/30">${isOut ? 'Sold Out' : p.badge}</span>
+              <button onclick="toggleWishlist(${p.id}, event)" title="Save to Wishlist" class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-stone-950/85 hover:bg-stone-900 border border-rose-500/30 flex items-center justify-center transition shadow">
+                <i class="${isWished ? 'fa-solid text-rose-500' : 'fa-regular text-stone-300'} fa-heart text-sm"></i>
+              </button>
               <span class="absolute bottom-3.5 right-3.5 bg-black/75 text-white text-[10px] font-bold px-2.5 py-1 rounded-full"><i class="fa-regular fa-images text-amber-400"></i> ${(p.images || []).length} Photos</span>
             </div>
             <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
@@ -630,6 +909,7 @@
       const prod = allProducts.find(p => p.id === id);
       if (!prod) return;
       currentOpenedProduct = prod;
+      updateQuickViewWishlistBtn(prod.id);
       const images = (prod.images && prod.images.length) ? prod.images : [""];
       document.getElementById('qvMainImage').src = images[0];
       document.getElementById('qvThumbnailsContainer').innerHTML = images.map((u, i) => `<img id="thumb_img_${i}" src="${u}" onclick="setMainImage('${u}', ${i})" class="w-14 h-14 object-cover rounded-xl border-2 ${i === 0 ? 'border-amber-400' : 'border-transparent'} cursor-pointer">`).join('');
@@ -653,7 +933,28 @@
       document.getElementById('qvAddToCartBtn').onclick = () => { addToCartWithVariant(prod); closeQuickView(); };
       document.getElementById('qvBuyNowBtn').onclick = () => { closeQuickView(); instantBuyNowWithVariant(prod); };
       renderProductReviews(prod);
+      renderRelatedProducts(prod);
       document.getElementById('quickViewModal').classList.remove('hidden');
+    }
+
+    function renderRelatedProducts(prod) {
+      const relSection = document.getElementById('qvRelatedSection');
+      const relGrid = document.getElementById('qvRelatedGrid');
+      const related = allProducts.filter(p => p.id !== prod.id && (p.category === prod.category || p.mainCategory === prod.mainCategory)).slice(0, 3);
+      if (!related.length) {
+        relSection.classList.add('hidden');
+        return;
+      }
+      relSection.classList.remove('hidden');
+      relGrid.innerHTML = related.map(r => `
+        <div onclick="openQuickView(${r.id})" class="cursor-pointer bg-stone-950 border border-stone-800 hover:border-amber-500/40 rounded-2xl p-2.5 flex items-center gap-2.5 transition">
+          <img src="${(r.images && r.images[0]) || ''}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0">
+          <div class="min-w-0">
+            <p class="text-[11px] font-bold text-stone-100 truncate">${r.name}</p>
+            <p class="text-xs font-black text-amber-400 mt-0.5">₹${r.price}</p>
+          </div>
+        </div>
+      `).join('');
     }
 
     function renderProductReviews(prod) {
@@ -832,21 +1133,66 @@
       });
       const data = await res.json();
       if (data.success) { alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}`); cart = []; updateCartUI(); closeCheckoutModal(); }
-      else alert("Failed to place order.");
+      else alert(data.message || "Failed to place order.");
       btn.disabled = false;
     }
 
     function openMyOrdersModal() { document.getElementById('myOrdersModal').classList.remove('hidden'); }
     function closeMyOrdersModal() { document.getElementById('myOrdersModal').classList.add('hidden'); }
 
+    function buildOrderTimelineHTML(status) {
+      if (status === 'Cancelled') {
+        return `<div class="bg-rose-950/60 border border-rose-500/40 text-rose-300 px-3 py-2 rounded-xl font-bold text-center">❌ Order Cancelled</div>`;
+      }
+      let step = 1;
+      if (status && status.includes('Packing')) step = 2;
+      if (status && status.includes('Shipped')) step = 3;
+      if (status === 'Delivered') step = 4;
+
+      const steps = [
+        { num: 1, label: 'Placed' },
+        { num: 2, label: 'Verified' },
+        { num: 3, label: 'Shipped' },
+        { num: 4, label: 'Delivered' }
+      ];
+
+      return `
+        <div class="grid grid-cols-4 gap-1.5 pt-1">
+          ${steps.map(s => `
+            <div class="text-center">
+              <div class="h-1.5 rounded-full mb-1 ${step >= s.num ? 'bg-emerald-400' : 'bg-stone-800'}"></div>
+              <span class="text-[10px] font-bold ${step >= s.num ? 'text-emerald-300' : 'text-stone-500'}">${s.label}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
     async function fetchMyOrders() {
       const phone = document.getElementById('myOrdersPhoneInput').value.trim();
-      if (!phone) return alert("Enter mobile number!");
+      if (!phone) return alert("Enter mobile number or Order ID!");
       const res = await fetch(`/api/orders/track?q=${encodeURIComponent(phone)}`);
       const data = await res.json();
       const box = document.getElementById('myOrdersListContainer');
       if (!data.orders || !data.orders.length) { box.innerHTML = `<p class="text-center py-6 text-rose-400 font-bold">No orders found!</p>`; return; }
-      box.innerHTML = data.orders.map(o => `<div class="border border-stone-800 bg-stone-950 p-4 rounded-2xl space-y-2"><div class="flex justify-between font-bold"><span class="text-amber-400 font-mono">#${o.id}</span><span class="text-emerald-300">${o.status}</span></div><p class="text-stone-400 text-[11px]">${o.date} • Total: ₹${o.total} (${o.paymentMethod})</p>${o.deliverySlipFile ? `<a href="${o.deliverySlipFile}" download="Slip_${o.id}" class="inline-block bg-emerald-600 text-white px-3 py-1 rounded-lg font-bold">Download Slip</a>` : ''}</div>`).join('');
+      box.innerHTML = data.orders.map(o => `
+        <div class="border border-stone-800 bg-stone-950 p-4 rounded-2xl space-y-3">
+          <div class="flex justify-between items-center font-bold">
+            <span class="text-amber-400 font-mono text-sm">#${o.id}</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] ${o.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${o.status}</span>
+          </div>
+          ${buildOrderTimelineHTML(o.status)}
+          <p class="text-stone-400 text-[11px]">${o.date} • Total: <b class="text-white">₹${o.total}</b> (${o.paymentMethod})</p>
+          ${o.awbNumber ? `<p class="text-[11px] text-cyan-300 font-mono">Courier: ${o.courierPartner || 'Delhivery'} | AWB: <b>${o.awbNumber}</b></p>` : ''}
+          <div class="flex flex-wrap gap-2 pt-1">
+            <a href="/api/orders/${o.id}/invoice" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px]">
+              <i class="fa-solid fa-file-pdf"></i> Download Invoice
+            </a>
+            ${o.awbNumber ? `<a href="https://www.delhivery.com/track/package/${encodeURIComponent(o.awbNumber)}" target="_blank" class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-location-dot"></i> Track Live Courier</a>` : ''}
+            ${o.deliverySlipFile ? `<a href="${o.deliverySlipFile}" download="Slip_${o.id}" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-download"></i> Delivery Slip</a>` : ''}
+          </div>
+        </div>
+      `).join('');
     }
 
     function openSupportModal() {
@@ -1022,6 +1368,7 @@
       }
     }
 
+    updateWishlistBadges();
     loadStore();
     setInterval(loadStore, 2000);
   </script>
