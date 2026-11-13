@@ -39,14 +39,20 @@
           <h1 class="text-2xl font-cinzel font-bold text-amber-400">AURA Fine Store Command</h1>
           <span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">● LIVE AUTO-SYNC</span>
         </div>
-        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Deal Timer Control, Meta Pixel, Low Stock Alerts, Reviews & Support</p>
+        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Abandoned Cart Recovery, Repeat Customers, Reviews & Support</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
+        <a href="#abandonedCartsSection" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-cart-arrow-down"></i> Incomplete (<span id="headerAbandonedBadge">0</span>)
+        </a>
+        <a href="#repeatCustomersSection" class="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-users"></i> Customers (<span id="headerCustomersBadge">0</span>)
+        </a>
         <a href="#reviewModerationSection" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
           <i class="fa-solid fa-star"></i> Reviews (<span id="headerReviewsBadge">0</span>)
         </a>
         <a href="#supportDeskSection" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
-          <i class="fa-solid fa-headset"></i> Support Desk (<span id="headerTicketsBadge">0</span>)
+          <i class="fa-solid fa-headset"></i> Support (<span id="headerTicketsBadge">0</span>)
         </a>
         <a href="/" target="_blank" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs border border-slate-700">View Store &rarr;</a>
         <button onclick="logout()" class="bg-rose-600/20 text-rose-400 hover:bg-rose-600/30 px-4 py-2 rounded-xl text-xs border border-rose-600/30 font-semibold">Logout</button>
@@ -95,6 +101,28 @@
         <p class="text-[11px] text-rose-300 font-semibold">Low Stock (&lt;3)</p>
         <p id="statLowStock" class="text-2xl font-bold text-rose-400 mt-1">0</p>
       </div>
+    </div>
+
+    <!-- Abandoned Cart Recovery (Incomplete Orders) -->
+    <div id="abandonedCartsSection" class="bg-slate-900 border border-rose-500/30 p-5 rounded-3xl space-y-4">
+      <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-rose-400"><i class="fa-solid fa-cart-arrow-down mr-1.5"></i> Abandoned Carts / Incomplete Orders (<span id="abandonedCountText">0</span>)</h3>
+          <p class="text-[11px] text-slate-400">Customers who entered address & phone but exited before UPI payment. Message them on WhatsApp to recover sales!</p>
+        </div>
+      </div>
+      <div id="adminAbandonedCartsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1"></div>
+    </div>
+
+    <!-- Repeat Buyer & Customer Database Section -->
+    <div id="repeatCustomersSection" class="bg-slate-900 border border-cyan-500/30 p-5 rounded-3xl space-y-4">
+      <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-cyan-400"><i class="fa-solid fa-users mr-1.5"></i> Customer Database & Repeat Buyers (<span id="totalCustomersCountText">0</span>)</h3>
+          <p class="text-[11px] text-slate-400">Sorted by total spending. Send VIP coupon offers directly via WhatsApp.</p>
+        </div>
+      </div>
+      <div id="adminRepeatCustomersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1"></div>
     </div>
 
     <!-- Store Controls, Meta Pixel, PIN & Coupons Section -->
@@ -373,12 +401,25 @@
       <div class="flex flex-wrap justify-between items-center gap-3">
         <div>
           <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-truck-fast mr-1"></i> Customer Orders & Logistics</h3>
-          <p class="text-[10px] text-emerald-400">New customer orders appear here automatically within 3 seconds without refresh.</p>
+          <p class="text-[10px] text-emerald-400">Cancelling an order automatically restores stock quantity.</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <input type="text" id="adminOrderSearch" oninput="renderAdminOrders()" placeholder="Search ID, Phone, UTR..." class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
+          <button onclick="exportOrdersCSV()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl font-bold shadow transition">
+            <i class="fa-solid fa-file-excel mr-1"></i> Export Excel (CSV)
+          </button>
           <button onclick="loadAdminDashboard(true)" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl border border-slate-700 font-semibold"><i class="fa-solid fa-rotate mr-1"></i> Refresh</button>
         </div>
+      </div>
+
+      <!-- Status Filter Tabs -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs" id="orderStatusFilterTabs">
+        <button onclick="setOrderStatusFilter('ALL', this)" class="ord-tab-btn bg-amber-500 text-slate-950 font-extrabold px-3.5 py-1.5 rounded-xl whitespace-nowrap">All Orders</button>
+        <button onclick="setOrderStatusFilter('Pending Verification', this)" class="ord-tab-btn bg-slate-800 text-slate-300 font-bold px-3.5 py-1.5 rounded-xl whitespace-nowrap">Pending Verify</button>
+        <button onclick="setOrderStatusFilter('Verified & Packing', this)" class="ord-tab-btn bg-slate-800 text-slate-300 font-bold px-3.5 py-1.5 rounded-xl whitespace-nowrap">Packing</button>
+        <button onclick="setOrderStatusFilter('Verified & Shipped', this)" class="ord-tab-btn bg-slate-800 text-slate-300 font-bold px-3.5 py-1.5 rounded-xl whitespace-nowrap">Shipped</button>
+        <button onclick="setOrderStatusFilter('Delivered', this)" class="ord-tab-btn bg-slate-800 text-slate-300 font-bold px-3.5 py-1.5 rounded-xl whitespace-nowrap">Delivered</button>
+        <button onclick="setOrderStatusFilter('Cancelled', this)" class="ord-tab-btn bg-slate-800 text-slate-300 font-bold px-3.5 py-1.5 rounded-xl whitespace-nowrap">Cancelled</button>
       </div>
 
       <div class="overflow-x-auto">
@@ -387,7 +428,7 @@
             <tr class="border-b border-slate-800 text-slate-400">
               <th class="p-3">Order & Date</th>
               <th class="p-3">Customer & Address</th>
-              <th class="p-3">Purchased Items</th>
+              <th class="p-3">Purchased Items & Gift Note</th>
               <th class="p-3">Payment & UTR</th>
               <th class="p-3">Logistics & Slip</th>
               <th class="p-3">Status, WhatsApp & Delete</th>
@@ -404,10 +445,12 @@
     let currentPin = sessionStorage.getItem('aura_admin_pin') || "";
     let cachedProducts = [];
     let cachedOrders = [];
+    let cachedAbandonedCarts = [];
     let cachedCoupons = [];
     let cachedBanners = [];
     let cachedSupportTickets = [];
     let currentFormImages = [];
+    let activeOrderStatusFilter = 'ALL';
     let adminLiveTimer = null;
     let adminDealEndMs = 0;
 
@@ -424,6 +467,36 @@
       subSelect.innerHTML = opts.map(o => `<option value="${o}">${o}</option>`).join('');
     }
     updateSubCategories();
+
+    function setOrderStatusFilter(status, btn) {
+      activeOrderStatusFilter = status;
+      document.querySelectorAll('.ord-tab-btn').forEach(b => {
+        b.className = "ord-tab-btn bg-slate-800 text-slate-300 font-bold px-3.5 py-1.5 rounded-xl whitespace-nowrap";
+      });
+      if (btn) btn.className = "ord-tab-btn bg-amber-500 text-slate-950 font-extrabold px-3.5 py-1.5 rounded-xl whitespace-nowrap";
+      renderAdminOrders();
+    }
+
+    function exportOrdersCSV() {
+      if (!cachedOrders.length) return alert("No orders to export!");
+      const headers = ["Order ID", "Date", "Customer Name", "Phone", "Address", "Pincode", "Items", "Gift Note", "Total (INR)", "Payment Mode", "UTR", "Status", "AWB"];
+      const rows = cachedOrders.map(o => {
+        const itemsStr = (o.items || []).map(i => `${i.name} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join(' | ');
+        return [
+          o.id, o.date, o.customerName, o.phone, o.address, o.pincode,
+          itemsStr, o.giftNote || "", o.total, o.paymentMethod, o.utrNumber, o.status, o.awbNumber || ""
+        ].map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(',');
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `AURA_Orders_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
 
     function updateAdminTimerBadge() {
       const badge = document.getElementById('adminDealTimerStatus');
@@ -553,7 +626,7 @@
         }
         loadAdminOrdersOnlySilently();
         loadAdminSupportTickets(false);
-      }, 3000);
+      }, 5000);
     }
 
     function logout() {
@@ -573,6 +646,96 @@
       txt.innerHTML = lowList.map(p => `<span class="inline-block bg-rose-900/90 border border-rose-500/40 px-2 py-0.5 rounded mr-1.5 mb-1"><b>${p.name}</b> (Only ${p.stockQuantity} left)</span>`).join('');
     }
 
+    function renderAbandonedCarts() {
+      const list = document.getElementById('adminAbandonedCartsList');
+      document.getElementById('headerAbandonedBadge').innerText = cachedAbandonedCarts.length;
+      document.getElementById('abandonedCountText').innerText = cachedAbandonedCarts.length;
+
+      if (!cachedAbandonedCarts.length) {
+        list.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No incomplete / abandoned carts right now.</p>`;
+        return;
+      }
+
+      list.innerHTML = cachedAbandonedCarts.map(c => {
+        const itemsSummary = (c.items || []).map(i => `${i.name} x${i.qty || 1}`).join(', ');
+        const waMsg = `✨ *AURA FINE STORE* ✨\nHello *${c.customerName}*,\nWe noticed you left items in your bag (${itemsSummary}) worth *₹${c.totalAmount}*.\n\nComplete your order now and enjoy *FREE UPI Delivery*! Reply here if you need any help.`;
+        return `
+          <div class="bg-slate-800/80 border border-rose-500/30 p-3.5 rounded-2xl text-xs space-y-2 flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="font-bold text-white">${c.customerName}</p>
+                  <p class="text-emerald-400 font-mono text-[11px]">+91 ${c.phone}</p>
+                </div>
+                <button onclick="deleteAbandonedCart('${c.phone}')" title="Dismiss" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+              </div>
+              <p class="text-amber-300 font-semibold mt-1 line-clamp-2">${itemsSummary}</p>
+              <p class="text-slate-400 text-[10px] mt-1">Bag Value: <b class="text-white">₹${c.totalAmount}</b> • ${c.updatedAtStr || ''}</p>
+            </div>
+            <a href="https://wa.me/91${c.phone}?text=${encodeURIComponent(waMsg)}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-xl font-bold text-center block shadow">
+              <i class="fa-brands fa-whatsapp mr-1"></i> Recover via WhatsApp
+            </a>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function deleteAbandonedCart(phone) {
+      if (!confirm("Remove this incomplete cart entry?")) return;
+      const res = await fetch(`/api/admin/abandoned-carts/${phone}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: currentPin })
+      });
+      const data = await res.json();
+      if (data.success) loadAdminDashboard(true);
+    }
+
+    function renderRepeatCustomers() {
+      const map = new Map();
+      cachedOrders.forEach(o => {
+        if (o.status === 'Cancelled') return;
+        const phone = String(o.phone || '').trim();
+        if (!phone) return;
+        if (!map.has(phone)) {
+          map.set(phone, { phone, name: o.customerName, ordersCount: 0, totalSpent: 0, lastCity: o.city || '' });
+        }
+        const entry = map.get(phone);
+        entry.ordersCount += 1;
+        entry.totalSpent += (o.total || 0);
+      });
+
+      const customers = Array.from(map.values()).sort((a, b) => b.totalSpent - a.totalSpent);
+      document.getElementById('headerCustomersBadge').innerText = customers.length;
+      document.getElementById('totalCustomersCountText').innerText = customers.length;
+
+      const list = document.getElementById('adminRepeatCustomersList');
+      if (!customers.length) {
+        list.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No confirmed customer history yet.</p>`;
+        return;
+      }
+
+      list.innerHTML = customers.map(c => {
+        const isRepeat = c.ordersCount > 1;
+        const vipMsg = `👑 *AURA FINE STORE VIP PRIVILEGE* 👑\nHello *${c.name}*,\nThank you for being a valued customer! Use code *AURA20* on your next order for an instant *20% VIP Discount* + Free Delivery.`;
+        return `
+          <div class="bg-slate-800/80 border ${isRepeat ? 'border-amber-500/40' : 'border-slate-700'} p-3.5 rounded-2xl text-xs flex flex-col justify-between space-y-2">
+            <div>
+              <div class="flex justify-between items-center">
+                <p class="font-bold text-white">${c.name}</p>
+                ${isRepeat ? `<span class="bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full">REPEAT BUYER (${c.ordersCount}x)</span>` : `<span class="bg-slate-700 text-slate-300 text-[9px] px-2 py-0.5 rounded-full">1 Order</span>`}
+              </div>
+              <p class="text-emerald-400 font-mono text-[11px] mt-0.5">+91 ${c.phone} ${c.lastCity ? `• ${c.lastCity}` : ''}</p>
+              <p class="text-slate-300 mt-1">Total Spent: <b class="text-amber-400 text-sm">₹${c.totalSpent}</b></p>
+            </div>
+            <a href="https://wa.me/91${c.phone}?text=${encodeURIComponent(vipMsg)}" target="_blank" class="w-full bg-cyan-600/30 hover:bg-cyan-600 text-cyan-200 hover:text-white border border-cyan-500/40 py-1.5 rounded-xl font-bold text-center block transition">
+              <i class="fa-brands fa-whatsapp mr-1"></i> Send VIP Offer
+            </a>
+          </div>
+        `;
+      }).join('');
+    }
+
     async function loadAdminOrdersOnlySilently() {
       try {
         const ordRes = await fetch('/api/admin/orders?t=' + Date.now(), {
@@ -582,10 +745,11 @@
         });
         const ordData = await ordRes.json();
         if (ordData.success) {
-          const newHash = JSON.stringify(ordData.orders);
+          const newHash = JSON.stringify({ o: ordData.orders, a: ordData.abandonedCarts });
           if (window._lastOrdersHash !== newHash) {
             window._lastOrdersHash = newHash;
             cachedOrders = ordData.orders || [];
+            cachedAbandonedCarts = ordData.abandonedCarts || [];
             document.getElementById('statTodayOrders').innerText = ordData.analytics.todayOrdersCount;
             document.getElementById('statTotalOrders').innerText = ordData.analytics.totalOrders;
             document.getElementById('statTotalSales').innerText = `₹${ordData.analytics.totalSales}`;
@@ -594,6 +758,8 @@
             document.getElementById('statPending').innerText = ordData.analytics.pendingOrders;
             document.getElementById('statLowStock').innerText = ordData.analytics.lowStockCount || 0;
             renderLowStockAlerts(ordData.lowStockProducts || []);
+            renderAbandonedCarts();
+            renderRepeatCustomers();
             renderAdminOrders();
           }
         }
@@ -612,7 +778,8 @@
 
         if (ordData.success) {
           cachedOrders = ordData.orders || [];
-          window._lastOrdersHash = JSON.stringify(cachedOrders);
+          cachedAbandonedCarts = ordData.abandonedCarts || [];
+          window._lastOrdersHash = JSON.stringify({ o: cachedOrders, a: cachedAbandonedCarts });
           cachedCoupons = ordData.coupons || [];
           
           document.getElementById('statTodayOrders').innerText = ordData.analytics.todayOrdersCount;
@@ -632,6 +799,8 @@
             updateAdminTimerBadge();
           }
 
+          renderAbandonedCarts();
+          renderRepeatCustomers();
           renderAdminCoupons();
           renderAdminOrders();
         }
@@ -690,9 +859,7 @@
           body: JSON.stringify({ pin: currentPin })
         });
         const data = await res.json();
-        if (data.success) {
-          loadAdminDashboard(true);
-        }
+        if (data.success) loadAdminDashboard(true);
       } catch (err) {
         alert("Failed to delete review.");
       }
@@ -802,9 +969,7 @@
           body: JSON.stringify({ pin: currentPin })
         });
         const data = await res.json();
-        if (data.success) {
-          loadAdminSupportTickets(true);
-        }
+        if (data.success) loadAdminSupportTickets(true);
       } catch (err) {
         alert("Failed to delete support ticket.");
       }
@@ -1183,16 +1348,18 @@
 
     function renderAdminOrders() {
       const q = (document.getElementById('adminOrderSearch').value || "").toLowerCase();
-      const filtered = cachedOrders.filter(o =>
-        o.id.toLowerCase().includes(q) ||
-        o.customerName.toLowerCase().includes(q) ||
-        o.phone.includes(q) ||
-        (o.utrNumber && o.utrNumber.toLowerCase().includes(q))
-      );
+      const filtered = cachedOrders.filter(o => {
+        const matchesTab = activeOrderStatusFilter === 'ALL' || o.status === activeOrderStatusFilter;
+        const matchesQuery = o.id.toLowerCase().includes(q) ||
+          o.customerName.toLowerCase().includes(q) ||
+          o.phone.includes(q) ||
+          (o.utrNumber && o.utrNumber.toLowerCase().includes(q));
+        return matchesTab && matchesQuery;
+      });
 
       const tbody = document.getElementById('ordersTableBody');
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">No orders found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">No orders found in this view.</td></tr>`;
         return;
       }
 
@@ -1203,6 +1370,10 @@
             <span class="block text-[10px] text-amber-400">Size: ${i.selectedSize || 'N/A'} | Color: ${i.selectedColor || 'N/A'}</span>
           </div>
         `).join('');
+
+        const giftNoteHtml = o.giftNote
+          ? `<div class="mt-1.5 bg-rose-950/70 border border-rose-500/40 p-2 rounded-lg text-[10px] text-rose-200"><i class="fa-solid fa-gift text-rose-400 mr-1"></i><b>Gift Note:</b> "${o.giftNote}"</div>`
+          : '';
 
         return `
           <tr class="hover:bg-slate-900/60 align-top">
@@ -1215,7 +1386,7 @@
               <p class="text-emerald-400 font-mono text-[11px]">+91 ${o.phone}</p>
               <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${o.address}</p>
             </td>
-            <td class="p-3 min-w-[180px]">${itemsText}</td>
+            <td class="p-3 min-w-[190px]">${itemsText}${giftNoteHtml}</td>
             <td class="p-3">
               <p class="font-bold text-emerald-400 text-sm">₹${o.total}</p>
               <p class="text-[10px] text-slate-400">COD Delivery Fee: ₹${o.deliveryCharge || 0}</p>
