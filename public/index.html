@@ -290,7 +290,20 @@
 
         <div id="subCategoryTabsBar" class="hidden flex items-center gap-2 overflow-x-auto pt-1 pb-1"></div>
       </div>
+
       <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+
+      <!-- Recently Viewed Products Section -->
+      <section id="recentlyViewedSection" class="hidden mt-16 pt-8 border-t border-amber-500/20 space-y-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="text-[10px] font-bold tracking-widest text-amber-400 uppercase">Your Browsing History</span>
+            <h4 class="font-cinzel font-bold text-xl text-amber-50">Recently Viewed Creations</h4>
+          </div>
+          <button onclick="clearRecentlyViewed()" class="text-[11px] text-stone-400 hover:text-rose-400 underline">Clear History</button>
+        </div>
+        <div id="recentlyViewedGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+      </section>
     </main>
   </div>
 
@@ -452,6 +465,13 @@
             <div><p class="font-bold text-amber-300" id="step2SummaryName"></p><p class="text-[10px] text-stone-400 truncate max-w-[260px]" id="step2SummaryAddr"></p></div>
             <button type="button" onclick="backToStep1Address()" class="text-[11px] text-amber-400 font-bold underline">Edit</button>
           </div>
+
+          <!-- Free Gift Wrapping & Custom Love Message -->
+          <div class="bg-rose-950/30 border border-rose-500/30 p-3 rounded-xl space-y-1.5">
+            <label class="block font-bold text-rose-300 text-[11px]"><i class="fa-solid fa-gift mr-1"></i> Add a Free Gift Note / Love Message (Optional):</label>
+            <input type="text" id="ordGiftNote" maxlength="120" placeholder="e.g. Happy Birthday My Love! From Rahul ❤️" class="w-full bg-stone-950 border border-rose-500/30 text-white rounded-lg px-2.5 py-2 text-xs">
+          </div>
+
           <div class="bg-stone-950 border border-stone-800 p-2.5 rounded-xl space-y-1.5">
             <label class="block font-bold text-amber-300 text-[11px]">Apply Coupon Code:</label>
             <div class="flex gap-2">
@@ -478,8 +498,14 @@
               <p class="font-bold text-amber-300 text-xs">COD Confirmation Token:</p>
               <p class="text-[11px] text-stone-300">Please pay <b id="codAdvanceDisplay" class="text-emerald-400">Advance (₹0)</b> now via UPI. Remaining <b id="codBalanceDisplay" class="text-amber-300">₹0</b> is payable in cash on delivery.</p>
             </div>
-            <p id="qrBoxTitle" class="text-xs text-amber-300 font-bold">Scan QR with GooglePay / PhonePe / Paytm</p>
+            <p id="qrBoxTitle" class="text-xs text-amber-300 font-bold">Scan QR or Tap Button to Pay via UPI</p>
             <div class="flex justify-center"><img id="dynamicQRCode" src="" alt="UPI QR" class="w-36 h-36 bg-white p-2 rounded-2xl border border-amber-400"></div>
+            
+            <!-- 1-Click Direct Mobile UPI App Payment Deep Link Button -->
+            <a id="directUpiAppBtn" href="#" class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-2.5 px-4 rounded-xl text-xs shadow-lg transition">
+              <i class="fa-solid fa-mobile-screen-button"></i> <span id="directUpiBtnLabel">Pay ₹0 via GPay / PhonePe / Paytm</span>
+            </a>
+
             <p class="text-[11px] text-stone-400">Merchant UPI: <span class="bg-stone-900 text-amber-300 px-2.5 py-0.5 rounded font-mono font-bold select-all">6289145092@ptsbi</span></p>
             <div class="text-left pt-1">
               <label class="block text-[11px] font-semibold text-stone-300 mb-1">Enter 12-Digit UPI Transaction ID (UTR) *</label>
@@ -657,11 +683,82 @@
     let allProducts = [], dealBanners = [], currentDealIndex = 0, dealSliderInterval = null;
     let activeMainSection = 'Home', activeSubCategory = 'All', cart = [], activeCoupons = [];
     let wishlistIds = JSON.parse(localStorage.getItem('aura_wishlist') || '[]');
+    let recentlyViewedIds = JSON.parse(localStorage.getItem('aura_recent_views') || '[]');
     let appliedDiscountRate = 0, appliedCouponCode = "", appliedCouponMinSpend = 0;
     let storeDeliveryCharge = 0, storeCodAdvancePct = 15, dealEndTimeMs = 0, isPincodeValid = false;
     let currentOpenedProduct = null, currentSelectedSize = "", currentSelectedColor = "";
     let supportMatchedOrders = [], selectedSupportOrder = null, supportPhotoFiles = [], supportVideoFile = null, supportLiveInterval = null;
     let initializedMetaPixelId = "";
+
+    // Save & Auto-Fill Customer Profile from localStorage
+    function saveCustomerProfileLocal() {
+      const profile = {
+        name: document.getElementById('ordName').value.trim(),
+        phone: document.getElementById('ordPhone').value.trim(),
+        pincode: document.getElementById('ordPincode').value.trim(),
+        city: document.getElementById('ordCity').value.trim(),
+        state: document.getElementById('ordState').value.trim(),
+        house: document.getElementById('addrHouseStreet').value.trim(),
+        village: document.getElementById('addrVillage').value.trim(),
+        po: document.getElementById('addrPostOffice').value.trim(),
+        ps: document.getElementById('addrPoliceStation').value.trim(),
+        landmark: document.getElementById('addrLandmark').value.trim()
+      };
+      localStorage.setItem('aura_customer_profile', JSON.stringify(profile));
+    }
+
+    function loadSavedCustomerProfile() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('aura_customer_profile') || 'null');
+        if (!saved) return;
+        if (saved.name) document.getElementById('ordName').value = saved.name;
+        if (saved.phone) document.getElementById('ordPhone').value = saved.phone;
+        if (saved.pincode) {
+          document.getElementById('ordPincode').value = saved.pincode;
+          if (saved.pincode.length === 6) isPincodeValid = true;
+        }
+        if (saved.city) document.getElementById('ordCity').value = saved.city;
+        if (saved.state) document.getElementById('ordState').value = saved.state;
+        if (saved.house) document.getElementById('addrHouseStreet').value = saved.house;
+        if (saved.village) document.getElementById('addrVillage').value = saved.village;
+        if (saved.po) document.getElementById('addrPostOffice').value = saved.po;
+        if (saved.ps) document.getElementById('addrPoliceStation').value = saved.ps;
+        if (saved.landmark) document.getElementById('addrLandmark').value = saved.landmark;
+      } catch (e) {}
+    }
+
+    // Track & Render Recently Viewed Products
+    function recordRecentlyViewed(prodId) {
+      recentlyViewedIds = [prodId, ...recentlyViewedIds.filter(id => id !== prodId)].slice(0, 4);
+      localStorage.setItem('aura_recent_views', JSON.stringify(recentlyViewedIds));
+      renderRecentlyViewed();
+    }
+
+    function clearRecentlyViewed() {
+      recentlyViewedIds = [];
+      localStorage.removeItem('aura_recent_views');
+      renderRecentlyViewed();
+    }
+
+    function renderRecentlyViewed() {
+      const sec = document.getElementById('recentlyViewedSection');
+      const grid = document.getElementById('recentlyViewedGrid');
+      const items = recentlyViewedIds.map(id => allProducts.find(p => p.id === id)).filter(Boolean);
+      if (!items.length) {
+        sec.classList.add('hidden');
+        return;
+      }
+      sec.classList.remove('hidden');
+      grid.innerHTML = items.map(p => `
+        <div onclick="openQuickView(${p.id})" class="cursor-pointer bg-stone-900/90 border border-stone-800 hover:border-amber-500/40 rounded-2xl p-3 flex items-center gap-3 transition">
+          <img src="${(p.images && p.images[0]) || ''}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0 border border-stone-700">
+          <div class="min-w-0">
+            <h5 class="text-xs font-bold text-stone-100 truncate">${p.name}</h5>
+            <p class="text-xs font-black text-amber-400 mt-0.5">₹${p.price} <span class="line-through text-stone-500 font-normal text-[10px]">₹${p.originalPrice}</span></p>
+          </div>
+        </div>
+      `).join('');
+    }
 
     function initMetaPixel(pixelId) {
       if (!pixelId || initializedMetaPixelId === pixelId) return;
@@ -889,7 +986,7 @@
           updateFlashTimerUI();
         }
         updateWishlistBadges();
-        renderStoreCoupons(); setupDealCarousel(); renderStore(); updateCartUI();
+        renderStoreCoupons(); setupDealCarousel(); renderStore(); renderRecentlyViewed(); updateCartUI();
       } catch (e) {}
     }
 
@@ -995,6 +1092,7 @@
       const prod = allProducts.find(p => p.id === id);
       if (!prod) return;
       currentOpenedProduct = prod;
+      recordRecentlyViewed(prod.id);
       trackMetaEvent('ViewContent', { content_name: prod.name, value: prod.price, currency: 'INR' });
       updateQuickViewWishlistBtn(prod.id);
       const images = (prod.images && prod.images.length) ? prod.images : [""];
@@ -1144,7 +1242,12 @@
       handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
     }
 
-    function openCheckoutModal() { toggleCart(); document.getElementById('checkoutModal').classList.remove('hidden'); backToStep1Address(); }
+    function openCheckoutModal() {
+      loadSavedCustomerProfile();
+      toggleCart();
+      document.getElementById('checkoutModal').classList.remove('hidden');
+      backToStep1Address();
+    }
     function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
 
     function goToStep2Payment() {
@@ -1153,6 +1256,18 @@
       if (!name || !phone || !pin || !city || !state || !house || !village || !po) return alert("Please fill all required address fields!");
       if (phone.length !== 10 || isNaN(phone)) return alert("Enter valid 10-digit mobile number!");
       if (!isPincodeValid) return alert("Enter valid 6-digit Indian Pincode!");
+
+      saveCustomerProfileLocal();
+
+      // Silently record Abandoned Cart in case user exits before paying
+      const fullAddr = `${house}, ${village}, P.O: ${po}, ${city}, ${state} - ${pin}`;
+      const { finalAmt } = calculateCartTotals('UPI');
+      fetch('/api/abandoned-cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerName: name, phone, address: fullAddr, items: cart, totalAmount: finalAmt })
+      }).catch(() => {});
+
       document.getElementById('checkoutStep1').classList.add('hidden'); document.getElementById('checkoutStep2').classList.remove('hidden');
       document.getElementById('checkoutStepIndicator').innerText = "Step 2 of 2: Payment & Offer Verification";
       document.getElementById('step2SummaryName').innerText = `${name} (${phone})`; document.getElementById('step2SummaryAddr').innerText = `${house}, ${village}, P.O: ${po}, ${city} - ${pin}`;
@@ -1189,20 +1304,25 @@
         document.getElementById('codNoticeBanner').classList.remove('hidden');
         document.getElementById('codAdvanceDisplay').innerText = `Advance Token: ₹${adv} (${storeCodAdvancePct}%)`;
         document.getElementById('codBalanceDisplay').innerText = `₹${finalAmt - adv}`;
-        document.getElementById('qrBoxTitle').innerText = `Scan to Pay ₹${adv} COD Advance Token`;
+        document.getElementById('qrBoxTitle').innerText = `Scan QR or Tap Button to Pay ₹${adv} Token`;
         document.getElementById('submitOrderBtn').innerText = `Pay ₹${adv} Advance & Place Order`;
       } else {
         document.getElementById('codNoticeBanner').classList.add('hidden');
-        document.getElementById('qrBoxTitle').innerText = `Scan to Pay 100% Prepaid (₹${finalAmt})`;
+        document.getElementById('qrBoxTitle').innerText = `Scan QR or Tap Button to Pay ₹${finalAmt}`;
         document.getElementById('submitOrderBtn').innerText = `Pay ₹${finalAmt} via UPI & Place Order`;
       }
-      document.getElementById('dynamicQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=${STORE_UPI_ID}&pn=AURA_STORE&am=${payAmt}&cu=INR`)}`;
+
+      const upiDeepLink = `upi://pay?pa=${STORE_UPI_ID}&pn=AURA_FINE_STORE&am=${payAmt}&cu=INR`;
+      document.getElementById('dynamicQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiDeepLink)}`;
+      document.getElementById('directUpiAppBtn').href = upiDeepLink;
+      document.getElementById('directUpiBtnLabel').innerText = `Pay ₹${payAmt} via GPay / PhonePe / Paytm`;
     }
 
     async function handlePlaceOrder(e) {
       e.preventDefault();
       const utr = document.getElementById('ordUTR').value.trim();
       if (!utr) return alert("Please enter 12-digit UTR!");
+      saveCustomerProfileLocal();
       const btn = document.getElementById('submitOrderBtn'); btn.innerText = "Placing Order..."; btn.disabled = true;
       const mode = document.getElementById('ordPaymentMethod').value;
       const { subTotal, discountAmt, finalAmt, deliveryCharge } = calculateCartTotals(mode);
@@ -1213,7 +1333,8 @@
           customerName: document.getElementById('ordName').value, phone: document.getElementById('ordPhone').value, pincode: document.getElementById('ordPincode').value,
           city: document.getElementById('ordCity').value, state: document.getElementById('ordState').value, houseNoStreet: document.getElementById('addrHouseStreet').value,
           villageOrCity: document.getElementById('addrVillage').value, postOffice: document.getElementById('addrPostOffice').value, policeStation: document.getElementById('addrPoliceStation').value,
-          landmark: document.getElementById('addrLandmark').value, items: [...cart], subTotal, discountApplied: discountAmt, deliveryCharge, couponCode: appliedCouponCode,
+          landmark: document.getElementById('addrLandmark').value, items: [...cart], giftNote: document.getElementById('ordGiftNote').value.trim(),
+          subTotal, discountApplied: discountAmt, deliveryCharge, couponCode: appliedCouponCode,
           total: finalAmt, paymentMethod: mode, advancePaid: adv, balanceDue: finalAmt - adv, utrNumber: utr
         })
       });
@@ -1226,7 +1347,15 @@
       btn.disabled = false;
     }
 
-    function openMyOrdersModal() { document.getElementById('myOrdersModal').classList.remove('hidden'); }
+    function openMyOrdersModal() {
+      document.getElementById('myOrdersModal').classList.remove('hidden');
+      const saved = JSON.parse(localStorage.getItem('aura_customer_profile') || 'null');
+      const inp = document.getElementById('myOrdersPhoneInput');
+      if (saved && saved.phone && !inp.value) {
+        inp.value = saved.phone;
+        fetchMyOrders();
+      }
+    }
     function closeMyOrdersModal() { document.getElementById('myOrdersModal').classList.add('hidden'); }
 
     function buildOrderTimelineHTML(status) {
@@ -1272,6 +1401,7 @@
           </div>
           ${buildOrderTimelineHTML(o.status)}
           <p class="text-stone-400 text-[11px]">${o.date} • Total: <b class="text-white">₹${o.total}</b> (${o.paymentMethod})</p>
+          ${o.giftNote ? `<p class="text-[11px] text-rose-300 italic"><i class="fa-solid fa-gift mr-1"></i>Gift Note: "${o.giftNote}"</p>` : ''}
           ${o.awbNumber ? `<p class="text-[11px] text-cyan-300 font-mono">Courier: ${o.courierPartner || 'Delhivery'} | AWB: <b>${o.awbNumber}</b></p>` : ''}
           <div class="flex flex-wrap gap-2 pt-1">
             <a href="/api/orders/${o.id}/invoice" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px]">
@@ -1286,6 +1416,12 @@
 
     function openSupportModal() {
       document.getElementById('supportModal').classList.remove('hidden'); backToSupportStep1();
+      const saved = JSON.parse(localStorage.getItem('aura_customer_profile') || 'null');
+      const inp = document.getElementById('supportPhoneInput');
+      if (saved && saved.phone && !inp.value) {
+        inp.value = saved.phone;
+        searchOrdersForSupport();
+      }
       if (supportLiveInterval) clearInterval(supportLiveInterval);
       supportLiveInterval = setInterval(() => {
         const p = (document.getElementById('supportPhoneInput').value || "").trim();
