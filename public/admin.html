@@ -14,6 +14,7 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
+  <!-- Admin Login Screen -->
   <div id="loginScreen" class="flex items-center justify-center min-h-screen p-4">
     <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-sm w-full space-y-5 shadow-2xl text-center">
       <div class="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mx-auto text-xl border border-amber-500/20">
@@ -23,12 +24,13 @@
         <h2 class="text-2xl font-cinzel font-bold text-amber-400">AURA Admin</h2>
         <p class="text-xs text-slate-400 mt-1">Executive Command Desk</p>
       </div>
-      <input type="password" id="adminPinInput" placeholder="Enter Admin PIN" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-center text-white tracking-widest font-mono focus:outline-none focus:border-amber-500">
+      <input type="password" id="adminPinInput" onkeydown="if(event.key==='Enter') attemptLogin()" placeholder="Enter Admin PIN" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-center text-white tracking-widest font-mono focus:outline-none focus:border-amber-500">
       <button onclick="attemptLogin()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 rounded-xl text-sm transition shadow-lg">Unlock Store Command</button>
-      <p id="loginError" class="text-xs text-rose-400 hidden">Incorrect PIN!</p>
+      <p id="loginError" class="text-xs text-rose-400 hidden font-semibold">Incorrect PIN!</p>
     </div>
   </div>
 
+  <!-- Main Admin Dashboard -->
   <div id="dashboardContent" class="hidden max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
     
     <header class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-800 pb-4">
@@ -37,9 +39,12 @@
           <h1 class="text-2xl font-cinzel font-bold text-amber-400">AURA Fine Store Command</h1>
           <span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">● LIVE AUTO-SYNC</span>
         </div>
-        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Deal Timer Control, Home Catalog & Customer Support</p>
+        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Deal Timer Control, Low Stock Alerts, Reviews & Customer Support</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
+        <a href="#reviewModerationSection" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-star"></i> Reviews (<span id="headerReviewsBadge">0</span>)
+        </a>
         <a href="#supportDeskSection" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
           <i class="fa-solid fa-headset"></i> Support Desk (<span id="headerTicketsBadge">0</span>)
         </a>
@@ -48,7 +53,20 @@
       </div>
     </header>
 
-    <div class="grid grid-cols-2 lg:grid-cols-6 gap-3">
+    <!-- Low Stock Alert Banner (Visible when stock < 3) -->
+    <div id="lowStockAlertBox" class="hidden bg-rose-950/70 border border-rose-500/50 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div class="flex items-center gap-3">
+        <span class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center text-sm animate-pulse"><i class="fa-solid fa-triangle-exclamation"></i></span>
+        <div>
+          <p class="font-bold text-rose-300 text-sm">Low Stock Warning!</p>
+          <p id="lowStockListText" class="text-rose-200/90 mt-0.5"></p>
+        </div>
+      </div>
+      <a href="#adminCatalogSection" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-1.5 rounded-xl font-bold">Restock Now &darr;</a>
+    </div>
+
+    <!-- Analytics Cards (7 Cards including Low Stock) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
       <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
         <p class="text-[11px] text-slate-400">Today's Orders</p>
         <p id="statTodayOrders" class="text-2xl font-bold text-amber-400 mt-1">0</p>
@@ -70,16 +88,22 @@
         <p id="statCodSales" class="text-xl font-bold text-purple-400 mt-1">₹0</p>
       </div>
       <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-        <p class="text-[11px] text-slate-400">Pending Verification</p>
+        <p class="text-[11px] text-slate-400">Pending Verify</p>
         <p id="statPending" class="text-2xl font-bold text-rose-400 mt-1">0</p>
+      </div>
+      <div class="bg-slate-900 border border-rose-500/30 p-4 rounded-2xl">
+        <p class="text-[11px] text-rose-300 font-semibold">Low Stock (&lt;3)</p>
+        <p id="statLowStock" class="text-2xl font-bold text-rose-400 mt-1">0</p>
       </div>
     </div>
 
+    <!-- Timer, Delivery, Security PIN & Coupons Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
-        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-stopwatch mr-1.5"></i> Flash Deal Timer & Delivery Control</h3>
+        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-sliders mr-1.5"></i> Store Controls & Security</h3>
         
         <div class="space-y-3 text-xs">
+          <!-- Flash Deal Timer -->
           <div class="bg-slate-800/90 p-3.5 rounded-2xl border border-amber-500/30 space-y-2.5">
             <div class="flex justify-between items-center">
               <label class="font-bold text-amber-300">Flash Deal Countdown Timer:</label>
@@ -98,11 +122,12 @@
             <div class="flex gap-2">
               <button type="button" onclick="setFlashDealTimer()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 py-2 rounded-xl font-extrabold transition shadow">Start Timer</button>
               <button type="button" onclick="deleteFlashDealTimer()" class="bg-rose-600/25 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 px-3 py-2 rounded-xl font-bold transition">
-                <i class="fa-solid fa-trash mr-1"></i> Delete Timer
+                <i class="fa-solid fa-trash mr-1"></i> Delete
               </button>
             </div>
           </div>
 
+          <!-- COD Delivery Charge -->
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2">
             <label class="block font-bold text-slate-200">COD Only Delivery Charge (₹):</label>
             <div class="flex gap-2">
@@ -111,6 +136,7 @@
             </div>
           </div>
 
+          <!-- COD Advance Token -->
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2">
             <label class="block font-bold text-slate-200">COD Advance Token (%):</label>
             <div class="flex gap-2">
@@ -118,9 +144,19 @@
               <button onclick="saveCodSettings()" class="bg-emerald-500 text-slate-950 px-3.5 py-2 rounded-xl font-bold hover:bg-emerald-400 transition whitespace-nowrap">Update %</button>
             </div>
           </div>
+
+          <!-- Change Admin Security PIN -->
+          <div class="bg-slate-800/80 p-3 rounded-2xl border border-rose-500/30 space-y-2">
+            <label class="block font-bold text-rose-300"><i class="fa-solid fa-key mr-1"></i> Change Admin Login PIN:</label>
+            <div class="flex gap-2">
+              <input type="password" id="newAdminPinInput" placeholder="New PIN (min 4 chars)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-mono">
+              <button onclick="changeAdminPin()" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-2 rounded-xl font-bold transition whitespace-nowrap">Update PIN</button>
+            </div>
+          </div>
         </div>
       </div>
 
+      <!-- Coupon Manager -->
       <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
         <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-ticket mr-1.5"></i> Discount Coupons & Offer Manager</h3>
         
@@ -142,10 +178,11 @@
           </div>
         </form>
 
-        <div id="adminCouponsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-44 overflow-y-auto pr-1"></div>
+        <div id="adminCouponsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1"></div>
       </div>
     </div>
 
+    <!-- Hero Deal Banners -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-2">
         <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-panorama mr-1.5"></i> Store Front Hero Deal Banners</h3>
@@ -181,7 +218,8 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Product Add/Edit & Store Catalog -->
+    <div id="adminCatalogSection" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
         <div class="flex justify-between items-center">
           <h3 id="productFormHeading" class="text-base font-bold text-amber-400"><i class="fa-solid fa-plus-circle mr-1"></i> Add New Product</h3>
@@ -289,6 +327,18 @@
       </div>
     </div>
 
+    <!-- Customer Review Moderation Section -->
+    <div id="reviewModerationSection" class="bg-slate-900 border border-amber-500/30 p-5 rounded-3xl space-y-4">
+      <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-star-half-stroke mr-1.5"></i> Customer Reviews Moderation (<span id="totalReviewsCountText">0</span>)</h3>
+          <p class="text-[11px] text-slate-400">View and delete unwanted or spam customer reviews from any product.</p>
+        </div>
+      </div>
+      <div id="adminReviewsModerationList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1"></div>
+    </div>
+
+    <!-- Customer Support & Reply Desk -->
     <div id="supportDeskSection" class="bg-slate-900 border-2 border-emerald-500/40 p-5 rounded-3xl space-y-4 shadow-2xl">
       <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-800 pb-3">
         <div>
@@ -308,6 +358,7 @@
       </div>
     </div>
 
+    <!-- Customer Orders & Logistics Table (With 1-Click WhatsApp Update Button) -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
         <div>
@@ -329,7 +380,7 @@
               <th class="p-3">Purchased Items</th>
               <th class="p-3">Payment & UTR</th>
               <th class="p-3">Logistics & Slip</th>
-              <th class="p-3">Status & Delete</th>
+              <th class="p-3">Status, WhatsApp & Delete</th>
             </tr>
           </thead>
           <tbody id="ordersTableBody" class="divide-y divide-slate-800"></tbody>
@@ -416,6 +467,27 @@
       }
     }
 
+    async function changeAdminPin() {
+      const newPin = (document.getElementById('newAdminPinInput').value || "").trim();
+      if (newPin.length < 4) return alert("New PIN must be at least 4 characters!");
+      if (!confirm("Are you sure you want to change your Admin Login PIN?")) return;
+
+      const res = await fetch('/api/admin/change-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPin, newPin })
+      });
+      const data = await res.json();
+      if (data.success) {
+        currentPin = newPin;
+        sessionStorage.setItem('aura_admin_pin', newPin);
+        document.getElementById('newAdminPinInput').value = "";
+        alert("✅ Admin PIN updated successfully!");
+      } else {
+        alert(data.message || "Failed to update PIN!");
+      }
+    }
+
     if (currentPin) verifyAndOpen(currentPin);
 
     async function attemptLogin() {
@@ -424,6 +496,7 @@
     }
 
     async function verifyAndOpen(pin) {
+      const errEl = document.getElementById('loginError');
       try {
         const res = await fetch('/api/admin/login', {
           method: 'POST',
@@ -434,13 +507,15 @@
         if (data.success) {
           currentPin = pin;
           sessionStorage.setItem('aura_admin_pin', pin);
+          errEl.classList.add('hidden');
           document.getElementById('loginScreen').classList.add('hidden');
           document.getElementById('dashboardContent').classList.remove('hidden');
           loadAdminDashboard(true);
           loadAdminSupportTickets(true);
           startAdminLiveSync();
         } else {
-          document.getElementById('loginError').classList.remove('hidden');
+          errEl.innerText = data.message || "Incorrect PIN!";
+          errEl.classList.remove('hidden');
         }
       } catch (e) { console.error(e); }
     }
@@ -464,6 +539,17 @@
       location.reload();
     }
 
+    function renderLowStockAlerts(lowList) {
+      const box = document.getElementById('lowStockAlertBox');
+      const txt = document.getElementById('lowStockListText');
+      if (!lowList || lowList.length === 0) {
+        box.classList.add('hidden');
+        return;
+      }
+      box.classList.remove('hidden');
+      txt.innerHTML = lowList.map(p => `<span class="inline-block bg-rose-900/90 border border-rose-500/40 px-2 py-0.5 rounded mr-1.5 mb-1"><b>${p.name}</b> (Only ${p.stockQuantity} left)</span>`).join('');
+    }
+
     async function loadAdminOrdersOnlySilently() {
       try {
         const ordRes = await fetch('/api/admin/orders?t=' + Date.now(), {
@@ -483,6 +569,8 @@
             document.getElementById('statOnlineSales').innerText = `₹${ordData.analytics.totalOnlineRevenue}`;
             document.getElementById('statCodSales').innerText = `₹${ordData.analytics.totalCodRevenue}`;
             document.getElementById('statPending').innerText = ordData.analytics.pendingOrders;
+            document.getElementById('statLowStock').innerText = ordData.analytics.lowStockCount || 0;
+            renderLowStockAlerts(ordData.lowStockProducts || []);
             renderAdminOrders();
           }
         }
@@ -510,6 +598,8 @@
           document.getElementById('statOnlineSales').innerText = `₹${ordData.analytics.totalOnlineRevenue}`;
           document.getElementById('statCodSales').innerText = `₹${ordData.analytics.totalCodRevenue}`;
           document.getElementById('statPending').innerText = ordData.analytics.pendingOrders;
+          document.getElementById('statLowStock').innerText = ordData.analytics.lowStockCount || 0;
+          renderLowStockAlerts(ordData.lowStockProducts || []);
 
           if (ordData.storeSettings) {
             document.getElementById('deliveryChargeInput').value = ordData.storeSettings.deliveryCharge || 0;
@@ -528,8 +618,61 @@
           renderAdminCatalog();
           renderAdminBanners();
           updateBannerProductDropdown();
+          renderAdminReviewsModeration();
         }
       } catch (err) { console.error("Dashboard load error", err); }
+    }
+
+    // Customer Reviews Moderation
+    function renderAdminReviewsModeration() {
+      const container = document.getElementById('adminReviewsModerationList');
+      const allRevs = [];
+      cachedProducts.forEach(p => {
+        (p.reviews || []).forEach(r => {
+          allRevs.push({ productId: p.id, productName: p.name, ...r });
+        });
+      });
+
+      document.getElementById('headerReviewsBadge').innerText = allRevs.length;
+      document.getElementById('totalReviewsCountText').innerText = allRevs.length;
+
+      if (!allRevs.length) {
+        container.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No customer reviews submitted yet.</p>`;
+        return;
+      }
+
+      container.innerHTML = allRevs.map(r => `
+        <div class="bg-slate-800/80 border border-slate-700 p-3 rounded-2xl space-y-1.5 text-xs flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-start gap-2">
+              <span class="font-bold text-amber-300 line-clamp-1">${r.productName}</span>
+              <button onclick="deleteCustomerReview(${r.productId}, '${r._id}')" title="Delete Review" class="text-rose-400 hover:text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded text-[10px] font-bold">
+                <i class="fa-solid fa-trash"></i> Delete
+              </button>
+            </div>
+            <p class="text-amber-400 text-[11px] mt-0.5">${'★'.repeat(r.rating || 5)} <span class="text-slate-400">by ${r.customerName}</span></p>
+            <p class="text-slate-200 mt-1">${r.comment}</p>
+          </div>
+          <p class="text-[10px] text-slate-500 pt-1">${r.date || ''}</p>
+        </div>
+      `).join('');
+    }
+
+    async function deleteCustomerReview(productId, reviewId) {
+      if (!confirm("Delete this customer review permanently?")) return;
+      try {
+        const res = await fetch(`/api/admin/products/${productId}/reviews/${reviewId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: currentPin })
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadAdminDashboard(true);
+        }
+      } catch (err) {
+        alert("Failed to delete review.");
+      }
     }
 
     async function loadAdminSupportTickets(force = false) {
@@ -977,13 +1120,14 @@
 
       document.getElementById('adminCatalogList').innerHTML = filtered.map(p => {
         const isHome = p.showOnHome === true;
+        const isLow = (p.stockQuantity || 0) < 3;
         return `
-          <div class="bg-slate-800/70 border border-slate-700 p-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="bg-slate-800/70 border ${isLow ? 'border-rose-500/60' : 'border-slate-700'} p-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
             <div class="flex items-center gap-3">
               <img src="${(p.images && p.images[0]) || ''}" class="w-12 h-12 rounded-xl object-cover border border-slate-600">
               <div>
-                <p class="font-bold text-white">${p.name}</p>
-                <p class="text-[11px] text-slate-400">${p.mainCategory} &rarr; ${p.category} | Photos: ${(p.images || []).length} | Stock: <b class="text-amber-400">${p.stockQuantity}</b></p>
+                <p class="font-bold text-white">${p.name} ${isLow ? '<span class="ml-1 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black">LOW STOCK</span>' : ''}</p>
+                <p class="text-[11px] text-slate-400">${p.mainCategory} &rarr; ${p.category} | Photos: ${(p.images || []).length} | Stock: <b class="${isLow ? 'text-rose-400' : 'text-amber-400'}">${p.stockQuantity}</b></p>
                 <p class="text-emerald-400 font-bold">₹${p.price} <span class="line-through text-slate-500 font-normal">₹${p.originalPrice}</span></p>
               </div>
             </div>
@@ -997,6 +1141,22 @@
           </div>
         `;
       }).join('');
+    }
+
+    // 1-Click WhatsApp Order Update Sender
+    function sendWhatsAppOrderUpdate(orderId) {
+      const o = cachedOrders.find(item => item.id === orderId);
+      if (!o) return;
+      const cleanPhone = String(o.phone || '').replace(/[^0-9]/g, '');
+      const fullPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+
+      const itemsSummary = (o.items || []).map(i => `• ${i.name} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join('\n');
+      const trackingLine = o.awbNumber
+        ? `\n🚚 *Courier:* ${o.courierPartner || 'Delhivery'}\n📦 *Tracking AWB:* ${o.awbNumber}\n🔗 *Track Here:* https://www.delhivery.com/track/package/${o.awbNumber}`
+        : '';
+
+      const message = `✨ *AURA FINE STORE* ✨\nHello *${o.customerName}*,\n\nYour order *#${o.id}* status is now: *${o.status}*\n\n🛍️ *Items:*\n${itemsSummary}\n\n💰 *Total Bill:* ₹${o.total} (${o.paymentMethod})${trackingLine}\n\nThank you for shopping with AURA Fine Store!`;
+      window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, '_blank');
     }
 
     function renderAdminOrders() {
@@ -1048,7 +1208,7 @@
                 <input type="file" accept="image/*,application/pdf" onchange="uploadDeliverySlip('${o.id}', this)" class="hidden">
               </label>
             </td>
-            <td class="p-3 space-y-2 min-w-[150px]">
+            <td class="p-3 space-y-2 min-w-[165px]">
               <select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1.5 text-[11px] text-white font-semibold">
                 <option value="Pending Verification" ${o.status === 'Pending Verification' ? 'selected' : ''}>Pending Verification</option>
                 <option value="Verified & Packing" ${o.status === 'Verified & Packing' ? 'selected' : ''}>Verified & Packing</option>
@@ -1056,6 +1216,9 @@
                 <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
                 <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
               </select>
+              <button onclick="sendWhatsAppOrderUpdate('${o.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5 shadow">
+                <i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp Update
+              </button>
               <button onclick="deleteCustomerOrder('${o.id}')" class="w-full bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1">
                 <i class="fa-solid fa-trash-can"></i> Delete Order
               </button>
