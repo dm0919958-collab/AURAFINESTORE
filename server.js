@@ -18,10 +18,9 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET || 'shG26-qHpVEzSUpokfs3-xDnkyk'
 });
 
-// Brute-force login protection tracker
 const loginAttempts = new Map();
 const MAX_LOGIN_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+const LOCKOUT_DURATION_MS = 5 * 60 * 1000;
 
 async function getActiveAdminPin() {
   try {
@@ -113,7 +112,8 @@ const settingsSchema = new mongoose.Schema({
   deliveryCharge: { type: Number, default: 0 },
   codAdvancePercent: { type: Number, default: 15 },
   dealEndTime: { type: Number, default: 0 },
-  adminPin: { type: String, default: DEFAULT_ADMIN_PIN }
+  adminPin: { type: String, default: DEFAULT_ADMIN_PIN },
+  metaPixelId: { type: String, default: "" }
 });
 
 const orderSchema = new mongoose.Schema({
@@ -552,7 +552,8 @@ async function seedInitialData() {
         deliveryCharge: 0,
         codAdvancePercent: 15,
         dealEndTime: 0,
-        adminPin: DEFAULT_ADMIN_PIN
+        adminPin: DEFAULT_ADMIN_PIN,
+        metaPixelId: ""
       });
     } else if (!existingSettings.adminPin) {
       existingSettings.adminPin = DEFAULT_ADMIN_PIN;
@@ -753,8 +754,13 @@ app.get('/api/store', async (req, res) => {
     ]);
 
     let activeSettings = settings
-      ? { deliveryCharge: settings.deliveryCharge, codAdvancePercent: settings.codAdvancePercent, dealEndTime: settings.dealEndTime }
-      : { deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0 };
+      ? {
+          deliveryCharge: settings.deliveryCharge,
+          codAdvancePercent: settings.codAdvancePercent,
+          dealEndTime: settings.dealEndTime,
+          metaPixelId: settings.metaPixelId || ""
+        }
+      : { deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0, metaPixelId: "" };
 
     if (activeSettings.dealEndTime && activeSettings.dealEndTime > 0 && Date.now() >= activeSettings.dealEndTime) {
       await Settings.findOneAndUpdate({ key: 'main' }, { dealEndTime: 0 });
@@ -772,7 +778,6 @@ app.get('/api/store', async (req, res) => {
   }
 });
 
-// Add Customer Review
 app.post('/api/products/:id/reviews', async (req, res) => {
   try {
     const { customerName, rating, comment } = req.body;
@@ -803,7 +808,6 @@ app.post('/api/products/:id/reviews', async (req, res) => {
   }
 });
 
-// Admin Review Moderation: Delete a Review
 app.delete('/api/admin/products/:id/reviews/:reviewId', async (req, res) => {
   try {
     const { pin } = req.body;
@@ -1100,13 +1104,14 @@ app.delete('/api/admin/coupons/:code', async (req, res) => {
 
 app.post('/api/admin/store-settings', async (req, res) => {
   try {
-    const { pin, deliveryCharge, codAdvancePercent, dealEndTime } = req.body;
+    const { pin, deliveryCharge, codAdvancePercent, dealEndTime, metaPixelId } = req.body;
     if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const updateFields = {};
     if (deliveryCharge !== undefined) updateFields.deliveryCharge = Number(deliveryCharge) || 0;
     if (codAdvancePercent !== undefined) updateFields.codAdvancePercent = Number(codAdvancePercent) || 15;
     if (dealEndTime !== undefined) updateFields.dealEndTime = Number(dealEndTime) || 0;
+    if (metaPixelId !== undefined) updateFields.metaPixelId = String(metaPixelId || "").trim();
 
     const storeSettings = await Settings.findOneAndUpdate(
       { key: 'main' },
@@ -1120,7 +1125,6 @@ app.post('/api/admin/store-settings', async (req, res) => {
   }
 });
 
-// Change Admin PIN Endpoint
 app.post('/api/admin/change-pin', async (req, res) => {
   try {
     const { currentPin, newPin } = req.body;
@@ -1138,7 +1142,6 @@ app.post('/api/admin/change-pin', async (req, res) => {
   }
 });
 
-// Place Order with Duplicate UTR Validation
 app.post('/api/orders', async (req, res) => {
   try {
     const { 
@@ -1153,7 +1156,6 @@ app.post('/api/orders', async (req, res) => {
       return res.status(400).json({ success: false, message: "Please enter a valid 12-digit UPI UTR number!" });
     }
 
-    // Check Duplicate UTR
     const existingUtrOrder = await Order.findOne({ utrNumber: cleanUtr }).lean();
     if (existingUtrOrder) {
       return res.status(400).json({
@@ -1215,7 +1217,6 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
-// Download Customer Tax Invoice PDF
 app.get('/api/orders/:id/invoice', async (req, res) => {
   try {
     const orderId = req.params.id;
@@ -1245,7 +1246,6 @@ app.get('/api/orders/track', async (req, res) => {
   }
 });
 
-// Admin Login with Lockout Security
 app.post('/api/admin/login', async (req, res) => {
   const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
   const record = loginAttempts.get(clientIp);
@@ -1293,8 +1293,13 @@ app.post('/api/admin/orders', async (req, res) => {
     ]);
 
     let activeSettings = settings
-      ? { deliveryCharge: settings.deliveryCharge, codAdvancePercent: settings.codAdvancePercent, dealEndTime: settings.dealEndTime }
-      : { deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0 };
+      ? {
+          deliveryCharge: settings.deliveryCharge,
+          codAdvancePercent: settings.codAdvancePercent,
+          dealEndTime: settings.dealEndTime,
+          metaPixelId: settings.metaPixelId || ""
+        }
+      : { deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0, metaPixelId: "" };
 
     if (activeSettings.dealEndTime && activeSettings.dealEndTime > 0 && Date.now() >= activeSettings.dealEndTime) {
       await Settings.findOneAndUpdate({ key: 'main' }, { dealEndTime: 0 });
