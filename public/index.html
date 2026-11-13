@@ -577,7 +577,7 @@
     </div>
   </div>
 
-  <!-- Legal Policy Popup Modal (For Meta Ads Compliance) -->
+  <!-- Legal Policy Popup Modal -->
   <div id="legalPolicyModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-4 shadow-2xl max-h-[88vh] overflow-y-auto border border-amber-500/30">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
@@ -653,8 +653,6 @@
 
   <script>
     const STORE_UPI_ID = "6289145092@ptsbi";
-    const SUPPORT_BOT_TOKEN = "9025873079:AAFiDAk_5FOGpNGRvjBtuVhwFHyfnn6pX1I";
-    const SUPPORT_CHAT_ID = "8836538477";
 
     let allProducts = [], dealBanners = [], currentDealIndex = 0, dealSliderInterval = null;
     let activeMainSection = 'Home', activeSubCategory = 'All', cart = [], activeCoupons = [];
@@ -665,7 +663,6 @@
     let supportMatchedOrders = [], selectedSupportOrder = null, supportPhotoFiles = [], supportVideoFile = null, supportLiveInterval = null;
     let initializedMetaPixelId = "";
 
-    // Meta Pixel Dynamic Loader & Event Tracker
     function initMetaPixel(pixelId) {
       if (!pixelId || initializedMetaPixelId === pixelId) return;
       initializedMetaPixelId = pixelId;
@@ -687,7 +684,6 @@
       }
     }
 
-    // Legal Policy Modals Content
     const legalPoliciesData = {
       privacy: {
         title: "Privacy Policy — AURA Fine Store",
@@ -1402,57 +1398,36 @@
 
       btn.innerText = "Uploading..."; btn.disabled = true;
       progBox.classList.remove('hidden');
-      progBar.style.width = "5%"; progPercent.innerText = "5%";
-      progLabel.innerText = "Sending complaint details...";
+      progBar.style.width = "10%"; progPercent.innerText = "10%";
+      progLabel.innerText = "Sending complaint & media securely...";
 
       const issueText = document.getElementById('supportIssueText').value.trim();
 
       try {
-        const itemsListText = (selectedSupportOrder.items || []).map((item, idx) => `${idx + 1}. ${item.name} (${item.selectedSize || 'Std'}, ${item.selectedColor || 'Std'}) x${item.qty || 1}`).join('\n');
-        const msg = `🚨 <b>NEW SUPPORT COMPLAINT</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>Order ID:</b> <code>#${selectedSupportOrder.id}</code>\n👤 <b>Customer:</b> ${selectedSupportOrder.customerName}\n📞 <b>Mobile:</b> <code>+91 ${selectedSupportOrder.phone}</code>\n📍 <b>Address:</b> ${selectedSupportOrder.address}\n💰 <b>Bill:</b> ₹${selectedSupportOrder.total} (${selectedSupportOrder.paymentMethod})\n🛍️ <b>Items:</b>\n${itemsListText}\n━━━━━━━━━━━━━━━━━━━━\n⚠️ <b>PROBLEM:</b>\n<i>"${issueText}"</i>`;
+        const formData = new FormData();
+        formData.append('orderId', selectedSupportOrder.id);
+        formData.append('issueText', issueText);
+        supportPhotoFiles.forEach(file => formData.append('photos', file));
+        if (supportVideoFile) formData.append('video', supportVideoFile);
 
-        await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendMessage`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: SUPPORT_CHAT_ID, text: msg, parse_mode: 'HTML' })
+        const rawResp = await uploadFormDataWithProgress('/api/support/ticket', formData, (pct) => {
+          progBar.style.width = `${pct}%`;
+          progPercent.innerText = `${pct}%`;
+          progLabel.innerText = pct < 100 ? `Uploading files (${pct}%)...` : "Forwarding to support desk...";
         });
 
-        for (let i = 0; i < supportPhotoFiles.length; i++) {
-          progLabel.innerText = `Uploading Photo ${i + 1} of ${supportPhotoFiles.length}...`;
-          const pf = new FormData();
-          pf.append('chat_id', SUPPORT_CHAT_ID);
-          pf.append('caption', `📸 Photo ${i + 1} | Order #${selectedSupportOrder.id} (${selectedSupportOrder.customerName})`);
-          pf.append('photo', supportPhotoFiles[i]);
-          await uploadFormDataWithProgress(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`, pf, (pct) => {
-            progBar.style.width = `${pct}%`; progPercent.innerText = `${pct}%`;
-          });
-        }
-
-        if (supportVideoFile) {
-          const totalMB = (supportVideoFile.size / (1024 * 1024)).toFixed(1);
-          const vf = new FormData();
-          vf.append('chat_id', SUPPORT_CHAT_ID);
-          vf.append('caption', `🎥 Video Proof | Order #${selectedSupportOrder.id} (${selectedSupportOrder.customerName})`);
-          vf.append('document', supportVideoFile);
-          await uploadFormDataWithProgress(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendDocument`, vf, (pct, loaded) => {
-            const loadedMB = (loaded / (1024 * 1024)).toFixed(1);
-            progLabel.innerText = `Uploading Video (${loadedMB} MB / ${totalMB} MB)...`;
-            progBar.style.width = `${pct}%`; progPercent.innerText = `${pct}%`;
-          });
-        }
-
-        progLabel.innerText = "Finalizing ticket...";
-        progBar.style.width = "100%"; progPercent.innerText = "100%";
-
-        const res = await fetch('/api/support/ticket', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId: selectedSupportOrder.id, issueText })
-        });
-        const data = await res.json();
+        const data = JSON.parse(rawResp);
         if (data.success) {
           alert(`✅ Support request submitted!\nTicket ID: ${data.ticketId}`);
-          document.getElementById('supportIssueText').value = ""; supportPhotoFiles = []; renderSupportPhotosPreview(); clearSupportVideo();
-          backToSupportStep1(); searchOrdersForSupport();
-        } else alert("Failed to save ticket.");
+          document.getElementById('supportIssueText').value = "";
+          supportPhotoFiles = [];
+          renderSupportPhotosPreview();
+          clearSupportVideo();
+          backToSupportStep1();
+          searchOrdersForSupport();
+        } else {
+          alert(data.message || "Failed to submit ticket.");
+        }
       } catch (err) {
         alert("Network error while uploading. Please try again.");
       } finally {
@@ -1463,7 +1438,7 @@
 
     updateWishlistBadges();
     loadStore();
-    setInterval(loadStore, 2000);
+    setInterval(loadStore, 45000);
   </script>
 </body>
 </html>
