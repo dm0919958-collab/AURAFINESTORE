@@ -5,6 +5,8 @@ const PDFDocument = require('pdfkit');
 const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
+const axios = require('axios');
+const FormDataNode = require('form-data');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -736,33 +738,34 @@ async function sendTelegramAlert(order) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const pdfBuffer = await generateOrderInvoicePDF(order);
-      const formData = new FormData();
+      const formData = new FormDataNode();
       formData.append('chat_id', TELEGRAM_CHAT_ID);
       formData.append('caption', captionText);
       formData.append('parse_mode', 'HTML');
-
-      const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
-      formData.append('document', blob, `Invoice_${order.id}.pdf`);
-
-      const resp = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, {
-        method: 'POST',
-        body: formData
+      formData.append('document', pdfBuffer, {
+        filename: `Invoice_${order.id}.pdf`,
+        contentType: 'application/pdf'
       });
-      const result = await resp.json();
-      if (result && result.ok) {
+
+      const resp = await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, formData, {
+        headers: formData.getHeaders()
+      });
+      if (resp.data && resp.data.ok) {
         console.log(`✅ Telegram Invoice sent for #${order.id}`);
         return;
       }
-      console.error(`Telegram attempt ${attempt} failed:`, result);
     } catch (err) {
-      console.error(`Telegram attempt ${attempt} error:`, err.message);
+      console.error(`Telegram attempt ${attempt} error:`, err.response ? err.response.data : err.message);
     }
     await new Promise(r => setTimeout(r, 1500));
   }
 }
 
 async function forwardSupportToTelegram(order, issueText, files) {
-  if (!SUPPORT_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+  if (!SUPPORT_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    console.error('❌ Missing SUPPORT_BOT_TOKEN or TELEGRAM_CHAT_ID!');
+    return;
+  }
   try {
     const itemsListText = (order.items || [])
       .map((item, idx) => `${idx + 1}. ${item.name} (${item.selectedSize || 'Std'}, ${item.selectedColor || 'Std'}) x${item.qty || 1}`)
@@ -770,33 +773,49 @@ async function forwardSupportToTelegram(order, issueText, files) {
 
     const msg = `🚨 <b>NEW SUPPORT COMPLAINT</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>Order ID:</b> <code>#${order.id}</code>\n👤 <b>Customer:</b> ${order.customerName}\n📞 <b>Mobile:</b> <code>+91 ${order.phone}</code>\n📍 <b>Address:</b> ${order.address}\n💰 <b>Bill:</b> ₹${order.total} (${order.paymentMethod})\n🛍️ <b>Items:</b>\n${itemsListText}\n━━━━━━━━━━━━━━━━━━━━\n⚠️ <b>PROBLEM:</b>\n<i>"${issueText}"</i>`;
 
-    await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg, parse_mode: 'HTML' })
+    await axios.post(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendMessage`, {
+      chat_id: TELEGRAM_CHAT_ID,
+      text: msg,
+      parse_mode: 'HTML'
     });
 
-    if (files && files.photos) {
+    // Direct RAM-to-Telegram Photo Upload (Zero Storage Used)
+    if (files && files.photos && files.photos.length > 0) {
       for (let i = 0; i < files.photos.length; i++) {
         const f = files.photos[i];
-        const pf = new FormData();
+        const pf = new FormDataNode();
         pf.append('chat_id', TELEGRAM_CHAT_ID);
         pf.append('caption', `📸 Photo ${i + 1} | Order #${order.id} (${order.customerName})`);
-        pf.append('photo', new Blob([f.buffer], { type: f.mimetype }), f.originalname || `photo_${i + 1}.jpg`);
-        await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`, { method: 'POST', body: pf });
+        pf.append('photo', f.buffer, {
+          filename: f.originalname || `photo_${i + 1}.jpg`,
+          contentType: f.mimetype || 'image/jpeg'
+        });
+        await axios.post(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`, pf, {
+          headers: pf.getHeaders(),
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity
+        });
       }
     }
 
+    // Direct RAM-to-Telegram Video Upload (Zero Storage Used)
     if (files && files.video && files.video[0]) {
       const v = files.video[0];
-      const vf = new FormData();
+      const vf = new FormDataNode();
       vf.append('chat_id', TELEGRAM_CHAT_ID);
       vf.append('caption', `🎥 Video Proof | Order #${order.id} (${order.customerName})`);
-      vf.append('document', new Blob([v.buffer], { type: v.mimetype }), v.originalname || 'proof_video.mp4');
-      await fetch(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendDocument`, { method: 'POST', body: vf });
+      vf.append('document', v.buffer, {
+        filename: v.originalname || 'proof_video.mp4',
+        contentType: v.mimetype || 'video/mp4'
+      });
+      await axios.post(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendDocument`, vf, {
+        headers: vf.getHeaders(),
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity
+      });
     }
   } catch (err) {
-    console.error('Support Telegram forward error:', err.message);
+    console.error('❌ Direct Telegram Forward Error:', err.response ? err.response.data : err.message);
   }
 }
 
@@ -846,7 +865,6 @@ app.get('/api/store', async (req, res) => {
   }
 });
 
-// Save Abandoned / Incomplete Cart when user fills Step 1 Address
 app.post('/api/abandoned-cart', async (req, res) => {
   try {
     const { customerName, phone, address, items, totalAmount } = req.body;
@@ -981,9 +999,9 @@ app.post('/api/support/ticket', uploadMemory.fields([{ name: 'photos', maxCount:
       createdAtStr: nowStr
     });
 
-    await forwardSupportToTelegram(order, (issueText || "").trim(), req.files);
-
     res.json({ success: true, ticketId });
+
+    forwardSupportToTelegram(order, (issueText || "").trim(), req.files);
   } catch (err) {
     console.error("Support ticket save error:", err.message);
     res.status(500).json({ success: false, message: "Failed to submit support issue." });
@@ -1309,7 +1327,6 @@ app.post('/api/orders', async (req, res) => {
       orderDateRaw: todayStr
     });
 
-    // Remove from Abandoned Cart once confirmed
     await AbandonedCart.deleteOne({ phone: cleanPhone }).catch(() => {});
 
     res.json({ success: true, orderId: order.id });
@@ -1466,7 +1483,6 @@ app.delete('/api/admin/orders/:id', async (req, res) => {
   }
 });
 
-// Auto Stock Restore when Cancelled & Deduct again if Un-cancelled
 app.patch('/api/admin/orders/:id/status', async (req, res) => {
   try {
     const { pin, status } = req.body;
