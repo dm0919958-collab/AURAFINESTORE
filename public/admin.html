@@ -39,20 +39,20 @@
           <h1 class="text-2xl font-cinzel font-bold text-amber-400">AURA Fine Store Command</h1>
           <span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">● JWT SECURED</span>
         </div>
-        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Net Profit, Max COD Limit, Free Gift Rules & Stock Waitlist</p>
+        <p class="text-xs text-slate-400 mt-0.5">Categories, Timed Coupons, AURA Coins Wallet, Net Profit & 4x6 Labels</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
+        <a href="#categoryManagerSection" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-layer-group"></i> Categories (<span id="headerCatBadge">0</span>)
+        </a>
         <a href="#stockWaitlistSection" class="bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
-          <i class="fa-solid fa-bell"></i> Notify Waitlist (<span id="headerWaitlistBadge">0</span>)
+          <i class="fa-solid fa-bell"></i> Waitlist (<span id="headerWaitlistBadge">0</span>)
         </a>
         <a href="#abandonedCartsSection" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
           <i class="fa-solid fa-cart-arrow-down"></i> Incomplete (<span id="headerAbandonedBadge">0</span>)
         </a>
         <a href="#repeatCustomersSection" class="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
           <i class="fa-solid fa-users"></i> Customers (<span id="headerCustomersBadge">0</span>)
-        </a>
-        <a href="#reviewModerationSection" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
-          <i class="fa-solid fa-star"></i> Reviews (<span id="headerReviewsBadge">0</span>)
         </a>
         <a href="#supportDeskSection" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
           <i class="fa-solid fa-headset"></i> Support (<span id="headerTicketsBadge">0</span>)
@@ -74,7 +74,7 @@
       <a href="#adminCatalogSection" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-1.5 rounded-xl font-bold">Restock Now &darr;</a>
     </div>
 
-    <!-- Analytics Cards (Includes Net Profit) -->
+    <!-- Analytics Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
       <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl">
         <p class="text-[11px] text-slate-400">Today's Orders</p>
@@ -110,6 +110,42 @@
       </div>
     </div>
 
+    <!-- DYNAMIC CATEGORY & SUB-CATEGORY MANAGER (WITH CASCADE DELETE) -->
+    <div id="categoryManagerSection" class="bg-slate-900 border-2 border-amber-500/35 p-5 rounded-3xl space-y-4 shadow-xl">
+      <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-layer-group mr-1.5"></i> Dynamic Category & Sub-Category Manager</h3>
+          <p class="text-[11px] text-slate-400">Add new categories/sub-categories here—they automatically appear on the Storefront & Product Upload Form. <span class="text-rose-400 font-bold">Warning: Deleting a category/sub-category deletes all products inside it!</span></p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <!-- Add Main Category -->
+        <form onsubmit="handleAddMainCategory(event)" class="bg-slate-800/70 border border-slate-700 p-3.5 rounded-2xl flex items-end gap-2">
+          <div class="flex-1">
+            <label class="block text-[11px] font-bold text-amber-300 mb-1">New Main Category Name *</label>
+            <input type="text" id="newMainCatInput" required placeholder="e.g. Electronics, Kids, Home Decor" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-semibold">
+          </div>
+          <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl whitespace-nowrap shadow">+ Add Category</button>
+        </form>
+
+        <!-- Add Sub-Category -->
+        <form onsubmit="handleAddSubCategory(event)" class="bg-slate-800/70 border border-slate-700 p-3.5 rounded-2xl flex items-end gap-2">
+          <div class="w-40">
+            <label class="block text-[11px] font-bold text-cyan-300 mb-1">Main Category *</label>
+            <select id="targetMainCatSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-semibold"></select>
+          </div>
+          <div class="flex-1">
+            <label class="block text-[11px] font-bold text-cyan-300 mb-1">New Sub-Category *</label>
+            <input type="text" id="newSubCatInput" required placeholder="e.g. Smartwatches, Rings" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-semibold">
+          </div>
+          <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl whitespace-nowrap shadow">+ Add Sub</button>
+        </form>
+      </div>
+
+      <div id="adminCategoriesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+    </div>
+
     <!-- Out-Of-Stock "Notify Me" Customer Waitlist Section -->
     <div id="stockWaitlistSection" class="bg-slate-900 border border-purple-500/30 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
@@ -121,34 +157,50 @@
       <div id="adminStockWaitlistGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1"></div>
     </div>
 
-    <!-- Abandoned Cart Recovery (Incomplete Orders) -->
+    <!-- Abandoned Cart Recovery -->
     <div id="abandonedCartsSection" class="bg-slate-900 border border-rose-500/30 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
         <div>
           <h3 class="text-base font-bold text-rose-400"><i class="fa-solid fa-cart-arrow-down mr-1.5"></i> Abandoned Carts / Incomplete Orders (<span id="abandonedCountText">0</span>)</h3>
-          <p class="text-[11px] text-slate-400">Customers who entered address & phone but exited before UPI payment. Message them on WhatsApp to recover sales!</p>
+          <p class="text-[11px] text-slate-400">Customers who entered address & phone but exited before UPI payment.</p>
         </div>
       </div>
       <div id="adminAbandonedCartsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1"></div>
     </div>
 
-    <!-- Repeat Buyer & Customer Database Section -->
+    <!-- Repeat Buyer & Customer Database + AURA Coins Balance -->
     <div id="repeatCustomersSection" class="bg-slate-900 border border-cyan-500/30 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
         <div>
-          <h3 class="text-base font-bold text-cyan-400"><i class="fa-solid fa-users mr-1.5"></i> Customer Database & Repeat Buyers (<span id="totalCustomersCountText">0</span>)</h3>
-          <p class="text-[11px] text-slate-400">Sorted by total spending. Send VIP coupon offers directly via WhatsApp.</p>
+          <h3 class="text-base font-bold text-cyan-400"><i class="fa-solid fa-users mr-1.5"></i> Customer Database, Repeat Buyers & AURA Coins (<span id="totalCustomersCountText">0</span>)</h3>
+          <p class="text-[11px] text-slate-400">View customer spending and their active AURA Coins loyalty wallet balance.</p>
         </div>
       </div>
       <div id="adminRepeatCustomersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1"></div>
     </div>
 
-    <!-- Store Controls, Free Gift Bar, Max COD Limit, Meta Pixel & Coupons Section -->
+    <!-- Store Controls, AURA Coins Rules, Free Gift, Max COD & Timed Coupons -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
-        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-sliders mr-1.5"></i> Store Controls, COD Limit & Free Gift</h3>
+        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-sliders mr-1.5"></i> Store Controls, AURA Coins & Limits</h3>
         
         <div class="space-y-3 text-xs">
+          <!-- AURA Coins Loyalty Wallet Rules -->
+          <div class="bg-amber-950/35 p-3.5 rounded-2xl border border-amber-500/35 space-y-2">
+            <label class="block font-bold text-amber-300"><i class="fa-solid fa-coins mr-1"></i> AURA Coins Loyalty Wallet (1 Coin = ₹1):</label>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <span class="text-[10px] text-slate-400 block mb-0.5">Earn % on Delivery (0=Off)</span>
+                <input type="number" id="coinsEarnPctInput" min="0" max="50" value="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-bold">
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block mb-0.5">Max Redeem / Order (₹)</span>
+                <input type="number" id="maxCoinsRedeemInput" min="0" value="200" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-bold">
+              </div>
+            </div>
+            <button onclick="saveAuraCoinsSettings()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 py-2 rounded-xl font-extrabold transition shadow">Save AURA Coins Rules</button>
+          </div>
+
           <!-- Free Gift Progress Bar Settings -->
           <div class="bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-500/35 space-y-2">
             <label class="block font-bold text-emerald-300"><i class="fa-solid fa-gift mr-1"></i> Free Gift Progress Bar (0 = Disabled):</label>
@@ -172,7 +224,6 @@
               <input type="number" id="maxCodAmountInput" min="0" placeholder="e.g. 2000 (0 = No Limit)" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-bold">
               <button onclick="saveMaxCodLimit()" class="bg-purple-500 hover:bg-purple-400 text-slate-950 px-3.5 py-2 rounded-xl font-extrabold transition whitespace-nowrap">Save Limit</button>
             </div>
-            <p class="text-[10px] text-slate-400">Orders above this amount will require 100% Prepaid UPI (0 = Unlimited COD).</p>
           </div>
 
           <!-- Flash Deal Timer -->
@@ -237,29 +288,40 @@
         </div>
       </div>
 
-      <!-- Coupon Manager -->
+      <!-- Discount Coupon Manager WITH AUTO-EXPIRY TIMER -->
       <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
-        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-ticket mr-1.5"></i> Discount Coupons & Offer Manager</h3>
+        <div>
+          <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-ticket mr-1.5"></i> Discount Coupons & Auto-Expire Timer Manager</h3>
+          <p class="text-[11px] text-slate-400">Set optional Hours/Minutes timer for any coupon—once time runs out, it automatically shows <b>Expired</b> and blocks checkout usage!</p>
+        </div>
         
-        <form onsubmit="handleCreateCoupon(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-xs bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700">
+        <form onsubmit="handleCreateCoupon(event)" class="grid grid-cols-2 sm:grid-cols-6 gap-2.5 text-xs bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700">
           <div>
             <label class="text-[10px] text-slate-400 block mb-1">Coupon Code *</label>
-            <input type="text" id="cpCode" required placeholder="e.g. SAVE25" class="uppercase w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-mono font-bold">
+            <input type="text" id="cpCode" required placeholder="e.g. FLASH30" class="uppercase w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-mono font-bold">
           </div>
           <div>
             <label class="text-[10px] text-slate-400 block mb-1">Discount (%) *</label>
-            <input type="number" id="cpDiscount" required min="1" max="90" placeholder="e.g. 25" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
+            <input type="number" id="cpDiscount" required min="1" max="90" placeholder="30" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
           </div>
           <div>
             <label class="text-[10px] text-slate-400 block mb-1">Min Order (₹)</label>
-            <input type="number" id="cpMinSpend" min="0" value="0" placeholder="0 = No Min" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white">
+            <input type="number" id="cpMinSpend" min="0" value="0" placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white">
+          </div>
+          <div>
+            <label class="text-[10px] text-amber-300 font-bold block mb-1">Timer Hours</label>
+            <input type="number" id="cpValidHours" min="0" max="720" value="0" placeholder="0 = No Limit" class="w-full bg-slate-900 border border-amber-500/40 rounded-xl p-2 text-amber-300 font-bold">
+          </div>
+          <div>
+            <label class="text-[10px] text-amber-300 font-bold block mb-1">Timer Mins</label>
+            <input type="number" id="cpValidMins" min="0" max="59" value="0" placeholder="0" class="w-full bg-slate-900 border border-amber-500/40 rounded-xl p-2 text-amber-300 font-bold">
           </div>
           <div class="flex flex-col justify-end">
-            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded-xl transition shadow">Add Coupon</button>
+            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2 rounded-xl transition shadow">Create Coupon</button>
           </div>
         </form>
 
-        <div id="adminCouponsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-96 overflow-y-auto pr-1"></div>
+        <div id="adminCouponsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-96 overflow-y-auto pr-1"></div>
       </div>
     </div>
 
@@ -298,8 +360,7 @@
         <div id="adminBannersGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
       </div>
     </div>
-
-    <!-- Product Add/Edit & Store Catalog (With Cost Price & Quick Inline Edit) -->
+    <!-- Product Add/Edit & Store Catalog (With Dynamic Categories & Quick Inline Edit) -->
     <div id="adminCatalogSection" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
         <div class="flex justify-between items-center">
@@ -323,16 +384,12 @@
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-slate-400 block mb-1">Main Section *</label>
-              <select id="prodMainCategory" onchange="updateSubCategories()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white">
-                <option value="Men">Men</option>
-                <option value="Women">Women</option>
-                <option value="Gifts">GF & BF Special Gifts</option>
-              </select>
+              <label class="text-slate-400 block mb-1">Main Category *</label>
+              <select id="prodMainCategory" onchange="updateSubCategories()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white font-semibold"></select>
             </div>
             <div>
               <label class="text-slate-400 block mb-1">Sub-Category *</label>
-              <select id="prodCategory" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white"></select>
+              <select id="prodCategory" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white font-semibold"></select>
             </div>
           </div>
 
@@ -413,7 +470,7 @@
       </div>
     </div>
 
-    <!-- Customer Review Moderation Section (With Photo Preview) -->
+    <!-- Customer Review Moderation Section -->
     <div id="reviewModerationSection" class="bg-slate-900 border border-amber-500/30 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
         <div>
@@ -449,7 +506,7 @@
       <div class="flex flex-wrap justify-between items-center gap-3">
         <div>
           <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-truck-fast mr-1"></i> Customer Orders & Logistics</h3>
-          <p class="text-[10px] text-emerald-400">Select Courier Partner, print 4x6 Thermal Shipping Labels, or export Excel CSV.</p>
+          <p class="text-[10px] text-emerald-400">Mark as <b>Delivered</b> to automatically credit customer AURA Coins, or print 4x6 Thermal Labels.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <input type="text" id="adminOrderSearch" oninput="renderAdminOrders()" placeholder="Search ID, Phone, UTR..." class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
@@ -476,8 +533,8 @@
             <tr class="border-b border-slate-800 text-slate-400">
               <th class="p-3">Order & Date</th>
               <th class="p-3">Customer & Address</th>
-              <th class="p-3">Purchased Items, Gift & Bonus</th>
-              <th class="p-3">Payment, Profit & UTR</th>
+              <th class="p-3">Purchased Items & Bonus</th>
+              <th class="p-3">Payment, Coins & UTR</th>
               <th class="p-3">Courier, AWB & 4x6 Label</th>
               <th class="p-3">Status, WhatsApp & Delete</th>
             </tr>
@@ -491,10 +548,12 @@
 
   <script>
     let adminToken = sessionStorage.getItem('aura_admin_jwt') || "";
+    let cachedCategories = [];
     let cachedProducts = [];
     let cachedOrders = [];
     let cachedAbandonedCarts = [];
     let cachedStockNotifies = [];
+    let cachedWallets = [];
     let cachedCoupons = [];
     let cachedBanners = [];
     let cachedSupportTickets = [];
@@ -520,12 +579,6 @@
       return false;
     }
 
-    const subCategoriesMap = {
-      "Men": ["Shirts", "T-Shirts", "Watches", "Trousers", "Perfumes"],
-      "Women": ["Jhumka", "Studs", "Kurtis", "Sarees", "Handbags", "Bangles"],
-      "Gifts": ["Couples", "Romantic", "Gift Sets", "Customized Lamps"]
-    };
-
     const courierTrackingUrls = {
       "Delhivery": (awb) => `https://www.delhivery.com/track/package/${encodeURIComponent(awb)}`,
       "DTDC": (awb) => `https://www.dtdc.in/tracking/shipment-tracking.asp?strCnno=${encodeURIComponent(awb)}`,
@@ -533,13 +586,163 @@
       "Shiprocket": (awb) => `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`
     };
 
-    function updateSubCategories() {
-      const mainCat = document.getElementById('prodMainCategory').value;
-      const subSelect = document.getElementById('prodCategory');
-      const opts = subCategoriesMap[mainCat] || ["General"];
-      subSelect.innerHTML = opts.map(o => `<option value="${o}">${o}</option>`).join('');
+    // Dynamic Category & Sub-Category Sync Functions
+    function populateCategoryDropdowns(selectedMain = "", selectedSub = "") {
+      const targetMainSel = document.getElementById('targetMainCatSelect');
+      const prodMainSel = document.getElementById('prodMainCategory');
+
+      if (!cachedCategories.length) {
+        targetMainSel.innerHTML = `<option value="">No Category</option>`;
+        prodMainSel.innerHTML = `<option value="">No Category</option>`;
+        document.getElementById('prodCategory').innerHTML = `<option value="General">General</option>`;
+        return;
+      }
+
+      const mainOptsHtml = cachedCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      targetMainSel.innerHTML = mainOptsHtml;
+      prodMainSel.innerHTML = mainOptsHtml;
+
+      if (selectedMain && cachedCategories.some(c => c.name === selectedMain)) {
+        prodMainSel.value = selectedMain;
+      }
+      updateSubCategories(selectedSub);
     }
-    updateSubCategories();
+
+    function updateSubCategories(selectedSub = "") {
+      const mainCatName = document.getElementById('prodMainCategory').value;
+      const subSelect = document.getElementById('prodCategory');
+      const catObj = cachedCategories.find(c => c.name === mainCatName);
+      const subs = (catObj && catObj.subCategories && catObj.subCategories.length) ? catObj.subCategories : ["General"];
+      subSelect.innerHTML = subs.map(o => `<option value="${o}">${o}</option>`).join('');
+      if (selectedSub && subs.includes(selectedSub)) {
+        subSelect.value = selectedSub;
+      }
+    }
+
+    function renderAdminCategories() {
+      document.getElementById('headerCatBadge').innerText = cachedCategories.length;
+      const grid = document.getElementById('adminCategoriesGrid');
+      if (!cachedCategories.length) {
+        grid.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No categories added yet. Create one above!</p>`;
+        return;
+      }
+
+      grid.innerHTML = cachedCategories.map(cat => {
+        const prodCountInCat = cachedProducts.filter(p => p.mainCategory === cat.name).length;
+        const subsHtml = (cat.subCategories || []).length
+          ? cat.subCategories.map(sub => {
+              const subProdCount = cachedProducts.filter(p => p.mainCategory === cat.name && p.category === sub).length;
+              return `
+                <div class="flex items-center justify-between bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded-xl text-[11px]">
+                  <span class="text-slate-200 font-semibold">${sub} <span class="text-slate-400 text-[10px]">(${subProdCount})</span></span>
+                  <button onclick="deleteSubCategory('${cat.name}', '${sub}', ${subProdCount})" title="Delete Sub-Category & its Products" class="text-rose-400 hover:text-rose-300 px-1.5 font-bold">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              `;
+            }).join('')
+          : `<p class="text-[10px] text-slate-500 italic">No sub-categories yet.</p>`;
+
+        return `
+          <div class="bg-slate-800/80 border border-slate-700 p-4 rounded-2xl space-y-3 flex flex-col justify-between">
+            <div class="space-y-2.5">
+              <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <div>
+                  <h4 class="font-bold text-amber-300 text-sm">${cat.name}</h4>
+                  <p class="text-[10px] text-slate-400">${prodCountInCat} total products</p>
+                </div>
+                <button onclick="deleteMainCategory('${cat.name}', ${prodCountInCat})" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 px-2.5 py-1 rounded-xl text-[10px] font-bold transition">
+                  <i class="fa-solid fa-trash mr-1"></i> Delete All
+                </button>
+              </div>
+              <div class="space-y-1.5 max-h-44 overflow-y-auto pr-1">${subsHtml}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function handleAddMainCategory(e) {
+      e.preventDefault();
+      const name = document.getElementById('newMainCatInput').value.trim();
+      if (!name) return;
+      const res = await fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ name })
+      });
+      if (handleUnauthorized(res)) return;
+      const data = await res.json();
+      if (data.success) {
+        cachedCategories = data.categories || [];
+        document.getElementById('newMainCatInput').value = "";
+        populateCategoryDropdowns(name);
+        renderAdminCategories();
+        alert(`✅ Category "${name}" created! Now add sub-categories or publish products under it.`);
+      } else {
+        alert(data.message || "Failed to add category.");
+      }
+    }
+
+    async function handleAddSubCategory(e) {
+      e.preventDefault();
+      const mainCat = document.getElementById('targetMainCatSelect').value;
+      const subName = document.getElementById('newSubCatInput').value.trim();
+      if (!mainCat || !subName) return;
+
+      const res = await fetch(`/api/admin/categories/${encodeURIComponent(mainCat)}/subcategories`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ subName })
+      });
+      if (handleUnauthorized(res)) return;
+      const data = await res.json();
+      if (data.success) {
+        cachedCategories = data.categories || [];
+        document.getElementById('newSubCatInput').value = "";
+        populateCategoryDropdowns(mainCat, subName);
+        renderAdminCategories();
+        alert(`✅ Sub-Category "${subName}" added inside "${mainCat}"!`);
+      } else {
+        alert(data.message || "Failed to add sub-category.");
+      }
+    }
+
+    async function deleteSubCategory(mainCat, subName, prodCount) {
+      if (!confirm(`⚠️ WARNING: Delete sub-category "${subName}"?\n\nAll ${prodCount} product(s) inside "${subName}" will be PERMANENTLY DELETED!`)) return;
+      const res = await fetch(`/api/admin/categories/${encodeURIComponent(mainCat)}/subcategories/${encodeURIComponent(subName)}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      if (handleUnauthorized(res)) return;
+      const data = await res.json();
+      if (data.success) {
+        cachedCategories = data.categories || [];
+        cachedProducts = data.products || [];
+        populateCategoryDropdowns();
+        renderAdminCategories();
+        renderAdminCatalog();
+        alert(`🗑️ Sub-category "${subName}" and ${data.deletedProductsCount || 0} product(s) inside it were deleted!`);
+      }
+    }
+
+    async function deleteMainCategory(mainCat, prodCount) {
+      if (!confirm(`⚠️ DANGER: Delete entire category "${mainCat}"?\n\nAll its sub-categories AND all ${prodCount} product(s) inside "${mainCat}" will be PERMANENTLY DELETED!`)) return;
+      const res = await fetch(`/api/admin/categories/${encodeURIComponent(mainCat)}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      if (handleUnauthorized(res)) return;
+      const data = await res.json();
+      if (data.success) {
+        cachedCategories = data.categories || [];
+        cachedProducts = data.products || [];
+        populateCategoryDropdowns();
+        renderAdminCategories();
+        renderAdminCatalog();
+        alert(`🗑️ Category "${mainCat}" and all ${data.deletedProductsCount || 0} product(s) inside it were deleted!`);
+      }
+    }
 
     function setOrderStatusFilter(status, btn) {
       activeOrderStatusFilter = status;
@@ -552,12 +755,12 @@
 
     function exportOrdersCSV() {
       if (!cachedOrders.length) return alert("No orders to export!");
-      const headers = ["Order ID", "Date", "Customer Name", "Phone", "Address", "Pincode", "Items", "Free Gift", "Gift Note", "Total (INR)", "Net Profit (INR)", "Payment Mode", "UTR", "Status", "Courier", "AWB"];
+      const headers = ["Order ID", "Date", "Customer Name", "Phone", "Address", "Pincode", "Items", "Free Gift", "Coins Used", "Total (INR)", "Net Profit (INR)", "Payment Mode", "UTR", "Status", "Courier", "AWB"];
       const rows = cachedOrders.map(o => {
         const itemsStr = (o.items || []).map(i => `${i.name} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join(' | ');
         return [
           o.id, o.date, o.customerName, o.phone, o.address, o.pincode,
-          itemsStr, o.freeGiftUnlocked || "", o.giftNote || "", o.total, o.netProfit || 0, o.paymentMethod, o.utrNumber, o.status, o.courierPartner || "Delhivery", o.awbNumber || ""
+          itemsStr, o.freeGiftUnlocked || "", o.coinsUsed || 0, o.total, o.netProfit || 0, o.paymentMethod, o.utrNumber, o.status, o.courierPartner || "Delhivery", o.awbNumber || ""
         ].map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(',');
       });
 
@@ -588,6 +791,21 @@
     }
     setInterval(updateAdminTimerBadge, 1000);
 
+    async function saveAuraCoinsSettings() {
+      const coinsEarnPercent = Number(document.getElementById('coinsEarnPctInput').value) || 0;
+      const maxCoinsRedeemPerOrder = Number(document.getElementById('maxCoinsRedeemInput').value) || 0;
+      const res = await fetch('/api/admin/store-settings', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ coinsEarnPercent, maxCoinsRedeemPerOrder })
+      });
+      if (handleUnauthorized(res)) return;
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ AURA Coins Rules Saved! Customers earn ${coinsEarnPercent}% on Delivered orders (Max ₹${maxCoinsRedeemPerOrder} redeem per order).`);
+      }
+    }
+
     async function saveFreeGiftSettings() {
       const threshold = Number(document.getElementById('freeGiftThresholdInput').value) || 0;
       const title = (document.getElementById('freeGiftTitleInput').value || "Luxury Surprise Jewellery Box").trim();
@@ -613,7 +831,7 @@
       if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
-        alert(limit > 0 ? `✅ Max COD Limit set to ₹${limit}! Orders above ₹${limit} will require Prepaid UPI.` : "✅ Max COD Limit removed (Unlimited COD allowed).");
+        alert(limit > 0 ? `✅ Max COD Limit set to ₹${limit}!` : "✅ Max COD Limit removed.");
       }
     }
 
@@ -664,7 +882,7 @@
       if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
-        alert(pixelId ? `✅ Meta Pixel ID (${pixelId}) saved and active on Store!` : "Meta Pixel ID cleared!");
+        alert(pixelId ? `✅ Meta Pixel ID (${pixelId}) saved!` : "Meta Pixel ID cleared!");
       }
     }
 
@@ -731,11 +949,10 @@
       adminLiveTimer = setInterval(() => {
         if (!adminToken) return;
         const activeTag = document.activeElement ? document.activeElement.tagName : '';
-        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
-          return;
-        }
+        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
         loadAdminOrdersOnlySilently();
         loadAdminSupportTickets(false);
+        renderAdminCoupons();
       }, 5000);
     }
 
@@ -818,7 +1035,7 @@
 
       list.innerHTML = cachedAbandonedCarts.map(c => {
         const itemsSummary = (c.items || []).map(i => `${i.name} x${i.qty || 1}`).join(', ');
-        const waMsg = `✨ *AURA FINE STORE* ✨\nHello *${c.customerName}*,\nWe noticed you left items in your bag (${itemsSummary}) worth *₹${c.totalAmount}*.\n\nComplete your order now and enjoy *FREE UPI Delivery*! Reply here if you need any help.`;
+        const waMsg = `✨ *AURA FINE STORE* ✨\nHello *${c.customerName}*,\nWe noticed you left items in your bag (${itemsSummary}) worth *₹${c.totalAmount}*.\n\nComplete your order now and enjoy *FREE UPI Delivery*!`;
         return `
           <div class="bg-slate-800/80 border border-rose-500/30 p-3.5 rounded-2xl text-xs space-y-2 flex flex-col justify-between">
             <div>
@@ -852,13 +1069,14 @@
     }
 
     function renderRepeatCustomers() {
+      const walletMap = new Map(cachedWallets.map(w => [String(w.phone), w.coins || 0]));
       const map = new Map();
       cachedOrders.forEach(o => {
         if (o.status === 'Cancelled') return;
         const phone = String(o.phone || '').trim();
         if (!phone) return;
         if (!map.has(phone)) {
-          map.set(phone, { phone, name: o.customerName, ordersCount: 0, totalSpent: 0, lastCity: o.city || '' });
+          map.set(phone, { phone, name: o.customerName, ordersCount: 0, totalSpent: 0, lastCity: o.city || '', coins: walletMap.get(phone) || 0 });
         }
         const entry = map.get(phone);
         entry.ordersCount += 1;
@@ -877,19 +1095,22 @@
 
       list.innerHTML = customers.map(c => {
         const isRepeat = c.ordersCount > 1;
-        const vipMsg = `👑 *AURA FINE STORE VIP PRIVILEGE* 👑\nHello *${c.name}*,\nThank you for being a valued customer! Use code *AURA20* on your next order for an instant *20% VIP Discount* + Free Delivery.`;
+        const vipMsg = `👑 *AURA FINE STORE VIP PRIVILEGE* 👑\nHello *${c.name}*,\nYou currently have *${c.coins} AURA Coins (₹${c.coins})* in your loyalty wallet! Shop now and redeem your coins for instant discount.`;
         return `
           <div class="bg-slate-800/80 border ${isRepeat ? 'border-amber-500/40' : 'border-slate-700'} p-3.5 rounded-2xl text-xs flex flex-col justify-between space-y-2">
             <div>
               <div class="flex justify-between items-center">
                 <p class="font-bold text-white">${c.name}</p>
-                ${isRepeat ? `<span class="bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full">REPEAT BUYER (${c.ordersCount}x)</span>` : `<span class="bg-slate-700 text-slate-300 text-[9px] px-2 py-0.5 rounded-full">1 Order</span>`}
+                ${isRepeat ? `<span class="bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full">REPEAT (${c.ordersCount}x)</span>` : `<span class="bg-slate-700 text-slate-300 text-[9px] px-2 py-0.5 rounded-full">1 Order</span>`}
               </div>
               <p class="text-emerald-400 font-mono text-[11px] mt-0.5">+91 ${c.phone} ${c.lastCity ? `• ${c.lastCity}` : ''}</p>
-              <p class="text-slate-300 mt-1">Total Spent: <b class="text-amber-400 text-sm">₹${c.totalSpent}</b></p>
+              <div class="flex justify-between items-center mt-1">
+                <p class="text-slate-300">Spent: <b class="text-amber-400">₹${c.totalSpent}</b></p>
+                <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold"><i class="fa-solid fa-coins mr-1"></i>${c.coins} Coins</span>
+              </div>
             </div>
             <a href="https://wa.me/91${c.phone}?text=${encodeURIComponent(vipMsg)}" target="_blank" class="w-full bg-cyan-600/30 hover:bg-cyan-600 text-cyan-200 hover:text-white border border-cyan-500/40 py-1.5 rounded-xl font-bold text-center block transition">
-              <i class="fa-brands fa-whatsapp mr-1"></i> Send VIP Offer
+              <i class="fa-brands fa-whatsapp mr-1"></i> Send Wallet Offer
             </a>
           </div>
         `;
@@ -917,12 +1138,13 @@
         if (handleUnauthorized(ordRes)) return;
         const ordData = await ordRes.json();
         if (ordData.success) {
-          const newHash = JSON.stringify({ o: ordData.orders, a: ordData.abandonedCarts, w: ordData.stockNotifies });
+          const newHash = JSON.stringify({ o: ordData.orders, a: ordData.abandonedCarts, w: ordData.stockNotifies, wl: ordData.wallets });
           if (window._lastOrdersHash !== newHash) {
             window._lastOrdersHash = newHash;
             cachedOrders = ordData.orders || [];
             cachedAbandonedCarts = ordData.abandonedCarts || [];
             cachedStockNotifies = ordData.stockNotifies || [];
+            cachedWallets = ordData.wallets || [];
             updateAnalyticsUI(ordData.analytics);
             renderLowStockAlerts(ordData.lowStockProducts || []);
             renderStockWaitlist();
@@ -949,8 +1171,10 @@
           cachedOrders = ordData.orders || [];
           cachedAbandonedCarts = ordData.abandonedCarts || [];
           cachedStockNotifies = ordData.stockNotifies || [];
+          cachedWallets = ordData.wallets || [];
+          cachedCategories = ordData.categories || storeData.categories || [];
           cachedProducts = ordData.products || storeData.products || [];
-          window._lastOrdersHash = JSON.stringify({ o: cachedOrders, a: cachedAbandonedCarts, w: cachedStockNotifies });
+          window._lastOrdersHash = JSON.stringify({ o: cachedOrders, a: cachedAbandonedCarts, w: cachedStockNotifies, wl: cachedWallets });
           cachedCoupons = ordData.coupons || [];
           
           updateAnalyticsUI(ordData.analytics);
@@ -962,11 +1186,15 @@
             document.getElementById('maxCodAmountInput').value = ordData.storeSettings.maxCodOrderAmount ?? 2000;
             document.getElementById('freeGiftThresholdInput').value = ordData.storeSettings.freeGiftThreshold ?? 1499;
             document.getElementById('freeGiftTitleInput').value = ordData.storeSettings.freeGiftTitle || "Luxury Surprise Jewellery Box";
+            document.getElementById('coinsEarnPctInput').value = ordData.storeSettings.coinsEarnPercent ?? 5;
+            document.getElementById('maxCoinsRedeemInput').value = ordData.storeSettings.maxCoinsRedeemPerOrder ?? 200;
             document.getElementById('metaPixelIdInput').value = ordData.storeSettings.metaPixelId || "";
             adminDealEndMs = ordData.storeSettings.dealEndTime || 0;
             updateAdminTimerBadge();
           }
 
+          populateCategoryDropdowns();
+          renderAdminCategories();
           renderStockWaitlist();
           renderAbandonedCarts();
           renderRepeatCustomers();
@@ -993,7 +1221,6 @@
         });
       });
 
-      document.getElementById('headerReviewsBadge').innerText = allRevs.length;
       document.getElementById('totalReviewsCountText').innerText = allRevs.length;
 
       if (!allRevs.length) {
@@ -1176,6 +1403,8 @@
         code: document.getElementById('cpCode').value,
         discountPercent: document.getElementById('cpDiscount').value,
         minSpend: document.getElementById('cpMinSpend').value,
+        validHours: document.getElementById('cpValidHours').value,
+        validMinutes: document.getElementById('cpValidMins').value,
         showOnStore: true
       };
       const res = await fetch('/api/admin/coupons', {
@@ -1190,7 +1419,9 @@
         renderAdminCoupons();
         document.getElementById('cpCode').value = "";
         document.getElementById('cpDiscount').value = "";
-        alert("Coupon added!");
+        document.getElementById('cpValidHours').value = "0";
+        document.getElementById('cpValidMins').value = "0";
+        alert("Coupon created!");
       }
     }
 
@@ -1208,18 +1439,32 @@
       }
     }
 
+    function formatRemainingCouponTime(expiresAt) {
+      if (!expiresAt || expiresAt <= 0) return `<span class="text-cyan-400">No Expiry (Permanent)</span>`;
+      const diff = expiresAt - Date.now();
+      if (diff <= 0) return `<span class="text-rose-400 font-extrabold">● EXPIRED</span>`;
+      const totalSec = Math.floor(diff / 1000);
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      return `<span class="text-emerald-400 font-mono font-bold">⏳ ${h}h ${m}m ${s}s left</span>`;
+    }
+
     function renderAdminCoupons() {
       const list = document.getElementById('adminCouponsList');
-      list.innerHTML = cachedCoupons.map(c => `
-        <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-xl flex justify-between items-center text-xs">
-          <div>
-            <span class="font-mono font-bold text-amber-400">${c.code}</span>
-            <span class="text-emerald-400 font-bold ml-1">${c.discountPercent}% OFF</span>
-            <p class="text-[10px] text-slate-400">Min Spend: ₹${c.minSpend || 0}</p>
+      list.innerHTML = cachedCoupons.map(c => {
+        const isExpired = c.expiresAt && c.expiresAt > 0 && Date.now() >= c.expiresAt;
+        return `
+          <div class="bg-slate-800 border ${isExpired ? 'border-rose-500/50 opacity-75' : 'border-slate-700'} p-2.5 rounded-xl flex justify-between items-center text-xs">
+            <div>
+              <span class="font-mono font-bold ${isExpired ? 'text-rose-400 line-through' : 'text-amber-400'}">${c.code}</span>
+              <span class="text-emerald-400 font-bold ml-1">${c.discountPercent}% OFF</span>
+              <p class="text-[10px] text-slate-400">Min: ₹${c.minSpend || 0} • ${formatRemainingCouponTime(c.expiresAt)}</p>
+            </div>
+            <button onclick="deleteCoupon('${c.code}')" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
           </div>
-          <button onclick="deleteCoupon('${c.code}')" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     function compressImageFile(file, maxWidth = 550, targetKB = 38) {
@@ -1419,9 +1664,7 @@
       document.getElementById('saveProdBtn').innerText = "Update Product";
 
       document.getElementById('prodName').value = p.name;
-      document.getElementById('prodMainCategory').value = p.mainCategory || "Men";
-      updateSubCategories();
-      document.getElementById('prodCategory').value = p.category;
+      populateCategoryDropdowns(p.mainCategory, p.category);
       document.getElementById('prodPrice').value = p.price;
       document.getElementById('prodOrigPrice').value = p.originalPrice;
       document.getElementById('prodCostPrice').value = p.costPrice || 0;
@@ -1444,6 +1687,7 @@
       document.getElementById('cancelEditBtn').classList.add('hidden');
       document.getElementById('saveProdBtn').innerText = "Publish to Store";
       document.getElementById('prodShowOnHome').checked = true;
+      populateCategoryDropdowns();
       currentFormImages = [];
       renderFormImagesPreview();
     }
@@ -1495,12 +1739,13 @@
       if (data.success) {
         cachedProducts = data.products;
         renderAdminCatalog();
+        renderAdminCategories();
       }
     }
 
     function renderAdminCatalog() {
       const q = (document.getElementById('adminProdSearch').value || "").toLowerCase();
-      const filtered = cachedProducts.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+      const filtered = cachedProducts.filter(p => p.name.toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q));
       document.getElementById('adminCatalogCount').innerText = filtered.length;
 
       document.getElementById('adminCatalogList').innerHTML = filtered.map(p => {
@@ -1591,10 +1836,6 @@
           ? `<div class="mt-1.5 bg-emerald-950/80 border border-emerald-500/40 p-2 rounded-lg text-[10px] text-emerald-300 font-bold"><i class="fa-solid fa-award text-emerald-400 mr-1"></i>FREE BONUS GIFT: ${o.freeGiftUnlocked}</div>`
           : '';
 
-        const giftNoteHtml = o.giftNote
-          ? `<div class="mt-1.5 bg-rose-950/70 border border-rose-500/40 p-2 rounded-lg text-[10px] text-rose-200"><i class="fa-solid fa-gift text-rose-400 mr-1"></i><b>Gift Note:</b> "${o.giftNote}"</div>`
-          : '';
-
         const curPartner = o.courierPartner || 'Delhivery';
 
         return `
@@ -1611,10 +1852,12 @@
               <p class="text-emerald-400 font-mono text-[11px]">+91 ${o.phone}</p>
               <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${o.address}</p>
             </td>
-            <td class="p-3 min-w-[180px]">${itemsText}${freeGiftHtml}${giftNoteHtml}</td>
+            <td class="p-3 min-w-[180px]">${itemsText}${freeGiftHtml}</td>
             <td class="p-3">
               <p class="font-bold text-emerald-400 text-sm">₹${o.total}</p>
               <p class="text-[10px] text-emerald-300 font-bold">Profit: ₹${o.netProfit || 0}</p>
+              ${o.coinsUsed > 0 ? `<p class="text-[10px] text-amber-300 font-bold">Coins Used: -₹${o.coinsUsed}</p>` : ''}
+              ${o.coinsEarned > 0 ? `<p class="text-[10px] ${o.coinsCredited ? 'text-emerald-400' : 'text-slate-400'}">Reward: ${o.coinsEarned} Coins ${o.coinsCredited ? '✓' : '(On Delivery)'}</p>` : ''}
               <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300">${o.paymentMethod}</span>
               <p class="text-[10px] font-mono text-slate-300 mt-1">UTR: ${o.utrNumber}</p>
             </td>
@@ -1712,3 +1955,4 @@
   </script>
 </body>
 </html>
+    
