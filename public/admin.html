@@ -22,7 +22,7 @@
       </div>
       <div>
         <h2 class="text-2xl font-cinzel font-bold text-amber-400">AURA Admin</h2>
-        <p class="text-xs text-slate-400 mt-1">Executive Command Desk</p>
+        <p class="text-xs text-slate-400 mt-1">Encrypted JWT Command Desk</p>
       </div>
       <input type="password" id="adminPinInput" onkeydown="if(event.key==='Enter') attemptLogin()" placeholder="Enter Admin PIN" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-center text-white tracking-widest font-mono focus:outline-none focus:border-amber-500">
       <button onclick="attemptLogin()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 rounded-xl text-sm transition shadow-lg">Unlock Store Command</button>
@@ -37,9 +37,9 @@
       <div>
         <div class="flex items-center gap-2.5">
           <h1 class="text-2xl font-cinzel font-bold text-amber-400">AURA Fine Store Command</h1>
-          <span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">● LIVE AUTO-SYNC</span>
+          <span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">● JWT SECURED</span>
         </div>
-        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Abandoned Cart Recovery, Repeat Customers, Reviews & Support</p>
+        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Net Profit Analytics, Quick Stock/Price Edit & 4x6 Labels</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <a href="#abandonedCartsSection" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
@@ -71,35 +71,39 @@
       <a href="#adminCatalogSection" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-1.5 rounded-xl font-bold">Restock Now &darr;</a>
     </div>
 
-    <!-- Analytics Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+    <!-- Analytics Cards (Includes Net Profit) -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+      <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl">
         <p class="text-[11px] text-slate-400">Today's Orders</p>
-        <p id="statTodayOrders" class="text-2xl font-bold text-amber-400 mt-1">0</p>
+        <p id="statTodayOrders" class="text-xl font-bold text-amber-400 mt-1">0</p>
       </div>
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+      <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl">
         <p class="text-[11px] text-slate-400">Total Orders</p>
-        <p id="statTotalOrders" class="text-2xl font-bold text-white mt-1">0</p>
+        <p id="statTotalOrders" class="text-xl font-bold text-white mt-1">0</p>
       </div>
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+      <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl">
         <p class="text-[11px] text-slate-400">Total Revenue</p>
-        <p id="statTotalSales" class="text-xl font-bold text-emerald-400 mt-1">₹0</p>
+        <p id="statTotalSales" class="text-lg font-bold text-emerald-400 mt-1">₹0</p>
       </div>
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+      <div class="bg-gradient-to-br from-emerald-950/90 to-slate-900 border border-emerald-500/40 p-3.5 rounded-2xl">
+        <p class="text-[11px] text-emerald-300 font-bold"><i class="fa-solid fa-sack-dollar mr-1"></i>Net Profit</p>
+        <p id="statNetProfit" class="text-lg font-extrabold text-emerald-300 mt-1">₹0</p>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl">
         <p class="text-[11px] text-slate-400">Online UPI Sales</p>
-        <p id="statOnlineSales" class="text-xl font-bold text-cyan-400 mt-1">₹0</p>
+        <p id="statOnlineSales" class="text-lg font-bold text-cyan-400 mt-1">₹0</p>
       </div>
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+      <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl">
         <p class="text-[11px] text-slate-400">COD Orders Value</p>
-        <p id="statCodSales" class="text-xl font-bold text-purple-400 mt-1">₹0</p>
+        <p id="statCodSales" class="text-lg font-bold text-purple-400 mt-1">₹0</p>
       </div>
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+      <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl">
         <p class="text-[11px] text-slate-400">Pending Verify</p>
-        <p id="statPending" class="text-2xl font-bold text-rose-400 mt-1">0</p>
+        <p id="statPending" class="text-xl font-bold text-rose-400 mt-1">0</p>
       </div>
-      <div class="bg-slate-900 border border-rose-500/30 p-4 rounded-2xl">
+      <div class="bg-slate-900 border border-rose-500/30 p-3.5 rounded-2xl">
         <p class="text-[11px] text-rose-300 font-semibold">Low Stock (&lt;3)</p>
-        <p id="statLowStock" class="text-2xl font-bold text-rose-400 mt-1">0</p>
+        <p id="statLowStock" class="text-xl font-bold text-rose-400 mt-1">0</p>
       </div>
     </div>
 
@@ -162,7 +166,6 @@
               <input type="text" id="metaPixelIdInput" placeholder="e.g. 123456789012345" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-mono">
               <button onclick="saveMetaPixelId()" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl font-bold transition whitespace-nowrap">Save Pixel</button>
             </div>
-            <p class="text-[10px] text-slate-400">Tracks PageView, ViewContent, AddToCart & Purchase automatically.</p>
           </div>
 
           <!-- COD Delivery Charge -->
@@ -185,7 +188,7 @@
 
           <!-- Change Admin Security PIN -->
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-rose-500/30 space-y-2">
-            <label class="block font-bold text-rose-300"><i class="fa-solid fa-key mr-1"></i> Change Admin Login PIN:</label>
+            <label class="block font-bold text-rose-300"><i class="fa-solid fa-key mr-1"></i> Change Admin Login PIN (Encrypted):</label>
             <div class="flex gap-2">
               <input type="password" id="newAdminPinInput" placeholder="New PIN (min 4 chars)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-mono">
               <button onclick="changeAdminPin()" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-2 rounded-xl font-bold transition whitespace-nowrap">Update PIN</button>
@@ -256,7 +259,7 @@
       </div>
     </div>
 
-    <!-- Product Add/Edit & Store Catalog -->
+    <!-- Product Add/Edit & Store Catalog (With Cost Price & Quick Inline Edit) -->
     <div id="adminCatalogSection" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
         <div class="flex justify-between items-center">
@@ -293,17 +296,21 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-3 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div>
-              <label class="text-slate-400 block mb-1">Sale Price ₹ *</label>
-              <input type="number" id="prodPrice" required placeholder="899" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
+              <label class="text-slate-400 block mb-1">Sale ₹ *</label>
+              <input type="number" id="prodPrice" required placeholder="899" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white font-bold">
             </div>
             <div>
               <label class="text-slate-400 block mb-1">MRP ₹ *</label>
               <input type="number" id="prodOrigPrice" required placeholder="1799" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
             </div>
             <div>
-              <label class="text-slate-400 block mb-1">Stock Qty *</label>
+              <label class="text-emerald-400 font-bold block mb-1" title="Hidden from customers">Cost ₹ *</label>
+              <input type="number" id="prodCostPrice" required value="0" placeholder="450" class="w-full bg-emerald-950/50 border border-emerald-500/40 rounded-xl p-2 text-emerald-300 font-bold">
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Stock *</label>
               <input type="number" id="prodStock" required value="15" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
             </div>
           </div>
@@ -341,7 +348,7 @@
               </label>
             </div>
             <div id="dynamicProdImagesPreview" class="grid grid-cols-3 gap-2"></div>
-            <p id="noPhotosHint" class="text-[10px] text-slate-400 text-center py-2">Click "+ Add Photos" to upload 1 or more photos. Click × on any photo to delete it.</p>
+            <p id="noPhotosHint" class="text-[10px] text-slate-400 text-center py-2">Click "+ Add Photos" to upload 1 or more photos.</p>
           </div>
 
           <div>
@@ -353,15 +360,16 @@
         </form>
       </div>
 
+      <!-- Store Catalog with Quick Inline Edit -->
       <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
         <div class="flex flex-wrap justify-between items-center gap-2">
           <div>
             <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-boxes-stacked mr-1"></i> Store Catalog (<span id="adminCatalogCount">0</span>)</h3>
-            <p class="text-[10px] text-slate-400">Toggle "On Home: YES / NO" to choose which products appear on the Home page.</p>
+            <p class="text-[10px] text-slate-400">Change Sale ₹, Cost ₹, or Stock directly in the box below and click <b>Save</b>.</p>
           </div>
           <input type="text" id="adminProdSearch" oninput="renderAdminCatalog()" placeholder="Search product..." class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
         </div>
-        <div id="adminCatalogList" class="space-y-2.5 max-h-[650px] overflow-y-auto pr-1"></div>
+        <div id="adminCatalogList" class="space-y-2.5 max-h-[680px] overflow-y-auto pr-1"></div>
       </div>
     </div>
 
@@ -396,12 +404,12 @@
       </div>
     </div>
 
-    <!-- Customer Orders & Logistics Table -->
+    <!-- Customer Orders & Logistics Table (Multi-Courier + 4x6 Thermal Label Print) -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
         <div>
           <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-truck-fast mr-1"></i> Customer Orders & Logistics</h3>
-          <p class="text-[10px] text-emerald-400">Cancelling an order automatically restores stock quantity.</p>
+          <p class="text-[10px] text-emerald-400">Select Courier Partner, print 4x6 Thermal Shipping Labels, or export Excel CSV.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <input type="text" id="adminOrderSearch" oninput="renderAdminOrders()" placeholder="Search ID, Phone, UTR..." class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
@@ -429,8 +437,8 @@
               <th class="p-3">Order & Date</th>
               <th class="p-3">Customer & Address</th>
               <th class="p-3">Purchased Items & Gift Note</th>
-              <th class="p-3">Payment & UTR</th>
-              <th class="p-3">Logistics & Slip</th>
+              <th class="p-3">Payment, Profit & UTR</th>
+              <th class="p-3">Courier, AWB & 4x6 Label</th>
               <th class="p-3">Status, WhatsApp & Delete</th>
             </tr>
           </thead>
@@ -442,7 +450,7 @@
   </div>
 
   <script>
-    let currentPin = sessionStorage.getItem('aura_admin_pin') || "";
+    let adminToken = sessionStorage.getItem('aura_admin_jwt') || "";
     let cachedProducts = [];
     let cachedOrders = [];
     let cachedAbandonedCarts = [];
@@ -454,10 +462,34 @@
     let adminLiveTimer = null;
     let adminDealEndMs = 0;
 
+    function getAuthHeaders(isJson = true) {
+      const headers = { 'Authorization': `Bearer ${adminToken}` };
+      if (isJson) headers['Content-Type'] = 'application/json';
+      return headers;
+    }
+
+    function handleUnauthorized(res) {
+      if (res && res.status === 403) {
+        sessionStorage.removeItem('aura_admin_jwt');
+        adminToken = "";
+        alert("Admin session expired. Please unlock again.");
+        location.reload();
+        return true;
+      }
+      return false;
+    }
+
     const subCategoriesMap = {
       "Men": ["Shirts", "T-Shirts", "Watches", "Trousers", "Perfumes"],
       "Women": ["Jhumka", "Studs", "Kurtis", "Sarees", "Handbags", "Bangles"],
       "Gifts": ["Couples", "Romantic", "Gift Sets", "Customized Lamps"]
+    };
+
+    const courierTrackingUrls = {
+      "Delhivery": (awb) => `https://www.delhivery.com/track/package/${encodeURIComponent(awb)}`,
+      "DTDC": (awb) => `https://www.dtdc.in/tracking/shipment-tracking.asp?strCnno=${encodeURIComponent(awb)}`,
+      "IndiaPost": (awb) => `https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx`,
+      "Shiprocket": (awb) => `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`
     };
 
     function updateSubCategories() {
@@ -479,12 +511,12 @@
 
     function exportOrdersCSV() {
       if (!cachedOrders.length) return alert("No orders to export!");
-      const headers = ["Order ID", "Date", "Customer Name", "Phone", "Address", "Pincode", "Items", "Gift Note", "Total (INR)", "Payment Mode", "UTR", "Status", "AWB"];
+      const headers = ["Order ID", "Date", "Customer Name", "Phone", "Address", "Pincode", "Items", "Gift Note", "Total (INR)", "Net Profit (INR)", "Payment Mode", "UTR", "Status", "Courier", "AWB"];
       const rows = cachedOrders.map(o => {
         const itemsStr = (o.items || []).map(i => `${i.name} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join(' | ');
         return [
           o.id, o.date, o.customerName, o.phone, o.address, o.pincode,
-          itemsStr, o.giftNote || "", o.total, o.paymentMethod, o.utrNumber, o.status, o.awbNumber || ""
+          itemsStr, o.giftNote || "", o.total, o.netProfit || 0, o.paymentMethod, o.utrNumber, o.status, o.courierPartner || "Delhivery", o.awbNumber || ""
         ].map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(',');
       });
 
@@ -524,9 +556,10 @@
 
       const res = await fetch('/api/admin/store-settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin, dealEndTime: endTime })
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ dealEndTime: endTime })
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         adminDealEndMs = endTime;
@@ -539,9 +572,10 @@
       if (!confirm("Stop and delete the active Flash Deal Timer?")) return;
       const res = await fetch('/api/admin/store-settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin, dealEndTime: 0 })
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ dealEndTime: 0 })
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         adminDealEndMs = 0;
@@ -554,9 +588,10 @@
       const pixelId = (document.getElementById('metaPixelIdInput').value || "").trim();
       const res = await fetch('/api/admin/store-settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin, metaPixelId: pixelId })
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ metaPixelId: pixelId })
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         alert(pixelId ? `✅ Meta Pixel ID (${pixelId}) saved and active on Store!` : "Meta Pixel ID cleared!");
@@ -570,28 +605,33 @@
 
       const res = await fetch('/api/admin/change-pin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPin, newPin })
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ newPin })
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
-        currentPin = newPin;
-        sessionStorage.setItem('aura_admin_pin', newPin);
+        if (data.token) {
+          adminToken = data.token;
+          sessionStorage.setItem('aura_admin_jwt', data.token);
+        }
         document.getElementById('newAdminPinInput').value = "";
-        alert("✅ Admin PIN updated successfully!");
+        alert("✅ Admin PIN encrypted & updated successfully!");
       } else {
         alert(data.message || "Failed to update PIN!");
       }
     }
 
-    if (currentPin) verifyAndOpen(currentPin);
+    if (adminToken) {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('dashboardContent').classList.remove('hidden');
+      loadAdminDashboard(true);
+      loadAdminSupportTickets(true);
+      startAdminLiveSync();
+    }
 
     async function attemptLogin() {
       const pin = document.getElementById('adminPinInput').value.trim();
-      verifyAndOpen(pin);
-    }
-
-    async function verifyAndOpen(pin) {
       const errEl = document.getElementById('loginError');
       try {
         const res = await fetch('/api/admin/login', {
@@ -600,9 +640,9 @@
           body: JSON.stringify({ pin })
         });
         const data = await res.json();
-        if (data.success) {
-          currentPin = pin;
-          sessionStorage.setItem('aura_admin_pin', pin);
+        if (data.success && data.token) {
+          adminToken = data.token;
+          sessionStorage.setItem('aura_admin_jwt', data.token);
           errEl.classList.add('hidden');
           document.getElementById('loginScreen').classList.add('hidden');
           document.getElementById('dashboardContent').classList.remove('hidden');
@@ -619,7 +659,7 @@
     function startAdminLiveSync() {
       if (adminLiveTimer) clearInterval(adminLiveTimer);
       adminLiveTimer = setInterval(() => {
-        if (!currentPin) return;
+        if (!adminToken) return;
         const activeTag = document.activeElement ? document.activeElement.tagName : '';
         if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
           return;
@@ -631,7 +671,7 @@
 
     function logout() {
       if (adminLiveTimer) clearInterval(adminLiveTimer);
-      sessionStorage.removeItem('aura_admin_pin');
+      sessionStorage.removeItem('aura_admin_jwt');
       location.reload();
     }
 
@@ -684,9 +724,9 @@
       if (!confirm("Remove this incomplete cart entry?")) return;
       const res = await fetch(`/api/admin/abandoned-carts/${phone}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin })
+        headers: getAuthHeaders()
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) loadAdminDashboard(true);
     }
@@ -736,13 +776,25 @@
       }).join('');
     }
 
+    function updateAnalyticsUI(analytics) {
+      document.getElementById('statTodayOrders').innerText = analytics.todayOrdersCount;
+      document.getElementById('statTotalOrders').innerText = analytics.totalOrders;
+      document.getElementById('statTotalSales').innerText = `₹${analytics.totalSales}`;
+      document.getElementById('statNetProfit').innerText = `₹${analytics.totalNetProfit || 0}`;
+      document.getElementById('statOnlineSales').innerText = `₹${analytics.totalOnlineRevenue}`;
+      document.getElementById('statCodSales').innerText = `₹${analytics.totalCodRevenue}`;
+      document.getElementById('statPending').innerText = analytics.pendingOrders;
+      document.getElementById('statLowStock').innerText = analytics.lowStockCount || 0;
+    }
+
     async function loadAdminOrdersOnlySilently() {
       try {
         const ordRes = await fetch('/api/admin/orders?t=' + Date.now(), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin: currentPin })
+          headers: getAuthHeaders(),
+          body: JSON.stringify({})
         });
+        if (handleUnauthorized(ordRes)) return;
         const ordData = await ordRes.json();
         if (ordData.success) {
           const newHash = JSON.stringify({ o: ordData.orders, a: ordData.abandonedCarts });
@@ -750,13 +802,7 @@
             window._lastOrdersHash = newHash;
             cachedOrders = ordData.orders || [];
             cachedAbandonedCarts = ordData.abandonedCarts || [];
-            document.getElementById('statTodayOrders').innerText = ordData.analytics.todayOrdersCount;
-            document.getElementById('statTotalOrders').innerText = ordData.analytics.totalOrders;
-            document.getElementById('statTotalSales').innerText = `₹${ordData.analytics.totalSales}`;
-            document.getElementById('statOnlineSales').innerText = `₹${ordData.analytics.totalOnlineRevenue}`;
-            document.getElementById('statCodSales').innerText = `₹${ordData.analytics.totalCodRevenue}`;
-            document.getElementById('statPending').innerText = ordData.analytics.pendingOrders;
-            document.getElementById('statLowStock').innerText = ordData.analytics.lowStockCount || 0;
+            updateAnalyticsUI(ordData.analytics);
             renderLowStockAlerts(ordData.lowStockProducts || []);
             renderAbandonedCarts();
             renderRepeatCustomers();
@@ -769,9 +815,10 @@
     async function loadAdminDashboard(force = false) {
       try {
         const [ordRes, storeRes] = await Promise.all([
-          fetch('/api/admin/orders?t=' + Date.now(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: currentPin }) }),
+          fetch('/api/admin/orders?t=' + Date.now(), { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({}) }),
           fetch('/api/store?t=' + Date.now())
         ]);
+        if (handleUnauthorized(ordRes)) return;
 
         const ordData = await ordRes.json();
         const storeData = await storeRes.json();
@@ -779,16 +826,11 @@
         if (ordData.success) {
           cachedOrders = ordData.orders || [];
           cachedAbandonedCarts = ordData.abandonedCarts || [];
+          cachedProducts = ordData.products || storeData.products || [];
           window._lastOrdersHash = JSON.stringify({ o: cachedOrders, a: cachedAbandonedCarts });
           cachedCoupons = ordData.coupons || [];
           
-          document.getElementById('statTodayOrders').innerText = ordData.analytics.todayOrdersCount;
-          document.getElementById('statTotalOrders').innerText = ordData.analytics.totalOrders;
-          document.getElementById('statTotalSales').innerText = `₹${ordData.analytics.totalSales}`;
-          document.getElementById('statOnlineSales').innerText = `₹${ordData.analytics.totalOnlineRevenue}`;
-          document.getElementById('statCodSales').innerText = `₹${ordData.analytics.totalCodRevenue}`;
-          document.getElementById('statPending').innerText = ordData.analytics.pendingOrders;
-          document.getElementById('statLowStock').innerText = ordData.analytics.lowStockCount || 0;
+          updateAnalyticsUI(ordData.analytics);
           renderLowStockAlerts(ordData.lowStockProducts || []);
 
           if (ordData.storeSettings) {
@@ -803,15 +845,14 @@
           renderRepeatCustomers();
           renderAdminCoupons();
           renderAdminOrders();
-        }
-
-        if (storeData.products) {
-          cachedProducts = storeData.products;
-          cachedBanners = storeData.dealBanners || [];
           renderAdminCatalog();
-          renderAdminBanners();
           updateBannerProductDropdown();
           renderAdminReviewsModeration();
+        }
+
+        if (storeData.dealBanners) {
+          cachedBanners = storeData.dealBanners || [];
+          renderAdminBanners();
         }
       } catch (err) { console.error("Dashboard load error", err); }
     }
@@ -855,9 +896,9 @@
       try {
         const res = await fetch(`/api/admin/products/${productId}/reviews/${reviewId}`, {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin: currentPin })
+          headers: getAuthHeaders()
         });
+        if (handleUnauthorized(res)) return;
         const data = await res.json();
         if (data.success) loadAdminDashboard(true);
       } catch (err) {
@@ -869,9 +910,10 @@
       try {
         const res = await fetch('/api/admin/support/tickets?t=' + Date.now(), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin: currentPin })
+          headers: getAuthHeaders(),
+          body: JSON.stringify({})
         });
+        if (handleUnauthorized(res)) return;
         const data = await res.json();
         if (data.success) {
           const newHash = JSON.stringify(data.tickets);
@@ -947,9 +989,10 @@
       try {
         const res = await fetch('/api/admin/support/reply', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin: currentPin, ticketId, replyText })
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ ticketId, replyText })
         });
+        if (handleUnauthorized(res)) return;
         const data = await res.json();
         if (data.success) {
           alert("Reply sent! Customer will see it live within 3 seconds.");
@@ -965,9 +1008,9 @@
       try {
         const res = await fetch(`/api/admin/support/tickets/${ticketId}`, {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin: currentPin })
+          headers: getAuthHeaders()
         });
+        if (handleUnauthorized(res)) return;
         const data = await res.json();
         if (data.success) loadAdminSupportTickets(true);
       } catch (err) {
@@ -979,9 +1022,10 @@
       const fee = document.getElementById('deliveryChargeInput').value;
       const res = await fetch('/api/admin/store-settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin, deliveryCharge: fee })
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ deliveryCharge: fee })
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) alert(`COD Delivery Charge updated to ₹${fee}!`);
     }
@@ -990,9 +1034,10 @@
       const pct = document.getElementById('codAdvanceInput').value;
       const res = await fetch('/api/admin/store-settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin, codAdvancePercent: pct })
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ codAdvancePercent: pct })
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) alert(`COD Advance Token updated to ${pct}%!`);
     }
@@ -1000,7 +1045,6 @@
     async function handleCreateCoupon(e) {
       e.preventDefault();
       const payload = {
-        pin: currentPin,
         code: document.getElementById('cpCode').value,
         discountPercent: document.getElementById('cpDiscount').value,
         minSpend: document.getElementById('cpMinSpend').value,
@@ -1008,9 +1052,10 @@
       };
       const res = await fetch('/api/admin/coupons', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         cachedCoupons = data.coupons;
@@ -1025,9 +1070,9 @@
       if (!confirm(`Delete coupon ${code}?`)) return;
       const res = await fetch(`/api/admin/coupons/${code}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin })
+        headers: getAuthHeaders()
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         cachedCoupons = data.coupons;
@@ -1132,7 +1177,6 @@
 
       const compressedImg = await compressImageFile(file, 900, 65);
       const payload = {
-        pin: currentPin,
         title: document.getElementById('bannerTitleInput').value,
         tag: document.getElementById('bannerTagInput').value,
         productId: document.getElementById('bannerProductSelect').value,
@@ -1141,9 +1185,10 @@
 
       const res = await fetch('/api/admin/banners/add', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         cachedBanners = data.dealBanners;
@@ -1161,9 +1206,9 @@
       if (!confirm("Delete this banner?")) return;
       const res = await fetch(`/api/admin/banners/${id}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin })
+        headers: getAuthHeaders()
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         cachedBanners = data.dealBanners;
@@ -1202,12 +1247,12 @@
       const colorsRaw = document.getElementById('prodColors').value;
 
       const payload = {
-        pin: currentPin,
         name: document.getElementById('prodName').value,
         mainCategory: document.getElementById('prodMainCategory').value,
         category: document.getElementById('prodCategory').value,
         price: document.getElementById('prodPrice').value,
         originalPrice: document.getElementById('prodOrigPrice').value,
+        costPrice: document.getElementById('prodCostPrice').value,
         stockQuantity: document.getElementById('prodStock').value,
         showOnHome: document.getElementById('prodShowOnHome').checked,
         sizeOptions: sizesRaw ? sizesRaw.split(',').map(s => s.trim()).filter(Boolean) : ["Standard"],
@@ -1222,9 +1267,10 @@
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         alert(editId ? "Product Updated!" : "Product Published!");
@@ -1250,6 +1296,7 @@
       document.getElementById('prodCategory').value = p.category;
       document.getElementById('prodPrice').value = p.price;
       document.getElementById('prodOrigPrice').value = p.originalPrice;
+      document.getElementById('prodCostPrice').value = p.costPrice || 0;
       document.getElementById('prodStock').value = p.stockQuantity;
       document.getElementById('prodSizes').value = (p.sizeOptions || []).join(', ');
       document.getElementById('prodColors').value = (p.colorOptions || []).join(', ');
@@ -1273,12 +1320,34 @@
       renderFormImagesPreview();
     }
 
+    // Quick Inline Price, Cost & Stock Save
+    async function saveQuickCatalogRow(id) {
+      const price = document.getElementById(`q_price_${id}`).value;
+      const costPrice = document.getElementById(`q_cost_${id}`).value;
+      const stockQuantity = document.getElementById(`q_stock_${id}`).value;
+
+      const res = await fetch(`/api/admin/products/${id}/quick-update`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ price, costPrice, stockQuantity })
+      });
+      if (handleUnauthorized(res)) return;
+      const data = await res.json();
+      if (data.success && data.product) {
+        const idx = cachedProducts.findIndex(p => p.id === id);
+        if (idx > -1) cachedProducts[idx] = data.product;
+        alert(`✅ Updated "${data.product.name}" (Sale: ₹${data.product.price}, Cost: ₹${data.product.costPrice}, Stock: ${data.product.stockQuantity})`);
+        renderAdminCatalog();
+      }
+    }
+
     async function toggleShowOnHome(id, currentStatus) {
       const res = await fetch(`/api/admin/products/${id}/toggle-home`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin, showOnHome: !currentStatus })
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ showOnHome: !currentStatus })
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         const idx = cachedProducts.findIndex(p => p.id === id);
@@ -1291,9 +1360,9 @@
       if (!confirm("Delete this product permanently?")) return;
       const res = await fetch(`/api/admin/products/${id}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin })
+        headers: getAuthHeaders()
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         cachedProducts = data.products;
@@ -1309,22 +1378,36 @@
       document.getElementById('adminCatalogList').innerHTML = filtered.map(p => {
         const isHome = p.showOnHome === true;
         const isLow = (p.stockQuantity || 0) < 3;
+        const unitMargin = (p.price || 0) - (p.costPrice || 0);
         return `
-          <div class="bg-slate-800/70 border ${isLow ? 'border-rose-500/60' : 'border-slate-700'} p-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div class="flex items-center gap-3">
-              <img src="${(p.images && p.images[0]) || ''}" class="w-12 h-12 rounded-xl object-cover border border-slate-600">
-              <div>
-                <p class="font-bold text-white">${p.name} ${isLow ? '<span class="ml-1 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black">LOW STOCK</span>' : ''}</p>
-                <p class="text-[11px] text-slate-400">${p.mainCategory} &rarr; ${p.category} | Photos: ${(p.images || []).length} | Stock: <b class="${isLow ? 'text-rose-400' : 'text-amber-400'}">${p.stockQuantity}</b></p>
-                <p class="text-emerald-400 font-bold">₹${p.price} <span class="line-through text-slate-500 font-normal">₹${p.originalPrice}</span></p>
+          <div class="bg-slate-800/70 border ${isLow ? 'border-rose-500/60' : 'border-slate-700'} p-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-3 min-w-0">
+              <img src="${(p.images && p.images[0]) || ''}" class="w-12 h-12 rounded-xl object-cover border border-slate-600 flex-shrink-0">
+              <div class="min-w-0">
+                <p class="font-bold text-white truncate">${p.name} ${isLow ? '<span class="ml-1 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black">LOW</span>' : ''}</p>
+                <p class="text-[10px] text-slate-400">${p.mainCategory} &rarr; ${p.category} • Margin: <b class="${unitMargin >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${unitMargin}/pc</b></p>
+                
+                <!-- Quick Inline Edit Inputs -->
+                <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  <label class="text-[10px] text-amber-300">Sale ₹:
+                    <input type="number" id="q_price_${p.id}" value="${p.price}" class="w-16 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold">
+                  </label>
+                  <label class="text-[10px] text-emerald-300">Cost ₹:
+                    <input type="number" id="q_cost_${p.id}" value="${p.costPrice || 0}" class="w-16 bg-slate-950 border border-emerald-500/40 rounded px-1.5 py-0.5 text-emerald-300 font-bold">
+                  </label>
+                  <label class="text-[10px] text-cyan-300">Stock:
+                    <input type="number" id="q_stock_${p.id}" value="${p.stockQuantity}" class="w-14 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold">
+                  </label>
+                  <button onclick="saveQuickCatalogRow(${p.id})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-0.5 rounded font-extrabold text-[10px] shadow">Save</button>
+                </div>
               </div>
             </div>
-            <div class="flex items-center gap-2">
-              <button onclick="toggleShowOnHome(${p.id}, ${isHome})" class="px-3 py-1.5 rounded-xl font-bold transition ${isHome ? 'bg-emerald-500 text-slate-950' : 'bg-slate-700 text-slate-300'}">
-                <i class="fa-solid ${isHome ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i> ${isHome ? 'On Home: YES' : 'On Home: NO'}
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button onclick="toggleShowOnHome(${p.id}, ${isHome})" class="px-2.5 py-1.5 rounded-xl font-bold transition text-[11px] ${isHome ? 'bg-emerald-500 text-slate-950' : 'bg-slate-700 text-slate-300'}">
+                <i class="fa-solid ${isHome ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i> ${isHome ? 'Home: YES' : 'Home: NO'}
               </button>
-              <button onclick="editProduct(${p.id})" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-3 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
-              <button onclick="deleteProduct(${p.id})" class="bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 px-3 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button>
+              <button onclick="editProduct(${p.id})" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-2.5 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-pen"></i> Full Edit</button>
+              <button onclick="deleteProduct(${p.id})" class="bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 px-2.5 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
         `;
@@ -1337,13 +1420,19 @@
       const cleanPhone = String(o.phone || '').replace(/[^0-9]/g, '');
       const fullPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
 
+      const courier = o.courierPartner || 'Delhivery';
+      const trackFn = courierTrackingUrls[courier] || courierTrackingUrls["Delhivery"];
       const itemsSummary = (o.items || []).map(i => `• ${i.name} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join('\n');
       const trackingLine = o.awbNumber
-        ? `\n🚚 *Courier:* ${o.courierPartner || 'Delhivery'}\n📦 *Tracking AWB:* ${o.awbNumber}\n🔗 *Track Here:* https://www.delhivery.com/track/package/${o.awbNumber}`
+        ? `\n🚚 *Courier:* ${courier}\n📦 *Tracking AWB:* ${o.awbNumber}\n🔗 *Track Here:* ${trackFn(o.awbNumber)}`
         : '';
 
       const message = `✨ *AURA FINE STORE* ✨\nHello *${o.customerName}*,\n\nYour order *#${o.id}* status is now: *${o.status}*\n\n🛍️ *Items:*\n${itemsSummary}\n\n💰 *Total Bill:* ₹${o.total} (${o.paymentMethod})${trackingLine}\n\nThank you for shopping with AURA Fine Store!`;
       window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
+    function openThermalShippingLabel(orderId) {
+      window.open(`/api/admin/orders/${orderId}/shipping-label?token=${encodeURIComponent(adminToken)}`, '_blank');
     }
 
     function renderAdminOrders() {
@@ -1375,25 +1464,36 @@
           ? `<div class="mt-1.5 bg-rose-950/70 border border-rose-500/40 p-2 rounded-lg text-[10px] text-rose-200"><i class="fa-solid fa-gift text-rose-400 mr-1"></i><b>Gift Note:</b> "${o.giftNote}"</div>`
           : '';
 
+        const curPartner = o.courierPartner || 'Delhivery';
+
         return `
           <tr class="hover:bg-slate-900/60 align-top">
             <td class="p-3">
               <span class="font-mono font-bold text-amber-400">#${o.id}</span>
               <span class="block text-[10px] text-slate-400 mt-0.5">${o.date}</span>
+              <button onclick="openThermalShippingLabel('${o.id}')" class="mt-2 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-lg text-[10px] font-extrabold shadow flex items-center gap-1">
+                <i class="fa-solid fa-print"></i> Label (4x6)
+              </button>
             </td>
-            <td class="p-3 max-w-[220px]">
+            <td class="p-3 max-w-[210px]">
               <p class="font-bold text-white">${o.customerName}</p>
               <p class="text-emerald-400 font-mono text-[11px]">+91 ${o.phone}</p>
               <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${o.address}</p>
             </td>
-            <td class="p-3 min-w-[190px]">${itemsText}${giftNoteHtml}</td>
+            <td class="p-3 min-w-[180px]">${itemsText}${giftNoteHtml}</td>
             <td class="p-3">
               <p class="font-bold text-emerald-400 text-sm">₹${o.total}</p>
-              <p class="text-[10px] text-slate-400">COD Delivery Fee: ₹${o.deliveryCharge || 0}</p>
+              <p class="text-[10px] text-emerald-300 font-bold">Profit: ₹${o.netProfit || 0}</p>
               <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300">${o.paymentMethod}</span>
               <p class="text-[10px] font-mono text-slate-300 mt-1">UTR: ${o.utrNumber}</p>
             </td>
-            <td class="p-3 space-y-1.5 min-w-[160px]">
+            <td class="p-3 space-y-1.5 min-w-[175px]">
+              <select id="courier_${o.id}" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1.5 text-[11px] text-cyan-300 font-bold">
+                <option value="Delhivery" ${curPartner === 'Delhivery' ? 'selected' : ''}>Delhivery</option>
+                <option value="DTDC" ${curPartner === 'DTDC' ? 'selected' : ''}>DTDC</option>
+                <option value="IndiaPost" ${curPartner === 'IndiaPost' ? 'selected' : ''}>IndiaPost</option>
+                <option value="Shiprocket" ${curPartner === 'Shiprocket' ? 'selected' : ''}>Shiprocket</option>
+              </select>
               <input type="text" id="awb_${o.id}" value="${o.awbNumber || ''}" placeholder="AWB Tracking No." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1.5 text-[11px] text-white">
               <button onclick="saveOrderTracking('${o.id}')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-1 rounded-lg text-[10px] font-bold">Save AWB & Ship</button>
               <label class="block w-full text-center bg-slate-800 hover:bg-slate-700 border border-slate-600 py-1 rounded-lg text-[10px] cursor-pointer text-amber-300 font-semibold">
@@ -1422,51 +1522,57 @@
     }
 
     async function updateOrderStatus(orderId, status) {
-      await fetch(`/api/admin/orders/${orderId}/status`, {
+      const res = await fetch(`/api/admin/orders/${orderId}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin, status })
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status })
       });
+      if (handleUnauthorized(res)) return;
       loadAdminDashboard(true);
     }
 
     async function saveOrderTracking(orderId) {
+      const courierPartner = document.getElementById(`courier_${orderId}`).value;
       const awbNumber = document.getElementById(`awb_${orderId}`).value.trim();
-      await fetch(`/api/admin/orders/${orderId}/dispatch-tracking`, {
+      const res = await fetch(`/api/admin/orders/${orderId}/dispatch-tracking`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin, courierPartner: "Delhivery", awbNumber })
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ courierPartner, awbNumber })
       });
-      alert("Tracking updated & marked as Shipped!");
+      if (handleUnauthorized(res)) return;
+      alert(`Tracking updated (${courierPartner}) & marked as Shipped!`);
       loadAdminDashboard(true);
     }
 
+    // Direct Multer File Upload (Zero Base64 Bloat)
     async function uploadDeliverySlip(orderId, input) {
       const file = input.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const res = await fetch(`/api/admin/orders/${orderId}/upload-slip`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin: currentPin, slipFileBase64: e.target.result })
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert("Delivery Slip Uploaded!");
-          loadAdminDashboard(true);
-        }
-      };
-      reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append('slipFile', file);
+
+      const res = await fetch(`/api/admin/orders/${orderId}/upload-slip`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${adminToken}` },
+        body: formData
+      });
+      if (handleUnauthorized(res)) return;
+      const data = await res.json();
+      if (data.success) {
+        alert("Delivery Slip Uploaded directly to Cloudinary!");
+        loadAdminDashboard(true);
+      } else {
+        alert(data.message || "Slip upload failed!");
+      }
     }
 
     async function deleteCustomerOrder(orderId) {
       if (!confirm(`Delete Order #${orderId} permanently from MongoDB?`)) return;
       const res = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: currentPin })
+        headers: getAuthHeaders()
       });
+      if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
         alert(`Order #${orderId} deleted from MongoDB!`);
