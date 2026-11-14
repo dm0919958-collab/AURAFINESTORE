@@ -39,14 +39,11 @@
           <h1 class="text-2xl font-cinzel font-bold text-amber-400">AURA Fine Store Command</h1>
           <span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">● JWT SECURED</span>
         </div>
-        <p class="text-xs text-slate-400 mt-0.5">Categories, Timed Coupons, AURA Coins, Blocked Numbers, Net Profit & 4x6 Labels</p>
+        <p class="text-xs text-slate-400 mt-0.5">Categories, Timed Coupons, AURA Coins Wallet, Net Profit & 4x6 Labels</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <a href="#categoryManagerSection" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
           <i class="fa-solid fa-layer-group"></i> Categories (<span id="headerCatBadge">0</span>)
-        </a>
-        <a href="#blockedNumbersSection" class="bg-rose-600/25 hover:bg-rose-600/40 text-rose-300 border border-rose-500/40 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
-          <i class="fa-solid fa-ban"></i> Blocked (<span id="headerBlockedBadge">0</span>)
         </a>
         <a href="#stockWaitlistSection" class="bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
           <i class="fa-solid fa-bell"></i> Waitlist (<span id="headerWaitlistBadge">0</span>)
@@ -113,7 +110,7 @@
       </div>
     </div>
 
-    <!-- DYNAMIC CATEGORY & SUB-CATEGORY MANAGER -->
+    <!-- DYNAMIC CATEGORY & SUB-CATEGORY MANAGER (WITH CASCADE DELETE) -->
     <div id="categoryManagerSection" class="bg-slate-900 border-2 border-amber-500/35 p-5 rounded-3xl space-y-4 shadow-xl">
       <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
         <div>
@@ -123,6 +120,7 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <!-- Add Main Category -->
         <form onsubmit="handleAddMainCategory(event)" class="bg-slate-800/70 border border-slate-700 p-3.5 rounded-2xl flex items-end gap-2">
           <div class="flex-1">
             <label class="block text-[11px] font-bold text-amber-300 mb-1">New Main Category Name *</label>
@@ -131,6 +129,7 @@
           <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl whitespace-nowrap shadow">+ Add Category</button>
         </form>
 
+        <!-- Add Sub-Category -->
         <form onsubmit="handleAddSubCategory(event)" class="bg-slate-800/70 border border-slate-700 p-3.5 rounded-2xl flex items-end gap-2">
           <div class="w-40">
             <label class="block text-[11px] font-bold text-cyan-300 mb-1">Main Category *</label>
@@ -145,32 +144,6 @@
       </div>
 
       <div id="adminCategoriesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-    </div>
-
-    <!-- UNLIMITED MOBILE NUMBER BLOCK / UNBLOCK MANAGER -->
-    <div id="blockedNumbersSection" class="bg-slate-900 border-2 border-rose-500/40 p-5 rounded-3xl space-y-4 shadow-xl">
-      <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
-        <div>
-          <h3 class="text-base font-bold text-rose-400"><i class="fa-solid fa-ban mr-1.5"></i> Blocked Mobile Numbers Manager (<span id="blockedCountText">0</span>)</h3>
-          <p class="text-[11px] text-slate-400">Block unlimited fake or RTO customer mobile numbers. Blocked numbers cannot place orders on your store until unblocked.</p>
-        </div>
-      </div>
-
-      <form onsubmit="handleBlockMobileNumber(event)" class="bg-slate-800/70 border border-slate-700 p-3.5 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs items-end">
-        <div>
-          <label class="block text-[11px] font-bold text-rose-300 mb-1">10-Digit Mobile Number *</label>
-          <input type="tel" id="blockPhoneInput" maxlength="10" required placeholder="e.g. 9876543210" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono font-bold">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-300 mb-1">Reason (Optional)</label>
-          <input type="text" id="blockReasonInput" placeholder="e.g. Fake UTR / Repeated RTO" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white">
-        </div>
-        <button type="submit" class="bg-rose-600 hover:bg-rose-500 text-white font-extrabold px-4 py-2 rounded-xl shadow transition">
-          <i class="fa-solid fa-ban mr-1"></i> Block Number
-        </button>
-      </form>
-
-      <div id="adminBlockedNumbersList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-64 overflow-y-auto pr-1"></div>
     </div>
 
     <!-- Out-Of-Stock "Notify Me" Customer Waitlist Section -->
@@ -212,6 +185,7 @@
         <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-sliders mr-1.5"></i> Store Controls, AURA Coins & Limits</h3>
         
         <div class="space-y-3 text-xs">
+          <!-- AURA Coins Loyalty Wallet Rules -->
           <div class="bg-amber-950/35 p-3.5 rounded-2xl border border-amber-500/35 space-y-2">
             <label class="block font-bold text-amber-300"><i class="fa-solid fa-coins mr-1"></i> AURA Coins Loyalty Wallet (1 Coin = ₹1):</label>
             <div class="grid grid-cols-2 gap-2">
@@ -227,6 +201,7 @@
             <button onclick="saveAuraCoinsSettings()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 py-2 rounded-xl font-extrabold transition shadow">Save AURA Coins Rules</button>
           </div>
 
+          <!-- Free Gift Progress Bar Settings -->
           <div class="bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-500/35 space-y-2">
             <label class="block font-bold text-emerald-300"><i class="fa-solid fa-gift mr-1"></i> Free Gift Progress Bar (0 = Disabled):</label>
             <div class="grid grid-cols-2 gap-2">
@@ -242,6 +217,7 @@
             <button onclick="saveFreeGiftSettings()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-2 rounded-xl font-extrabold transition shadow">Save Free Gift Rule</button>
           </div>
 
+          <!-- Max COD Order Amount Limit -->
           <div class="bg-purple-950/35 p-3 rounded-2xl border border-purple-500/35 space-y-2">
             <label class="block font-bold text-purple-300"><i class="fa-solid fa-shield-halved mr-1"></i> Max Order Amount for COD (₹):</label>
             <div class="flex gap-2">
@@ -250,6 +226,7 @@
             </div>
           </div>
 
+          <!-- Flash Deal Timer -->
           <div class="bg-slate-800/90 p-3.5 rounded-2xl border border-amber-500/30 space-y-2.5">
             <div class="flex justify-between items-center">
               <label class="font-bold text-amber-300">Flash Deal Countdown Timer:</label>
@@ -273,6 +250,7 @@
             </div>
           </div>
 
+          <!-- COD Delivery Charge & Advance Token -->
           <div class="grid grid-cols-2 gap-2">
             <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-1.5">
               <label class="block font-bold text-slate-200 text-[11px]">COD Delivery Fee (₹):</label>
@@ -290,6 +268,7 @@
             </div>
           </div>
 
+          <!-- Meta Pixel ID Setting -->
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-blue-500/30 space-y-1.5">
             <label class="block font-bold text-blue-300"><i class="fa-brands fa-meta mr-1"></i> Meta (Facebook) Pixel ID:</label>
             <div class="flex gap-2">
@@ -298,6 +277,7 @@
             </div>
           </div>
 
+          <!-- Change Admin Security PIN -->
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-rose-500/30 space-y-1.5">
             <label class="block font-bold text-rose-300"><i class="fa-solid fa-key mr-1"></i> Change Admin Login PIN (Encrypted):</label>
             <div class="flex gap-2">
@@ -526,7 +506,7 @@
       <div class="flex flex-wrap justify-between items-center gap-3">
         <div>
           <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-truck-fast mr-1"></i> Customer Orders & Logistics</h3>
-          <p class="text-[10px] text-emerald-400">Mark as <b>Delivered</b> to automatically credit customer AURA Coins, print 4x6 Labels, or Block/Unblock numbers.</p>
+          <p class="text-[10px] text-emerald-400">Mark as <b>Delivered</b> to automatically credit customer AURA Coins, or print 4x6 Thermal Labels.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <input type="text" id="adminOrderSearch" oninput="renderAdminOrders()" placeholder="Search ID, Phone, UTR..." class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
@@ -552,7 +532,7 @@
           <thead>
             <tr class="border-b border-slate-800 text-slate-400">
               <th class="p-3">Order & Date</th>
-              <th class="p-3">Customer & Block Control</th>
+              <th class="p-3">Customer & Address</th>
               <th class="p-3">Purchased Items & Bonus</th>
               <th class="p-3">Payment, Coins & UTR</th>
               <th class="p-3">Courier, AWB & 4x6 Label</th>
@@ -574,7 +554,6 @@
     let cachedAbandonedCarts = [];
     let cachedStockNotifies = [];
     let cachedWallets = [];
-    let cachedBlockedNumbers = [];
     let cachedCoupons = [];
     let cachedBanners = [];
     let cachedSupportTickets = [];
@@ -607,89 +586,7 @@
       "Shiprocket": (awb) => `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`
     };
 
-    function renderBlockedNumbers() {
-      document.getElementById('headerBlockedBadge').innerText = cachedBlockedNumbers.length;
-      document.getElementById('blockedCountText').innerText = cachedBlockedNumbers.length;
-      const list = document.getElementById('adminBlockedNumbersList');
-
-      if (!cachedBlockedNumbers.length) {
-        list.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No blocked mobile numbers right now.</p>`;
-        return;
-      }
-
-      list.innerHTML = cachedBlockedNumbers.map(b => `
-        <div class="bg-rose-950/35 border border-rose-500/40 p-3 rounded-2xl flex items-center justify-between gap-2 text-xs">
-          <div class="min-w-0">
-            <p class="font-mono font-bold text-rose-300 text-sm"><i class="fa-solid fa-ban mr-1"></i>+91 ${b.phone}</p>
-            <p class="text-[10px] text-slate-300 truncate">${b.reason || 'Blocked by Admin'}</p>
-            <p class="text-[9px] text-slate-500">${b.blockedAtStr || ''}</p>
-          </div>
-          <button onclick="unblockMobileNumber('${b.phone}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-xl text-[10px] font-extrabold whitespace-nowrap shadow">
-            <i class="fa-solid fa-lock-open mr-1"></i> Unblock
-          </button>
-        </div>
-      `).join('');
-    }
-
-    async function handleBlockMobileNumber(e) {
-      e.preventDefault();
-      const phone = document.getElementById('blockPhoneInput').value.replace(/[^0-9]/g, '');
-      const reason = document.getElementById('blockReasonInput').value.trim();
-      if (phone.length !== 10) return alert("Please enter a valid 10-digit mobile number!");
-
-      const res = await fetch('/api/admin/blocked-numbers', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ phone, reason })
-      });
-      if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
-        cachedBlockedNumbers = data.blockedNumbers || [];
-        document.getElementById('blockPhoneInput').value = "";
-        document.getElementById('blockReasonInput').value = "";
-        renderBlockedNumbers();
-        renderAdminOrders();
-        alert(`🚫 Mobile number +91 ${phone} has been BLOCKED!`);
-      } else {
-        alert(data.message || "Failed to block number.");
-      }
-    }
-
-    async function quickBlockMobileNumber(phone) {
-      const reason = prompt(`Enter reason to block +91 ${phone}:`, "Fake / RTO Customer");
-      if (reason === null) return;
-      const res = await fetch('/api/admin/blocked-numbers', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ phone, reason })
-      });
-      if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
-        cachedBlockedNumbers = data.blockedNumbers || [];
-        renderBlockedNumbers();
-        renderAdminOrders();
-        alert(`🚫 +91 ${phone} blocked!`);
-      }
-    }
-
-    async function unblockMobileNumber(phone) {
-      if (!confirm(`Unblock mobile number +91 ${phone} so they can order again?`)) return;
-      const res = await fetch(`/api/admin/blocked-numbers/${phone}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
-      if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
-        cachedBlockedNumbers = data.blockedNumbers || [];
-        renderBlockedNumbers();
-        renderAdminOrders();
-        alert(`✅ Mobile number +91 ${phone} has been UNBLOCKED!`);
-      }
-    }
-
+    // Dynamic Category & Sub-Category Sync Functions
     function populateCategoryDropdowns(selectedMain = "", selectedSub = "") {
       const targetMainSel = document.getElementById('targetMainCatSelect');
       const prodMainSel = document.getElementById('prodMainCategory');
@@ -1241,17 +1138,15 @@
         if (handleUnauthorized(ordRes)) return;
         const ordData = await ordRes.json();
         if (ordData.success) {
-          const newHash = JSON.stringify({ o: ordData.orders, a: ordData.abandonedCarts, w: ordData.stockNotifies, wl: ordData.wallets, b: ordData.blockedNumbers });
+          const newHash = JSON.stringify({ o: ordData.orders, a: ordData.abandonedCarts, w: ordData.stockNotifies, wl: ordData.wallets });
           if (window._lastOrdersHash !== newHash) {
             window._lastOrdersHash = newHash;
             cachedOrders = ordData.orders || [];
             cachedAbandonedCarts = ordData.abandonedCarts || [];
             cachedStockNotifies = ordData.stockNotifies || [];
             cachedWallets = ordData.wallets || [];
-            cachedBlockedNumbers = ordData.blockedNumbers || [];
             updateAnalyticsUI(ordData.analytics);
             renderLowStockAlerts(ordData.lowStockProducts || []);
-            renderBlockedNumbers();
             renderStockWaitlist();
             renderAbandonedCarts();
             renderRepeatCustomers();
@@ -1277,10 +1172,9 @@
           cachedAbandonedCarts = ordData.abandonedCarts || [];
           cachedStockNotifies = ordData.stockNotifies || [];
           cachedWallets = ordData.wallets || [];
-          cachedBlockedNumbers = ordData.blockedNumbers || [];
           cachedCategories = ordData.categories || storeData.categories || [];
           cachedProducts = ordData.products || storeData.products || [];
-          window._lastOrdersHash = JSON.stringify({ o: cachedOrders, a: cachedAbandonedCarts, w: cachedStockNotifies, wl: cachedWallets, b: cachedBlockedNumbers });
+          window._lastOrdersHash = JSON.stringify({ o: cachedOrders, a: cachedAbandonedCarts, w: cachedStockNotifies, wl: cachedWallets });
           cachedCoupons = ordData.coupons || [];
           
           updateAnalyticsUI(ordData.analytics);
@@ -1301,7 +1195,6 @@
 
           populateCategoryDropdowns();
           renderAdminCategories();
-          renderBlockedNumbers();
           renderStockWaitlist();
           renderAbandonedCarts();
           renderRepeatCustomers();
@@ -1916,7 +1809,6 @@
 
     function renderAdminOrders() {
       const q = (document.getElementById('adminOrderSearch').value || "").toLowerCase();
-      const blockedSet = new Set(cachedBlockedNumbers.map(b => String(b.phone)));
       const filtered = cachedOrders.filter(o => {
         const matchesTab = activeOrderStatusFilter === 'ALL' || o.status === activeOrderStatusFilter;
         const matchesQuery = o.id.toLowerCase().includes(q) ||
@@ -1945,7 +1837,6 @@
           : '';
 
         const curPartner = o.courierPartner || 'Delhivery';
-        const isNumBlocked = blockedSet.has(String(o.phone));
 
         return `
           <tr class="hover:bg-slate-900/60 align-top">
@@ -1960,9 +1851,6 @@
               <p class="font-bold text-white">${o.customerName}</p>
               <p class="text-emerald-400 font-mono text-[11px]">+91 ${o.phone}</p>
               <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${o.address}</p>
-              ${isNumBlocked
-                ? `<button onclick="unblockMobileNumber('${o.phone}')" class="mt-1.5 bg-emerald-600/25 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-lock-open mr-1"></i>Blocked (Unblock)</button>`
-                : `<button onclick="quickBlockMobileNumber('${o.phone}')" class="mt-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-ban mr-1"></i>Block Number</button>`}
             </td>
             <td class="p-3 min-w-[180px]">${itemsText}${freeGiftHtml}</td>
             <td class="p-3">
@@ -2067,3 +1955,4 @@
   </script>
 </body>
 </html>
+    
