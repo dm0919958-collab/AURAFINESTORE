@@ -39,9 +39,12 @@
           <h1 class="text-2xl font-cinzel font-bold text-amber-400">AURA Fine Store Command</h1>
           <span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">● JWT SECURED</span>
         </div>
-        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Net Profit Analytics, Quick Stock/Price Edit & 4x6 Labels</p>
+        <p class="text-xs text-slate-400 mt-0.5">Real-time Orders, Net Profit, Max COD Limit, Free Gift Rules & Stock Waitlist</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
+        <a href="#stockWaitlistSection" class="bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-bell"></i> Notify Waitlist (<span id="headerWaitlistBadge">0</span>)
+        </a>
         <a href="#abandonedCartsSection" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
           <i class="fa-solid fa-cart-arrow-down"></i> Incomplete (<span id="headerAbandonedBadge">0</span>)
         </a>
@@ -107,6 +110,17 @@
       </div>
     </div>
 
+    <!-- Out-Of-Stock "Notify Me" Customer Waitlist Section -->
+    <div id="stockWaitlistSection" class="bg-slate-900 border border-purple-500/30 p-5 rounded-3xl space-y-4">
+      <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-purple-300"><i class="fa-solid fa-bell mr-1.5"></i> Out-of-Stock "Notify Me" Waitlist (<span id="waitlistCountText">0</span>)</h3>
+          <p class="text-[11px] text-slate-400">Customers waiting for sold-out products. Restock the item and send them a 1-click WhatsApp alert!</p>
+        </div>
+      </div>
+      <div id="adminStockWaitlistGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1"></div>
+    </div>
+
     <!-- Abandoned Cart Recovery (Incomplete Orders) -->
     <div id="abandonedCartsSection" class="bg-slate-900 border border-rose-500/30 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
@@ -129,12 +143,38 @@
       <div id="adminRepeatCustomersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1"></div>
     </div>
 
-    <!-- Store Controls, Meta Pixel, PIN & Coupons Section -->
+    <!-- Store Controls, Free Gift Bar, Max COD Limit, Meta Pixel & Coupons Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
-        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-sliders mr-1.5"></i> Store Controls, Meta Pixel & Security</h3>
+        <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-sliders mr-1.5"></i> Store Controls, COD Limit & Free Gift</h3>
         
         <div class="space-y-3 text-xs">
+          <!-- Free Gift Progress Bar Settings -->
+          <div class="bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-500/35 space-y-2">
+            <label class="block font-bold text-emerald-300"><i class="fa-solid fa-gift mr-1"></i> Free Gift Progress Bar (0 = Disabled):</label>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <span class="text-[10px] text-slate-400 block mb-0.5">Min Spend (₹)</span>
+                <input type="number" id="freeGiftThresholdInput" min="0" placeholder="1499" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-bold">
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block mb-0.5">Gift Name</span>
+                <input type="text" id="freeGiftTitleInput" placeholder="Surprise Gift Box" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-semibold">
+              </div>
+            </div>
+            <button onclick="saveFreeGiftSettings()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-2 rounded-xl font-extrabold transition shadow">Save Free Gift Rule</button>
+          </div>
+
+          <!-- Max COD Order Amount Limit -->
+          <div class="bg-purple-950/35 p-3 rounded-2xl border border-purple-500/35 space-y-2">
+            <label class="block font-bold text-purple-300"><i class="fa-solid fa-shield-halved mr-1"></i> Max Order Amount for COD (₹):</label>
+            <div class="flex gap-2">
+              <input type="number" id="maxCodAmountInput" min="0" placeholder="e.g. 2000 (0 = No Limit)" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-bold">
+              <button onclick="saveMaxCodLimit()" class="bg-purple-500 hover:bg-purple-400 text-slate-950 px-3.5 py-2 rounded-xl font-extrabold transition whitespace-nowrap">Save Limit</button>
+            </div>
+            <p class="text-[10px] text-slate-400">Orders above this amount will require 100% Prepaid UPI (0 = Unlimited COD).</p>
+          </div>
+
           <!-- Flash Deal Timer -->
           <div class="bg-slate-800/90 p-3.5 rounded-2xl border border-amber-500/30 space-y-2.5">
             <div class="flex justify-between items-center">
@@ -159,35 +199,35 @@
             </div>
           </div>
 
+          <!-- COD Delivery Charge & Advance Token -->
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-1.5">
+              <label class="block font-bold text-slate-200 text-[11px]">COD Delivery Fee (₹):</label>
+              <div class="flex gap-1.5">
+                <input type="number" id="deliveryChargeInput" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-1.5 text-white font-bold">
+                <button onclick="saveDeliveryCharge()" class="bg-amber-500 text-slate-950 px-2.5 py-1.5 rounded-xl font-bold">Save</button>
+              </div>
+            </div>
+            <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-1.5">
+              <label class="block font-bold text-slate-200 text-[11px]">COD Advance (%):</label>
+              <div class="flex gap-1.5">
+                <input type="number" id="codAdvanceInput" min="1" max="100" value="15" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-1.5 text-white font-bold">
+                <button onclick="saveCodSettings()" class="bg-emerald-500 text-slate-950 px-2.5 py-1.5 rounded-xl font-bold">Save</button>
+              </div>
+            </div>
+          </div>
+
           <!-- Meta Pixel ID Setting -->
-          <div class="bg-slate-800/80 p-3 rounded-2xl border border-blue-500/30 space-y-2">
+          <div class="bg-slate-800/80 p-3 rounded-2xl border border-blue-500/30 space-y-1.5">
             <label class="block font-bold text-blue-300"><i class="fa-brands fa-meta mr-1"></i> Meta (Facebook) Pixel ID:</label>
             <div class="flex gap-2">
               <input type="text" id="metaPixelIdInput" placeholder="e.g. 123456789012345" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-mono">
-              <button onclick="saveMetaPixelId()" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl font-bold transition whitespace-nowrap">Save Pixel</button>
-            </div>
-          </div>
-
-          <!-- COD Delivery Charge -->
-          <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2">
-            <label class="block font-bold text-slate-200">COD Only Delivery Charge (₹):</label>
-            <div class="flex gap-2">
-              <input type="number" id="deliveryChargeInput" min="0" placeholder="e.g. 49" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
-              <button onclick="saveDeliveryCharge()" class="bg-amber-500 text-slate-950 px-3.5 py-2 rounded-xl font-bold hover:bg-amber-400 transition whitespace-nowrap">Save Fee</button>
-            </div>
-          </div>
-
-          <!-- COD Advance Token -->
-          <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2">
-            <label class="block font-bold text-slate-200">COD Advance Token (%):</label>
-            <div class="flex gap-2">
-              <input type="number" id="codAdvanceInput" min="1" max="100" value="15" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
-              <button onclick="saveCodSettings()" class="bg-emerald-500 text-slate-950 px-3.5 py-2 rounded-xl font-bold hover:bg-emerald-400 transition whitespace-nowrap">Update %</button>
+              <button onclick="saveMetaPixelId()" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl font-bold transition whitespace-nowrap">Save</button>
             </div>
           </div>
 
           <!-- Change Admin Security PIN -->
-          <div class="bg-slate-800/80 p-3 rounded-2xl border border-rose-500/30 space-y-2">
+          <div class="bg-slate-800/80 p-3 rounded-2xl border border-rose-500/30 space-y-1.5">
             <label class="block font-bold text-rose-300"><i class="fa-solid fa-key mr-1"></i> Change Admin Login PIN (Encrypted):</label>
             <div class="flex gap-2">
               <input type="password" id="newAdminPinInput" placeholder="New PIN (min 4 chars)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-mono">
@@ -219,7 +259,7 @@
           </div>
         </form>
 
-        <div id="adminCouponsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-80 overflow-y-auto pr-1"></div>
+        <div id="adminCouponsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-96 overflow-y-auto pr-1"></div>
       </div>
     </div>
 
@@ -373,12 +413,12 @@
       </div>
     </div>
 
-    <!-- Customer Review Moderation Section -->
+    <!-- Customer Review Moderation Section (With Photo Preview) -->
     <div id="reviewModerationSection" class="bg-slate-900 border border-amber-500/30 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
         <div>
           <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-star-half-stroke mr-1.5"></i> Customer Reviews Moderation (<span id="totalReviewsCountText">0</span>)</h3>
-          <p class="text-[11px] text-slate-400">View and delete unwanted or spam customer reviews from any product.</p>
+          <p class="text-[11px] text-slate-400">View photo reviews and delete unwanted or spam customer reviews from any product.</p>
         </div>
       </div>
       <div id="adminReviewsModerationList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1"></div>
@@ -404,7 +444,7 @@
       </div>
     </div>
 
-    <!-- Customer Orders & Logistics Table (Multi-Courier + 4x6 Thermal Label Print) -->
+    <!-- Customer Orders & Logistics Table -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
         <div>
@@ -436,7 +476,7 @@
             <tr class="border-b border-slate-800 text-slate-400">
               <th class="p-3">Order & Date</th>
               <th class="p-3">Customer & Address</th>
-              <th class="p-3">Purchased Items & Gift Note</th>
+              <th class="p-3">Purchased Items, Gift & Bonus</th>
               <th class="p-3">Payment, Profit & UTR</th>
               <th class="p-3">Courier, AWB & 4x6 Label</th>
               <th class="p-3">Status, WhatsApp & Delete</th>
@@ -454,6 +494,7 @@
     let cachedProducts = [];
     let cachedOrders = [];
     let cachedAbandonedCarts = [];
+    let cachedStockNotifies = [];
     let cachedCoupons = [];
     let cachedBanners = [];
     let cachedSupportTickets = [];
@@ -488,7 +529,7 @@
     const courierTrackingUrls = {
       "Delhivery": (awb) => `https://www.delhivery.com/track/package/${encodeURIComponent(awb)}`,
       "DTDC": (awb) => `https://www.dtdc.in/tracking/shipment-tracking.asp?strCnno=${encodeURIComponent(awb)}`,
-      "IndiaPost": (awb) => `https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx`,
+      "IndiaPost": () => `https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx`,
       "Shiprocket": (awb) => `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`
     };
 
@@ -511,12 +552,12 @@
 
     function exportOrdersCSV() {
       if (!cachedOrders.length) return alert("No orders to export!");
-      const headers = ["Order ID", "Date", "Customer Name", "Phone", "Address", "Pincode", "Items", "Gift Note", "Total (INR)", "Net Profit (INR)", "Payment Mode", "UTR", "Status", "Courier", "AWB"];
+      const headers = ["Order ID", "Date", "Customer Name", "Phone", "Address", "Pincode", "Items", "Free Gift", "Gift Note", "Total (INR)", "Net Profit (INR)", "Payment Mode", "UTR", "Status", "Courier", "AWB"];
       const rows = cachedOrders.map(o => {
         const itemsStr = (o.items || []).map(i => `${i.name} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join(' | ');
         return [
           o.id, o.date, o.customerName, o.phone, o.address, o.pincode,
-          itemsStr, o.giftNote || "", o.total, o.netProfit || 0, o.paymentMethod, o.utrNumber, o.status, o.courierPartner || "Delhivery", o.awbNumber || ""
+          itemsStr, o.freeGiftUnlocked || "", o.giftNote || "", o.total, o.netProfit || 0, o.paymentMethod, o.utrNumber, o.status, o.courierPartner || "Delhivery", o.awbNumber || ""
         ].map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(',');
       });
 
@@ -546,6 +587,35 @@
       badge.className = "text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400";
     }
     setInterval(updateAdminTimerBadge, 1000);
+
+    async function saveFreeGiftSettings() {
+      const threshold = Number(document.getElementById('freeGiftThresholdInput').value) || 0;
+      const title = (document.getElementById('freeGiftTitleInput').value || "Luxury Surprise Jewellery Box").trim();
+      const res = await fetch('/api/admin/store-settings', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ freeGiftThreshold: threshold, freeGiftTitle: title })
+      });
+      if (handleUnauthorized(res)) return;
+      const data = await res.json();
+      if (data.success) {
+        alert(threshold > 0 ? `✅ Free Gift ("${title}") enabled on orders above ₹${threshold}!` : "Free Gift Progress Bar disabled.");
+      }
+    }
+
+    async function saveMaxCodLimit() {
+      const limit = Number(document.getElementById('maxCodAmountInput').value) || 0;
+      const res = await fetch('/api/admin/store-settings', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ maxCodOrderAmount: limit })
+      });
+      if (handleUnauthorized(res)) return;
+      const data = await res.json();
+      if (data.success) {
+        alert(limit > 0 ? `✅ Max COD Limit set to ₹${limit}! Orders above ₹${limit} will require Prepaid UPI.` : "✅ Max COD Limit removed (Unlimited COD allowed).");
+      }
+    }
 
     async function setFlashDealTimer() {
       const h = Number(document.getElementById('dealHoursInput').value) || 0;
@@ -686,6 +756,56 @@
       txt.innerHTML = lowList.map(p => `<span class="inline-block bg-rose-900/90 border border-rose-500/40 px-2 py-0.5 rounded mr-1.5 mb-1"><b>${p.name}</b> (Only ${p.stockQuantity} left)</span>`).join('');
     }
 
+    function renderStockWaitlist() {
+      const list = document.getElementById('adminStockWaitlistGrid');
+      document.getElementById('headerWaitlistBadge').innerText = cachedStockNotifies.length;
+      document.getElementById('waitlistCountText').innerText = cachedStockNotifies.length;
+
+      if (!cachedStockNotifies.length) {
+        list.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No pending restock notification requests.</p>`;
+        return;
+      }
+
+      list.innerHTML = cachedStockNotifies.map(n => {
+        const prod = cachedProducts.find(p => p.id === n.productId);
+        const inStockNow = prod && (prod.stockQuantity || 0) > 0;
+        const productUrl = `${window.location.origin}/?product=${n.productId}`;
+        const waMsg = `✨ *AURA FINE STORE RESTOCK ALERT* ✨\nHello *${n.customerName}*,\n\nGreat news! Your requested item *${n.productName}* is now *BACK IN STOCK* (Limited pieces)!\n\nOrder directly here before it sells out again:\n${productUrl}`;
+
+        return `
+          <div class="bg-slate-800/80 border ${inStockNow ? 'border-emerald-500/40' : 'border-purple-500/30'} p-3.5 rounded-2xl text-xs space-y-2 flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start gap-2">
+                <div>
+                  <p class="font-bold text-white">${n.customerName}</p>
+                  <p class="text-emerald-400 font-mono text-[11px]">+91 ${n.phone}</p>
+                </div>
+                <button onclick="deleteStockNotify('${n._id}')" title="Remove" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+              </div>
+              <p class="text-amber-300 font-bold mt-1 line-clamp-1">${n.productName}</p>
+              <p class="text-[10px] mt-0.5 ${inStockNow ? 'text-emerald-400 font-bold' : 'text-rose-400'}">
+                ${inStockNow ? `● Ready to Notify (${prod.stockQuantity} in stock)` : '● Currently Sold Out'}
+              </p>
+            </div>
+            <a href="https://wa.me/91${n.phone}?text=${encodeURIComponent(waMsg)}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-xl font-bold text-center block shadow">
+              <i class="fa-brands fa-whatsapp mr-1"></i> Send Back-in-Stock Alert
+            </a>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function deleteStockNotify(id) {
+      if (!confirm("Remove this waitlist entry?")) return;
+      const res = await fetch(`/api/admin/stock-notify/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      if (handleUnauthorized(res)) return;
+      const data = await res.json();
+      if (data.success) loadAdminDashboard(true);
+    }
+
     function renderAbandonedCarts() {
       const list = document.getElementById('adminAbandonedCartsList');
       document.getElementById('headerAbandonedBadge').innerText = cachedAbandonedCarts.length;
@@ -797,13 +917,15 @@
         if (handleUnauthorized(ordRes)) return;
         const ordData = await ordRes.json();
         if (ordData.success) {
-          const newHash = JSON.stringify({ o: ordData.orders, a: ordData.abandonedCarts });
+          const newHash = JSON.stringify({ o: ordData.orders, a: ordData.abandonedCarts, w: ordData.stockNotifies });
           if (window._lastOrdersHash !== newHash) {
             window._lastOrdersHash = newHash;
             cachedOrders = ordData.orders || [];
             cachedAbandonedCarts = ordData.abandonedCarts || [];
+            cachedStockNotifies = ordData.stockNotifies || [];
             updateAnalyticsUI(ordData.analytics);
             renderLowStockAlerts(ordData.lowStockProducts || []);
+            renderStockWaitlist();
             renderAbandonedCarts();
             renderRepeatCustomers();
             renderAdminOrders();
@@ -826,8 +948,9 @@
         if (ordData.success) {
           cachedOrders = ordData.orders || [];
           cachedAbandonedCarts = ordData.abandonedCarts || [];
+          cachedStockNotifies = ordData.stockNotifies || [];
           cachedProducts = ordData.products || storeData.products || [];
-          window._lastOrdersHash = JSON.stringify({ o: cachedOrders, a: cachedAbandonedCarts });
+          window._lastOrdersHash = JSON.stringify({ o: cachedOrders, a: cachedAbandonedCarts, w: cachedStockNotifies });
           cachedCoupons = ordData.coupons || [];
           
           updateAnalyticsUI(ordData.analytics);
@@ -836,11 +959,15 @@
           if (ordData.storeSettings) {
             document.getElementById('deliveryChargeInput').value = ordData.storeSettings.deliveryCharge || 0;
             document.getElementById('codAdvanceInput').value = ordData.storeSettings.codAdvancePercent || 15;
+            document.getElementById('maxCodAmountInput').value = ordData.storeSettings.maxCodOrderAmount ?? 2000;
+            document.getElementById('freeGiftThresholdInput').value = ordData.storeSettings.freeGiftThreshold ?? 1499;
+            document.getElementById('freeGiftTitleInput').value = ordData.storeSettings.freeGiftTitle || "Luxury Surprise Jewellery Box";
             document.getElementById('metaPixelIdInput').value = ordData.storeSettings.metaPixelId || "";
             adminDealEndMs = ordData.storeSettings.dealEndTime || 0;
             updateAdminTimerBadge();
           }
 
+          renderStockWaitlist();
           renderAbandonedCarts();
           renderRepeatCustomers();
           renderAdminCoupons();
@@ -885,6 +1012,7 @@
             </div>
             <p class="text-amber-400 text-[11px] mt-0.5">${'★'.repeat(r.rating || 5)} <span class="text-slate-400">by ${r.customerName}</span></p>
             <p class="text-slate-200 mt-1">${r.comment}</p>
+            ${r.photoUrl ? `<a href="${r.photoUrl}" target="_blank"><img src="${r.photoUrl}" class="w-16 h-16 object-cover rounded-lg border border-slate-600 mt-2"></a>` : ''}
           </div>
           <p class="text-[10px] text-slate-500 pt-1">${r.date || ''}</p>
         </div>
@@ -1320,7 +1448,6 @@
       renderFormImagesPreview();
     }
 
-    // Quick Inline Price, Cost & Stock Save
     async function saveQuickCatalogRow(id) {
       const price = document.getElementById(`q_price_${id}`).value;
       const costPrice = document.getElementById(`q_cost_${id}`).value;
@@ -1338,6 +1465,7 @@
         if (idx > -1) cachedProducts[idx] = data.product;
         alert(`✅ Updated "${data.product.name}" (Sale: ₹${data.product.price}, Cost: ₹${data.product.costPrice}, Stock: ${data.product.stockQuantity})`);
         renderAdminCatalog();
+        renderStockWaitlist();
       }
     }
 
@@ -1387,7 +1515,6 @@
                 <p class="font-bold text-white truncate">${p.name} ${isLow ? '<span class="ml-1 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black">LOW</span>' : ''}</p>
                 <p class="text-[10px] text-slate-400">${p.mainCategory} &rarr; ${p.category} • Margin: <b class="${unitMargin >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${unitMargin}/pc</b></p>
                 
-                <!-- Quick Inline Edit Inputs -->
                 <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
                   <label class="text-[10px] text-amber-300">Sale ₹:
                     <input type="number" id="q_price_${p.id}" value="${p.price}" class="w-16 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold">
@@ -1460,6 +1587,10 @@
           </div>
         `).join('');
 
+        const freeGiftHtml = o.freeGiftUnlocked
+          ? `<div class="mt-1.5 bg-emerald-950/80 border border-emerald-500/40 p-2 rounded-lg text-[10px] text-emerald-300 font-bold"><i class="fa-solid fa-award text-emerald-400 mr-1"></i>FREE BONUS GIFT: ${o.freeGiftUnlocked}</div>`
+          : '';
+
         const giftNoteHtml = o.giftNote
           ? `<div class="mt-1.5 bg-rose-950/70 border border-rose-500/40 p-2 rounded-lg text-[10px] text-rose-200"><i class="fa-solid fa-gift text-rose-400 mr-1"></i><b>Gift Note:</b> "${o.giftNote}"</div>`
           : '';
@@ -1480,7 +1611,7 @@
               <p class="text-emerald-400 font-mono text-[11px]">+91 ${o.phone}</p>
               <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${o.address}</p>
             </td>
-            <td class="p-3 min-w-[180px]">${itemsText}${giftNoteHtml}</td>
+            <td class="p-3 min-w-[180px]">${itemsText}${freeGiftHtml}${giftNoteHtml}</td>
             <td class="p-3">
               <p class="font-bold text-emerald-400 text-sm">₹${o.total}</p>
               <p class="text-[10px] text-emerald-300 font-bold">Profit: ₹${o.netProfit || 0}</p>
@@ -1544,7 +1675,6 @@
       loadAdminDashboard(true);
     }
 
-    // Direct Multer File Upload (Zero Base64 Bloat)
     async function uploadDeliverySlip(orderId, input) {
       const file = input.files[0];
       if (!file) return;
