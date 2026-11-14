@@ -7,11 +7,14 @@ const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const axios = require('axios');
 const FormDataNode = require('form-data');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 const DEFAULT_ADMIN_PIN = process.env.ADMIN_PIN || "admin123";
+const JWT_SECRET = process.env.JWT_SECRET || (MONGO_URI_FALLBACK_SECRET = (process.env.MONGO_URI || "aura_secret_key_2026").slice(0, 32));
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const SUPPORT_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN;
@@ -32,24 +35,32 @@ const loginAttempts = new Map();
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 5 * 60 * 1000;
 
-async function getActiveAdminPin() {
+async function verifyAdminAuth(req) {
+  const authHeader = req.headers['authorization'] || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  const tokenOrPin = bearerToken || (req.body && (req.body.token || req.body.pin)) || (req.query && req.query.token) || '';
+  if (!tokenOrPin) return false;
+
+  try {
+    const decoded = jwt.verify(tokenOrPin, JWT_SECRET);
+    if (decoded && decoded.role === 'admin') return true;
+  } catch (e) {}
+
   try {
     const s = await Settings.findOne({ key: 'main' }).lean();
-    return (s && s.adminPin) ? s.adminPin : DEFAULT_ADMIN_PIN;
-  } catch (e) {
-    return DEFAULT_ADMIN_PIN;
+    const storedPin = (s && s.adminPin) ? s.adminPin : DEFAULT_ADMIN_PIN;
+    if (storedPin.startsWith('$2a$') || storedPin.startsWith('$2b$')) {
+      return await bcrypt.compare(String(tokenOrPin).trim(), storedPin);
+    }
+    return String(tokenOrPin).trim() === String(storedPin).trim();
+  } catch (err) {
+    return false;
   }
-}
-
-async function verifyAdminPin(pin) {
-  if (!pin) return false;
-  const activePin = await getActiveAdminPin();
-  return String(pin).trim() === String(activePin).trim();
 }
 
 async function uploadToCloudinary(fileData, folder = 'aura_store') {
   if (!fileData) return "";
-  if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
+  if (typeof fileData === 'string' && (fileData.startsWith('http://') || fileData.startsWith('https://'))) {
     return fileData;
   }
   try {
@@ -60,8 +71,21 @@ async function uploadToCloudinary(fileData, folder = 'aura_store') {
     return result.secure_url;
   } catch (err) {
     console.error('Cloudinary Upload Error:', err.message);
-    return fileData;
+    return typeof fileData === 'string' ? fileData : "";
   }
+}
+
+function uploadBufferToCloudinary(buffer, folder = 'aura_store/delivery_slips') {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: 'auto' },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
 }
 
 if (!MONGO_URI) {
@@ -82,6 +106,7 @@ const productSchema = new mongoose.Schema({
   category: String,
   price: Number,
   originalPrice: Number,
+  costPrice: { type: Number, default: 0 },
   stockQuantity: Number,
   badge: String,
   rating: Number,
@@ -124,7 +149,7 @@ const settingsSchema = new mongoose.Schema({
   deliveryCharge: { type: Number, default: 0 },
   codAdvancePercent: { type: Number, default: 15 },
   dealEndTime: { type: Number, default: 0 },
-  adminPin: { type: String, default: DEFAULT_ADMIN_PIN },
+  adminPin: { type: String, default: "" },
   metaPixelId: { type: String, default: "" }
 });
 
@@ -143,6 +168,8 @@ const orderSchema = new mongoose.Schema({
   deliveryCharge: Number,
   couponCode: String,
   total: Number,
+  totalCost: { type: Number, default: 0 },
+  netProfit: { type: Number, default: 0 },
   paymentMethod: String,
   advancePaid: Number,
   balanceDue: Number,
@@ -230,6 +257,7 @@ const defaultProducts = [
     category: "Shirts",
     price: 899,
     originalPrice: 1799,
+    costPrice: 450,
     stockQuantity: 18,
     badge: "Bestseller",
     rating: 4.9,
@@ -252,6 +280,7 @@ const defaultProducts = [
     category: "T-Shirts",
     price: 549,
     originalPrice: 1099,
+    costPrice: 260,
     stockQuantity: 25,
     badge: "Must Have",
     rating: 4.9,
@@ -274,6 +303,7 @@ const defaultProducts = [
     category: "Watches",
     price: 1899,
     originalPrice: 3999,
+    costPrice: 900,
     stockQuantity: 10,
     badge: "Luxury Edition",
     rating: 5.0,
@@ -290,56 +320,13 @@ const defaultProducts = [
     reviews: []
   },
   {
-    id: 310,
-    name: "Tailored Stretch Chino Formal Trousers",
-    mainCategory: "Men",
-    category: "Trousers",
-    price: 1099,
-    originalPrice: 2199,
-    stockQuantity: 16,
-    badge: "Executive Fit",
-    rating: 4.8,
-    reviewsCount: 61,
-    inStock: true,
-    showOnHome: false,
-    sizeOptions: ["30", "32", "34", "36"],
-    colorOptions: ["Charcoal Grey", "Classic Navy", "Warm Khaki"],
-    images: [
-      "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=480&q=55",
-      "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=480&q=55"
-    ],
-    description: "Wrinkle-resistant cotton-lycra tailored formal trousers designed for all-day office and evening comfort.",
-    reviews: []
-  },
-  {
-    id: 311,
-    name: "AURA Noir Oud Royal Eau De Parfum (100ml)",
-    mainCategory: "Men",
-    category: "Perfumes",
-    price: 1299,
-    originalPrice: 2499,
-    stockQuantity: 20,
-    badge: "Long Lasting",
-    rating: 4.9,
-    reviewsCount: 112,
-    inStock: true,
-    showOnHome: false,
-    sizeOptions: ["100 ml Bottle"],
-    colorOptions: ["Royal Noir Oud"],
-    images: [
-      "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=480&q=55",
-      "https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=480&q=55"
-    ],
-    description: "Deep woody Arabian oud blended with amber, bergamot, and warm spices offering 12+ hours of sillage.",
-    reviews: []
-  },
-  {
     id: 401,
     name: "Royal Heritage Kundan Drop Jhumkas",
     mainCategory: "Women",
     category: "Jhumka",
     price: 699,
     originalPrice: 1299,
+    costPrice: 310,
     stockQuantity: 14,
     badge: "Bestseller",
     rating: 4.9,
@@ -356,122 +343,13 @@ const defaultProducts = [
     reviews: []
   },
   {
-    id: 404,
-    name: "Solitaire Zirconia Halo Floral Studs",
-    mainCategory: "Women",
-    category: "Studs",
-    price: 399,
-    originalPrice: 799,
-    stockQuantity: 25,
-    badge: "Sparkle Cut",
-    rating: 4.9,
-    reviewsCount: 110,
-    inStock: true,
-    showOnHome: false,
-    sizeOptions: ["Free Size (1.2 cm)"],
-    colorOptions: ["Platinum Silver", "Rose Gold Polish"],
-    images: [
-      "https://images.unsplash.com/photo-1635767798638-3e25273a8236?auto=format&fit=crop&w=480&q=55",
-      "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=480&q=55"
-    ],
-    description: "5A diamond-cut cubic zirconia surrounded by sparkling micro-pave crystals with push-back closures.",
-    reviews: []
-  },
-  {
-    id: 407,
-    name: "Anarkali Embroidered Pure Chanderi Kurti",
-    mainCategory: "Women",
-    category: "Kurtis",
-    price: 1199,
-    originalPrice: 2399,
-    stockQuantity: 15,
-    badge: "Royal Festive",
-    rating: 4.9,
-    reviewsCount: 96,
-    inStock: true,
-    showOnHome: false,
-    sizeOptions: ["M (38)", "L (40)", "XL (42)", "XXL (44)"],
-    colorOptions: ["Mustard Gold", "Pastel Mint Green", "Royal Maroon"],
-    images: [
-      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=480&q=55",
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=480&q=55"
-    ],
-    description: "Graceful flared Chanderi silk blend Anarkali kurti adorned with intricate sequin zari work and cotton lining.",
-    reviews: []
-  },
-  {
-    id: 410,
-    name: "Banarasi Katan Silk Woven Zari Saree",
-    mainCategory: "Women",
-    category: "Sarees",
-    price: 1899,
-    originalPrice: 3899,
-    stockQuantity: 12,
-    badge: "Bridal Classic",
-    rating: 5.0,
-    reviewsCount: 128,
-    inStock: true,
-    showOnHome: true,
-    sizeOptions: ["Standard 6.3m (With Blouse Piece)"],
-    colorOptions: ["Vermillion Red", "Peacock Teal Blue", "Emerald Green"],
-    images: [
-      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=480&q=55",
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=480&q=55"
-    ],
-    description: "Woven with gleaming golden Kadwa floral jaal along with heavy designer pallu and matching unstitched blouse.",
-    reviews: []
-  },
-  {
-    id: 413,
-    name: "Velvet Quilted Evening Crossbody Sling Bag",
-    mainCategory: "Women",
-    category: "Handbags",
-    price: 799,
-    originalPrice: 1599,
-    stockQuantity: 19,
-    badge: "Trending Bag",
-    rating: 4.9,
-    reviewsCount: 84,
-    inStock: true,
-    showOnHome: false,
-    sizeOptions: ["Compact (22x15 cm)"],
-    colorOptions: ["Midnight Black Velvet", "Wine Maroon Velvet"],
-    images: [
-      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=480&q=55",
-      "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=480&q=55"
-    ],
-    description: "Plush diamond quilted velvet sling crafted with antique gold hardware curb chain and high-security twist lock.",
-    reviews: []
-  },
-  {
-    id: 416,
-    name: "22K Gold Plated Temple Kundan Bangles Set",
-    mainCategory: "Women",
-    category: "Bangles",
-    price: 849,
-    originalPrice: 1699,
-    stockQuantity: 16,
-    badge: "Bridal Set",
-    rating: 4.9,
-    reviewsCount: 73,
-    inStock: true,
-    showOnHome: false,
-    sizeOptions: ["2.4", "2.6", "2.8"],
-    colorOptions: ["Antique Temple Gold", "Ruby Emerald Gold"],
-    images: [
-      "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=480&q=55",
-      "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=480&q=55"
-    ],
-    description: "Intricately carved royal temple motif kadas encrusted with uncut Kundan stones and screw-lock clasp.",
-    reviews: []
-  },
-  {
     id: 501,
     name: "Magnetic Mutual Heart Couple Bracelets Set",
     mainCategory: "Gifts",
     category: "Couples",
     price: 499,
     originalPrice: 999,
+    costPrice: 210,
     stockQuantity: 28,
     badge: "Love Magnet",
     rating: 5.0,
@@ -486,89 +364,21 @@ const defaultProducts = [
     ],
     description: "When brought close, the two heart halves automatically snap together via custom magnetic attraction bells.",
     reviews: []
-  },
-  {
-    id: 504,
-    name: "100 Languages I Love You Projection Necklace",
-    mainCategory: "Gifts",
-    category: "Romantic",
-    price: 499,
-    originalPrice: 999,
-    stockQuantity: 22,
-    badge: "Viral Trend",
-    rating: 4.9,
-    reviewsCount: 140,
-    inStock: true,
-    showOnHome: false,
-    sizeOptions: ["45cm Chain"],
-    colorOptions: ["Rose Gold Finish", "Platinum Silver"],
-    images: [
-      "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=480&q=55",
-      "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55"
-    ],
-    description: "Using phone light or holding close reveals 'I Love You' etched in 100 languages inside the central micro crystal.",
-    reviews: []
-  },
-  {
-    id: 507,
-    name: "Luxury Couple Grand Surprise Hamper Box",
-    mainCategory: "Gifts",
-    category: "Gift Sets",
-    price: 1299,
-    originalPrice: 2599,
-    stockQuantity: 10,
-    badge: "Mega Hamper",
-    rating: 5.0,
-    reviewsCount: 112,
-    inStock: true,
-    showOnHome: false,
-    sizeOptions: ["Grand Combo Box"],
-    colorOptions: ["Signature Black & Gold", "Romantic Blush"],
-    images: [
-      "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55",
-      "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=480&q=55"
-    ],
-    description: "Includes Magnetic Bracelets, Projection Pendant, Velvet Rose Case, Scented Candle, and Love Message Scroll.",
-    reviews: []
-  },
-  {
-    id: 510,
-    name: "Crystal LED 3D Galaxy Rose Heart Lamp",
-    mainCategory: "Gifts",
-    category: "Customized Lamps",
-    price: 749,
-    originalPrice: 1499,
-    stockQuantity: 18,
-    badge: "Night Glow",
-    rating: 4.9,
-    reviewsCount: 95,
-    inStock: true,
-    showOnHome: false,
-    sizeOptions: ["Wooden LED Base (10cm)"],
-    colorOptions: ["Warm Golden Glow", "Multicolor Ambient"],
-    images: [
-      "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?auto=format&fit=crop&w=480&q=55",
-      "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=480&q=55"
-    ],
-    description: "Laser-engraved K9 optical crystal sphere on natural beechwood LED base that illuminates any room with romantic warmth.",
-    reviews: []
   }
 ];
 
 async function seedInitialData() {
   try {
     const productCount = await Product.countDocuments();
-    if (productCount === 0) {
-      await Product.insertMany(defaultProducts);
-    }
+    if (productCount === 0) await Product.insertMany(defaultProducts);
+
     const bannerCount = await Banner.countDocuments();
-    if (bannerCount === 0) {
-      await Banner.insertMany(defaultBanners);
-    }
+    if (bannerCount === 0) await Banner.insertMany(defaultBanners);
+
     const couponCount = await Coupon.countDocuments();
-    if (couponCount === 0) {
-      await Coupon.insertMany(defaultCoupons);
-    }
+    if (couponCount === 0) await Coupon.insertMany(defaultCoupons);
+
+    const hashedDefaultPin = await bcrypt.hash(DEFAULT_ADMIN_PIN, 10);
     const existingSettings = await Settings.findOne({ key: 'main' });
     if (!existingSettings) {
       await Settings.create({
@@ -576,11 +386,14 @@ async function seedInitialData() {
         deliveryCharge: 0,
         codAdvancePercent: 15,
         dealEndTime: 0,
-        adminPin: DEFAULT_ADMIN_PIN,
+        adminPin: hashedDefaultPin,
         metaPixelId: ""
       });
     } else if (!existingSettings.adminPin) {
-      existingSettings.adminPin = DEFAULT_ADMIN_PIN;
+      existingSettings.adminPin = hashedDefaultPin;
+      await existingSettings.save();
+    } else if (!existingSettings.adminPin.startsWith('$2a$') && !existingSettings.adminPin.startsWith('$2b$')) {
+      existingSettings.adminPin = await bcrypt.hash(existingSettings.adminPin, 10);
       await existingSettings.save();
     }
   } catch (err) {
@@ -595,10 +408,7 @@ function generateOrderInvoicePDF(order) {
       const buffers = [];
 
       doc.on('data', buffers.push.bind(buffers));
-      doc.on('end', () => {
-        const pdfData = Buffer.concat(buffers);
-        resolve(pdfData);
-      });
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
 
       doc.rect(40, 35, 515, 6).fill('#854d0e');
 
@@ -638,17 +448,10 @@ function generateOrderInvoicePDF(order) {
       let currentY = tableTop + 30;
 
       (order.items || []).forEach((item, idx) => {
-        doc.fillColor('#111827').fontSize(8.5).font('Helvetica');
-        doc.text(String(idx + 1), 52, currentY + 3);
-
-        doc.fillColor('#111827').font('Helvetica-Bold').fontSize(9);
-        doc.text(item.name, 85, currentY);
-
-        doc.fillColor('#92400e').font('Helvetica').fontSize(7.5);
-        doc.text(`Size: ${item.selectedSize || 'Standard'} | Color: ${item.selectedColor || 'Standard'}`, 85, currentY + 12);
-
-        doc.fillColor('#111827').font('Helvetica').fontSize(8.5);
-        doc.text(`Rs. ${item.price}`, 335, currentY + 4, { width: 70, align: 'right' });
+        doc.fillColor('#111827').fontSize(8.5).font('Helvetica').text(String(idx + 1), 52, currentY + 3);
+        doc.fillColor('#111827').font('Helvetica-Bold').fontSize(9).text(item.name, 85, currentY);
+        doc.fillColor('#92400e').font('Helvetica').fontSize(7.5).text(`Size: ${item.selectedSize || 'Standard'} | Color: ${item.selectedColor || 'Standard'}`, 85, currentY + 12);
+        doc.fillColor('#111827').font('Helvetica').fontSize(8.5).text(`Rs. ${item.price}`, 335, currentY + 4, { width: 70, align: 'right' });
         doc.text(String(item.qty || 1), 420, currentY + 4, { width: 35, align: 'center' });
         doc.font('Helvetica-Bold').text(`Rs. ${(item.price || 0) * (item.qty || 1)}`, 470, currentY + 4, { width: 75, align: 'right' });
 
@@ -667,18 +470,16 @@ function generateOrderInvoicePDF(order) {
       doc.roundedRect(40, summaryY, 250, 108, 6).strokeColor('#e5e7eb').stroke();
       doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text('PAYMENT VERIFICATION:', 50, summaryY + 12);
       doc.fillColor('#111827').fontSize(9).font('Helvetica-Bold').text(`Mode: ${order.paymentMethod}`, 50, summaryY + 28);
-      
+
       const isPaid = order.paymentMethod === 'UPI';
       doc.fillColor('#059669').fontSize(8.5).font('Helvetica-Bold').text(
         isPaid ? 'Payment: 100% Fully Paid (Verified)' : `Advance Paid: Rs. ${order.advancePaid} (Balance Due: Rs. ${order.balanceDue})`,
         50, summaryY + 44
       );
-
       doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text(`Transaction UTR: ${order.utrNumber || 'N/A'}`, 50, summaryY + 62);
       doc.fillColor('#059669').fontSize(7.5).font('Helvetica-Oblique').text('* 100% Safe & Authenticated Order', 50, summaryY + 84);
 
       doc.roundedRect(305, summaryY, 250, 108, 6).strokeColor('#e5e7eb').stroke();
-      
       doc.fillColor('#374151').fontSize(8.5).font('Helvetica');
       doc.text('Bag Subtotal:', 318, summaryY + 12);
       doc.font('Helvetica-Bold').text(`Rs. ${order.subTotal}`, 440, summaryY + 12, { width: 105, align: 'right' });
@@ -688,7 +489,7 @@ function generateOrderInvoicePDF(order) {
 
       doc.fillColor('#374151').font('Helvetica').text('COD Delivery Charge:', 318, summaryY + 40);
       doc.fillColor(order.deliveryCharge > 0 ? '#111827' : '#059669').font('Helvetica-Bold').text(
-        order.deliveryCharge > 0 ? `Rs. ${order.deliveryCharge}` : 'FREE', 
+        order.deliveryCharge > 0 ? `Rs. ${order.deliveryCharge}` : 'FREE',
         440, summaryY + 40, { width: 105, align: 'right' }
       );
 
@@ -702,7 +503,6 @@ function generateOrderInvoicePDF(order) {
 
       const footerY = summaryY + 125;
       doc.moveTo(40, footerY - 8).lineTo(555, footerY - 8).strokeColor('#e5e7eb').stroke();
-
       doc.fillColor('#111827').fontSize(8).font('Helvetica-Bold').text('TERMS & REPLACEMENT POLICY:', 40, footerY + 5);
       doc.fillColor('#4b5563').fontSize(7.5).font('Helvetica');
       doc.text('1. 7-Day Replacement: Report transit damage within 7 days of delivery.', 40, footerY + 18);
@@ -712,6 +512,77 @@ function generateOrderInvoicePDF(order) {
       doc.fillColor('#111827').fontSize(9).font('Helvetica-Bold').text('AURA FINE STORE', 385, footerY + 9, { width: 170, align: 'center' });
       doc.fillColor('#6b7280').fontSize(7.5).font('Helvetica').text('Digitally Verified Bill', 385, footerY + 22, { width: 170, align: 'center' });
       doc.fillColor('#b45309').fontSize(8).font('Helvetica-Bold').text('[ Authorized Signature ]', 385, footerY + 34, { width: 170, align: 'center' });
+
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+// 4x6 Inch Thermal Shipping Label PDF Generator (288 x 432 points)
+function generateThermalShippingLabelPDF(order) {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ margin: 14, size: [288, 432] });
+      const buffers = [];
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+
+      doc.rect(10, 10, 268, 412).lineWidth(1.5).strokeColor('#000000').stroke();
+
+      // Top Header
+      doc.rect(10, 10, 268, 38).fill('#000000');
+      doc.fillColor('#FFFFFF').fontSize(14).font('Helvetica-Bold').text('AURA FINE STORE', 18, 17);
+      doc.fontSize(8).font('Helvetica').text('PRIORITY EXPRESS PARCEL', 18, 33);
+      doc.fontSize(10).font('Helvetica-Bold').text(order.paymentMethod === 'COD' ? 'COD' : 'PREPAID', 210, 22, { width: 60, align: 'right' });
+
+      // Order & Courier Bar
+      doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold').text(`ORDER: #${order.id}`, 18, 56);
+      doc.fontSize(8.5).font('Helvetica').text(`Courier: ${order.courierPartner || 'Delhivery'}`, 18, 69);
+      doc.fontSize(8.5).font('Helvetica-Bold').text(`AWB: ${order.awbNumber || 'PENDING DISPATCH'}`, 18, 81);
+      doc.moveTo(10, 96).lineTo(278, 96).lineWidth(1).stroke();
+
+      // Deliver To Box
+      doc.fontSize(8.5).font('Helvetica-Bold').text('DELIVER TO:', 18, 104);
+      doc.fontSize(12).font('Helvetica-Bold').text(order.customerName || 'Customer', 18, 117);
+      doc.fontSize(10).font('Helvetica-Bold').text(`MOB: +91 ${order.phone}`, 18, 133);
+      doc.fontSize(8.5).font('Helvetica').text(order.address || '', 18, 149, { width: 252, lineGap: 2 });
+
+      doc.rect(18, 210, 140, 24).fill('#f3f4f6');
+      doc.fillColor('#000000').fontSize(11).font('Helvetica-Bold').text(`PIN: ${order.pincode || ''}`, 24, 217);
+
+      // COD Collect Banner
+      if (order.paymentMethod === 'COD') {
+        doc.rect(164, 210, 106, 24).fill('#000000');
+        doc.fillColor('#FFFFFF').fontSize(9.5).font('Helvetica-Bold').text(`COLLECT: Rs.${order.balanceDue}`, 168, 217, { width: 98, align: 'center' });
+      } else {
+        doc.rect(164, 210, 106, 24).strokeColor('#000000').stroke();
+        doc.fillColor('#000000').fontSize(9.5).font('Helvetica-Bold').text('PAID: Rs.0 DUE', 168, 217, { width: 98, align: 'center' });
+      }
+
+      doc.moveTo(10, 244).lineTo(278, 244).lineWidth(1).stroke();
+
+      // Package Contents
+      doc.fillColor('#000000').fontSize(8).font('Helvetica-Bold').text('PACKAGE CONTENTS:', 18, 252);
+      let itemY = 265;
+      (order.items || []).slice(0, 4).forEach((item, idx) => {
+        doc.fontSize(8).font('Helvetica').text(
+          `${idx + 1}. ${item.name} (${item.selectedSize || 'Std'}) x${item.qty || 1}`,
+          18, itemY, { width: 252, lineBreak: false }
+        );
+        itemY += 13;
+      });
+
+      doc.moveTo(10, 326).lineTo(278, 326).lineWidth(1).stroke();
+
+      // Return / Shipper Address
+      doc.fontSize(7.5).font('Helvetica-Bold').text('RETURN / SHIPPER ADDRESS (IF UNDELIVERED):', 18, 334);
+      doc.fontSize(7.5).font('Helvetica').text('AURA Fine Store Hub, Bolpur, Birbhum, West Bengal - 731204', 18, 345, { width: 252 });
+      doc.text('Customer Care: +91 6289145092', 18, 366);
+
+      doc.moveTo(10, 382).lineTo(278, 382).lineWidth(1).stroke();
+      doc.fontSize(8).font('Helvetica-Bold').text('HANDLE WITH CARE • RECORD UNBOXING VIDEO', 10, 395, { width: 268, align: 'center' });
 
       doc.end();
     } catch (err) {
@@ -730,7 +601,7 @@ async function sendTelegramAlert(order) {
     `📞 <b>Mobile:</b> <code>${order.phone}</code>\n` +
     `📍 <b>Address:</b> ${order.address}\n` +
     `💰 <b>Total Bill:</b> <b>₹${order.total}</b> (${order.paymentMethod})\n` +
-    `🚚 <b>Delivery Fee:</b> ₹${order.deliveryCharge}\n` +
+    `📈 <b>Est. Net Profit:</b> <b>₹${order.netProfit || 0}</b>\n` +
     `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>${giftLine}\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `<i>Official PDF Invoice is attached below.</i>`;
@@ -750,10 +621,7 @@ async function sendTelegramAlert(order) {
       const resp = await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, formData, {
         headers: formData.getHeaders()
       });
-      if (resp.data && resp.data.ok) {
-        console.log(`✅ Telegram Invoice sent for #${order.id}`);
-        return;
-      }
+      if (resp.data && resp.data.ok) return;
     } catch (err) {
       console.error(`Telegram attempt ${attempt} error:`, err.response ? err.response.data : err.message);
     }
@@ -762,10 +630,7 @@ async function sendTelegramAlert(order) {
 }
 
 async function forwardSupportToTelegram(order, issueText, files) {
-  if (!SUPPORT_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-    console.error('❌ Missing SUPPORT_BOT_TOKEN or TELEGRAM_CHAT_ID!');
-    return;
-  }
+  if (!SUPPORT_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
   try {
     const itemsListText = (order.items || [])
       .map((item, idx) => `${idx + 1}. ${item.name} (${item.selectedSize || 'Std'}, ${item.selectedColor || 'Std'}) x${item.qty || 1}`)
@@ -779,43 +644,31 @@ async function forwardSupportToTelegram(order, issueText, files) {
       parse_mode: 'HTML'
     });
 
-    // Direct RAM-to-Telegram Photo Upload (Zero Storage Used)
     if (files && files.photos && files.photos.length > 0) {
       for (let i = 0; i < files.photos.length; i++) {
         const f = files.photos[i];
         const pf = new FormDataNode();
         pf.append('chat_id', TELEGRAM_CHAT_ID);
         pf.append('caption', `📸 Photo ${i + 1} | Order #${order.id} (${order.customerName})`);
-        pf.append('photo', f.buffer, {
-          filename: f.originalname || `photo_${i + 1}.jpg`,
-          contentType: f.mimetype || 'image/jpeg'
-        });
+        pf.append('photo', f.buffer, { filename: f.originalname || `photo_${i + 1}.jpg`, contentType: f.mimetype || 'image/jpeg' });
         await axios.post(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`, pf, {
-          headers: pf.getHeaders(),
-          maxBodyLength: Infinity,
-          maxContentLength: Infinity
+          headers: pf.getHeaders(), maxBodyLength: Infinity, maxContentLength: Infinity
         });
       }
     }
 
-    // Direct RAM-to-Telegram Video Upload (Zero Storage Used)
     if (files && files.video && files.video[0]) {
       const v = files.video[0];
       const vf = new FormDataNode();
       vf.append('chat_id', TELEGRAM_CHAT_ID);
       vf.append('caption', `🎥 Video Proof | Order #${order.id} (${order.customerName})`);
-      vf.append('document', v.buffer, {
-        filename: v.originalname || 'proof_video.mp4',
-        contentType: v.mimetype || 'video/mp4'
-      });
+      vf.append('document', v.buffer, { filename: v.originalname || 'proof_video.mp4', contentType: v.mimetype || 'video/mp4' });
       await axios.post(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendDocument`, vf, {
-        headers: vf.getHeaders(),
-        maxBodyLength: Infinity,
-        maxContentLength: Infinity
+        headers: vf.getHeaders(), maxBodyLength: Infinity, maxContentLength: Infinity
       });
     }
   } catch (err) {
-    console.error('❌ Direct Telegram Forward Error:', err.response ? err.response.data : err.message);
+    console.error('❌ Direct Telegram Forward Error:', err.message);
   }
 }
 
@@ -824,6 +677,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Public Storefront Endpoint (hides costPrice from customers)
 app.get('/api/store', async (req, res) => {
   try {
     res.set({
@@ -833,12 +687,14 @@ app.get('/api/store', async (req, res) => {
       'Surrogate-Control': 'no-store'
     });
 
-    const [dealBanners, products, coupons, settings] = await Promise.all([
+    const [dealBanners, rawProducts, coupons, settings] = await Promise.all([
       Banner.find().lean(),
       Product.find().sort({ _id: -1 }).lean(),
       Coupon.find().lean(),
       Settings.findOne({ key: 'main' })
     ]);
+
+    const products = rawProducts.map(({ costPrice, ...publicProd }) => publicProd);
 
     let activeSettings = settings
       ? {
@@ -854,12 +710,7 @@ app.get('/api/store', async (req, res) => {
       activeSettings.dealEndTime = 0;
     }
 
-    res.json({
-      dealBanners,
-      products,
-      coupons,
-      storeSettings: activeSettings
-    });
+    res.json({ dealBanners, products, coupons, storeSettings: activeSettings });
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
   }
@@ -869,9 +720,8 @@ app.post('/api/abandoned-cart', async (req, res) => {
   try {
     const { customerName, phone, address, items, totalAmount } = req.body;
     const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
-    if (cleanPhone.length !== 10 || !items || items.length === 0) {
-      return res.json({ success: false });
-    }
+    if (cleanPhone.length !== 10 || !items || items.length === 0) return res.json({ success: false });
+
     const updatedAtStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     await AbandonedCart.findOneAndUpdate(
       { phone: cleanPhone },
@@ -916,7 +766,8 @@ app.post('/api/products/:id/reviews', async (req, res) => {
     product.rating = Number(((oldTotal + numRating) / newCount).toFixed(1));
 
     await product.save();
-    res.json({ success: true, product });
+    const { costPrice, ...safeProd } = product.toObject();
+    res.json({ success: true, product: safeProd });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -924,8 +775,7 @@ app.post('/api/products/:id/reviews', async (req, res) => {
 
 app.delete('/api/admin/products/:id/reviews/:reviewId', async (req, res) => {
   try {
-    const { pin } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const prodId = Number(req.params.id);
     const reviewId = req.params.reviewId;
@@ -1000,18 +850,15 @@ app.post('/api/support/ticket', uploadMemory.fields([{ name: 'photos', maxCount:
     });
 
     res.json({ success: true, ticketId });
-
     forwardSupportToTelegram(order, (issueText || "").trim(), req.files);
   } catch (err) {
-    console.error("Support ticket save error:", err.message);
     res.status(500).json({ success: false, message: "Failed to submit support issue." });
   }
 });
 
 app.post('/api/admin/support/tickets', async (req, res) => {
   try {
-    const { pin } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     const tickets = await SupportTicket.find().sort({ createdAt: -1 }).lean();
     res.json({ success: true, tickets });
   } catch (err) {
@@ -1021,9 +868,8 @@ app.post('/api/admin/support/tickets', async (req, res) => {
 
 app.post('/api/admin/support/reply', async (req, res) => {
   try {
-    const { pin, ticketId, replyText } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
-
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { ticketId, replyText } = req.body;
     const repliedAt = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const updated = await SupportTicket.findOneAndUpdate(
       { ticketId },
@@ -1039,8 +885,7 @@ app.post('/api/admin/support/reply', async (req, res) => {
 
 app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
   try {
-    const { pin } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     await SupportTicket.deleteOne({ ticketId: req.params.ticketId });
     res.json({ success: true });
   } catch (err) {
@@ -1048,10 +893,11 @@ app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
   }
 });
 
+// Admin Product CRUD (includes costPrice & quick update)
 app.post('/api/admin/products', async (req, res) => {
   try {
-    const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, showOnHome, sizeOptions, colorOptions, badge, images, description } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, colorOptions, badge, images, description } = req.body;
 
     const uploadedUrls = await Promise.all(
       (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
@@ -1064,6 +910,7 @@ app.post('/api/admin/products', async (req, res) => {
       category,
       price: Number(price) || 0,
       originalPrice: Number(originalPrice) || Number(price) || 0,
+      costPrice: Number(costPrice) || 0,
       stockQuantity: Number(stockQuantity) || 1,
       showOnHome: showOnHome !== false,
       sizeOptions: sizeOptions || [],
@@ -1084,8 +931,8 @@ app.post('/api/admin/products', async (req, res) => {
 
 app.put('/api/admin/products/:id', async (req, res) => {
   try {
-    const { pin, name, mainCategory, category, price, originalPrice, stockQuantity, showOnHome, sizeOptions, colorOptions, badge, images, description } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, colorOptions, badge, images, description } = req.body;
 
     const uploadedUrls = await Promise.all(
       (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
@@ -1100,6 +947,7 @@ app.put('/api/admin/products/:id', async (req, res) => {
         category,
         price: Number(price),
         originalPrice: Number(originalPrice),
+        costPrice: Number(costPrice) || 0,
         stockQuantity: Number(stockQuantity),
         showOnHome: showOnHome !== false,
         sizeOptions,
@@ -1119,10 +967,33 @@ app.put('/api/admin/products/:id', async (req, res) => {
   }
 });
 
+// Quick Inline Price, Cost & Stock Update Endpoint
+app.patch('/api/admin/products/:id/quick-update', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { price, costPrice, stockQuantity } = req.body;
+    const prodId = Number(req.params.id);
+
+    const updateFields = {};
+    if (price !== undefined) updateFields.price = Math.max(0, Number(price));
+    if (costPrice !== undefined) updateFields.costPrice = Math.max(0, Number(costPrice));
+    if (stockQuantity !== undefined) {
+      updateFields.stockQuantity = Math.max(0, Number(stockQuantity));
+      updateFields.inStock = updateFields.stockQuantity > 0;
+    }
+
+    const updated = await Product.findOneAndUpdate({ id: prodId }, updateFields, { new: true });
+    if (!updated) return res.status(404).json({ success: false, message: "Product not found" });
+    res.json({ success: true, product: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.patch('/api/admin/products/:id/toggle-home', async (req, res) => {
   try {
-    const { pin, showOnHome } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { showOnHome } = req.body;
     const prodId = Number(req.params.id);
     const updated = await Product.findOneAndUpdate({ id: prodId }, { showOnHome: Boolean(showOnHome) }, { new: true });
     if (!updated) return res.status(404).json({ success: false });
@@ -1134,14 +1005,13 @@ app.patch('/api/admin/products/:id/toggle-home', async (req, res) => {
 
 app.delete('/api/admin/products/:id', async (req, res) => {
   try {
-    const { pin } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     const prodId = Number(req.params.id);
     await Promise.all([
       Product.deleteOne({ id: prodId }),
       Banner.deleteMany({ productId: prodId })
     ]);
-    const products = await Product.find().lean();
+    const products = await Product.find().sort({ _id: -1 }).lean();
     res.json({ success: true, products });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -1150,9 +1020,8 @@ app.delete('/api/admin/products/:id', async (req, res) => {
 
 app.post('/api/admin/banners/add', async (req, res) => {
   try {
-    const { pin, title, tag, productId, image } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
-
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { title, tag, productId, image } = req.body;
     const bannerUrl = await uploadToCloudinary(image, 'aura_store/banners');
 
     await Banner.create({
@@ -1171,8 +1040,7 @@ app.post('/api/admin/banners/add', async (req, res) => {
 
 app.delete('/api/admin/banners/:id', async (req, res) => {
   try {
-    const { pin } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     await Banner.deleteOne({ id: Number(req.params.id) });
     const dealBanners = await Banner.find().lean();
     res.json({ success: true, dealBanners });
@@ -1183,8 +1051,8 @@ app.delete('/api/admin/banners/:id', async (req, res) => {
 
 app.post('/api/admin/coupons', async (req, res) => {
   try {
-    const { pin, code, discountPercent, minSpend, title, description, showOnStore } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { code, discountPercent, minSpend, title, description, showOnStore } = req.body;
 
     const cleanCode = (code || "").trim().toUpperCase();
     await Coupon.findOneAndUpdate(
@@ -1208,8 +1076,7 @@ app.post('/api/admin/coupons', async (req, res) => {
 
 app.delete('/api/admin/coupons/:code', async (req, res) => {
   try {
-    const { pin } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     await Coupon.deleteOne({ code: req.params.code.toUpperCase() });
     const coupons = await Coupon.find().lean();
     res.json({ success: true, coupons });
@@ -1220,8 +1087,8 @@ app.delete('/api/admin/coupons/:code', async (req, res) => {
 
 app.post('/api/admin/store-settings', async (req, res) => {
   try {
-    const { pin, deliveryCharge, codAdvancePercent, dealEndTime, metaPixelId } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { deliveryCharge, codAdvancePercent, dealEndTime, metaPixelId } = req.body;
 
     const updateFields = {};
     if (deliveryCharge !== undefined) updateFields.deliveryCharge = Number(deliveryCharge) || 0;
@@ -1243,33 +1110,40 @@ app.post('/api/admin/store-settings', async (req, res) => {
 
 app.post('/api/admin/change-pin', async (req, res) => {
   try {
-    const { currentPin, newPin } = req.body;
-    if (!(await verifyAdminPin(currentPin))) {
-      return res.status(403).json({ success: false, message: "Current PIN is incorrect!" });
+    if (!(await verifyAdminAuth(req))) {
+      return res.status(403).json({ success: false, message: "Session expired or unauthorized!" });
     }
+    const { newPin } = req.body;
     const cleanNew = String(newPin || "").trim();
     if (cleanNew.length < 4) {
       return res.status(400).json({ success: false, message: "New PIN must be at least 4 characters!" });
     }
-    await Settings.findOneAndUpdate({ key: 'main' }, { adminPin: cleanNew }, { upsert: true });
-    res.json({ success: true, message: "Admin PIN updated successfully!" });
+    const hashedPin = await bcrypt.hash(cleanNew, 10);
+    await Settings.findOneAndUpdate({ key: 'main' }, { adminPin: hashedPin }, { upsert: true });
+    const newToken = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
+    res.json({ success: true, token: newToken, message: "Admin PIN encrypted & updated successfully!" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
+// SERVER-SIDE PRICE, STOCK & COUPON VALIDATION ON ORDER CREATION
 app.post('/api/orders', async (req, res) => {
   try {
-    const { 
-      customerName, phone, pincode, city, state, 
+    const {
+      customerName, phone, pincode, city, state,
       villageOrCity, houseNoStreet, postOffice, policeStation, landmark,
-      items, giftNote, total, subTotal, discountApplied, couponCode, deliveryCharge,
-      paymentMethod, utrNumber, advancePaid, balanceDue
+      items, giftNote, couponCode,
+      paymentMethod, utrNumber
     } = req.body;
 
     const cleanUtr = String(utrNumber || "").trim();
     if (!cleanUtr || cleanUtr.length < 8) {
       return res.status(400).json({ success: false, message: "Please enter a valid 12-digit UPI UTR number!" });
+    }
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: "Your bag is empty!" });
     }
 
     const existingUtrOrder = await Order.findOne({ utrNumber: cleanUtr }).lean();
@@ -1280,25 +1154,82 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
-    const structuredAddress = `${houseNoStreet}, ${villageOrCity}, P.O: ${postOffice}${policeStation ? ', P.S: ' + policeStation : ''}${landmark ? ' (Landmark: ' + landmark + ')' : ''}, ${city}, ${state} - ${pincode}`;
+    // Fetch authoritative prices & costs from MongoDB
+    const productIds = items.map(i => Number(i.id));
+    const dbProducts = await Product.find({ id: { $in: productIds } });
+    const prodMap = new Map(dbProducts.map(p => [p.id, p]));
 
-    if (items && items.length > 0) {
-      for (const cartItem of items) {
-        const p = await Product.findOne({ id: cartItem.id });
-        if (p) {
-          p.stockQuantity = Math.max(0, (p.stockQuantity || 10) - (cartItem.qty || 1));
-          p.inStock = p.stockQuantity > 0;
-          await p.save();
-        }
+    let verifiedSubTotal = 0;
+    let verifiedTotalCost = 0;
+    const verifiedItems = [];
+
+    for (const cartItem of items) {
+      const dbProd = prodMap.get(Number(cartItem.id));
+      if (!dbProd) {
+        return res.status(400).json({ success: false, message: `Product "${cartItem.name}" is no longer available.` });
+      }
+      const qty = Math.max(1, parseInt(cartItem.qty, 10) || 1);
+      if ((dbProd.stockQuantity || 0) < qty) {
+        return res.status(400).json({ success: false, message: `Insufficient stock for "${dbProd.name}". Only ${dbProd.stockQuantity} left.` });
+      }
+
+      verifiedSubTotal += dbProd.price * qty;
+      verifiedTotalCost += (dbProd.costPrice || 0) * qty;
+
+      verifiedItems.push({
+        id: dbProd.id,
+        name: dbProd.name,
+        price: dbProd.price,
+        costPrice: dbProd.costPrice || 0,
+        selectedSize: cartItem.selectedSize || "Standard",
+        selectedColor: cartItem.selectedColor || "Standard",
+        qty,
+        images: dbProd.images || []
+      });
+    }
+
+    // Verify coupon server-side
+    let verifiedDiscount = 0;
+    let verifiedCouponCode = "None";
+    if (couponCode && String(couponCode).trim()) {
+      const cleanCode = String(couponCode).trim().toUpperCase();
+      const dbCoupon = await Coupon.findOne({ code: cleanCode }).lean();
+      if (dbCoupon && verifiedSubTotal >= (dbCoupon.minSpend || 0)) {
+        verifiedDiscount = Math.round((verifiedSubTotal * dbCoupon.discountPercent) / 100);
+        verifiedCouponCode = dbCoupon.code;
       }
     }
 
+    // Verify delivery & COD rules server-side
+    const storeSettings = await Settings.findOne({ key: 'main' }).lean();
+    const deliveryFeeSetting = storeSettings ? (storeSettings.deliveryCharge || 0) : 0;
+    const codAdvancePctSetting = storeSettings ? (storeSettings.codAdvancePercent || 15) : 15;
+
+    const normalizedMode = paymentMethod === 'COD' ? 'COD' : 'UPI';
+    const appliedDelivery = normalizedMode === 'COD' ? deliveryFeeSetting : 0;
+    const verifiedFinalTotal = Math.max(1, verifiedSubTotal - verifiedDiscount + appliedDelivery);
+
+    const verifiedAdvancePaid = normalizedMode === 'COD'
+      ? Math.max(1, Math.round((verifiedFinalTotal * codAdvancePctSetting) / 100))
+      : verifiedFinalTotal;
+    const verifiedBalanceDue = verifiedFinalTotal - verifiedAdvancePaid;
+    const estimatedNetProfit = (verifiedSubTotal - verifiedDiscount) - verifiedTotalCost;
+
+    // Deduct stock safely
+    for (const vItem of verifiedItems) {
+      const p = prodMap.get(vItem.id);
+      if (p) {
+        p.stockQuantity = Math.max(0, (p.stockQuantity || 0) - vItem.qty);
+        p.inStock = p.stockQuantity > 0;
+        await p.save();
+      }
+    }
+
+    const structuredAddress = `${houseNoStreet}, ${villageOrCity}, P.O: ${postOffice}${policeStation ? ', P.S: ' + policeStation : ''}${landmark ? ' (Landmark: ' + landmark + ')' : ''}, ${city}, ${state} - ${pincode}`;
     const orderId = 'AUR-' + Math.floor(100000 + Math.random() * 900000);
     const orderDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
     const cleanPhone = String(phone).replace(/[^0-9]/g, '');
-
-    const appliedDelivery = paymentMethod === 'COD' ? (Number(deliveryCharge) || 0) : 0;
 
     const order = await Order.create({
       id: orderId,
@@ -1308,16 +1239,18 @@ app.post('/api/orders', async (req, res) => {
       pincode,
       city,
       state,
-      items: items || [],
+      items: verifiedItems,
       giftNote: (giftNote || "").trim(),
-      subTotal: Number(subTotal) || Number(total),
-      discountApplied: Number(discountApplied) || 0,
+      subTotal: verifiedSubTotal,
+      discountApplied: verifiedDiscount,
       deliveryCharge: appliedDelivery,
-      couponCode: couponCode || "None",
-      total: Number(total),
-      paymentMethod,
-      advancePaid: Number(advancePaid) || 0,
-      balanceDue: Number(balanceDue) || 0,
+      couponCode: verifiedCouponCode,
+      total: verifiedFinalTotal,
+      totalCost: verifiedTotalCost,
+      netProfit: estimatedNetProfit,
+      paymentMethod: normalizedMode,
+      advancePaid: verifiedAdvancePaid,
+      balanceDue: verifiedBalanceDue,
       utrNumber: cleanUtr,
       status: "Pending Verification",
       courierPartner: "Delhivery",
@@ -1329,8 +1262,7 @@ app.post('/api/orders', async (req, res) => {
 
     await AbandonedCart.deleteOne({ phone: cleanPhone }).catch(() => {});
 
-    res.json({ success: true, orderId: order.id });
-
+    res.json({ success: true, orderId: order.id, verifiedTotal: verifiedFinalTotal });
     sendTelegramAlert(order).catch(e => console.error("Background Telegram error:", e.message));
   } catch (err) {
     res.status(500).json({ success: false, message: "Order creation failed" });
@@ -1339,10 +1271,8 @@ app.post('/api/orders', async (req, res) => {
 
 app.get('/api/orders/:id/invoice', async (req, res) => {
   try {
-    const orderId = req.params.id;
-    const order = await Order.findOne({ id: orderId }).lean();
+    const order = await Order.findOne({ id: req.params.id }).lean();
     if (!order) return res.status(404).send("Order not found");
-
     const pdfBuffer = await generateOrderInvoicePDF(order);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="AURA_Invoice_${order.id}.pdf"`);
@@ -1352,12 +1282,27 @@ app.get('/api/orders/:id/invoice', async (req, res) => {
   }
 });
 
+// 4x6 Thermal Shipping Label PDF Route (Admin Authenticated)
+app.get('/api/admin/orders/:id/shipping-label', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).send("Unauthorized");
+    const order = await Order.findOne({ id: req.params.id }).lean();
+    if (!order) return res.status(404).send("Order not found");
+    const pdfBuffer = await generateThermalShippingLabelPDF(order);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="Label_4x6_${order.id}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    res.status(500).send("Failed to generate 4x6 shipping label");
+  }
+});
+
 app.get('/api/orders/track', async (req, res) => {
   try {
     const query = (req.query.q || "").trim().toLowerCase();
     const cleanDigits = query.replace(/[^0-9]/g, '');
     const allOrders = await Order.find().sort({ createdAt: -1 }).lean();
-    const matched = allOrders.filter(o => 
+    const matched = allOrders.filter(o =>
       o.id.toLowerCase() === query || (cleanDigits.length >= 6 && o.phone.includes(cleanDigits))
     );
     res.json({ success: true, orders: matched });
@@ -1366,6 +1311,7 @@ app.get('/api/orders/track', async (req, res) => {
   }
 });
 
+// Admin Login with bcrypt + JWT issuance
 app.post('/api/admin/login', async (req, res) => {
   const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
   const record = loginAttempts.get(clientIp);
@@ -1379,9 +1325,21 @@ app.post('/api/admin/login', async (req, res) => {
   }
 
   const { pin } = req.body;
-  if (await verifyAdminPin(pin)) {
+  let isValid = false;
+  try {
+    const s = await Settings.findOne({ key: 'main' }).lean();
+    const storedPin = (s && s.adminPin) ? s.adminPin : DEFAULT_ADMIN_PIN;
+    if (storedPin.startsWith('$2a$') || storedPin.startsWith('$2b$')) {
+      isValid = await bcrypt.compare(String(pin || '').trim(), storedPin);
+    } else {
+      isValid = String(pin || '').trim() === String(storedPin).trim();
+    }
+  } catch (e) {}
+
+  if (isValid) {
     loginAttempts.delete(clientIp);
-    return res.json({ success: true, token: "admin-active" });
+    const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
+    return res.json({ success: true, token });
   }
 
   const currentCount = (record ? record.count : 0) + 1;
@@ -1402,14 +1360,13 @@ app.post('/api/admin/login', async (req, res) => {
 
 app.post('/api/admin/orders', async (req, res) => {
   try {
-    const { pin } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const [orders, coupons, settings, products, abandonedCarts] = await Promise.all([
       Order.find().sort({ createdAt: -1 }).lean(),
       Coupon.find().lean(),
       Settings.findOne({ key: 'main' }),
-      Product.find().lean(),
+      Product.find().sort({ _id: -1 }).lean(),
       AbandonedCart.find().sort({ updatedAt: -1 }).lean()
     ]);
 
@@ -1427,16 +1384,19 @@ app.post('/api/admin/orders', async (req, res) => {
       activeSettings.dealEndTime = 0;
     }
 
+    const activeOrders = orders.filter(o => o.status !== 'Cancelled');
     const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
-    const todayOrders = orders.filter(o => o.orderDateRaw === todayStr || (o.date && o.date.includes(todayStr)));
-    const totalSales = orders.reduce((sum, o) => sum + (o.total || 0), 0);
-    const totalOnlineRevenue = orders.filter(o => o.paymentMethod === 'UPI').reduce((sum, o) => sum + (o.total || 0), 0);
-    const totalCodRevenue = orders.filter(o => o.paymentMethod === 'COD').reduce((sum, o) => sum + (o.total || 0), 0);
+    const todayOrders = activeOrders.filter(o => o.orderDateRaw === todayStr || (o.date && o.date.includes(todayStr)));
+    const totalSales = activeOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    const totalNetProfit = activeOrders.reduce((sum, o) => sum + (o.netProfit || 0), 0);
+    const totalOnlineRevenue = activeOrders.filter(o => o.paymentMethod === 'UPI').reduce((sum, o) => sum + (o.total || 0), 0);
+    const totalCodRevenue = activeOrders.filter(o => o.paymentMethod === 'COD').reduce((sum, o) => sum + (o.total || 0), 0);
     const lowStockProducts = products.filter(p => (p.stockQuantity || 0) < 3).map(p => ({ id: p.id, name: p.name, stockQuantity: p.stockQuantity || 0 }));
 
     res.json({
       success: true,
       orders,
+      products,
       coupons,
       abandonedCarts,
       storeSettings: activeSettings,
@@ -1445,6 +1405,7 @@ app.post('/api/admin/orders', async (req, res) => {
         totalOrders: orders.length,
         todayOrdersCount: todayOrders.length,
         totalSales,
+        totalNetProfit,
         totalOnlineRevenue,
         totalCodRevenue,
         pendingOrders: orders.filter(o => o.status && o.status.includes('Pending')).length,
@@ -1458,8 +1419,7 @@ app.post('/api/admin/orders', async (req, res) => {
 
 app.delete('/api/admin/abandoned-carts/:phone', async (req, res) => {
   try {
-    const { pin } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     await AbandonedCart.deleteOne({ phone: req.params.phone });
     res.json({ success: true });
   } catch (err) {
@@ -1469,14 +1429,10 @@ app.delete('/api/admin/abandoned-carts/:phone', async (req, res) => {
 
 app.delete('/api/admin/orders/:id', async (req, res) => {
   try {
-    const { pin } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
-
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     const orderId = req.params.id;
     const deleted = await Order.deleteOne({ id: orderId });
-    if (deleted.deletedCount === 0) {
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+    if (deleted.deletedCount === 0) return res.status(404).json({ success: false, message: "Order not found" });
     res.json({ success: true, message: `Order #${orderId} deleted from MongoDB` });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -1485,9 +1441,8 @@ app.delete('/api/admin/orders/:id', async (req, res) => {
 
 app.patch('/api/admin/orders/:id/status', async (req, res) => {
   try {
-    const { pin, status } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
-
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { status } = req.body;
     const order = await Order.findOne({ id: req.params.id });
     if (!order) return res.status(404).json({ success: false });
 
@@ -1522,12 +1477,11 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
 
 app.post('/api/admin/orders/:id/dispatch-tracking', async (req, res) => {
   try {
-    const { pin, courierPartner, awbNumber } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
-
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { courierPartner, awbNumber } = req.body;
     const order = await Order.findOneAndUpdate(
       { id: req.params.id },
-      { courierPartner, awbNumber, status: "Verified & Shipped" },
+      { courierPartner: courierPartner || "Delhivery", awbNumber, status: "Verified & Shipped" },
       { new: true }
     );
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
@@ -1537,22 +1491,22 @@ app.post('/api/admin/orders/:id/dispatch-tracking', async (req, res) => {
   }
 });
 
-app.post('/api/admin/orders/:id/upload-slip', async (req, res) => {
+// Direct Multer Binary Upload for Delivery Slip (Zero Base64 bloat)
+app.post('/api/admin/orders/:id/upload-slip', uploadMemory.single('slipFile'), async (req, res) => {
   try {
-    const { pin, slipFileBase64 } = req.body;
-    if (!(await verifyAdminPin(pin))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    if (!req.file) return res.status(400).json({ success: false, message: "No slip file uploaded!" });
 
-    const slipUrl = await uploadToCloudinary(slipFileBase64, 'aura_store/delivery_slips');
-
+    const slipUrl = await uploadBufferToCloudinary(req.file.buffer, 'aura_store/delivery_slips');
     const order = await Order.findOneAndUpdate(
       { id: req.params.id },
       { deliverySlipFile: slipUrl },
       { new: true }
     );
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
-    res.json({ success: true });
+    res.json({ success: true, slipUrl });
   } catch (err) {
-    res.status(500).json({ success: false });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
