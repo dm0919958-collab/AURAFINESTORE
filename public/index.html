@@ -307,7 +307,7 @@
     </main>
   </div>
 
-  <!-- Quick View Modal -->
+  <!-- Quick View Modal (With Smart Size Guide & Deep Product Share Link) -->
   <div id="quickViewModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto border border-amber-500/30">
       <button onclick="closeQuickView()" class="absolute top-5 right-5 text-stone-400 hover:text-amber-400 text-3xl font-bold">&times;</button>
@@ -326,7 +326,7 @@
                 <i class="fa-regular fa-heart mr-1"></i> Save
               </button>
               <button onclick="shareCurrentProductWhatsApp()" class="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition flex items-center gap-1.5">
-                <i class="fa-brands fa-whatsapp text-sm"></i> Share
+                <i class="fa-brands fa-whatsapp text-sm"></i> Share Link
               </button>
             </div>
           </div>
@@ -337,7 +337,12 @@
             <span id="qvDiscount" class="text-xs text-emerald-300 font-bold bg-emerald-950 px-2.5 py-0.5 rounded-full">0% OFF</span>
           </div>
           <div class="space-y-1.5 pt-2 border-t border-stone-800">
-            <label class="block text-xs font-bold text-stone-300">Select Size: <span id="qvSelectedSizeDisplay" class="text-amber-400 font-extrabold ml-1"></span></label>
+            <div class="flex justify-between items-center">
+              <label class="block text-xs font-bold text-stone-300">Select Size: <span id="qvSelectedSizeDisplay" class="text-amber-400 font-extrabold ml-1"></span></label>
+              <button type="button" onclick="openSizeGuideModal()" class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 underline flex items-center gap-1">
+                <i class="fa-solid fa-ruler-horizontal"></i> Size Guide
+              </button>
+            </div>
             <div id="qvSizeContainer" class="flex flex-wrap gap-2"></div>
           </div>
           <div class="space-y-1.5 pt-1">
@@ -384,6 +389,66 @@
     </div>
   </div>
 
+  <!-- Smart Size Guide Modal -->
+  <div id="sizeGuideModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden z-[60] flex items-center justify-center p-4">
+    <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl border border-cyan-500/35 max-h-[88vh] overflow-y-auto text-xs">
+      <div class="flex justify-between items-center border-b border-stone-800 pb-3">
+        <div>
+          <h4 class="font-cinzel font-bold text-lg text-cyan-300"><i class="fa-solid fa-ruler-combined mr-1.5"></i>AURA Official Size Chart</h4>
+          <p class="text-[11px] text-stone-400">Standard Indian Tailored Measurements</p>
+        </div>
+        <button onclick="closeSizeGuideModal()" class="text-stone-400 hover:text-white text-2xl font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <p class="font-bold text-amber-300 mb-1.5">👔 Men's Shirts & T-Shirts (Inches)</p>
+          <table class="w-full text-center border border-stone-800 rounded-xl overflow-hidden">
+            <thead class="bg-stone-950 text-amber-400">
+              <tr><th class="p-2">Size</th><th class="p-2">Chest (in)</th><th class="p-2">Shoulder (in)</th><th class="p-2">Length (in)</th></tr>
+            </thead>
+            <tbody class="divide-y divide-stone-800 bg-stone-900/50">
+              <tr><td class="p-2 font-bold">S (36)</td><td>38"</td><td>17"</td><td>27"</td></tr>
+              <tr><td class="p-2 font-bold">M (38)</td><td>40"</td><td>17.5"</td><td>28"</td></tr>
+              <tr><td class="p-2 font-bold">L (40)</td><td>42"</td><td>18.2"</td><td>29"</td></tr>
+              <tr><td class="p-2 font-bold">XL (42)</td><td>44"</td><td>19"</td><td>30"</td></tr>
+              <tr><td class="p-2 font-bold">XXL (44)</td><td>46"</td><td>19.8"</td><td>31"</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <p class="font-bold text-amber-300 mb-1.5">👗 Women's Kurtis & Ethnic Wear (Inches)</p>
+          <table class="w-full text-center border border-stone-800 rounded-xl overflow-hidden">
+            <thead class="bg-stone-950 text-amber-400">
+              <tr><th class="p-2">Size</th><th class="p-2">Bust (in)</th><th class="p-2">Waist (in)</th><th class="p-2">Hip (in)</th></tr>
+            </thead>
+            <tbody class="divide-y divide-stone-800 bg-stone-900/50">
+              <tr><td class="p-2 font-bold">M (38)</td><td>38"</td><td>34"</td><td>40"</td></tr>
+              <tr><td class="p-2 font-bold">L (40)</td><td>40"</td><td>36"</td><td>42"</td></tr>
+              <tr><td class="p-2 font-bold">XL (42)</td><td>42"</td><td>38"</td><td>44"</td></tr>
+              <tr><td class="p-2 font-bold">XXL (44)</td><td>44"</td><td>40"</td><td>46"</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <p class="font-bold text-amber-300 mb-1.5">💫 Women's Bangles Inner Diameter</p>
+          <table class="w-full text-center border border-stone-800 rounded-xl overflow-hidden">
+            <thead class="bg-stone-950 text-amber-400">
+              <tr><th class="p-2">Bangle Size</th><th class="p-2">Diameter (Inches)</th><th class="p-2">Diameter (mm)</th></tr>
+            </thead>
+            <tbody class="divide-y divide-stone-800 bg-stone-900/50">
+              <tr><td class="p-2 font-bold">2.4</td><td>2.25 in</td><td>57.2 mm</td></tr>
+              <tr><td class="p-2 font-bold">2.6</td><td>2.37 in</td><td>60.3 mm</td></tr>
+              <tr><td class="p-2 font-bold">2.8</td><td>2.50 in</td><td>63.5 mm</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Wishlist Modal -->
   <div id="wishlistModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[88vh] overflow-y-auto border border-rose-500/30">
@@ -398,11 +463,11 @@
     </div>
   </div>
 
-  <!-- Cart Drawer -->
+  <!-- Cart Drawer (Persisted in localStorage) -->
   <div id="cartDrawer" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden z-50 flex justify-end">
     <div class="bg-stone-900 text-stone-100 w-full max-w-md h-full flex flex-col p-6 shadow-2xl border-l border-amber-500/20">
       <div class="flex justify-between items-center pb-3 border-b border-stone-800">
-        <div><h3 class="font-cinzel font-bold text-xl text-amber-200">Your Bag</h3><p class="text-[11px] text-stone-400">AURA Fine Store Collection</p></div>
+        <div><h3 class="font-cinzel font-bold text-xl text-amber-200">Your Bag</h3><p class="text-[11px] text-emerald-400">● Auto-Saved in Your Browser</p></div>
         <button onclick="toggleCart()" class="text-stone-400 hover:text-amber-400 text-2xl font-bold">&times;</button>
       </div>
       <div id="cartItemsList" class="flex-1 overflow-y-auto py-4 space-y-4"></div>
@@ -466,7 +531,6 @@
             <button type="button" onclick="backToStep1Address()" class="text-[11px] text-amber-400 font-bold underline">Edit</button>
           </div>
 
-          <!-- Free Gift Wrapping & Custom Love Message -->
           <div class="bg-rose-950/30 border border-rose-500/30 p-3 rounded-xl space-y-1.5">
             <label class="block font-bold text-rose-300 text-[11px]"><i class="fa-solid fa-gift mr-1"></i> Add a Free Gift Note / Love Message (Optional):</label>
             <input type="text" id="ordGiftNote" maxlength="120" placeholder="e.g. Happy Birthday My Love! From Rahul ❤️" class="w-full bg-stone-950 border border-rose-500/30 text-white rounded-lg px-2.5 py-2 text-xs">
@@ -501,7 +565,6 @@
             <p id="qrBoxTitle" class="text-xs text-amber-300 font-bold">Scan QR or Tap Button to Pay via UPI</p>
             <div class="flex justify-center"><img id="dynamicQRCode" src="" alt="UPI QR" class="w-36 h-36 bg-white p-2 rounded-2xl border border-amber-400"></div>
             
-            <!-- 1-Click Direct Mobile UPI App Payment Deep Link Button -->
             <a id="directUpiAppBtn" href="#" class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-2.5 px-4 rounded-xl text-xs shadow-lg transition">
               <i class="fa-solid fa-mobile-screen-button"></i> <span id="directUpiBtnLabel">Pay ₹0 via GPay / PhonePe / Paytm</span>
             </a>
@@ -521,11 +584,11 @@
     </div>
   </div>
 
-  <!-- My Orders & Visual Timeline + Live Courier + PDF Invoice Modal -->
+  <!-- My Orders & Multi-Courier Live Tracking Modal -->
   <div id="myOrdersModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto text-xs border border-amber-500/25">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
-        <div><h4 class="font-cinzel font-bold text-xl text-amber-300">My Orders & Tracking</h4><p class="text-[11px] text-stone-400">Live status timeline, courier tracking & official PDF invoice</p></div>
+        <div><h4 class="font-cinzel font-bold text-xl text-amber-300">My Orders & Tracking</h4><p class="text-[11px] text-stone-400">Live status timeline, multi-courier tracking & official PDF invoice</p></div>
         <button onclick="closeMyOrdersModal()" class="text-stone-400 hover:text-amber-400 text-2xl font-bold">&times;</button>
       </div>
       <div class="flex gap-2">
@@ -654,7 +717,7 @@
       <div class="space-y-3">
         <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">EXPRESS LOGISTICS</h4>
         <p class="text-stone-400 leading-relaxed">
-          Dispatched from Bolpur, Birbhum, West Bengal - 731204. We partner with Delhivery, DTDC, and IndiaPost across India.
+          Dispatched from Bolpur, Birbhum, West Bengal - 731204. We partner with Delhivery, DTDC, Shiprocket, and IndiaPost across India.
         </p>
         <p class="text-stone-300 font-semibold"><i class="fa-solid fa-envelope mr-1.5 text-amber-500"></i> mahatosarita436@gmail.com</p>
         <div class="pt-1">
@@ -681,16 +744,37 @@
     const STORE_UPI_ID = "6289145092@ptsbi";
 
     let allProducts = [], dealBanners = [], currentDealIndex = 0, dealSliderInterval = null;
-    let activeMainSection = 'Home', activeSubCategory = 'All', cart = [], activeCoupons = [];
+    let activeMainSection = 'Home', activeSubCategory = 'All', activeCoupons = [];
+    let cart = JSON.parse(localStorage.getItem('aura_saved_cart') || '[]');
     let wishlistIds = JSON.parse(localStorage.getItem('aura_wishlist') || '[]');
     let recentlyViewedIds = JSON.parse(localStorage.getItem('aura_recent_views') || '[]');
-    let appliedDiscountRate = 0, appliedCouponCode = "", appliedCouponMinSpend = 0;
+    let appliedDiscountRate = 0, appliedCouponCode = localStorage.getItem('aura_saved_coupon') || "", appliedCouponMinSpend = 0;
     let storeDeliveryCharge = 0, storeCodAdvancePct = 15, dealEndTimeMs = 0, isPincodeValid = false;
     let currentOpenedProduct = null, currentSelectedSize = "", currentSelectedColor = "";
     let supportMatchedOrders = [], selectedSupportOrder = null, supportPhotoFiles = [], supportVideoFile = null, supportLiveInterval = null;
     let initializedMetaPixelId = "";
+    let hasCheckedDeepLink = false;
 
-    // Save & Auto-Fill Customer Profile from localStorage
+    const courierTrackingUrls = {
+      "Delhivery": (awb) => `https://www.delhivery.com/track/package/${encodeURIComponent(awb)}`,
+      "DTDC": (awb) => `https://www.dtdc.in/tracking/shipment-tracking.asp?strCnno=${encodeURIComponent(awb)}`,
+      "IndiaPost": () => `https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx`,
+      "Shiprocket": (awb) => `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`
+    };
+
+    function persistCartLocal() {
+      localStorage.setItem('aura_saved_cart', JSON.stringify(cart));
+      if (appliedCouponCode) localStorage.setItem('aura_saved_coupon', appliedCouponCode);
+      else localStorage.removeItem('aura_saved_coupon');
+    }
+
+    function openSizeGuideModal() {
+      document.getElementById('sizeGuideModal').classList.remove('hidden');
+    }
+    function closeSizeGuideModal() {
+      document.getElementById('sizeGuideModal').classList.add('hidden');
+    }
+
     function saveCustomerProfileLocal() {
       const profile = {
         name: document.getElementById('ordName').value.trim(),
@@ -727,7 +811,6 @@
       } catch (e) {}
     }
 
-    // Track & Render Recently Viewed Products
     function recordRecentlyViewed(prodId) {
       recentlyViewedIds = [prodId, ...recentlyViewedIds.filter(id => id !== prodId)].slice(0, 4);
       localStorage.setItem('aura_recent_views', JSON.stringify(recentlyViewedIds));
@@ -787,27 +870,23 @@
         html: `
           <p>At <strong>AURA Fine Store</strong>, we value your trust and are committed to protecting your personal data.</p>
           <p><strong>1. Information We Collect:</strong> When you place an order or contact support, we collect your name, mobile number, shipping address, pincode, and UPI transaction reference (UTR) solely to process and deliver your order.</p>
-          <p><strong>2. How We Use Information:</strong> Your details are used strictly for order confirmation, courier dispatch (Delhivery/DTDC/IndiaPost), customer support, and tax invoice generation. We never sell or rent customer data to third parties.</p>
-          <p><strong>3. Payment Security:</strong> All UPI payments are processed directly through verified banking channels. We do not store bank passwords, card numbers, or UPI PINs.</p>
-          <p><strong>4. Contact Us:</strong> For any privacy-related queries, email us at <strong>mahatosarita436@gmail.com</strong>.</p>
+          <p><strong>2. How We Use Information:</strong> Your details are used strictly for order confirmation, courier dispatch (Delhivery/DTDC/Shiprocket/IndiaPost), customer support, and tax invoice generation.</p>
+          <p><strong>3. Payment Security:</strong> All UPI payments are processed directly through verified banking channels. We do not store bank passwords or UPI PINs.</p>
         `
       },
       terms: {
         title: "Terms & Conditions — AURA Fine Store",
         html: `
-          <p>Welcome to <strong>AURA Fine Store</strong>. By accessing or purchasing from our website, you agree to the following terms:</p>
-          <p><strong>1. Order Verification:</strong> All prepaid UPI and COD token orders are verified against the submitted 12-digit UTR number before dispatch. Duplicate or invalid UTR submissions will result in automatic order cancellation.</p>
-          <p><strong>2. Shipping & Delivery:</strong> Orders are dispatched from our hub in Bolpur, Birbhum, West Bengal within 24–48 hours of verification. Standard delivery takes 4–7 business days depending on your Indian postal pincode.</p>
-          <p><strong>3. Product Representation:</strong> Slight color variations may occur due to photographic lighting or screen display settings.</p>
+          <p>Welcome to <strong>AURA Fine Store</strong>. By purchasing from our website, you agree to the following terms:</p>
+          <p><strong>1. Order Verification:</strong> All prepaid UPI and COD token orders are verified against the submitted 12-digit UTR number before dispatch.</p>
+          <p><strong>2. Shipping & Delivery:</strong> Orders are dispatched from Bolpur, Birbhum, West Bengal within 24–48 hours of verification. Delivery takes 4–7 business days.</p>
         `
       },
       refund: {
         title: "Refund & 7-Day Replacement Policy",
         html: `
-          <p><strong>AURA Fine Store</strong> stands behind the craftsmanship and quality of every product we ship.</p>
-          <p><strong>1. 7-Day Easy Replacement:</strong> If you receive a damaged, defective, or incorrect product, you can raise a replacement request within <strong>7 days of delivery</strong> via our <em>Help & Support Desk</em>.</p>
-          <p><strong>2. Mandatory Unboxing Video:</strong> To claim transit damage or missing item replacement, a clear, uncut 360-degree parcel unboxing video from opening the sealed package is mandatory.</p>
-          <p><strong>3. Refunds:</strong> If an approved replacement item is out of stock, a 100% refund of your paid amount will be credited to your original UPI account within 3–5 business days.</p>
+          <p><strong>1. 7-Day Easy Replacement:</strong> Report transit damage or wrong item within <strong>7 days of delivery</strong> via our <em>Help & Support Desk</em>.</p>
+          <p><strong>2. Mandatory Unboxing Video:</strong> A clear, uncut 360-degree parcel unboxing video is mandatory for transit damage replacement.</p>
         `
       }
     };
@@ -911,11 +990,12 @@
       document.getElementById('wishlistModal').classList.add('hidden');
     }
 
+    // Deep Product Share Link (?product=ID)
     function shareCurrentProductWhatsApp() {
       if (!currentOpenedProduct) return;
       const p = currentOpenedProduct;
-      const storeUrl = window.location.origin;
-      const text = `✨ *AURA Fine Store* ✨\nCheck out this luxury design:\n\n*${p.name}*\nPrice: *₹${p.price}* (MRP ₹${p.originalPrice})\n\nOrder here: ${storeUrl}`;
+      const productUrl = `${window.location.origin}/?product=${p.id}`;
+      const text = `✨ *AURA Fine Store* ✨\nCheck out this luxury design:\n\n*${p.name}*\nPrice: *₹${p.price}* (MRP ₹${p.originalPrice})\n\nView & Order directly here: ${productUrl}`;
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
 
@@ -985,8 +1065,30 @@
           }
           updateFlashTimerUI();
         }
+        // Re-validate saved coupon if present
+        if (appliedCouponCode) {
+          const found = activeCoupons.find(c => c.code === appliedCouponCode);
+          if (found) {
+            appliedDiscountRate = found.discountPercent;
+            appliedCouponMinSpend = found.minSpend || 0;
+            document.getElementById('couponInput').value = appliedCouponCode;
+          } else {
+            appliedCouponCode = "";
+            appliedDiscountRate = 0;
+          }
+        }
         updateWishlistBadges();
         renderStoreCoupons(); setupDealCarousel(); renderStore(); renderRecentlyViewed(); updateCartUI();
+
+        // Auto-open product if ?product=ID is in URL
+        if (!hasCheckedDeepLink) {
+          hasCheckedDeepLink = true;
+          const urlParams = new URLSearchParams(window.location.search);
+          const sharedProdId = Number(urlParams.get('product'));
+          if (sharedProdId && allProducts.some(p => p.id === sharedProdId)) {
+            openQuickView(sharedProdId);
+          }
+        }
       } catch (e) {}
     }
 
@@ -1095,6 +1197,12 @@
       recordRecentlyViewed(prod.id);
       trackMetaEvent('ViewContent', { content_name: prod.name, value: prod.price, currency: 'INR' });
       updateQuickViewWishlistBtn(prod.id);
+
+      // Update browser URL cleanly so copying address bar also shares this product
+      try {
+        window.history.replaceState({}, '', `?product=${prod.id}`);
+      } catch (e) {}
+
       const images = (prod.images && prod.images.length) ? prod.images : [""];
       document.getElementById('qvMainImage').src = images[0];
       document.getElementById('qvThumbnailsContainer').innerHTML = images.map((u, i) => `<img id="thumb_img_${i}" src="${u}" onclick="setMainImage('${u}', ${i})" class="w-14 h-14 object-cover rounded-xl border-2 ${i === 0 ? 'border-amber-400' : 'border-transparent'} cursor-pointer">`).join('');
@@ -1187,17 +1295,31 @@
       const exist = cart.find(i => i.itemKey === key);
       if (exist) exist.qty += 1; else cart.push({ ...prod, itemKey: key, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 });
       trackMetaEvent('AddToCart', { content_name: prod.name, value: prod.price, currency: 'INR' });
+      persistCartLocal();
       updateCartUI(); toggleCart(true);
     }
 
     function instantBuyNowWithVariant(prod) {
       cart = [{ ...prod, itemKey: `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 }];
       trackMetaEvent('InitiateCheckout', { content_name: prod.name, value: prod.price, currency: 'INR' });
+      persistCartLocal();
       updateCartUI(); openCheckoutModal();
     }
 
-    function closeQuickView() { document.getElementById('quickViewModal').classList.add('hidden'); }
-    function updateQty(idx, ch) { cart[idx].qty += ch; if (cart[idx].qty <= 0) cart.splice(idx, 1); updateCartUI(); }
+    function closeQuickView() {
+      document.getElementById('quickViewModal').classList.add('hidden');
+      try {
+        window.history.replaceState({}, '', window.location.pathname);
+      } catch (e) {}
+    }
+
+    function updateQty(idx, ch) {
+      cart[idx].qty += ch;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      persistCartLocal();
+      updateCartUI();
+    }
+
     function toggleCart(forceOpen = false) { const d = document.getElementById('cartDrawer'); if (forceOpen) d.classList.remove('hidden'); else d.classList.toggle('hidden'); }
 
     function calculateCartTotals(mode = 'UPI') {
@@ -1217,7 +1339,7 @@
       }
       document.getElementById('checkoutProceedBtn').disabled = false;
       const { subTotal, discountAmt, finalAmt } = calculateCartTotals('UPI');
-      list.innerHTML = cart.map((item, idx) => `<div class="flex items-center gap-3 border-b border-stone-800 pb-3"><img src="${(item.images && item.images[0]) || ''}" class="w-14 h-14 object-cover rounded-xl"><div class="flex-1"><h5 class="text-xs font-bold line-clamp-1">${item.name}</h5><p class="text-[10px] text-amber-400">${item.selectedSize} | ${item.selectedColor}</p><p class="text-xs font-black text-amber-400">₹${item.price}</p><div class="flex items-center gap-2 mt-1"><button onclick="updateQty(${idx}, -1)" class="w-6 h-6 bg-stone-800 rounded">-</button><span>${item.qty}</span><button onclick="updateQty(${idx}, 1)" class="w-6 h-6 bg-stone-800 rounded">+</button></div></div><button onclick="cart.splice(${idx}, 1); updateCartUI();" class="text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button></div>`).join('');
+      list.innerHTML = cart.map((item, idx) => `<div class="flex items-center gap-3 border-b border-stone-800 pb-3"><img src="${(item.images && item.images[0]) || ''}" class="w-14 h-14 object-cover rounded-xl"><div class="flex-1"><h5 class="text-xs font-bold line-clamp-1">${item.name}</h5><p class="text-[10px] text-amber-400">${item.selectedSize} | ${item.selectedColor}</p><p class="text-xs font-black text-amber-400">₹${item.price}</p><div class="flex items-center gap-2 mt-1"><button onclick="updateQty(${idx}, -1)" class="w-6 h-6 bg-stone-800 rounded">-</button><span>${item.qty}</span><button onclick="updateQty(${idx}, 1)" class="w-6 h-6 bg-stone-800 rounded">+</button></div></div><button onclick="cart.splice(${idx}, 1); persistCartLocal(); updateCartUI();" class="text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button></div>`).join('');
       document.getElementById('subTotalDisplay').innerText = `₹${subTotal}`; document.getElementById('discountDisplay').innerText = `-₹${discountAmt}`; document.getElementById('finalTotalDisplay').innerText = `₹${finalAmt}`;
     }
 
@@ -1233,6 +1355,7 @@
         appliedDiscountRate = 0; appliedCouponCode = "";
         status.innerText = found ? `Min order ₹${found.minSpend} required!` : "Invalid coupon code!"; status.className = "text-[11px] text-rose-400 block font-bold";
       }
+      persistCartLocal();
       status.classList.remove('hidden'); updateCartUI();
     }
 
@@ -1259,7 +1382,6 @@
 
       saveCustomerProfileLocal();
 
-      // Silently record Abandoned Cart in case user exits before paying
       const fullAddr = `${house}, ${village}, P.O: ${po}, ${city}, ${state} - ${pin}`;
       const { finalAmt } = calculateCartTotals('UPI');
       fetch('/api/abandoned-cart', {
@@ -1323,26 +1445,33 @@
       const utr = document.getElementById('ordUTR').value.trim();
       if (!utr) return alert("Please enter 12-digit UTR!");
       saveCustomerProfileLocal();
-      const btn = document.getElementById('submitOrderBtn'); btn.innerText = "Placing Order..."; btn.disabled = true;
+      const btn = document.getElementById('submitOrderBtn'); btn.innerText = "Verifying & Placing Order..."; btn.disabled = true;
       const mode = document.getElementById('ordPaymentMethod').value;
-      const { subTotal, discountAmt, finalAmt, deliveryCharge } = calculateCartTotals(mode);
-      const adv = mode === 'COD' ? Math.max(1, Math.round((finalAmt * storeCodAdvancePct) / 100)) : finalAmt;
+
       const res = await fetch('/api/orders', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customerName: document.getElementById('ordName').value, phone: document.getElementById('ordPhone').value, pincode: document.getElementById('ordPincode').value,
           city: document.getElementById('ordCity').value, state: document.getElementById('ordState').value, houseNoStreet: document.getElementById('addrHouseStreet').value,
           villageOrCity: document.getElementById('addrVillage').value, postOffice: document.getElementById('addrPostOffice').value, policeStation: document.getElementById('addrPoliceStation').value,
-          landmark: document.getElementById('addrLandmark').value, items: [...cart], giftNote: document.getElementById('ordGiftNote').value.trim(),
-          subTotal, discountApplied: discountAmt, deliveryCharge, couponCode: appliedCouponCode,
-          total: finalAmt, paymentMethod: mode, advancePaid: adv, balanceDue: finalAmt - adv, utrNumber: utr
+          landmark: document.getElementById('addrLandmark').value,
+          items: cart.map(i => ({ id: i.id, name: i.name, selectedSize: i.selectedSize, selectedColor: i.selectedColor, qty: i.qty })),
+          giftNote: document.getElementById('ordGiftNote').value.trim(),
+          couponCode: appliedCouponCode,
+          paymentMethod: mode,
+          utrNumber: utr
         })
       });
       const data = await res.json();
       if (data.success) {
-        trackMetaEvent('Purchase', { value: finalAmt, currency: 'INR', order_id: data.orderId });
-        alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}`);
-        cart = []; updateCartUI(); closeCheckoutModal();
+        trackMetaEvent('Purchase', { value: data.verifiedTotal || 0, currency: 'INR', order_id: data.orderId });
+        alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}\nVerified Bill: ₹${data.verifiedTotal}`);
+        cart = [];
+        appliedCouponCode = "";
+        appliedDiscountRate = 0;
+        persistCartLocal();
+        updateCartUI();
+        closeCheckoutModal();
       } else alert(data.message || "Failed to place order.");
       btn.disabled = false;
     }
@@ -1393,7 +1522,10 @@
       const data = await res.json();
       const box = document.getElementById('myOrdersListContainer');
       if (!data.orders || !data.orders.length) { box.innerHTML = `<p class="text-center py-6 text-rose-400 font-bold">No orders found!</p>`; return; }
-      box.innerHTML = data.orders.map(o => `
+      box.innerHTML = data.orders.map(o => {
+        const courier = o.courierPartner || 'Delhivery';
+        const trackFn = courierTrackingUrls[courier] || courierTrackingUrls["Delhivery"];
+        return `
         <div class="border border-stone-800 bg-stone-950 p-4 rounded-2xl space-y-3">
           <div class="flex justify-between items-center font-bold">
             <span class="text-amber-400 font-mono text-sm">#${o.id}</span>
@@ -1402,16 +1534,16 @@
           ${buildOrderTimelineHTML(o.status)}
           <p class="text-stone-400 text-[11px]">${o.date} • Total: <b class="text-white">₹${o.total}</b> (${o.paymentMethod})</p>
           ${o.giftNote ? `<p class="text-[11px] text-rose-300 italic"><i class="fa-solid fa-gift mr-1"></i>Gift Note: "${o.giftNote}"</p>` : ''}
-          ${o.awbNumber ? `<p class="text-[11px] text-cyan-300 font-mono">Courier: ${o.courierPartner || 'Delhivery'} | AWB: <b>${o.awbNumber}</b></p>` : ''}
+          ${o.awbNumber ? `<p class="text-[11px] text-cyan-300 font-mono">Courier: ${courier} | AWB: <b>${o.awbNumber}</b></p>` : ''}
           <div class="flex flex-wrap gap-2 pt-1">
             <a href="/api/orders/${o.id}/invoice" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px]">
               <i class="fa-solid fa-file-pdf"></i> Download Invoice
             </a>
-            ${o.awbNumber ? `<a href="https://www.delhivery.com/track/package/${encodeURIComponent(o.awbNumber)}" target="_blank" class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-location-dot"></i> Track Live Courier</a>` : ''}
+            ${o.awbNumber ? `<a href="${trackFn(o.awbNumber)}" target="_blank" class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-location-dot"></i> Track on ${courier}</a>` : ''}
             ${o.deliverySlipFile ? `<a href="${o.deliverySlipFile}" download="Slip_${o.id}" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-download"></i> Delivery Slip</a>` : ''}
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
     }
 
     function openSupportModal() {
@@ -1573,6 +1705,7 @@
     }
 
     updateWishlistBadges();
+    updateCartUI();
     loadStore();
     setInterval(loadStore, 45000);
   </script>
