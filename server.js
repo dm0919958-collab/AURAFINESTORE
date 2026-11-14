@@ -236,13 +236,6 @@ const stockNotifySchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-const blockedNumberSchema = new mongoose.Schema({
-  phone: { type: String, unique: true },
-  reason: { type: String, default: "Blocked by Admin" },
-  blockedAtStr: String,
-  createdAt: { type: Date, default: Date.now }
-});
-
 const Category = mongoose.model('Category', categorySchema);
 const Product = mongoose.model('Product', productSchema);
 const Banner = mongoose.model('Banner', bannerSchema);
@@ -253,7 +246,6 @@ const Wallet = mongoose.model('Wallet', walletSchema);
 const AbandonedCart = mongoose.model('AbandonedCart', abandonedCartSchema);
 const SupportTicket = mongoose.model('SupportTicket', supportTicketSchema);
 const StockNotify = mongoose.model('StockNotify', stockNotifySchema);
-const BlockedNumber = mongoose.model('BlockedNumber', blockedNumberSchema);
 
 const defaultCategories = [
   { name: "Men", subCategories: ["Shirts", "T-Shirts", "Watches", "Trousers", "Perfumes"] },
@@ -480,7 +472,7 @@ function generateOrderInvoicePDF(order) {
 
       doc.fillColor('#111827').fontSize(24).font('Helvetica-Bold').text('AURA FINE STORE', 40, 52);
       doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text('Premium Lifestyle, Ethnic Wear & Luxury Collections', 40, 78);
-      doc.fillColor('#6b7280').fontSize(8).text('Bolpur, Birbhum, West Bengal - 731235 | Support: +91 6289145092', 40, 90);
+      doc.fillColor('#6b7280').fontSize(8).text('Bolpur, Birbhum, West Bengal - 731204 | Support: +91 6289145092', 40, 90);
 
       doc.roundedRect(365, 48, 190, 52, 6).strokeColor('#e5e7eb').lineWidth(1).stroke();
       doc.fillColor('#b45309').fontSize(10).font('Helvetica-Bold').text('TAX INVOICE / BILL', 375, 56);
@@ -498,7 +490,7 @@ function generateOrderInvoicePDF(order) {
       doc.roundedRect(305, 126, 250, 96, 6).strokeColor('#e5e7eb').stroke();
       doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text('DISPATCH LOGISTICS:', 315, 136);
       doc.fillColor('#111827').fontSize(9.5).font('Helvetica-Bold').text('AURA Central Logistics Hub', 315, 150);
-      doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text('Bolpur, Birbhum, WB - 731235', 315, 164);
+      doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text('Bolpur, Birbhum, WB - 731204', 315, 164);
       doc.fillColor('#374151').fontSize(8.5).text(`Courier Partner: ${order.courierPartner || 'Delhivery'}`, 315, 177);
       doc.fillColor('#4b5563').fontSize(8).text(`AWB / Tracking: ${order.awbNumber ? order.awbNumber : 'Post-Packing Dispatch'}`, 315, 190);
 
@@ -586,6 +578,7 @@ function generateOrderInvoicePDF(order) {
   });
 }
 
+// Premium E-Commerce 4x6 Inch Thermal Shipping Label PDF (288 x 432 pt)
 function generateThermalShippingLabelPDF(order) {
   return new Promise((resolve, reject) => {
     try {
@@ -598,22 +591,27 @@ function generateThermalShippingLabelPDF(order) {
       const carrier = (order.courierPartner || 'Delhivery').toUpperCase();
       const trackingCode = String(order.awbNumber || order.id || 'AUR000000').toUpperCase();
 
+      // Double Outer Frame
       doc.rect(6, 6, 276, 420).lineWidth(2.0).strokeColor('#000000').stroke();
       doc.rect(9, 9, 270, 414).lineWidth(0.5).strokeColor('#000000').stroke();
 
+      // 1. Top Dark Brand Banner
       doc.rect(9, 9, 270, 38).fill('#000000');
       doc.fillColor('#FFFFFF').fontSize(14).font('Helvetica-Bold').text('AURA FINE STORE', 15, 15);
       doc.fontSize(7).font('Helvetica').text('EXPRESS PARCEL • FRAGILE / HANDLE WITH CARE', 15, 32);
 
+      // Right Mode Stamp
       doc.rect(208, 13, 66, 30).fill('#FFFFFF');
       doc.fillColor('#000000').fontSize(11).font('Helvetica-Bold').text(isCOD ? 'COD' : 'PREPAID', 208, 17, { width: 66, align: 'center' });
       doc.fontSize(6.5).font('Helvetica').text(isCOD ? 'COLLECT CASH' : 'DO NOT COLLECT', 208, 31, { width: 66, align: 'center' });
 
+      // 2. Carrier, Order ID & High-Density Vector Barcode
       doc.fillColor('#000000').fontSize(8.5).font('Helvetica-Bold').text(`CARRIER: ${carrier}`, 15, 53);
       doc.fontSize(8).font('Helvetica').text(`DATE: ${order.orderDateRaw || order.date || ''}`, 175, 53, { width: 98, align: 'right' });
       doc.fontSize(9.5).font('Helvetica-Bold').text(`ORDER ID: #${order.id}`, 15, 65);
       doc.fontSize(8.5).font('Helvetica-Bold').text(`AWB NO: ${order.awbNumber || 'AWAITING PICKUP'}`, 15, 78);
 
+      // Barcode Box on Right
       let bx = 152;
       for (let i = 0; i < 42; i++) {
         const val = trackingCode.charCodeAt(i % trackingCode.length) * (i + 3);
@@ -627,15 +625,17 @@ function generateThermalShippingLabelPDF(order) {
 
       doc.moveTo(9, 98).lineTo(279, 98).lineWidth(1.4).stroke();
 
+      // 3. Recipient Delivery Section
       doc.fontSize(7.5).font('Helvetica-Bold').text('DELIVER TO (CUSTOMER DETAILS):', 15, 103);
       doc.fontSize(13).font('Helvetica-Bold').text((order.customerName || 'Valued Customer').toUpperCase(), 15, 114, { width: 258, lineBreak: false, ellipsis: true });
       doc.fontSize(11).font('Helvetica-Bold').text(`MOBILE: +91 ${order.phone}`, 15, 130);
       doc.fontSize(8.5).font('Helvetica').text(order.address || '', 15, 145, { width: 258, height: 52, lineGap: 1.8 });
 
+      // 4. Prominent Pincode & Payment Collection Grid
       const gridY = 200;
       doc.rect(15, gridY, 108, 34).lineWidth(1.5).strokeColor('#000000').stroke();
       doc.fontSize(7).font('Helvetica-Bold').text('ROUTING PINCODE', 19, gridY + 4);
-      doc.fontSize(15).font('Helvetica-Bold').text(String(order.pincode || '731235'), 19, gridY + 14);
+      doc.fontSize(15).font('Helvetica-Bold').text(String(order.pincode || '731204'), 19, gridY + 14);
 
       if (isCOD) {
         doc.rect(128, gridY, 145, 34).fill('#000000');
@@ -649,6 +649,7 @@ function generateThermalShippingLabelPDF(order) {
 
       doc.moveTo(9, 241).lineTo(279, 241).lineWidth(1.4).stroke();
 
+      // 5. Package Contents Table
       doc.fillColor('#000000').rect(9, 241, 270, 15).fill('#e5e7eb');
       doc.fillColor('#000000').fontSize(7.5).font('Helvetica-Bold');
       doc.text('ITEM NAME & VARIANT (SIZE / COLOR)', 15, 245);
@@ -670,11 +671,13 @@ function generateThermalShippingLabelPDF(order) {
 
       doc.moveTo(9, 326).lineTo(279, 326).lineWidth(1.4).stroke();
 
+      // 6. Return / Shipper Origin Block
       doc.fontSize(7.5).font('Helvetica-Bold').text('RETURN / SHIPPER ADDRESS (IF UNDELIVERED):', 15, 332);
       doc.fontSize(8.5).font('Helvetica-Bold').text('AURA Fine Store Central Dispatch Hub', 15, 343);
-      doc.fontSize(7.5).font('Helvetica').text('Bolpur, Birbhum, West Bengal - 731235, India', 15, 354);
+      doc.fontSize(7.5).font('Helvetica').text('Bolpur, Birbhum, West Bengal - 731204, India', 15, 354);
       doc.font('Helvetica-Bold').text('Helpline: +91 6289145092 | Weight: 0.50 Kg', 15, 365);
 
+      // 7. Bottom Unboxing Video Strip
       doc.rect(9, 381, 270, 42).fill('#000000');
       doc.fillColor('#FFFFFF').fontSize(7.5).font('Helvetica-Bold').text('IMPORTANT CUSTOMER NOTICE:', 15, 387);
       doc.fontSize(7).font('Helvetica').text('Record a continuous 360-degree unboxing video before opening the sealed package to claim 7-day replacement.', 15, 398, { width: 258 });
@@ -773,168 +776,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// =========================================================================
-// MANDATORY PAYMENT GATEWAY COMPLIANCE PAGES (Razorpay / Cashfree / PhonePe)
-// =========================================================================
-function renderCompliancePageHTML(pageTitle, activeSlug, contentHtml) {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${pageTitle} | AURA Fine Store</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-    .font-cinzel { font-family: 'Cinzel', serif; }
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0c0a09; color: #f5f5f4; }
-  </style>
-</head>
-<body class="min-h-screen flex flex-col justify-between">
-  <div>
-    <header class="bg-stone-950 border-b border-amber-500/25 py-4 px-4 sm:px-6 sticky top-0 z-40">
-      <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3">
-        <a href="/" class="flex flex-col">
-          <span class="text-2xl font-extrabold font-cinzel tracking-[0.22em] text-amber-100">AURA</span>
-          <span class="text-[9px] uppercase tracking-[0.4em] text-amber-500 font-bold -mt-1">Fine Store</span>
-        </a>
-        <a href="/" class="bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold px-4 py-2 rounded-xl text-xs transition">
-          <i class="fa-solid fa-arrow-left mr-1.5"></i> Back to Store
-        </a>
-      </div>
-    </header>
-
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-10">
-      <div class="flex flex-wrap gap-2 mb-6 text-xs">
-        <a href="/privacy-policy" class="px-3.5 py-1.5 rounded-full font-bold border ${activeSlug === 'privacy' ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-900 text-stone-300 border-stone-800 hover:border-amber-500/40'}">Privacy Policy</a>
-        <a href="/terms-and-conditions" class="px-3.5 py-1.5 rounded-full font-bold border ${activeSlug === 'terms' ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-900 text-stone-300 border-stone-800 hover:border-amber-500/40'}">Terms & Conditions</a>
-        <a href="/refund-policy" class="px-3.5 py-1.5 rounded-full font-bold border ${activeSlug === 'refund' ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-900 text-stone-300 border-stone-800 hover:border-amber-500/40'}">Refund & Cancellation</a>
-        <a href="/shipping-policy" class="px-3.5 py-1.5 rounded-full font-bold border ${activeSlug === 'shipping' ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-900 text-stone-300 border-stone-800 hover:border-amber-500/40'}">Shipping Policy</a>
-        <a href="/contact-us" class="px-3.5 py-1.5 rounded-full font-bold border ${activeSlug === 'contact' ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-900 text-stone-300 border-stone-800 hover:border-amber-500/40'}">Contact Us</a>
-      </div>
-
-      <article class="bg-stone-900/90 border border-amber-500/25 rounded-3xl p-6 sm:p-10 space-y-5 shadow-2xl">
-        <div class="border-b border-stone-800 pb-4">
-          <span class="text-[10px] uppercase tracking-widest text-amber-400 font-bold">Official Store Compliance Document</span>
-          <h1 class="text-2xl sm:text-3xl font-cinzel font-bold text-white mt-1">${pageTitle}</h1>
-          <p class="text-xs text-stone-400 mt-1">Legal Entity: <strong>AURA Fine Store</strong> • Last Updated: November 2026</p>
-        </div>
-        <div class="space-y-4 text-sm text-stone-300 leading-relaxed">
-          ${contentHtml}
-        </div>
-      </article>
-    </main>
-  </div>
-
-  <footer class="bg-black border-t border-stone-900 py-8 px-4 text-xs text-stone-400">
-    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-      <p>&copy; 2026 <strong>AURA Fine Store</strong> • Bolpur, Birbhum, West Bengal - 731235, India</p>
-      <div class="flex flex-wrap justify-center gap-4">
-        <a href="/privacy-policy" class="hover:text-amber-400">Privacy Policy</a>
-        <a href="/terms-and-conditions" class="hover:text-amber-400">Terms & Conditions</a>
-        <a href="/refund-policy" class="hover:text-amber-400">Refund & Cancellation</a>
-        <a href="/shipping-policy" class="hover:text-amber-400">Shipping Policy</a>
-        <a href="/contact-us" class="hover:text-amber-400">Contact Us</a>
-      </div>
-    </div>
-  </footer>
-</body>
-</html>`;
-}
-
-app.get('/privacy-policy', (req, res) => {
-  res.send(renderCompliancePageHTML('Privacy Policy', 'privacy', `
-    <p>At <strong>AURA Fine Store</strong>, protecting the privacy and personal data of our customers is our highest priority.</p>
-    <h2 class="text-base font-bold text-amber-300 pt-2">1. Information We Collect</h2>
-    <p>When you browse our catalog, place an order, or submit a support inquiry, we collect necessary contact and delivery details including your full name, 10-digit mobile number, email address, shipping address, postal pincode, and payment transaction reference (UTR).</p>
-    <h2 class="text-base font-bold text-amber-300 pt-2">2. How We Use Your Information</h2>
-    <ul class="list-disc pl-5 space-y-1.5">
-      <li>To process, pack, and dispatch your orders via authorized courier partners (Delhivery, DTDC, Shiprocket, and IndiaPost).</li>
-      <li>To send order confirmation invoices and shipment tracking updates.</li>
-      <li>To prevent fraudulent transactions and maintain loyalty wallet balances.</li>
-    </ul>
-    <h2 class="text-base font-bold text-amber-300 pt-2">3. Payment & Data Security</h2>
-    <p>We do <strong>not</strong> store any credit/debit card numbers or UPI PINs on our servers. All online payments are processed through encrypted, secure payment channels and verified UPI gateways.</p>
-    <h2 class="text-base font-bold text-amber-300 pt-2">4. Contact for Privacy Queries</h2>
-    <p>For data access, correction, or deletion requests, please email us at <strong>mahatosarita436@gmail.com</strong> or call <strong>+91 6289145092</strong>.</p>
-  `));
-});
-
-app.get('/terms-and-conditions', (req, res) => {
-  res.send(renderCompliancePageHTML('Terms & Conditions', 'terms', `
-    <p>Welcome to <strong>AURA Fine Store</strong>. By accessing our website and purchasing products from our store, you agree to comply with and be bound by the following Terms & Conditions.</p>
-    <h2 class="text-base font-bold text-amber-300 pt-2">1. Product Descriptions & Pricing</h2>
-    <p>All prices listed on AURA Fine Store are in Indian Rupees (INR / ₹). We strive to display accurate product photographs, dimensions, variants, and pricing.</p>
-    <h2 class="text-base font-bold text-amber-300 pt-2">2. Order Acceptance & Verification</h2>
-    <p>All prepaid orders and Cash on Delivery (COD) advance token orders are subject to payment verification and stock availability. AURA Fine Store reserves the right to cancel any order in case of invalid transaction references or suspected fraudulent activity.</p>
-    <h2 class="text-base font-bold text-amber-300 pt-2">3. Governing Law & Jurisdiction</h2>
-    <p>These Terms & Conditions shall be governed by and construed in accordance with the laws of India. Any disputes arising shall be subject to the exclusive jurisdiction of the courts in <strong>Birbhum, West Bengal, India</strong>.</p>
-  `));
-});
-
-app.get('/refund-policy', (req, res) => {
-  res.send(renderCompliancePageHTML('Refund, Return & Cancellation Policy', 'refund', `
-    <p>At <strong>AURA Fine Store</strong>, we inspect every item carefully before dispatch. Please review our transparent cancellation, replacement, and refund policy below:</p>
-    <h2 class="text-base font-bold text-amber-300 pt-2">1. Order Cancellation Policy</h2>
-    <ul class="list-disc pl-5 space-y-1.5">
-      <li>Customers can request order cancellation <strong>before the parcel is dispatched/shipped</strong> from our warehouse by contacting our Help & Support Desk or calling <strong>+91 6289145092</strong>.</li>
-      <li>Once an order has been handed over to the courier partner and an AWB tracking number is generated, it cannot be cancelled.</li>
-      <li>For approved pre-dispatch cancellations on prepaid orders, a 100% refund is initiated within <strong>24–48 hours</strong>.</li>
-    </ul>
-    <h2 class="text-base font-bold text-amber-300 pt-2">2. 7-Day Easy Replacement Policy</h2>
-    <p>If you receive a damaged, defective, or incorrect item, you must report the issue within <strong>7 days of delivery</strong> via our website's <em>Help & Support Desk</em>.</p>
-    <div class="bg-amber-950/40 border border-amber-500/35 p-4 rounded-2xl text-amber-200 text-xs">
-      <strong>Mandatory Unboxing Video Requirement:</strong> To protect against transit tampering, a continuous, uncut 360-degree parcel unboxing video showing the sealed shipping label clearly is mandatory for claiming a replacement or refund for damaged/missing items.
-    </div>
-    <h2 class="text-base font-bold text-amber-300 pt-2">3. Refund Processing Timeline</h2>
-    <p>If a replacement unit is out of stock or a refund is approved after quality verification, the refund amount will be credited back to the customer's original payment method within <strong>5 to 7 business days</strong>.</p>
-  `));
-});
-
-app.get('/shipping-policy', (req, res) => {
-  res.send(renderCompliancePageHTML('Shipping & Delivery Policy', 'shipping', `
-    <p><strong>AURA Fine Store</strong> delivers across India through trusted national courier networks.</p>
-    <h2 class="text-base font-bold text-amber-300 pt-2">1. Order Processing & Dispatch Time</h2>
-    <p>All confirmed orders are packed and dispatched from our central fulfillment hub in <strong>Bolpur, Birbhum, West Bengal - 731235</strong> within <strong>24 to 48 business hours</strong>.</p>
-    <h2 class="text-base font-bold text-amber-300 pt-2">2. Estimated Delivery Timeline</h2>
-    <ul class="list-disc pl-5 space-y-1.5">
-      <li><strong>West Bengal & Eastern India:</strong> 3 to 5 business days after dispatch.</li>
-      <li><strong>Rest of India (Metro & Tier 1/2 Cities):</strong> 5 to 7 business days after dispatch.</li>
-    </ul>
-    <h2 class="text-base font-bold text-amber-300 pt-2">3. Shipping Charges</h2>
-    <p>আমরা সব প্রিপেইড অর্ডারে **ফ্রি স্ট্যান্ডার্ড শিপিং** দিই। ক্যাশ অন ডেলিভারি (COD)-র ক্ষেত্রে সামান্য হ্যান্ডলিং চার্জ প্রযোজ্য হতে পারে।</p>
-  `));
-});
-
-app.get('/contact-us', (req, res) => {
-  res.send(renderCompliancePageHTML('Contact Us & Merchant Details', 'contact', `
-    <p>We are always happy to assist you with product inquiries, order tracking, bulk orders, or post-purchase support.</p>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-      <div class="bg-stone-950 border border-stone-800 p-5 rounded-2xl space-y-2">
-        <p class="text-xs font-bold uppercase text-amber-400"><i class="fa-solid fa-store mr-1.5"></i> Registered Business Name</p>
-        <p class="text-base font-bold text-white">AURA Fine Store</p>
-        <p class="text-xs text-stone-400">Artisanal Couture, Apparel, Jewellery & Lifestyle Retail</p>
-      </div>
-      <div class="bg-stone-950 border border-stone-800 p-5 rounded-2xl space-y-2">
-        <p class="text-xs font-bold uppercase text-amber-400"><i class="fa-solid fa-location-dot mr-1.5"></i> Registered Office & Dispatch Address</p>
-        <p class="text-sm font-semibold text-white">Bolpur (Kopai), District: Birbhum,<br>West Bengal - 731235, India</p>
-      </div>
-      <div class="bg-stone-950 border border-stone-800 p-5 rounded-2xl space-y-2">
-        <p class="text-xs font-bold uppercase text-emerald-400"><i class="fa-solid fa-phone mr-1.5"></i> Customer Support Helpline & WhatsApp</p>
-        <p class="text-base font-mono font-bold text-white">+91 6289145092</p>
-        <p class="text-xs text-stone-400">Support Hours: Monday – Saturday, 10:00 AM to 7:00 PM IST</p>
-      </div>
-      <div class="bg-stone-950 border border-stone-800 p-5 rounded-2xl space-y-2">
-        <p class="text-xs font-bold uppercase text-cyan-400"><i class="fa-solid fa-envelope mr-1.5"></i> Official Support Email</p>
-        <p class="text-sm font-bold text-white">mahatosarita436@gmail.com</p>
-        <p class="text-xs text-stone-400">Average response time: Within 4–6 business hours</p>
-      </div>
-    </div>
-  `));
-});
-
-// Public Storefront Endpoint
+// Public Storefront Endpoint (Includes Dynamic Categories)
 app.get('/api/store', async (req, res) => {
   try {
     res.set({
@@ -989,6 +831,7 @@ app.get('/api/store', async (req, res) => {
   }
 });
 
+// Check Customer AURA Coins Wallet Balance
 app.get('/api/wallet/:phone', async (req, res) => {
   try {
     const cleanPhone = String(req.params.phone || '').replace(/[^0-9]/g, '');
@@ -1000,42 +843,607 @@ app.get('/api/wallet/:phone', async (req, res) => {
   }
 });
 
-// Blocked Numbers Endpoints
-app.post('/api/admin/blocked-numbers', async (req, res) => {
+// Admin Category & Sub-Category Management (With Cascade Delete of Products)
+app.post('/api/admin/categories', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const cleanPhone = String(req.body.phone || '').replace(/[^0-9]/g, '');
+    const name = String(req.body.name || "").trim();
+    if (!name) return res.status(400).json({ success: false, message: "Category name is required!" });
+
+    const existing = await Category.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
+    if (existing) return res.status(400).json({ success: false, message: "Category already exists!" });
+
+    await Category.create({ name, subCategories: [] });
+    const categories = await Category.find().lean();
+    res.json({ success: true, categories });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/admin/categories/:name/subcategories', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const catName = req.params.name;
+    const subName = String(req.body.subName || "").trim();
+    if (!subName) return res.status(400).json({ success: false, message: "Sub-category name is required!" });
+
+    const cat = await Category.findOne({ name: catName });
+    if (!cat) return res.status(404).json({ success: false, message: "Main category not found!" });
+
+    if (!cat.subCategories.some(s => s.toLowerCase() === subName.toLowerCase())) {
+      cat.subCategories.push(subName);
+      await cat.save();
+    }
+    const categories = await Category.find().lean();
+    res.json({ success: true, categories });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Delete Sub-Category & CASCADE DELETE all Products inside it
+app.delete('/api/admin/categories/:name/subcategories/:subName', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const catName = req.params.name;
+    const subName = req.params.subName;
+
+    const cat = await Category.findOne({ name: catName });
+    if (cat) {
+      cat.subCategories = cat.subCategories.filter(s => s !== subName);
+      await cat.save();
+    }
+
+    const prodsToDelete = await Product.find({ mainCategory: catName, category: subName }).lean();
+    const prodIds = prodsToDelete.map(p => p.id);
+
+    await Promise.all([
+      Product.deleteMany({ mainCategory: catName, category: subName }),
+      prodIds.length ? Banner.deleteMany({ productId: { $in: prodIds } }) : Promise.resolve()
+    ]);
+
+    const [categories, products] = await Promise.all([
+      Category.find().lean(),
+      Product.find().sort({ _id: -1 }).lean()
+    ]);
+
+    res.json({ success: true, deletedProductsCount: prodIds.length, categories, products });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Delete Main Category & CASCADE DELETE all Sub-Categories & Products inside it
+app.delete('/api/admin/categories/:name', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const catName = req.params.name;
+
+    const prodsToDelete = await Product.find({ mainCategory: catName }).lean();
+    const prodIds = prodsToDelete.map(p => p.id);
+
+    await Promise.all([
+      Category.deleteOne({ name: catName }),
+      Product.deleteMany({ mainCategory: catName }),
+      prodIds.length ? Banner.deleteMany({ productId: { $in: prodIds } }) : Promise.resolve()
+    ]);
+
+    const [categories, products] = await Promise.all([
+      Category.find().lean(),
+      Product.find().sort({ _id: -1 }).lean()
+    ]);
+
+    res.json({ success: true, deletedProductsCount: prodIds.length, categories, products });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Live Recent Sales Feed
+app.get('/api/recent-sales', async (req, res) => {
+  try {
+    const recentOrders = await Order.find({ status: { $ne: 'Cancelled' } })
+      .sort({ createdAt: -1 })
+      .limit(15)
+      .lean();
+
+    const feed = [];
+    for (const o of recentOrders) {
+      if (!o.items || !o.items.length) continue;
+      const firstName = String(o.customerName || 'Customer').trim().split(/\s+/)[0];
+      const city = String(o.city || 'India').trim();
+      const item = o.items[0];
+      feed.push({
+        customerName: firstName,
+        city,
+        productId: item.id,
+        productName: item.name,
+        productImage: (item.images && item.images[0]) || ""
+      });
+    }
+    res.json({ success: true, sales: feed });
+  } catch (err) {
+    res.json({ success: true, sales: [] });
+  }
+});
+
+// Out-of-Stock "Notify Me"
+app.post('/api/products/:id/notify', async (req, res) => {
+  try {
+    const prodId = Number(req.params.id);
+    const { customerName, phone } = req.body;
+    const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
     if (cleanPhone.length !== 10) {
       return res.status(400).json({ success: false, message: "Please enter a valid 10-digit mobile number!" });
     }
-    const reason = String(req.body.reason || "Fake / RTO Customer").trim();
-    const blockedAtStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
-    await BlockedNumber.findOneAndUpdate(
-      { phone: cleanPhone },
-      { phone: cleanPhone, reason, blockedAtStr, createdAt: new Date() },
-      { upsert: true, new: true }
-    );
-    const blockedNumbers = await BlockedNumber.find().sort({ createdAt: -1 }).lean();
-    res.json({ success: true, blockedNumbers });
+    const product = await Product.findOne({ id: prodId }).lean();
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    const existing = await StockNotify.findOne({ productId: prodId, phone: cleanPhone });
+    if (existing) {
+      return res.json({ success: true, message: "You are already on the priority WhatsApp restock list!" });
+    }
+
+    const nowStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+    await StockNotify.create({
+      productId: prodId,
+      productName: product.name,
+      customerName: (customerName || 'Customer').trim(),
+      phone: cleanPhone,
+      createdAtStr: nowStr
+    });
+
+    res.json({ success: true, message: "Saved! We will notify you on WhatsApp as soon as it is back in stock." });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: "Failed to save notification request." });
   }
 });
 
-app.delete('/api/admin/blocked-numbers/:phone', async (req, res) => {
+app.delete('/api/admin/stock-notify/:id', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const cleanPhone = String(req.params.phone || '').replace(/[^0-9]/g, '');
-    await BlockedNumber.deleteOne({ phone: cleanPhone });
-    const blockedNumbers = await BlockedNumber.find().sort({ createdAt: -1 }).lean();
-    res.json({ success: true, blockedNumbers });
+    await StockNotify.deleteOne({ _id: req.params.id });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+});
+
+app.post('/api/abandoned-cart', async (req, res) => {
+  try {
+    const { customerName, phone, address, items, totalAmount } = req.body;
+    const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
+    if (cleanPhone.length !== 10 || !items || items.length === 0) return res.json({ success: false });
+
+    const updatedAtStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+    await AbandonedCart.findOneAndUpdate(
+      { phone: cleanPhone },
+      {
+        phone: cleanPhone,
+        customerName: (customerName || 'Customer').trim(),
+        address: (address || '').trim(),
+        items,
+        totalAmount: Number(totalAmount) || 0,
+        updatedAtStr,
+        updatedAt: new Date()
+      },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.json({ success: false });
+  }
+});
+
+app.post('/api/products/:id/reviews', async (req, res) => {
+  try {
+    const { customerName, rating, comment, photoBase64 } = req.body;
+    const prodId = Number(req.params.id);
+    const product = await Product.findOne({ id: prodId });
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    let uploadedPhotoUrl = "";
+    if (photoBase64 && String(photoBase64).startsWith('data:image/')) {
+      uploadedPhotoUrl = await uploadToCloudinary(photoBase64, 'aura_store/reviews');
+    }
+
+    const numRating = Math.min(5, Math.max(1, Number(rating) || 5));
+    const reviewDate = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+    if (!product.reviews) product.reviews = [];
+    product.reviews.unshift({
+      customerName: (customerName || "Verified Buyer").trim(),
+      rating: numRating,
+      comment: (comment || "").trim(),
+      photoUrl: uploadedPhotoUrl,
+      date: reviewDate
+    });
+
+    const oldTotal = (product.rating || 5) * (product.reviewsCount || 1);
+    const newCount = (product.reviewsCount || 0) + 1;
+    product.reviewsCount = newCount;
+    product.rating = Number(((oldTotal + numRating) / newCount).toFixed(1));
+
+    await product.save();
+    const { costPrice, ...safeProd } = product.toObject();
+    res.json({ success: true, product: safeProd });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// Order Placement with Block Check
+app.delete('/api/admin/products/:id/reviews/:reviewId', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+    const prodId = Number(req.params.id);
+    const reviewId = req.params.reviewId;
+    const product = await Product.findOne({ id: prodId });
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    product.reviews = (product.reviews || []).filter(r => String(r._id) !== String(reviewId));
+
+    if (product.reviews.length > 0) {
+      const sum = product.reviews.reduce((acc, r) => acc + (r.rating || 5), 0);
+      product.reviewsCount = product.reviews.length;
+      product.rating = Number((sum / product.reviews.length).toFixed(1));
+    } else {
+      product.reviewsCount = 1;
+      product.rating = 5.0;
+    }
+
+    await product.save();
+    res.json({ success: true, product });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get('/api/support/search', async (req, res) => {
+  try {
+    const query = (req.query.q || "").trim().toLowerCase();
+    const cleanDigits = query.replace(/[^0-9]/g, '');
+    if (!query || (cleanDigits.length < 6 && query.length < 4)) {
+      return res.json({ success: true, orders: [], tickets: [] });
+    }
+
+    const [allOrders, allTickets] = await Promise.all([
+      Order.find().sort({ createdAt: -1 }).lean(),
+      SupportTicket.find().sort({ createdAt: -1 }).lean()
+    ]);
+
+    const matchedOrders = allOrders.filter(o =>
+      (cleanDigits.length >= 6 && o.phone && o.phone.includes(cleanDigits)) ||
+      (o.id && o.id.toLowerCase() === query)
+    );
+
+    const matchedTickets = allTickets.filter(t =>
+      (cleanDigits.length >= 6 && t.phone && t.phone.includes(cleanDigits)) ||
+      (t.orderId && t.orderId.toLowerCase() === query)
+    );
+
+    res.json({ success: true, orders: matchedOrders, tickets: matchedTickets });
+  } catch (err) {
+    res.status(500).json({ success: false, orders: [], tickets: [] });
+  }
+});
+
+app.post('/api/support/ticket', uploadMemory.fields([{ name: 'photos', maxCount: 6 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
+  try {
+    const { orderId, issueText } = req.body;
+    const order = await Order.findOne({ id: orderId }).lean();
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+    const ticketId = 'TKT-' + Math.floor(100000 + Math.random() * 900000);
+    const nowStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+    await SupportTicket.create({
+      ticketId,
+      orderId: order.id,
+      customerName: order.customerName,
+      phone: order.phone,
+      issueText: (issueText || "").trim(),
+      adminReply: "",
+      repliedAt: "",
+      createdAtStr: nowStr
+    });
+
+    res.json({ success: true, ticketId });
+    forwardSupportToTelegram(order, (issueText || "").trim(), req.files);
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to submit support issue." });
+  }
+});
+
+app.post('/api/admin/support/tickets', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const tickets = await SupportTicket.find().sort({ createdAt: -1 }).lean();
+    res.json({ success: true, tickets });
+  } catch (err) {
+    res.status(500).json({ success: false, tickets: [] });
+  }
+});
+
+app.post('/api/admin/support/reply', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { ticketId, replyText } = req.body;
+    const repliedAt = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+    const updated = await SupportTicket.findOneAndUpdate(
+      { ticketId },
+      { adminReply: replyText.trim(), repliedAt },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ success: false, message: "Ticket not found" });
+    res.json({ success: true, ticket: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    await SupportTicket.deleteOne({ ticketId: req.params.ticketId });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Admin Product CRUD
+app.post('/api/admin/products', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, colorOptions, badge, images, description } = req.body;
+
+    const uploadedUrls = await Promise.all(
+      (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
+    );
+
+    const newProd = await Product.create({
+      id: Date.now(),
+      name,
+      mainCategory,
+      category,
+      price: Number(price) || 0,
+      originalPrice: Number(originalPrice) || Number(price) || 0,
+      costPrice: Number(costPrice) || 0,
+      stockQuantity: Number(stockQuantity) || 1,
+      showOnHome: showOnHome !== false,
+      sizeOptions: sizeOptions || [],
+      colorOptions: colorOptions || [],
+      badge: badge || "New",
+      rating: 5.0,
+      reviewsCount: 1,
+      inStock: Number(stockQuantity) > 0,
+      images: uploadedUrls,
+      description: description || "",
+      reviews: []
+    });
+    res.json({ success: true, product: newProd });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.put('/api/admin/products/:id', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, colorOptions, badge, images, description } = req.body;
+
+    const uploadedUrls = await Promise.all(
+      (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
+    );
+
+    const prodId = Number(req.params.id);
+    const updated = await Product.findOneAndUpdate(
+      { id: prodId },
+      {
+        name,
+        mainCategory,
+        category,
+        price: Number(price),
+        originalPrice: Number(originalPrice),
+        costPrice: Number(costPrice) || 0,
+        stockQuantity: Number(stockQuantity),
+        showOnHome: showOnHome !== false,
+        sizeOptions,
+        colorOptions,
+        badge,
+        description,
+        images: uploadedUrls,
+        inStock: Number(stockQuantity) > 0
+      },
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ success: false, message: "Product not found" });
+    res.json({ success: true, product: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.patch('/api/admin/products/:id/quick-update', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { price, costPrice, stockQuantity } = req.body;
+    const prodId = Number(req.params.id);
+
+    const updateFields = {};
+    if (price !== undefined) updateFields.price = Math.max(0, Number(price));
+    if (costPrice !== undefined) updateFields.costPrice = Math.max(0, Number(costPrice));
+    if (stockQuantity !== undefined) {
+      updateFields.stockQuantity = Math.max(0, Number(stockQuantity));
+      updateFields.inStock = updateFields.stockQuantity > 0;
+    }
+
+    const updated = await Product.findOneAndUpdate({ id: prodId }, updateFields, { new: true });
+    if (!updated) return res.status(404).json({ success: false, message: "Product not found" });
+    res.json({ success: true, product: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.patch('/api/admin/products/:id/toggle-home', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { showOnHome } = req.body;
+    const prodId = Number(req.params.id);
+    const updated = await Product.findOneAndUpdate({ id: prodId }, { showOnHome: Boolean(showOnHome) }, { new: true });
+    if (!updated) return res.status(404).json({ success: false });
+    res.json({ success: true, product: updated });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+});
+
+app.delete('/api/admin/products/:id', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const prodId = Number(req.params.id);
+    await Promise.all([
+      Product.deleteOne({ id: prodId }),
+      Banner.deleteMany({ productId: prodId })
+    ]);
+    const products = await Product.find().sort({ _id: -1 }).lean();
+    res.json({ success: true, products });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/admin/banners/add', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { title, tag, productId, image } = req.body;
+    const bannerUrl = await uploadToCloudinary(image, 'aura_store/banners');
+
+    await Banner.create({
+      id: Date.now(),
+      productId: Number(productId),
+      title,
+      tag,
+      image: bannerUrl
+    });
+    const dealBanners = await Banner.find().lean();
+    res.json({ success: true, dealBanners });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/admin/banners/:id', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    await Banner.deleteOne({ id: Number(req.params.id) });
+    const dealBanners = await Banner.find().lean();
+    res.json({ success: true, dealBanners });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Coupons With Expiry Timer (expiresAt timestamp)
+app.post('/api/admin/coupons', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const { code, discountPercent, minSpend, validHours, validMinutes, title, description, showOnStore } = req.body;
+
+    const cleanCode = (code || "").trim().toUpperCase();
+    const h = Math.max(0, Number(validHours) || 0);
+    const m = Math.max(0, Number(validMinutes) || 0);
+    const durationMs = (h * 3600 + m * 60) * 1000;
+    const expiresAt = durationMs > 0 ? (Date.now() + durationMs) : 0;
+
+    await Coupon.findOneAndUpdate(
+      { code: cleanCode },
+      {
+        code: cleanCode,
+        discountPercent: Number(discountPercent) || 10,
+        minSpend: Number(minSpend) || 0,
+        expiresAt,
+        title: title || `${cleanCode} Special Offer`,
+        description: description || `Flat ${discountPercent}% OFF`,
+        showOnStore: showOnStore === true || showOnStore === "true"
+      },
+      { upsert: true, new: true }
+    );
+    const coupons = await Coupon.find().lean();
+    res.json({ success: true, coupons });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/admin/coupons/:code', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    await Coupon.deleteOne({ code: req.params.code.toUpperCase() });
+    const coupons = await Coupon.find().lean();
+    res.json({ success: true, coupons });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/admin/store-settings', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const {
+      deliveryCharge, codAdvancePercent, maxCodOrderAmount,
+      freeGiftThreshold, freeGiftTitle, coinsEarnPercent, maxCoinsRedeemPerOrder,
+      dealEndTime, metaPixelId
+    } = req.body;
+
+    const updateFields = {};
+    if (deliveryCharge !== undefined) updateFields.deliveryCharge = Number(deliveryCharge) || 0;
+    if (codAdvancePercent !== undefined) updateFields.codAdvancePercent = Number(codAdvancePercent) || 15;
+    if (maxCodOrderAmount !== undefined) updateFields.maxCodOrderAmount = Math.max(0, Number(maxCodOrderAmount) || 0);
+    if (freeGiftThreshold !== undefined) updateFields.freeGiftThreshold = Math.max(0, Number(freeGiftThreshold) || 0);
+    if (freeGiftTitle !== undefined) updateFields.freeGiftTitle = String(freeGiftTitle || "Luxury Surprise Jewellery Box").trim();
+    if (coinsEarnPercent !== undefined) updateFields.coinsEarnPercent = Math.max(0, Math.min(50, Number(coinsEarnPercent) || 0));
+    if (maxCoinsRedeemPerOrder !== undefined) updateFields.maxCoinsRedeemPerOrder = Math.max(0, Number(maxCoinsRedeemPerOrder) || 0);
+    if (dealEndTime !== undefined) updateFields.dealEndTime = Number(dealEndTime) || 0;
+    if (metaPixelId !== undefined) updateFields.metaPixelId = String(metaPixelId || "").trim();
+
+    const storeSettings = await Settings.findOneAndUpdate(
+      { key: 'main' },
+      updateFields,
+      { upsert: true, new: true }
+    ).lean();
+
+    res.json({ success: true, storeSettings });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/admin/change-pin', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) {
+      return res.status(403).json({ success: false, message: "Session expired or unauthorized!" });
+    }
+    const { newPin } = req.body;
+    const cleanNew = String(newPin || "").trim();
+    if (cleanNew.length < 4) {
+      return res.status(400).json({ success: false, message: "New PIN must be at least 4 characters!" });
+    }
+    const hashedPin = await bcrypt.hash(cleanNew, 10);
+    await Settings.findOneAndUpdate({ key: 'main' }, { adminPin: hashedPin }, { upsert: true });
+    const newToken = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
+    res.json({ success: true, token: newToken, message: "Admin PIN encrypted & updated successfully!" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// SERVER-SIDE PRICE, COUPON EXPIRY, AURA COINS, FREE GIFT & MAX COD VALIDATION
 app.post('/api/orders', async (req, res) => {
   try {
     const {
@@ -1044,19 +1452,6 @@ app.post('/api/orders', async (req, res) => {
       items, couponCode, useAuraCoins,
       paymentMethod, utrNumber
     } = req.body;
-
-    const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
-    if (cleanPhone.length !== 10) {
-      return res.status(400).json({ success: false, message: "Please enter a valid 10-digit mobile number!" });
-    }
-
-    const isBlocked = await BlockedNumber.findOne({ phone: cleanPhone }).lean();
-    if (isBlocked) {
-      return res.status(403).json({
-        success: false,
-        message: "Sorry! Orders from this mobile number are restricted by store administration. Please contact +91 6289145092 for assistance."
-      });
-    }
 
     const cleanUtr = String(utrNumber || "").trim();
     if (!cleanUtr || cleanUtr.length < 8) {
@@ -1108,6 +1503,7 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
+    // Verify coupon + expiry timer server-side
     let verifiedDiscount = 0;
     let verifiedCouponCode = "None";
     if (couponCode && String(couponCode).trim()) {
@@ -1133,8 +1529,10 @@ app.post('/api/orders', async (req, res) => {
     const coinsEarnPct = storeSettings ? (storeSettings.coinsEarnPercent ?? 5) : 5;
     const maxCoinsRedeem = storeSettings ? (storeSettings.maxCoinsRedeemPerOrder ?? 200) : 200;
 
+    const cleanPhone = String(phone).replace(/[^0-9]/g, '');
     let afterCouponValue = Math.max(1, verifiedSubTotal - verifiedDiscount);
 
+    // Verify & Redeem AURA Coins if requested
     let verifiedCoinsUsed = 0;
     if (useAuraCoins && cleanPhone.length === 10) {
       const wallet = await Wallet.findOne({ phone: cleanPhone });
@@ -1224,7 +1622,6 @@ app.post('/api/orders', async (req, res) => {
       verifiedTotal: verifiedFinalTotal,
       coinsEarned: potentialCoinsEarned
     });
-
     sendTelegramAlert(order).catch(e => console.error("Background Telegram error:", e.message));
   } catch (err) {
     res.status(500).json({ success: false, message: "Order creation failed" });
@@ -1327,7 +1724,7 @@ app.post('/api/admin/orders', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-    const [orders, coupons, settings, products, abandonedCarts, stockNotifies, categories, wallets, blockedNumbers] = await Promise.all([
+    const [orders, coupons, settings, products, abandonedCarts, stockNotifies, categories, wallets] = await Promise.all([
       Order.find().sort({ createdAt: -1 }).lean(),
       Coupon.find().lean(),
       Settings.findOne({ key: 'main' }),
@@ -1335,8 +1732,7 @@ app.post('/api/admin/orders', async (req, res) => {
       AbandonedCart.find().sort({ updatedAt: -1 }).lean(),
       StockNotify.find().sort({ createdAt: -1 }).lean(),
       Category.find().lean(),
-      Wallet.find().sort({ coins: -1 }).lean(),
-      BlockedNumber.find().sort({ createdAt: -1 }).lean()
+      Wallet.find().sort({ coins: -1 }).lean()
     ]);
 
     let activeSettings = settings
@@ -1386,7 +1782,6 @@ app.post('/api/admin/orders', async (req, res) => {
       abandonedCarts,
       stockNotifies,
       wallets,
-      blockedNumbers,
       storeSettings: activeSettings,
       lowStockProducts,
       analytics: {
@@ -1427,6 +1822,7 @@ app.delete('/api/admin/orders/:id', async (req, res) => {
   }
 });
 
+// Order Status Update (Auto-Credits AURA Coins on 'Delivered' & Restores Stock on 'Cancelled')
 app.patch('/api/admin/orders/:id/status', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -1455,6 +1851,7 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
       }
     }
 
+    // Credit AURA Coins automatically when order is marked Delivered (only once)
     if (status === 'Delivered' && !order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
       await Wallet.findOneAndUpdate(
         { phone: order.phone },
