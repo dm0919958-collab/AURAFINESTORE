@@ -14,7 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const DEFAULT_ADMIN_PIN = process.env.ADMIN_PIN || "admin123";
-const JWT_SECRET = process.env.JWT_SECRET || (MONGO_URI_FALLBACK_SECRET = (process.env.MONGO_URI || "aura_secret_key_2026").slice(0, 32));
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.MONGO_URI || "aura_secret_key_2026").slice(0, 32);
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const SUPPORT_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN;
@@ -122,6 +122,7 @@ const productSchema = new mongoose.Schema({
       customerName: String,
       rating: Number,
       comment: String,
+      photoUrl: { type: String, default: "" },
       date: String
     }
   ]
@@ -148,6 +149,9 @@ const settingsSchema = new mongoose.Schema({
   key: { type: String, default: 'main', unique: true },
   deliveryCharge: { type: Number, default: 0 },
   codAdvancePercent: { type: Number, default: 15 },
+  maxCodOrderAmount: { type: Number, default: 2000 },
+  freeGiftThreshold: { type: Number, default: 1499 },
+  freeGiftTitle: { type: String, default: "Luxury Surprise Jewellery Box" },
   dealEndTime: { type: Number, default: 0 },
   adminPin: { type: String, default: "" },
   metaPixelId: { type: String, default: "" }
@@ -163,6 +167,7 @@ const orderSchema = new mongoose.Schema({
   state: String,
   items: Array,
   giftNote: { type: String, default: "" },
+  freeGiftUnlocked: { type: String, default: "" },
   subTotal: Number,
   discountApplied: Number,
   deliveryCharge: Number,
@@ -205,6 +210,15 @@ const supportTicketSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+const stockNotifySchema = new mongoose.Schema({
+  productId: Number,
+  productName: String,
+  customerName: String,
+  phone: String,
+  createdAtStr: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
 const Product = mongoose.model('Product', productSchema);
 const Banner = mongoose.model('Banner', bannerSchema);
 const Coupon = mongoose.model('Coupon', couponSchema);
@@ -212,6 +226,7 @@ const Settings = mongoose.model('Settings', settingsSchema);
 const Order = mongoose.model('Order', orderSchema);
 const AbandonedCart = mongoose.model('AbandonedCart', abandonedCartSchema);
 const SupportTicket = mongoose.model('SupportTicket', supportTicketSchema);
+const StockNotify = mongoose.model('StockNotify', stockNotifySchema);
 
 const defaultBanners = [
   {
@@ -304,7 +319,7 @@ const defaultProducts = [
     price: 1899,
     originalPrice: 3999,
     costPrice: 900,
-    stockQuantity: 10,
+    stockQuantity: 4,
     badge: "Luxury Edition",
     rating: 5.0,
     reviewsCount: 94,
@@ -327,7 +342,7 @@ const defaultProducts = [
     price: 699,
     originalPrice: 1299,
     costPrice: 310,
-    stockQuantity: 14,
+    stockQuantity: 3,
     badge: "Bestseller",
     rating: 4.9,
     reviewsCount: 142,
@@ -385,16 +400,31 @@ async function seedInitialData() {
         key: 'main',
         deliveryCharge: 0,
         codAdvancePercent: 15,
+        maxCodOrderAmount: 2000,
+        freeGiftThreshold: 1499,
+        freeGiftTitle: "Luxury Surprise Jewellery Box",
         dealEndTime: 0,
         adminPin: hashedDefaultPin,
         metaPixelId: ""
       });
-    } else if (!existingSettings.adminPin) {
-      existingSettings.adminPin = hashedDefaultPin;
-      await existingSettings.save();
-    } else if (!existingSettings.adminPin.startsWith('$2a$') && !existingSettings.adminPin.startsWith('$2b$')) {
-      existingSettings.adminPin = await bcrypt.hash(existingSettings.adminPin, 10);
-      await existingSettings.save();
+    } else {
+      let dirty = false;
+      if (!existingSettings.adminPin) {
+        existingSettings.adminPin = hashedDefaultPin;
+        dirty = true;
+      } else if (!existingSettings.adminPin.startsWith('$2a$') && !existingSettings.adminPin.startsWith('$2b$')) {
+        existingSettings.adminPin = await bcrypt.hash(existingSettings.adminPin, 10);
+        dirty = true;
+      }
+      if (existingSettings.maxCodOrderAmount === undefined) {
+        existingSettings.maxCodOrderAmount = 2000;
+        dirty = true;
+      }
+      if (existingSettings.freeGiftThreshold === undefined) {
+        existingSettings.freeGiftThreshold = 1499;
+        dirty = true;
+      }
+      if (dirty) await existingSettings.save();
     }
   } catch (err) {
     console.error('Seed error:', err.message);
@@ -460,12 +490,17 @@ function generateOrderInvoicePDF(order) {
         currentY += 4;
       });
 
-      if (order.giftNote && order.giftNote.trim()) {
-        doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text(`Free Gift Message: "${order.giftNote.trim()}"`, 40, currentY + 6, { width: 515 });
-        currentY += 22;
+      if (order.freeGiftUnlocked && order.freeGiftUnlocked.trim()) {
+        doc.fillColor('#059669').fontSize(8.5).font('Helvetica-Bold').text(`FREE BONUS GIFT INCLUDED: ${order.freeGiftUnlocked.trim()} (Rs. 0.00)`, 40, currentY + 4, { width: 515 });
+        currentY += 18;
       }
 
-      const summaryY = Math.max(currentY + 15, 360);
+      if (order.giftNote && order.giftNote.trim()) {
+        doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text(`Free Gift Message: "${order.giftNote.trim()}"`, 40, currentY + 4, { width: 515 });
+        currentY += 18;
+      }
+
+      const summaryY = Math.max(currentY + 15, 365);
 
       doc.roundedRect(40, summaryY, 250, 108, 6).strokeColor('#e5e7eb').stroke();
       doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text('PAYMENT VERIFICATION:', 50, summaryY + 12);
@@ -502,7 +537,7 @@ function generateOrderInvoicePDF(order) {
       doc.fontSize(12).font('Helvetica-Bold').text(`Rs. ${order.total}`, 430, summaryY + 82, { width: 115, align: 'right' });
 
       const footerY = summaryY + 125;
-      doc.moveTo(40, footerY - 8).lineTo(555, footerY - 8).strokeColor('#e5e7eb').stroke();
+      doc.moveTo(40, footerY - 8).lineTo(555, footerY - 8).strokeColor('#e5e7eb').lineWidth(1).stroke();
       doc.fillColor('#111827').fontSize(8).font('Helvetica-Bold').text('TERMS & REPLACEMENT POLICY:', 40, footerY + 5);
       doc.fillColor('#4b5563').fontSize(7.5).font('Helvetica');
       doc.text('1. 7-Day Replacement: Report transit damage within 7 days of delivery.', 40, footerY + 18);
@@ -520,69 +555,111 @@ function generateOrderInvoicePDF(order) {
   });
 }
 
-// 4x6 Inch Thermal Shipping Label PDF Generator (288 x 432 points)
+// Upgraded Professional 4x6 Inch Thermal Shipping Label PDF Generator (288 x 432 pt)
 function generateThermalShippingLabelPDF(order) {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ margin: 14, size: [288, 432] });
+      const doc = new PDFDocument({ margin: 8, size: [288, 432] });
       const buffers = [];
       doc.on('data', buffers.push.bind(buffers));
       doc.on('end', () => resolve(Buffer.concat(buffers)));
 
-      doc.rect(10, 10, 268, 412).lineWidth(1.5).strokeColor('#000000').stroke();
+      // Outer Heavy Border
+      doc.rect(8, 8, 272, 416).lineWidth(1.8).strokeColor('#000000').stroke();
 
-      // Top Header
-      doc.rect(10, 10, 268, 38).fill('#000000');
-      doc.fillColor('#FFFFFF').fontSize(14).font('Helvetica-Bold').text('AURA FINE STORE', 18, 17);
-      doc.fontSize(8).font('Helvetica').text('PRIORITY EXPRESS PARCEL', 18, 33);
-      doc.fontSize(10).font('Helvetica-Bold').text(order.paymentMethod === 'COD' ? 'COD' : 'PREPAID', 210, 22, { width: 60, align: 'right' });
+      // 1. Top Brand & Service Header
+      doc.rect(8, 8, 272, 36).fill('#000000');
+      doc.fillColor('#FFFFFF').fontSize(13).font('Helvetica-Bold').text('AURA FINE STORE', 14, 14);
+      doc.fontSize(7).font('Helvetica').text('SURFACE / PRIORITY EXPRESS', 14, 29);
 
-      // Order & Courier Bar
-      doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold').text(`ORDER: #${order.id}`, 18, 56);
-      doc.fontSize(8.5).font('Helvetica').text(`Courier: ${order.courierPartner || 'Delhivery'}`, 18, 69);
-      doc.fontSize(8.5).font('Helvetica-Bold').text(`AWB: ${order.awbNumber || 'PENDING DISPATCH'}`, 18, 81);
-      doc.moveTo(10, 96).lineTo(278, 96).lineWidth(1).stroke();
+      // Right Mode Pill inside header
+      doc.rect(206, 13, 68, 26).fill('#FFFFFF');
+      doc.fillColor('#000000').fontSize(11).font('Helvetica-Bold').text(
+        order.paymentMethod === 'COD' ? 'COD' : 'PREPAID',
+        206, 20, { width: 68, align: 'center' }
+      );
 
-      // Deliver To Box
-      doc.fontSize(8.5).font('Helvetica-Bold').text('DELIVER TO:', 18, 104);
-      doc.fontSize(12).font('Helvetica-Bold').text(order.customerName || 'Customer', 18, 117);
-      doc.fontSize(10).font('Helvetica-Bold').text(`MOB: +91 ${order.phone}`, 18, 133);
-      doc.fontSize(8.5).font('Helvetica').text(order.address || '', 18, 149, { width: 252, lineGap: 2 });
+      // 2. Order ID, Courier & Visual Barcode Strip
+      doc.fillColor('#000000').fontSize(9.5).font('Helvetica-Bold').text(`ORDER: #${order.id}`, 14, 50);
+      doc.fontSize(8).font('Helvetica').text(`Date: ${order.orderDateRaw || order.date || ''}`, 175, 51, { width: 99, align: 'right' });
 
-      doc.rect(18, 210, 140, 24).fill('#f3f4f6');
-      doc.fillColor('#000000').fontSize(11).font('Helvetica-Bold').text(`PIN: ${order.pincode || ''}`, 24, 217);
+      doc.fontSize(8.5).font('Helvetica-Bold').text(`CARRIER: ${(order.courierPartner || 'Delhivery').toUpperCase()}`, 14, 63);
+      doc.fontSize(8.5).font('Helvetica-Bold').text(`AWB: ${order.awbNumber || 'AWAITING PICKUP'}`, 14, 75);
 
-      // COD Collect Banner
-      if (order.paymentMethod === 'COD') {
-        doc.rect(164, 210, 106, 24).fill('#000000');
-        doc.fillColor('#FFFFFF').fontSize(9.5).font('Helvetica-Bold').text(`COLLECT: Rs.${order.balanceDue}`, 168, 217, { width: 98, align: 'center' });
-      } else {
-        doc.rect(164, 210, 106, 24).strokeColor('#000000').stroke();
-        doc.fillColor('#000000').fontSize(9.5).font('Helvetica-Bold').text('PAID: Rs.0 DUE', 168, 217, { width: 98, align: 'center' });
+      // Crisp Vector Barcode Pattern (derived from Order ID characters)
+      const codeSeed = String(order.awbNumber || order.id || 'AUR123456');
+      let bx = 152;
+      for (let i = 0; i < 36; i++) {
+        const charVal = codeSeed.charCodeAt(i % codeSeed.length) + i * 7;
+        const barW = (charVal % 2 === 0) ? 2.2 : 1.1;
+        if (bx + barW < 274) {
+          doc.rect(bx, 63, barW, 22).fill('#000000');
+          bx += barW + ((charVal % 3 === 0) ? 2.0 : 1.3);
+        }
       }
 
-      doc.moveTo(10, 244).lineTo(278, 244).lineWidth(1).stroke();
+      doc.moveTo(8, 91).lineTo(280, 91).lineWidth(1.2).stroke();
 
-      // Package Contents
-      doc.fillColor('#000000').fontSize(8).font('Helvetica-Bold').text('PACKAGE CONTENTS:', 18, 252);
-      let itemY = 265;
-      (order.items || []).slice(0, 4).forEach((item, idx) => {
-        doc.fontSize(8).font('Helvetica').text(
-          `${idx + 1}. ${item.name} (${item.selectedSize || 'Std'}) x${item.qty || 1}`,
-          18, itemY, { width: 252, lineBreak: false }
-        );
+      // 3. Recipient Delivery Block
+      doc.fontSize(8).font('Helvetica-Bold').text('SHIP TO / DELIVER TO:', 14, 97);
+      doc.fontSize(12.5).font('Helvetica-Bold').text((order.customerName || 'Valued Customer').toUpperCase(), 14, 109, { width: 260 });
+      doc.fontSize(10.5).font('Helvetica-Bold').text(`PHONE: +91 ${order.phone}`, 14, 125);
+      doc.fontSize(8.5).font('Helvetica').text(order.address || '', 14, 141, { width: 260, lineGap: 1.8 });
+
+      // 4. High-Contrast Pincode & Payment Collection Box
+      const boxY = 202;
+      doc.rect(14, boxY, 112, 30).lineWidth(1.4).strokeColor('#000000').stroke();
+      doc.fontSize(7).font('Helvetica-Bold').text('DESTINATION PINCODE', 18, boxY + 4);
+      doc.fontSize(13).font('Helvetica-Bold').text(String(order.pincode || '731204'), 18, boxY + 13);
+
+      if (order.paymentMethod === 'COD') {
+        doc.rect(132, boxY, 142, 30).fill('#000000');
+        doc.fillColor('#FFFFFF').fontSize(7).font('Helvetica-Bold').text('COLLECT CASH ON DELIVERY', 136, boxY + 4, { width: 134, align: 'center' });
+        doc.fontSize(12).font('Helvetica-Bold').text(`Rs. ${order.balanceDue}/-`, 136, boxY + 14, { width: 134, align: 'center' });
+      } else {
+        doc.rect(132, boxY, 142, 30).lineWidth(1.4).strokeColor('#000000').stroke();
+        doc.fillColor('#000000').fontSize(7.5).font('Helvetica-Bold').text('PREPAID ORDER - DO NOT COLLECT', 136, boxY + 5, { width: 134, align: 'center' });
+        doc.fontSize(11).font('Helvetica-Bold').text('AMOUNT DUE: Rs. 0', 136, boxY + 15, { width: 134, align: 'center' });
+      }
+
+      doc.moveTo(8, 240).lineTo(280, 240).lineWidth(1.2).stroke();
+
+      // 5. Package Contents Table
+      doc.fillColor('#000000').fontSize(8).font('Helvetica-Bold').text('ITEM DESCRIPTION (SIZE / COLOR)', 14, 246);
+      doc.text('QTY', 246, 246, { width: 28, align: 'right' });
+      doc.moveTo(14, 257).lineTo(274, 257).lineWidth(0.6).stroke();
+
+      let itemY = 261;
+      const itemsToPrint = (order.items || []).slice(0, 4);
+      itemsToPrint.forEach((item, idx) => {
+        const label = `${idx + 1}. ${item.name} [${item.selectedSize || 'Std'}, ${item.selectedColor || 'Std'}]`;
+        doc.fontSize(7.8).font('Helvetica').text(label, 14, itemY, { width: 232, lineBreak: false, ellipsis: true });
+        doc.font('Helvetica-Bold').text(String(item.qty || 1), 246, itemY, { width: 28, align: 'right' });
         itemY += 13;
       });
 
-      doc.moveTo(10, 326).lineTo(278, 326).lineWidth(1).stroke();
+      if (order.freeGiftUnlocked) {
+        doc.fontSize(7.8).font('Helvetica-Bold').text(`+ FREE GIFT: ${order.freeGiftUnlocked}`, 14, itemY, { width: 232, lineBreak: false, ellipsis: true });
+        doc.text('1', 246, itemY, { width: 28, align: 'right' });
+        itemY += 13;
+      }
 
-      // Return / Shipper Address
-      doc.fontSize(7.5).font('Helvetica-Bold').text('RETURN / SHIPPER ADDRESS (IF UNDELIVERED):', 18, 334);
-      doc.fontSize(7.5).font('Helvetica').text('AURA Fine Store Hub, Bolpur, Birbhum, West Bengal - 731204', 18, 345, { width: 252 });
-      doc.text('Customer Care: +91 6289145092', 18, 366);
+      if (order.giftNote && order.giftNote.trim()) {
+        doc.fontSize(7.2).font('Helvetica-Oblique').text(`Gift Note: "${order.giftNote.trim()}"`, 14, itemY, { width: 260, lineBreak: false, ellipsis: true });
+      }
 
-      doc.moveTo(10, 382).lineTo(278, 382).lineWidth(1).stroke();
-      doc.fontSize(8).font('Helvetica-Bold').text('HANDLE WITH CARE • RECORD UNBOXING VIDEO', 10, 395, { width: 268, align: 'center' });
+      doc.moveTo(8, 332).lineTo(280, 332).lineWidth(1.2).stroke();
+
+      // 6. Return / Shipper Address Footer
+      doc.fontSize(7.5).font('Helvetica-Bold').text('IF UNDELIVERED, PLEASE RETURN TO:', 14, 338);
+      doc.fontSize(7.5).font('Helvetica-Bold').text('AURA Fine Store Logistics Hub', 14, 349);
+      doc.fontSize(7.5).font('Helvetica').text('Bolpur, Birbhum, West Bengal - 731204, India', 14, 359);
+      doc.text('Support Helpline: +91 6289145092', 14, 369);
+
+      // Bottom Caution Strip
+      doc.rect(8, 386, 272, 38).fill('#f3f4f6');
+      doc.fillColor('#000000').fontSize(7.5).font('Helvetica-Bold').text('CUSTOMER INSTRUCTION:', 14, 392);
+      doc.fontSize(7.2).font('Helvetica').text('Please record a clear 360-degree unboxing video before opening the seal for 7-day replacement protection.', 14, 402, { width: 260 });
 
       doc.end();
     } catch (err) {
@@ -594,6 +671,7 @@ function generateThermalShippingLabelPDF(order) {
 async function sendTelegramAlert(order) {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
   const giftLine = order.giftNote ? `\n🎁 <b>Gift Message:</b> <i>"${order.giftNote}"</i>` : '';
+  const bonusLine = order.freeGiftUnlocked ? `\n🎀 <b>Free Gift Unlocked:</b> <b>${order.freeGiftUnlocked}</b>` : '';
   const captionText = `🧾 <b>AURA FINE STORE - NEW ORDER CONFIRMED</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `📦 <b>Order ID:</b> <code>#${order.id}</code>\n` +
@@ -602,7 +680,7 @@ async function sendTelegramAlert(order) {
     `📍 <b>Address:</b> ${order.address}\n` +
     `💰 <b>Total Bill:</b> <b>₹${order.total}</b> (${order.paymentMethod})\n` +
     `📈 <b>Est. Net Profit:</b> <b>₹${order.netProfit || 0}</b>\n` +
-    `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>${giftLine}\n` +
+    `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>${bonusLine}${giftLine}\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `<i>Official PDF Invoice is attached below.</i>`;
 
@@ -677,7 +755,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Public Storefront Endpoint (hides costPrice from customers)
+// Public Storefront Endpoint
 app.get('/api/store', async (req, res) => {
   try {
     res.set({
@@ -700,10 +778,21 @@ app.get('/api/store', async (req, res) => {
       ? {
           deliveryCharge: settings.deliveryCharge,
           codAdvancePercent: settings.codAdvancePercent,
+          maxCodOrderAmount: settings.maxCodOrderAmount ?? 2000,
+          freeGiftThreshold: settings.freeGiftThreshold ?? 1499,
+          freeGiftTitle: settings.freeGiftTitle || "Luxury Surprise Jewellery Box",
           dealEndTime: settings.dealEndTime,
           metaPixelId: settings.metaPixelId || ""
         }
-      : { deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0, metaPixelId: "" };
+      : {
+          deliveryCharge: 0,
+          codAdvancePercent: 15,
+          maxCodOrderAmount: 2000,
+          freeGiftThreshold: 1499,
+          freeGiftTitle: "Luxury Surprise Jewellery Box",
+          dealEndTime: 0,
+          metaPixelId: ""
+        };
 
     if (activeSettings.dealEndTime && activeSettings.dealEndTime > 0 && Date.now() >= activeSettings.dealEndTime) {
       await Settings.findOneAndUpdate({ key: 'main' }, { dealEndTime: 0 });
@@ -713,6 +802,77 @@ app.get('/api/store', async (req, res) => {
     res.json({ dealBanners, products, coupons, storeSettings: activeSettings });
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
+  }
+});
+
+// Live Recent Sales Feed for Social Proof Popups (Real Orders + Privacy Safe)
+app.get('/api/recent-sales', async (req, res) => {
+  try {
+    const recentOrders = await Order.find({ status: { $ne: 'Cancelled' } })
+      .sort({ createdAt: -1 })
+      .limit(15)
+      .lean();
+
+    const feed = [];
+    for (const o of recentOrders) {
+      if (!o.items || !o.items.length) continue;
+      const firstName = String(o.customerName || 'Customer').trim().split(/\s+/)[0];
+      const city = String(o.city || 'India').trim();
+      const item = o.items[0];
+      feed.push({
+        customerName: firstName,
+        city,
+        productId: item.id,
+        productName: item.name,
+        productImage: (item.images && item.images[0]) || ""
+      });
+    }
+    res.json({ success: true, sales: feed });
+  } catch (err) {
+    res.json({ success: true, sales: [] });
+  }
+});
+
+// Out-of-Stock "Notify Me" Subscription Endpoint
+app.post('/api/products/:id/notify', async (req, res) => {
+  try {
+    const prodId = Number(req.params.id);
+    const { customerName, phone } = req.body;
+    const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ success: false, message: "Please enter a valid 10-digit mobile number!" });
+    }
+
+    const product = await Product.findOne({ id: prodId }).lean();
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    const existing = await StockNotify.findOne({ productId: prodId, phone: cleanPhone });
+    if (existing) {
+      return res.json({ success: true, message: "You are already on the priority WhatsApp restock list!" });
+    }
+
+    const nowStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+    await StockNotify.create({
+      productId: prodId,
+      productName: product.name,
+      customerName: (customerName || 'Customer').trim(),
+      phone: cleanPhone,
+      createdAtStr: nowStr
+    });
+
+    res.json({ success: true, message: "Saved! We will notify you on WhatsApp as soon as it is back in stock." });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to save notification request." });
+  }
+});
+
+app.delete('/api/admin/stock-notify/:id', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    await StockNotify.deleteOne({ _id: req.params.id });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
   }
 });
 
@@ -742,12 +902,18 @@ app.post('/api/abandoned-cart', async (req, res) => {
   }
 });
 
+// Product Reviews with Optional Compressed Photo Upload
 app.post('/api/products/:id/reviews', async (req, res) => {
   try {
-    const { customerName, rating, comment } = req.body;
+    const { customerName, rating, comment, photoBase64 } = req.body;
     const prodId = Number(req.params.id);
     const product = await Product.findOne({ id: prodId });
     if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    let uploadedPhotoUrl = "";
+    if (photoBase64 && String(photoBase64).startsWith('data:image/')) {
+      uploadedPhotoUrl = await uploadToCloudinary(photoBase64, 'aura_store/reviews');
+    }
 
     const numRating = Math.min(5, Math.max(1, Number(rating) || 5));
     const reviewDate = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
@@ -757,6 +923,7 @@ app.post('/api/products/:id/reviews', async (req, res) => {
       customerName: (customerName || "Verified Buyer").trim(),
       rating: numRating,
       comment: (comment || "").trim(),
+      photoUrl: uploadedPhotoUrl,
       date: reviewDate
     });
 
@@ -893,7 +1060,7 @@ app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
   }
 });
 
-// Admin Product CRUD (includes costPrice & quick update)
+// Admin Product CRUD
 app.post('/api/admin/products', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -967,7 +1134,6 @@ app.put('/api/admin/products/:id', async (req, res) => {
   }
 });
 
-// Quick Inline Price, Cost & Stock Update Endpoint
 app.patch('/api/admin/products/:id/quick-update', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -1088,11 +1254,14 @@ app.delete('/api/admin/coupons/:code', async (req, res) => {
 app.post('/api/admin/store-settings', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { deliveryCharge, codAdvancePercent, dealEndTime, metaPixelId } = req.body;
+    const { deliveryCharge, codAdvancePercent, maxCodOrderAmount, freeGiftThreshold, freeGiftTitle, dealEndTime, metaPixelId } = req.body;
 
     const updateFields = {};
     if (deliveryCharge !== undefined) updateFields.deliveryCharge = Number(deliveryCharge) || 0;
     if (codAdvancePercent !== undefined) updateFields.codAdvancePercent = Number(codAdvancePercent) || 15;
+    if (maxCodOrderAmount !== undefined) updateFields.maxCodOrderAmount = Math.max(0, Number(maxCodOrderAmount) || 0);
+    if (freeGiftThreshold !== undefined) updateFields.freeGiftThreshold = Math.max(0, Number(freeGiftThreshold) || 0);
+    if (freeGiftTitle !== undefined) updateFields.freeGiftTitle = String(freeGiftTitle || "Luxury Surprise Jewellery Box").trim();
     if (dealEndTime !== undefined) updateFields.dealEndTime = Number(dealEndTime) || 0;
     if (metaPixelId !== undefined) updateFields.metaPixelId = String(metaPixelId || "").trim();
 
@@ -1127,7 +1296,7 @@ app.post('/api/admin/change-pin', async (req, res) => {
   }
 });
 
-// SERVER-SIDE PRICE, STOCK & COUPON VALIDATION ON ORDER CREATION
+// SERVER-SIDE PRICE, STOCK, COUPON, FREE GIFT & MAX COD LIMIT VALIDATION
 app.post('/api/orders', async (req, res) => {
   try {
     const {
@@ -1154,7 +1323,6 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
-    // Fetch authoritative prices & costs from MongoDB
     const productIds = items.map(i => Number(i.id));
     const dbProducts = await Product.find({ id: { $in: productIds } });
     const prodMap = new Map(dbProducts.map(p => [p.id, p]));
@@ -1188,7 +1356,6 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
-    // Verify coupon server-side
     let verifiedDiscount = 0;
     let verifiedCouponCode = "None";
     if (couponCode && String(couponCode).trim()) {
@@ -1200,22 +1367,34 @@ app.post('/api/orders', async (req, res) => {
       }
     }
 
-    // Verify delivery & COD rules server-side
     const storeSettings = await Settings.findOne({ key: 'main' }).lean();
     const deliveryFeeSetting = storeSettings ? (storeSettings.deliveryCharge || 0) : 0;
     const codAdvancePctSetting = storeSettings ? (storeSettings.codAdvancePercent || 15) : 15;
+    const maxCodLimit = storeSettings ? (storeSettings.maxCodOrderAmount ?? 2000) : 2000;
+    const giftThreshold = storeSettings ? (storeSettings.freeGiftThreshold ?? 1499) : 1499;
+    const giftTitle = storeSettings ? (storeSettings.freeGiftTitle || "Luxury Surprise Jewellery Box") : "Luxury Surprise Jewellery Box";
 
+    const netBagValue = verifiedSubTotal - verifiedDiscount;
     const normalizedMode = paymentMethod === 'COD' ? 'COD' : 'UPI';
+
+    // Enforce Admin Max COD Amount Rule
+    if (normalizedMode === 'COD' && maxCodLimit > 0 && netBagValue > maxCodLimit) {
+      return res.status(400).json({
+        success: false,
+        message: `Cash on Delivery is disabled for orders above ₹${maxCodLimit}. Please select 100% Prepaid UPI!`
+      });
+    }
+
     const appliedDelivery = normalizedMode === 'COD' ? deliveryFeeSetting : 0;
-    const verifiedFinalTotal = Math.max(1, verifiedSubTotal - verifiedDiscount + appliedDelivery);
+    const verifiedFinalTotal = Math.max(1, netBagValue + appliedDelivery);
+    const unlockedGift = (giftThreshold > 0 && netBagValue >= giftThreshold) ? giftTitle : "";
 
     const verifiedAdvancePaid = normalizedMode === 'COD'
       ? Math.max(1, Math.round((verifiedFinalTotal * codAdvancePctSetting) / 100))
       : verifiedFinalTotal;
     const verifiedBalanceDue = verifiedFinalTotal - verifiedAdvancePaid;
-    const estimatedNetProfit = (verifiedSubTotal - verifiedDiscount) - verifiedTotalCost;
+    const estimatedNetProfit = netBagValue - verifiedTotalCost;
 
-    // Deduct stock safely
     for (const vItem of verifiedItems) {
       const p = prodMap.get(vItem.id);
       if (p) {
@@ -1241,6 +1420,7 @@ app.post('/api/orders', async (req, res) => {
       state,
       items: verifiedItems,
       giftNote: (giftNote || "").trim(),
+      freeGiftUnlocked: unlockedGift,
       subTotal: verifiedSubTotal,
       discountApplied: verifiedDiscount,
       deliveryCharge: appliedDelivery,
@@ -1282,7 +1462,6 @@ app.get('/api/orders/:id/invoice', async (req, res) => {
   }
 });
 
-// 4x6 Thermal Shipping Label PDF Route (Admin Authenticated)
 app.get('/api/admin/orders/:id/shipping-label', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).send("Unauthorized");
@@ -1311,7 +1490,6 @@ app.get('/api/orders/track', async (req, res) => {
   }
 });
 
-// Admin Login with bcrypt + JWT issuance
 app.post('/api/admin/login', async (req, res) => {
   const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
   const record = loginAttempts.get(clientIp);
@@ -1362,22 +1540,34 @@ app.post('/api/admin/orders', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-    const [orders, coupons, settings, products, abandonedCarts] = await Promise.all([
+    const [orders, coupons, settings, products, abandonedCarts, stockNotifies] = await Promise.all([
       Order.find().sort({ createdAt: -1 }).lean(),
       Coupon.find().lean(),
       Settings.findOne({ key: 'main' }),
       Product.find().sort({ _id: -1 }).lean(),
-      AbandonedCart.find().sort({ updatedAt: -1 }).lean()
+      AbandonedCart.find().sort({ updatedAt: -1 }).lean(),
+      StockNotify.find().sort({ createdAt: -1 }).lean()
     ]);
 
     let activeSettings = settings
       ? {
           deliveryCharge: settings.deliveryCharge,
           codAdvancePercent: settings.codAdvancePercent,
+          maxCodOrderAmount: settings.maxCodOrderAmount ?? 2000,
+          freeGiftThreshold: settings.freeGiftThreshold ?? 1499,
+          freeGiftTitle: settings.freeGiftTitle || "Luxury Surprise Jewellery Box",
           dealEndTime: settings.dealEndTime,
           metaPixelId: settings.metaPixelId || ""
         }
-      : { deliveryCharge: 0, codAdvancePercent: 15, dealEndTime: 0, metaPixelId: "" };
+      : {
+          deliveryCharge: 0,
+          codAdvancePercent: 15,
+          maxCodOrderAmount: 2000,
+          freeGiftThreshold: 1499,
+          freeGiftTitle: "Luxury Surprise Jewellery Box",
+          dealEndTime: 0,
+          metaPixelId: ""
+        };
 
     if (activeSettings.dealEndTime && activeSettings.dealEndTime > 0 && Date.now() >= activeSettings.dealEndTime) {
       await Settings.findOneAndUpdate({ key: 'main' }, { dealEndTime: 0 });
@@ -1399,6 +1589,7 @@ app.post('/api/admin/orders', async (req, res) => {
       products,
       coupons,
       abandonedCarts,
+      stockNotifies,
       storeSettings: activeSettings,
       lowStockProducts,
       analytics: {
@@ -1491,7 +1682,6 @@ app.post('/api/admin/orders/:id/dispatch-tracking', async (req, res) => {
   }
 });
 
-// Direct Multer Binary Upload for Delivery Slip (Zero Base64 bloat)
 app.post('/api/admin/orders/:id/upload-slip', uploadMemory.single('slipFile'), async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
