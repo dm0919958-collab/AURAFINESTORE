@@ -99,6 +99,11 @@ if (!MONGO_URI) {
     .catch(err => console.error('❌ MongoDB Connection Error:', err.message));
 }
 
+const categorySchema = new mongoose.Schema({
+  name: { type: String, unique: true },
+  subCategories: [String]
+});
+
 const productSchema = new mongoose.Schema({
   id: { type: Number, unique: true },
   name: String,
@@ -140,6 +145,7 @@ const couponSchema = new mongoose.Schema({
   code: { type: String, unique: true },
   discountPercent: Number,
   minSpend: Number,
+  expiresAt: { type: Number, default: 0 },
   title: String,
   description: String,
   showOnStore: Boolean
@@ -152,6 +158,8 @@ const settingsSchema = new mongoose.Schema({
   maxCodOrderAmount: { type: Number, default: 2000 },
   freeGiftThreshold: { type: Number, default: 1499 },
   freeGiftTitle: { type: String, default: "Luxury Surprise Jewellery Box" },
+  coinsEarnPercent: { type: Number, default: 5 },
+  maxCoinsRedeemPerOrder: { type: Number, default: 200 },
   dealEndTime: { type: Number, default: 0 },
   adminPin: { type: String, default: "" },
   metaPixelId: { type: String, default: "" }
@@ -166,10 +174,12 @@ const orderSchema = new mongoose.Schema({
   city: String,
   state: String,
   items: Array,
-  giftNote: { type: String, default: "" },
   freeGiftUnlocked: { type: String, default: "" },
   subTotal: Number,
   discountApplied: Number,
+  coinsUsed: { type: Number, default: 0 },
+  coinsEarned: { type: Number, default: 0 },
+  coinsCredited: { type: Boolean, default: false },
   deliveryCharge: Number,
   couponCode: String,
   total: Number,
@@ -186,6 +196,13 @@ const orderSchema = new mongoose.Schema({
   date: String,
   orderDateRaw: String,
   createdAt: { type: Date, default: Date.now }
+});
+
+const walletSchema = new mongoose.Schema({
+  phone: { type: String, unique: true },
+  customerName: String,
+  coins: { type: Number, default: 0 },
+  updatedAt: { type: Date, default: Date.now }
 });
 
 const abandonedCartSchema = new mongoose.Schema({
@@ -219,14 +236,22 @@ const stockNotifySchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+const Category = mongoose.model('Category', categorySchema);
 const Product = mongoose.model('Product', productSchema);
 const Banner = mongoose.model('Banner', bannerSchema);
 const Coupon = mongoose.model('Coupon', couponSchema);
 const Settings = mongoose.model('Settings', settingsSchema);
 const Order = mongoose.model('Order', orderSchema);
+const Wallet = mongoose.model('Wallet', walletSchema);
 const AbandonedCart = mongoose.model('AbandonedCart', abandonedCartSchema);
 const SupportTicket = mongoose.model('SupportTicket', supportTicketSchema);
 const StockNotify = mongoose.model('StockNotify', stockNotifySchema);
+
+const defaultCategories = [
+  { name: "Men", subCategories: ["Shirts", "T-Shirts", "Watches", "Trousers", "Perfumes"] },
+  { name: "Women", subCategories: ["Jhumka", "Studs", "Kurtis", "Sarees", "Handbags", "Bangles"] },
+  { name: "Gifts", subCategories: ["Couples", "Romantic", "Gift Sets", "Customized Lamps"] }
+];
 
 const defaultBanners = [
   {
@@ -250,6 +275,7 @@ const defaultCoupons = [
     code: "DIWALI33",
     discountPercent: 33,
     minSpend: 499,
+    expiresAt: 0,
     title: "Festive Special Offer",
     description: "Flat 33% OFF on orders above ₹499!",
     showOnStore: true
@@ -258,6 +284,7 @@ const defaultCoupons = [
     code: "AURA20",
     discountPercent: 20,
     minSpend: 0,
+    expiresAt: 0,
     title: "Mega Welcome Offer",
     description: "Flat 20% OFF on all orders.",
     showOnStore: true
@@ -384,6 +411,9 @@ const defaultProducts = [
 
 async function seedInitialData() {
   try {
+    const catCount = await Category.countDocuments();
+    if (catCount === 0) await Category.insertMany(defaultCategories);
+
     const productCount = await Product.countDocuments();
     if (productCount === 0) await Product.insertMany(defaultProducts);
 
@@ -403,6 +433,8 @@ async function seedInitialData() {
         maxCodOrderAmount: 2000,
         freeGiftThreshold: 1499,
         freeGiftTitle: "Luxury Surprise Jewellery Box",
+        coinsEarnPercent: 5,
+        maxCoinsRedeemPerOrder: 200,
         dealEndTime: 0,
         adminPin: hashedDefaultPin,
         metaPixelId: ""
@@ -416,14 +448,10 @@ async function seedInitialData() {
         existingSettings.adminPin = await bcrypt.hash(existingSettings.adminPin, 10);
         dirty = true;
       }
-      if (existingSettings.maxCodOrderAmount === undefined) {
-        existingSettings.maxCodOrderAmount = 2000;
-        dirty = true;
-      }
-      if (existingSettings.freeGiftThreshold === undefined) {
-        existingSettings.freeGiftThreshold = 1499;
-        dirty = true;
-      }
+      if (existingSettings.maxCodOrderAmount === undefined) { existingSettings.maxCodOrderAmount = 2000; dirty = true; }
+      if (existingSettings.freeGiftThreshold === undefined) { existingSettings.freeGiftThreshold = 1499; dirty = true; }
+      if (existingSettings.coinsEarnPercent === undefined) { existingSettings.coinsEarnPercent = 5; dirty = true; }
+      if (existingSettings.maxCoinsRedeemPerOrder === undefined) { existingSettings.maxCoinsRedeemPerOrder = 200; dirty = true; }
       if (dirty) await existingSettings.save();
     }
   } catch (err) {
@@ -495,14 +523,9 @@ function generateOrderInvoicePDF(order) {
         currentY += 18;
       }
 
-      if (order.giftNote && order.giftNote.trim()) {
-        doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text(`Free Gift Message: "${order.giftNote.trim()}"`, 40, currentY + 4, { width: 515 });
-        currentY += 18;
-      }
-
       const summaryY = Math.max(currentY + 15, 365);
 
-      doc.roundedRect(40, summaryY, 250, 108, 6).strokeColor('#e5e7eb').stroke();
+      doc.roundedRect(40, summaryY, 250, 114, 6).strokeColor('#e5e7eb').stroke();
       doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text('PAYMENT VERIFICATION:', 50, summaryY + 12);
       doc.fillColor('#111827').fontSize(9).font('Helvetica-Bold').text(`Mode: ${order.paymentMethod}`, 50, summaryY + 28);
 
@@ -512,31 +535,31 @@ function generateOrderInvoicePDF(order) {
         50, summaryY + 44
       );
       doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text(`Transaction UTR: ${order.utrNumber || 'N/A'}`, 50, summaryY + 62);
-      doc.fillColor('#059669').fontSize(7.5).font('Helvetica-Oblique').text('* 100% Safe & Authenticated Order', 50, summaryY + 84);
+      doc.fillColor('#059669').fontSize(7.5).font('Helvetica-Oblique').text('* 100% Safe & Authenticated Order', 50, summaryY + 86);
 
-      doc.roundedRect(305, summaryY, 250, 108, 6).strokeColor('#e5e7eb').stroke();
+      doc.roundedRect(305, summaryY, 250, 114, 6).strokeColor('#e5e7eb').stroke();
       doc.fillColor('#374151').fontSize(8.5).font('Helvetica');
-      doc.text('Bag Subtotal:', 318, summaryY + 12);
-      doc.font('Helvetica-Bold').text(`Rs. ${order.subTotal}`, 440, summaryY + 12, { width: 105, align: 'right' });
+      doc.text('Bag Subtotal:', 318, summaryY + 10);
+      doc.font('Helvetica-Bold').text(`Rs. ${order.subTotal}`, 440, summaryY + 10, { width: 105, align: 'right' });
 
-      doc.font('Helvetica').text('Coupon Discount:', 318, summaryY + 26);
-      doc.fillColor('#059669').font('Helvetica-Bold').text(`- Rs. ${order.discountApplied || 0}`, 440, summaryY + 26, { width: 105, align: 'right' });
+      doc.font('Helvetica').text('Coupon Discount:', 318, summaryY + 24);
+      doc.fillColor('#059669').font('Helvetica-Bold').text(`- Rs. ${order.discountApplied || 0}`, 440, summaryY + 24, { width: 105, align: 'right' });
 
-      doc.fillColor('#374151').font('Helvetica').text('COD Delivery Charge:', 318, summaryY + 40);
+      doc.fillColor('#374151').font('Helvetica').text('AURA Coins Redeemed:', 318, summaryY + 38);
+      doc.fillColor('#b45309').font('Helvetica-Bold').text(`- Rs. ${order.coinsUsed || 0}`, 440, summaryY + 38, { width: 105, align: 'right' });
+
+      doc.fillColor('#374151').font('Helvetica').text('COD Delivery Charge:', 318, summaryY + 52);
       doc.fillColor(order.deliveryCharge > 0 ? '#111827' : '#059669').font('Helvetica-Bold').text(
         order.deliveryCharge > 0 ? `Rs. ${order.deliveryCharge}` : 'FREE',
-        440, summaryY + 40, { width: 105, align: 'right' }
+        440, summaryY + 52, { width: 105, align: 'right' }
       );
 
-      doc.fillColor('#6b7280').font('Helvetica').text('GST & Taxes Included:', 318, summaryY + 54);
-      doc.text('Rs. 0.00', 440, summaryY + 54, { width: 105, align: 'right' });
-
-      doc.roundedRect(305, summaryY + 71, 250, 37, 4).fill('#2b1105');
+      doc.roundedRect(305, summaryY + 75, 250, 39, 4).fill('#2b1105');
       doc.fillColor('#FFFFFF').fontSize(9.5).font('Helvetica-Bold');
-      doc.text('TOTAL BILL AMOUNT:', 318, summaryY + 84);
-      doc.fontSize(12).font('Helvetica-Bold').text(`Rs. ${order.total}`, 430, summaryY + 82, { width: 115, align: 'right' });
+      doc.text('TOTAL BILL AMOUNT:', 318, summaryY + 88);
+      doc.fontSize(12).font('Helvetica-Bold').text(`Rs. ${order.total}`, 430, summaryY + 86, { width: 115, align: 'right' });
 
-      const footerY = summaryY + 125;
+      const footerY = summaryY + 132;
       doc.moveTo(40, footerY - 8).lineTo(555, footerY - 8).strokeColor('#e5e7eb').lineWidth(1).stroke();
       doc.fillColor('#111827').fontSize(8).font('Helvetica-Bold').text('TERMS & REPLACEMENT POLICY:', 40, footerY + 5);
       doc.fillColor('#4b5563').fontSize(7.5).font('Helvetica');
@@ -555,111 +578,109 @@ function generateOrderInvoicePDF(order) {
   });
 }
 
-// Upgraded Professional 4x6 Inch Thermal Shipping Label PDF Generator (288 x 432 pt)
+// Premium E-Commerce 4x6 Inch Thermal Shipping Label PDF (288 x 432 pt)
 function generateThermalShippingLabelPDF(order) {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ margin: 8, size: [288, 432] });
+      const doc = new PDFDocument({ margin: 6, size: [288, 432] });
       const buffers = [];
       doc.on('data', buffers.push.bind(buffers));
       doc.on('end', () => resolve(Buffer.concat(buffers)));
 
-      // Outer Heavy Border
-      doc.rect(8, 8, 272, 416).lineWidth(1.8).strokeColor('#000000').stroke();
+      const isCOD = order.paymentMethod === 'COD';
+      const carrier = (order.courierPartner || 'Delhivery').toUpperCase();
+      const trackingCode = String(order.awbNumber || order.id || 'AUR000000').toUpperCase();
 
-      // 1. Top Brand & Service Header
-      doc.rect(8, 8, 272, 36).fill('#000000');
-      doc.fillColor('#FFFFFF').fontSize(13).font('Helvetica-Bold').text('AURA FINE STORE', 14, 14);
-      doc.fontSize(7).font('Helvetica').text('SURFACE / PRIORITY EXPRESS', 14, 29);
+      // Double Outer Frame
+      doc.rect(6, 6, 276, 420).lineWidth(2.0).strokeColor('#000000').stroke();
+      doc.rect(9, 9, 270, 414).lineWidth(0.5).strokeColor('#000000').stroke();
 
-      // Right Mode Pill inside header
-      doc.rect(206, 13, 68, 26).fill('#FFFFFF');
-      doc.fillColor('#000000').fontSize(11).font('Helvetica-Bold').text(
-        order.paymentMethod === 'COD' ? 'COD' : 'PREPAID',
-        206, 20, { width: 68, align: 'center' }
-      );
+      // 1. Top Dark Brand Banner
+      doc.rect(9, 9, 270, 38).fill('#000000');
+      doc.fillColor('#FFFFFF').fontSize(14).font('Helvetica-Bold').text('AURA FINE STORE', 15, 15);
+      doc.fontSize(7).font('Helvetica').text('EXPRESS PARCEL • FRAGILE / HANDLE WITH CARE', 15, 32);
 
-      // 2. Order ID, Courier & Visual Barcode Strip
-      doc.fillColor('#000000').fontSize(9.5).font('Helvetica-Bold').text(`ORDER: #${order.id}`, 14, 50);
-      doc.fontSize(8).font('Helvetica').text(`Date: ${order.orderDateRaw || order.date || ''}`, 175, 51, { width: 99, align: 'right' });
+      // Right Mode Stamp
+      doc.rect(208, 13, 66, 30).fill('#FFFFFF');
+      doc.fillColor('#000000').fontSize(11).font('Helvetica-Bold').text(isCOD ? 'COD' : 'PREPAID', 208, 17, { width: 66, align: 'center' });
+      doc.fontSize(6.5).font('Helvetica').text(isCOD ? 'COLLECT CASH' : 'DO NOT COLLECT', 208, 31, { width: 66, align: 'center' });
 
-      doc.fontSize(8.5).font('Helvetica-Bold').text(`CARRIER: ${(order.courierPartner || 'Delhivery').toUpperCase()}`, 14, 63);
-      doc.fontSize(8.5).font('Helvetica-Bold').text(`AWB: ${order.awbNumber || 'AWAITING PICKUP'}`, 14, 75);
+      // 2. Carrier, Order ID & High-Density Vector Barcode
+      doc.fillColor('#000000').fontSize(8.5).font('Helvetica-Bold').text(`CARRIER: ${carrier}`, 15, 53);
+      doc.fontSize(8).font('Helvetica').text(`DATE: ${order.orderDateRaw || order.date || ''}`, 175, 53, { width: 98, align: 'right' });
+      doc.fontSize(9.5).font('Helvetica-Bold').text(`ORDER ID: #${order.id}`, 15, 65);
+      doc.fontSize(8.5).font('Helvetica-Bold').text(`AWB NO: ${order.awbNumber || 'AWAITING PICKUP'}`, 15, 78);
 
-      // Crisp Vector Barcode Pattern (derived from Order ID characters)
-      const codeSeed = String(order.awbNumber || order.id || 'AUR123456');
+      // Barcode Box on Right
       let bx = 152;
-      for (let i = 0; i < 36; i++) {
-        const charVal = codeSeed.charCodeAt(i % codeSeed.length) + i * 7;
-        const barW = (charVal % 2 === 0) ? 2.2 : 1.1;
-        if (bx + barW < 274) {
-          doc.rect(bx, 63, barW, 22).fill('#000000');
-          bx += barW + ((charVal % 3 === 0) ? 2.0 : 1.3);
+      for (let i = 0; i < 42; i++) {
+        const val = trackingCode.charCodeAt(i % trackingCode.length) * (i + 3);
+        const bw = (val % 3 === 0) ? 2.2 : 1.0;
+        if (bx + bw < 273) {
+          doc.rect(bx, 64, bw, 24).fill('#000000');
+          bx += bw + ((val % 2 === 0) ? 1.8 : 1.1);
         }
       }
+      doc.fontSize(6.5).font('Helvetica-Bold').text(`*${trackingCode}*`, 150, 89, { width: 124, align: 'center' });
 
-      doc.moveTo(8, 91).lineTo(280, 91).lineWidth(1.2).stroke();
+      doc.moveTo(9, 98).lineTo(279, 98).lineWidth(1.4).stroke();
 
-      // 3. Recipient Delivery Block
-      doc.fontSize(8).font('Helvetica-Bold').text('SHIP TO / DELIVER TO:', 14, 97);
-      doc.fontSize(12.5).font('Helvetica-Bold').text((order.customerName || 'Valued Customer').toUpperCase(), 14, 109, { width: 260 });
-      doc.fontSize(10.5).font('Helvetica-Bold').text(`PHONE: +91 ${order.phone}`, 14, 125);
-      doc.fontSize(8.5).font('Helvetica').text(order.address || '', 14, 141, { width: 260, lineGap: 1.8 });
+      // 3. Recipient Delivery Section
+      doc.fontSize(7.5).font('Helvetica-Bold').text('DELIVER TO (CUSTOMER DETAILS):', 15, 103);
+      doc.fontSize(13).font('Helvetica-Bold').text((order.customerName || 'Valued Customer').toUpperCase(), 15, 114, { width: 258, lineBreak: false, ellipsis: true });
+      doc.fontSize(11).font('Helvetica-Bold').text(`MOBILE: +91 ${order.phone}`, 15, 130);
+      doc.fontSize(8.5).font('Helvetica').text(order.address || '', 15, 145, { width: 258, height: 52, lineGap: 1.8 });
 
-      // 4. High-Contrast Pincode & Payment Collection Box
-      const boxY = 202;
-      doc.rect(14, boxY, 112, 30).lineWidth(1.4).strokeColor('#000000').stroke();
-      doc.fontSize(7).font('Helvetica-Bold').text('DESTINATION PINCODE', 18, boxY + 4);
-      doc.fontSize(13).font('Helvetica-Bold').text(String(order.pincode || '731204'), 18, boxY + 13);
+      // 4. Prominent Pincode & Payment Collection Grid
+      const gridY = 200;
+      doc.rect(15, gridY, 108, 34).lineWidth(1.5).strokeColor('#000000').stroke();
+      doc.fontSize(7).font('Helvetica-Bold').text('ROUTING PINCODE', 19, gridY + 4);
+      doc.fontSize(15).font('Helvetica-Bold').text(String(order.pincode || '731204'), 19, gridY + 14);
 
-      if (order.paymentMethod === 'COD') {
-        doc.rect(132, boxY, 142, 30).fill('#000000');
-        doc.fillColor('#FFFFFF').fontSize(7).font('Helvetica-Bold').text('COLLECT CASH ON DELIVERY', 136, boxY + 4, { width: 134, align: 'center' });
-        doc.fontSize(12).font('Helvetica-Bold').text(`Rs. ${order.balanceDue}/-`, 136, boxY + 14, { width: 134, align: 'center' });
+      if (isCOD) {
+        doc.rect(128, gridY, 145, 34).fill('#000000');
+        doc.fillColor('#FFFFFF').fontSize(7.5).font('Helvetica-Bold').text('COLLECT CASH FROM BUYER', 132, gridY + 5, { width: 137, align: 'center' });
+        doc.fontSize(14).font('Helvetica-Bold').text(`Rs. ${order.balanceDue}/-`, 132, gridY + 15, { width: 137, align: 'center' });
       } else {
-        doc.rect(132, boxY, 142, 30).lineWidth(1.4).strokeColor('#000000').stroke();
-        doc.fillColor('#000000').fontSize(7.5).font('Helvetica-Bold').text('PREPAID ORDER - DO NOT COLLECT', 136, boxY + 5, { width: 134, align: 'center' });
-        doc.fontSize(11).font('Helvetica-Bold').text('AMOUNT DUE: Rs. 0', 136, boxY + 15, { width: 134, align: 'center' });
+        doc.rect(128, gridY, 145, 34).lineWidth(1.5).strokeColor('#000000').stroke();
+        doc.fillColor('#000000').fontSize(7.5).font('Helvetica-Bold').text('PREPAID - ALREADY PAID', 132, gridY + 5, { width: 137, align: 'center' });
+        doc.fontSize(13).font('Helvetica-Bold').text('COLLECT: Rs. 0/-', 132, gridY + 16, { width: 137, align: 'center' });
       }
 
-      doc.moveTo(8, 240).lineTo(280, 240).lineWidth(1.2).stroke();
+      doc.moveTo(9, 241).lineTo(279, 241).lineWidth(1.4).stroke();
 
       // 5. Package Contents Table
-      doc.fillColor('#000000').fontSize(8).font('Helvetica-Bold').text('ITEM DESCRIPTION (SIZE / COLOR)', 14, 246);
-      doc.text('QTY', 246, 246, { width: 28, align: 'right' });
-      doc.moveTo(14, 257).lineTo(274, 257).lineWidth(0.6).stroke();
+      doc.fillColor('#000000').rect(9, 241, 270, 15).fill('#e5e7eb');
+      doc.fillColor('#000000').fontSize(7.5).font('Helvetica-Bold');
+      doc.text('ITEM NAME & VARIANT (SIZE / COLOR)', 15, 245);
+      doc.text('QTY', 246, 245, { width: 27, align: 'right' });
 
-      let itemY = 261;
-      const itemsToPrint = (order.items || []).slice(0, 4);
-      itemsToPrint.forEach((item, idx) => {
-        const label = `${idx + 1}. ${item.name} [${item.selectedSize || 'Std'}, ${item.selectedColor || 'Std'}]`;
-        doc.fontSize(7.8).font('Helvetica').text(label, 14, itemY, { width: 232, lineBreak: false, ellipsis: true });
-        doc.font('Helvetica-Bold').text(String(item.qty || 1), 246, itemY, { width: 28, align: 'right' });
+      let itemY = 260;
+      const itemsList = (order.items || []).slice(0, 4);
+      itemsList.forEach((item, idx) => {
+        const desc = `${idx + 1}. ${item.name} (${item.selectedSize || 'Std'}, ${item.selectedColor || 'Std'})`;
+        doc.fontSize(7.8).font('Helvetica').text(desc, 15, itemY, { width: 230, lineBreak: false, ellipsis: true });
+        doc.font('Helvetica-Bold').text(String(item.qty || 1), 246, itemY, { width: 27, align: 'right' });
         itemY += 13;
       });
 
       if (order.freeGiftUnlocked) {
-        doc.fontSize(7.8).font('Helvetica-Bold').text(`+ FREE GIFT: ${order.freeGiftUnlocked}`, 14, itemY, { width: 232, lineBreak: false, ellipsis: true });
-        doc.text('1', 246, itemY, { width: 28, align: 'right' });
-        itemY += 13;
+        doc.fontSize(7.8).font('Helvetica-Bold').text(`+ BONUS GIFT: ${order.freeGiftUnlocked}`, 15, itemY, { width: 230, lineBreak: false, ellipsis: true });
+        doc.text('1', 246, itemY, { width: 27, align: 'right' });
       }
 
-      if (order.giftNote && order.giftNote.trim()) {
-        doc.fontSize(7.2).font('Helvetica-Oblique').text(`Gift Note: "${order.giftNote.trim()}"`, 14, itemY, { width: 260, lineBreak: false, ellipsis: true });
-      }
+      doc.moveTo(9, 326).lineTo(279, 326).lineWidth(1.4).stroke();
 
-      doc.moveTo(8, 332).lineTo(280, 332).lineWidth(1.2).stroke();
+      // 6. Return / Shipper Origin Block
+      doc.fontSize(7.5).font('Helvetica-Bold').text('RETURN / SHIPPER ADDRESS (IF UNDELIVERED):', 15, 332);
+      doc.fontSize(8.5).font('Helvetica-Bold').text('AURA Fine Store Central Dispatch Hub', 15, 343);
+      doc.fontSize(7.5).font('Helvetica').text('Bolpur, Birbhum, West Bengal - 731204, India', 15, 354);
+      doc.font('Helvetica-Bold').text('Helpline: +91 6289145092 | Weight: 0.50 Kg', 15, 365);
 
-      // 6. Return / Shipper Address Footer
-      doc.fontSize(7.5).font('Helvetica-Bold').text('IF UNDELIVERED, PLEASE RETURN TO:', 14, 338);
-      doc.fontSize(7.5).font('Helvetica-Bold').text('AURA Fine Store Logistics Hub', 14, 349);
-      doc.fontSize(7.5).font('Helvetica').text('Bolpur, Birbhum, West Bengal - 731204, India', 14, 359);
-      doc.text('Support Helpline: +91 6289145092', 14, 369);
-
-      // Bottom Caution Strip
-      doc.rect(8, 386, 272, 38).fill('#f3f4f6');
-      doc.fillColor('#000000').fontSize(7.5).font('Helvetica-Bold').text('CUSTOMER INSTRUCTION:', 14, 392);
-      doc.fontSize(7.2).font('Helvetica').text('Please record a clear 360-degree unboxing video before opening the seal for 7-day replacement protection.', 14, 402, { width: 260 });
+      // 7. Bottom Unboxing Video Strip
+      doc.rect(9, 381, 270, 42).fill('#000000');
+      doc.fillColor('#FFFFFF').fontSize(7.5).font('Helvetica-Bold').text('IMPORTANT CUSTOMER NOTICE:', 15, 387);
+      doc.fontSize(7).font('Helvetica').text('Record a continuous 360-degree unboxing video before opening the sealed package to claim 7-day replacement.', 15, 398, { width: 258 });
 
       doc.end();
     } catch (err) {
@@ -670,8 +691,8 @@ function generateThermalShippingLabelPDF(order) {
 
 async function sendTelegramAlert(order) {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
-  const giftLine = order.giftNote ? `\n🎁 <b>Gift Message:</b> <i>"${order.giftNote}"</i>` : '';
   const bonusLine = order.freeGiftUnlocked ? `\n🎀 <b>Free Gift Unlocked:</b> <b>${order.freeGiftUnlocked}</b>` : '';
+  const coinsLine = order.coinsUsed > 0 ? `\n🪙 <b>AURA Coins Used:</b> -₹${order.coinsUsed}` : '';
   const captionText = `🧾 <b>AURA FINE STORE - NEW ORDER CONFIRMED</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `📦 <b>Order ID:</b> <code>#${order.id}</code>\n` +
@@ -680,7 +701,7 @@ async function sendTelegramAlert(order) {
     `📍 <b>Address:</b> ${order.address}\n` +
     `💰 <b>Total Bill:</b> <b>₹${order.total}</b> (${order.paymentMethod})\n` +
     `📈 <b>Est. Net Profit:</b> <b>₹${order.netProfit || 0}</b>\n` +
-    `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>${bonusLine}${giftLine}\n` +
+    `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>${coinsLine}${bonusLine}\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `<i>Official PDF Invoice is attached below.</i>`;
 
@@ -755,7 +776,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Public Storefront Endpoint
+// Public Storefront Endpoint (Includes Dynamic Categories)
 app.get('/api/store', async (req, res) => {
   try {
     res.set({
@@ -765,7 +786,8 @@ app.get('/api/store', async (req, res) => {
       'Surrogate-Control': 'no-store'
     });
 
-    const [dealBanners, rawProducts, coupons, settings] = await Promise.all([
+    const [categories, dealBanners, rawProducts, coupons, settings] = await Promise.all([
+      Category.find().lean(),
       Banner.find().lean(),
       Product.find().sort({ _id: -1 }).lean(),
       Coupon.find().lean(),
@@ -781,6 +803,8 @@ app.get('/api/store', async (req, res) => {
           maxCodOrderAmount: settings.maxCodOrderAmount ?? 2000,
           freeGiftThreshold: settings.freeGiftThreshold ?? 1499,
           freeGiftTitle: settings.freeGiftTitle || "Luxury Surprise Jewellery Box",
+          coinsEarnPercent: settings.coinsEarnPercent ?? 5,
+          maxCoinsRedeemPerOrder: settings.maxCoinsRedeemPerOrder ?? 200,
           dealEndTime: settings.dealEndTime,
           metaPixelId: settings.metaPixelId || ""
         }
@@ -790,6 +814,8 @@ app.get('/api/store', async (req, res) => {
           maxCodOrderAmount: 2000,
           freeGiftThreshold: 1499,
           freeGiftTitle: "Luxury Surprise Jewellery Box",
+          coinsEarnPercent: 5,
+          maxCoinsRedeemPerOrder: 200,
           dealEndTime: 0,
           metaPixelId: ""
         };
@@ -799,13 +825,122 @@ app.get('/api/store', async (req, res) => {
       activeSettings.dealEndTime = 0;
     }
 
-    res.json({ dealBanners, products, coupons, storeSettings: activeSettings });
+    res.json({ categories, dealBanners, products, coupons, storeSettings: activeSettings });
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
   }
 });
 
-// Live Recent Sales Feed for Social Proof Popups (Real Orders + Privacy Safe)
+// Check Customer AURA Coins Wallet Balance
+app.get('/api/wallet/:phone', async (req, res) => {
+  try {
+    const cleanPhone = String(req.params.phone || '').replace(/[^0-9]/g, '');
+    if (cleanPhone.length !== 10) return res.json({ success: true, coins: 0 });
+    const wallet = await Wallet.findOne({ phone: cleanPhone }).lean();
+    res.json({ success: true, coins: wallet ? (wallet.coins || 0) : 0 });
+  } catch (err) {
+    res.json({ success: true, coins: 0 });
+  }
+});
+
+// Admin Category & Sub-Category Management (With Cascade Delete of Products)
+app.post('/api/admin/categories', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const name = String(req.body.name || "").trim();
+    if (!name) return res.status(400).json({ success: false, message: "Category name is required!" });
+
+    const existing = await Category.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
+    if (existing) return res.status(400).json({ success: false, message: "Category already exists!" });
+
+    await Category.create({ name, subCategories: [] });
+    const categories = await Category.find().lean();
+    res.json({ success: true, categories });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/admin/categories/:name/subcategories', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const catName = req.params.name;
+    const subName = String(req.body.subName || "").trim();
+    if (!subName) return res.status(400).json({ success: false, message: "Sub-category name is required!" });
+
+    const cat = await Category.findOne({ name: catName });
+    if (!cat) return res.status(404).json({ success: false, message: "Main category not found!" });
+
+    if (!cat.subCategories.some(s => s.toLowerCase() === subName.toLowerCase())) {
+      cat.subCategories.push(subName);
+      await cat.save();
+    }
+    const categories = await Category.find().lean();
+    res.json({ success: true, categories });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Delete Sub-Category & CASCADE DELETE all Products inside it
+app.delete('/api/admin/categories/:name/subcategories/:subName', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const catName = req.params.name;
+    const subName = req.params.subName;
+
+    const cat = await Category.findOne({ name: catName });
+    if (cat) {
+      cat.subCategories = cat.subCategories.filter(s => s !== subName);
+      await cat.save();
+    }
+
+    const prodsToDelete = await Product.find({ mainCategory: catName, category: subName }).lean();
+    const prodIds = prodsToDelete.map(p => p.id);
+
+    await Promise.all([
+      Product.deleteMany({ mainCategory: catName, category: subName }),
+      prodIds.length ? Banner.deleteMany({ productId: { $in: prodIds } }) : Promise.resolve()
+    ]);
+
+    const [categories, products] = await Promise.all([
+      Category.find().lean(),
+      Product.find().sort({ _id: -1 }).lean()
+    ]);
+
+    res.json({ success: true, deletedProductsCount: prodIds.length, categories, products });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Delete Main Category & CASCADE DELETE all Sub-Categories & Products inside it
+app.delete('/api/admin/categories/:name', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const catName = req.params.name;
+
+    const prodsToDelete = await Product.find({ mainCategory: catName }).lean();
+    const prodIds = prodsToDelete.map(p => p.id);
+
+    await Promise.all([
+      Category.deleteOne({ name: catName }),
+      Product.deleteMany({ mainCategory: catName }),
+      prodIds.length ? Banner.deleteMany({ productId: { $in: prodIds } }) : Promise.resolve()
+    ]);
+
+    const [categories, products] = await Promise.all([
+      Category.find().lean(),
+      Product.find().sort({ _id: -1 }).lean()
+    ]);
+
+    res.json({ success: true, deletedProductsCount: prodIds.length, categories, products });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Live Recent Sales Feed
 app.get('/api/recent-sales', async (req, res) => {
   try {
     const recentOrders = await Order.find({ status: { $ne: 'Cancelled' } })
@@ -833,7 +968,7 @@ app.get('/api/recent-sales', async (req, res) => {
   }
 });
 
-// Out-of-Stock "Notify Me" Subscription Endpoint
+// Out-of-Stock "Notify Me"
 app.post('/api/products/:id/notify', async (req, res) => {
   try {
     const prodId = Number(req.params.id);
@@ -902,7 +1037,6 @@ app.post('/api/abandoned-cart', async (req, res) => {
   }
 });
 
-// Product Reviews with Optional Compressed Photo Upload
 app.post('/api/products/:id/reviews', async (req, res) => {
   try {
     const { customerName, rating, comment, photoBase64 } = req.body;
@@ -1215,18 +1349,25 @@ app.delete('/api/admin/banners/:id', async (req, res) => {
   }
 });
 
+// Coupons With Expiry Timer (expiresAt timestamp)
 app.post('/api/admin/coupons', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { code, discountPercent, minSpend, title, description, showOnStore } = req.body;
+    const { code, discountPercent, minSpend, validHours, validMinutes, title, description, showOnStore } = req.body;
 
     const cleanCode = (code || "").trim().toUpperCase();
+    const h = Math.max(0, Number(validHours) || 0);
+    const m = Math.max(0, Number(validMinutes) || 0);
+    const durationMs = (h * 3600 + m * 60) * 1000;
+    const expiresAt = durationMs > 0 ? (Date.now() + durationMs) : 0;
+
     await Coupon.findOneAndUpdate(
       { code: cleanCode },
       {
         code: cleanCode,
         discountPercent: Number(discountPercent) || 10,
         minSpend: Number(minSpend) || 0,
+        expiresAt,
         title: title || `${cleanCode} Special Offer`,
         description: description || `Flat ${discountPercent}% OFF`,
         showOnStore: showOnStore === true || showOnStore === "true"
@@ -1254,7 +1395,11 @@ app.delete('/api/admin/coupons/:code', async (req, res) => {
 app.post('/api/admin/store-settings', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { deliveryCharge, codAdvancePercent, maxCodOrderAmount, freeGiftThreshold, freeGiftTitle, dealEndTime, metaPixelId } = req.body;
+    const {
+      deliveryCharge, codAdvancePercent, maxCodOrderAmount,
+      freeGiftThreshold, freeGiftTitle, coinsEarnPercent, maxCoinsRedeemPerOrder,
+      dealEndTime, metaPixelId
+    } = req.body;
 
     const updateFields = {};
     if (deliveryCharge !== undefined) updateFields.deliveryCharge = Number(deliveryCharge) || 0;
@@ -1262,6 +1407,8 @@ app.post('/api/admin/store-settings', async (req, res) => {
     if (maxCodOrderAmount !== undefined) updateFields.maxCodOrderAmount = Math.max(0, Number(maxCodOrderAmount) || 0);
     if (freeGiftThreshold !== undefined) updateFields.freeGiftThreshold = Math.max(0, Number(freeGiftThreshold) || 0);
     if (freeGiftTitle !== undefined) updateFields.freeGiftTitle = String(freeGiftTitle || "Luxury Surprise Jewellery Box").trim();
+    if (coinsEarnPercent !== undefined) updateFields.coinsEarnPercent = Math.max(0, Math.min(50, Number(coinsEarnPercent) || 0));
+    if (maxCoinsRedeemPerOrder !== undefined) updateFields.maxCoinsRedeemPerOrder = Math.max(0, Number(maxCoinsRedeemPerOrder) || 0);
     if (dealEndTime !== undefined) updateFields.dealEndTime = Number(dealEndTime) || 0;
     if (metaPixelId !== undefined) updateFields.metaPixelId = String(metaPixelId || "").trim();
 
@@ -1296,13 +1443,13 @@ app.post('/api/admin/change-pin', async (req, res) => {
   }
 });
 
-// SERVER-SIDE PRICE, STOCK, COUPON, FREE GIFT & MAX COD LIMIT VALIDATION
+// SERVER-SIDE PRICE, COUPON EXPIRY, AURA COINS, FREE GIFT & MAX COD VALIDATION
 app.post('/api/orders', async (req, res) => {
   try {
     const {
       customerName, phone, pincode, city, state,
       villageOrCity, houseNoStreet, postOffice, policeStation, landmark,
-      items, giftNote, couponCode,
+      items, couponCode, useAuraCoins,
       paymentMethod, utrNumber
     } = req.body;
 
@@ -1356,14 +1503,20 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
+    // Verify coupon + expiry timer server-side
     let verifiedDiscount = 0;
     let verifiedCouponCode = "None";
     if (couponCode && String(couponCode).trim()) {
       const cleanCode = String(couponCode).trim().toUpperCase();
       const dbCoupon = await Coupon.findOne({ code: cleanCode }).lean();
-      if (dbCoupon && verifiedSubTotal >= (dbCoupon.minSpend || 0)) {
-        verifiedDiscount = Math.round((verifiedSubTotal * dbCoupon.discountPercent) / 100);
-        verifiedCouponCode = dbCoupon.code;
+      if (dbCoupon) {
+        if (dbCoupon.expiresAt && dbCoupon.expiresAt > 0 && Date.now() >= dbCoupon.expiresAt) {
+          return res.status(400).json({ success: false, message: `Coupon "${cleanCode}" has expired!` });
+        }
+        if (verifiedSubTotal >= (dbCoupon.minSpend || 0)) {
+          verifiedDiscount = Math.round((verifiedSubTotal * dbCoupon.discountPercent) / 100);
+          verifiedCouponCode = dbCoupon.code;
+        }
       }
     }
 
@@ -1373,11 +1526,30 @@ app.post('/api/orders', async (req, res) => {
     const maxCodLimit = storeSettings ? (storeSettings.maxCodOrderAmount ?? 2000) : 2000;
     const giftThreshold = storeSettings ? (storeSettings.freeGiftThreshold ?? 1499) : 1499;
     const giftTitle = storeSettings ? (storeSettings.freeGiftTitle || "Luxury Surprise Jewellery Box") : "Luxury Surprise Jewellery Box";
+    const coinsEarnPct = storeSettings ? (storeSettings.coinsEarnPercent ?? 5) : 5;
+    const maxCoinsRedeem = storeSettings ? (storeSettings.maxCoinsRedeemPerOrder ?? 200) : 200;
 
-    const netBagValue = verifiedSubTotal - verifiedDiscount;
+    const cleanPhone = String(phone).replace(/[^0-9]/g, '');
+    let afterCouponValue = Math.max(1, verifiedSubTotal - verifiedDiscount);
+
+    // Verify & Redeem AURA Coins if requested
+    let verifiedCoinsUsed = 0;
+    if (useAuraCoins && cleanPhone.length === 10) {
+      const wallet = await Wallet.findOne({ phone: cleanPhone });
+      if (wallet && wallet.coins > 0) {
+        const redeemable = Math.min(wallet.coins, maxCoinsRedeem, Math.max(0, afterCouponValue - 1));
+        if (redeemable > 0) {
+          verifiedCoinsUsed = redeemable;
+          wallet.coins -= redeemable;
+          wallet.updatedAt = new Date();
+          await wallet.save();
+        }
+      }
+    }
+
+    const netBagValue = Math.max(1, afterCouponValue - verifiedCoinsUsed);
     const normalizedMode = paymentMethod === 'COD' ? 'COD' : 'UPI';
 
-    // Enforce Admin Max COD Amount Rule
     if (normalizedMode === 'COD' && maxCodLimit > 0 && netBagValue > maxCodLimit) {
       return res.status(400).json({
         success: false,
@@ -1388,6 +1560,7 @@ app.post('/api/orders', async (req, res) => {
     const appliedDelivery = normalizedMode === 'COD' ? deliveryFeeSetting : 0;
     const verifiedFinalTotal = Math.max(1, netBagValue + appliedDelivery);
     const unlockedGift = (giftThreshold > 0 && netBagValue >= giftThreshold) ? giftTitle : "";
+    const potentialCoinsEarned = coinsEarnPct > 0 ? Math.floor((netBagValue * coinsEarnPct) / 100) : 0;
 
     const verifiedAdvancePaid = normalizedMode === 'COD'
       ? Math.max(1, Math.round((verifiedFinalTotal * codAdvancePctSetting) / 100))
@@ -1408,7 +1581,6 @@ app.post('/api/orders', async (req, res) => {
     const orderId = 'AUR-' + Math.floor(100000 + Math.random() * 900000);
     const orderDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
-    const cleanPhone = String(phone).replace(/[^0-9]/g, '');
 
     const order = await Order.create({
       id: orderId,
@@ -1419,10 +1591,12 @@ app.post('/api/orders', async (req, res) => {
       city,
       state,
       items: verifiedItems,
-      giftNote: (giftNote || "").trim(),
       freeGiftUnlocked: unlockedGift,
       subTotal: verifiedSubTotal,
       discountApplied: verifiedDiscount,
+      coinsUsed: verifiedCoinsUsed,
+      coinsEarned: potentialCoinsEarned,
+      coinsCredited: false,
       deliveryCharge: appliedDelivery,
       couponCode: verifiedCouponCode,
       total: verifiedFinalTotal,
@@ -1442,7 +1616,12 @@ app.post('/api/orders', async (req, res) => {
 
     await AbandonedCart.deleteOne({ phone: cleanPhone }).catch(() => {});
 
-    res.json({ success: true, orderId: order.id, verifiedTotal: verifiedFinalTotal });
+    res.json({
+      success: true,
+      orderId: order.id,
+      verifiedTotal: verifiedFinalTotal,
+      coinsEarned: potentialCoinsEarned
+    });
     sendTelegramAlert(order).catch(e => console.error("Background Telegram error:", e.message));
   } catch (err) {
     res.status(500).json({ success: false, message: "Order creation failed" });
@@ -1484,9 +1663,14 @@ app.get('/api/orders/track', async (req, res) => {
     const matched = allOrders.filter(o =>
       o.id.toLowerCase() === query || (cleanDigits.length >= 6 && o.phone.includes(cleanDigits))
     );
-    res.json({ success: true, orders: matched });
+    let walletCoins = 0;
+    if (cleanDigits.length === 10) {
+      const w = await Wallet.findOne({ phone: cleanDigits }).lean();
+      walletCoins = w ? (w.coins || 0) : 0;
+    }
+    res.json({ success: true, orders: matched, walletCoins });
   } catch (err) {
-    res.status(500).json({ success: false, orders: [] });
+    res.status(500).json({ success: false, orders: [], walletCoins: 0 });
   }
 });
 
@@ -1540,13 +1724,15 @@ app.post('/api/admin/orders', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-    const [orders, coupons, settings, products, abandonedCarts, stockNotifies] = await Promise.all([
+    const [orders, coupons, settings, products, abandonedCarts, stockNotifies, categories, wallets] = await Promise.all([
       Order.find().sort({ createdAt: -1 }).lean(),
       Coupon.find().lean(),
       Settings.findOne({ key: 'main' }),
       Product.find().sort({ _id: -1 }).lean(),
       AbandonedCart.find().sort({ updatedAt: -1 }).lean(),
-      StockNotify.find().sort({ createdAt: -1 }).lean()
+      StockNotify.find().sort({ createdAt: -1 }).lean(),
+      Category.find().lean(),
+      Wallet.find().sort({ coins: -1 }).lean()
     ]);
 
     let activeSettings = settings
@@ -1556,6 +1742,8 @@ app.post('/api/admin/orders', async (req, res) => {
           maxCodOrderAmount: settings.maxCodOrderAmount ?? 2000,
           freeGiftThreshold: settings.freeGiftThreshold ?? 1499,
           freeGiftTitle: settings.freeGiftTitle || "Luxury Surprise Jewellery Box",
+          coinsEarnPercent: settings.coinsEarnPercent ?? 5,
+          maxCoinsRedeemPerOrder: settings.maxCoinsRedeemPerOrder ?? 200,
           dealEndTime: settings.dealEndTime,
           metaPixelId: settings.metaPixelId || ""
         }
@@ -1565,6 +1753,8 @@ app.post('/api/admin/orders', async (req, res) => {
           maxCodOrderAmount: 2000,
           freeGiftThreshold: 1499,
           freeGiftTitle: "Luxury Surprise Jewellery Box",
+          coinsEarnPercent: 5,
+          maxCoinsRedeemPerOrder: 200,
           dealEndTime: 0,
           metaPixelId: ""
         };
@@ -1587,9 +1777,11 @@ app.post('/api/admin/orders', async (req, res) => {
       success: true,
       orders,
       products,
+      categories,
       coupons,
       abandonedCarts,
       stockNotifies,
+      wallets,
       storeSettings: activeSettings,
       lowStockProducts,
       analytics: {
@@ -1630,6 +1822,7 @@ app.delete('/api/admin/orders/:id', async (req, res) => {
   }
 });
 
+// Order Status Update (Auto-Credits AURA Coins on 'Delivered' & Restores Stock on 'Cancelled')
 app.patch('/api/admin/orders/:id/status', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -1656,6 +1849,20 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
           await p.save();
         }
       }
+    }
+
+    // Credit AURA Coins automatically when order is marked Delivered (only once)
+    if (status === 'Delivered' && !order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
+      await Wallet.findOneAndUpdate(
+        { phone: order.phone },
+        {
+          $setOnInsert: { phone: order.phone },
+          $set: { customerName: order.customerName, updatedAt: new Date() },
+          $inc: { coins: order.coinsEarned }
+        },
+        { upsert: true }
+      );
+      order.coinsCredited = true;
     }
 
     order.status = status;
