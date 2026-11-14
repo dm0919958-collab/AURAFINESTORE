@@ -54,48 +54,8 @@
           </a>
         </div>
 
-        <!-- Desktop Navigation -->
-        <nav class="hidden lg:flex items-center gap-6 text-xs font-bold tracking-wider text-stone-300 uppercase">
-          <a href="#catalogSection" onclick="showHomeCatalog()" class="text-amber-400 hover:text-amber-300 transition flex items-center gap-1.5"><i class="fa-solid fa-house text-amber-500"></i> Home</a>
-
-          <div class="relative group">
-            <button onclick="filterBySection('Men', 'All')" class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition uppercase"><span>Men</span><i class="fa-solid fa-chevron-down text-[9px]"></i></button>
-            <div class="absolute left-0 top-full hidden group-hover:block w-52 bg-stone-900 border border-amber-500/25 rounded-2xl shadow-2xl p-2 space-y-1 z-50 text-stone-200">
-              <a href="#catalogSection" onclick="filterBySection('Men', 'Shirts')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">👔 Oxford Shirts</a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">👕 Supima Tees</a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'Watches')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">⌚ Chrono Watches</a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'Trousers')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">👖 Formal Trousers</a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'Perfumes')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">✨ Royal Perfumes</a>
-              <a href="#catalogSection" onclick="filterBySection('Men', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore All Men's &rarr;</a>
-            </div>
-          </div>
-
-          <div class="relative group">
-            <button onclick="filterBySection('Women', 'All')" class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition uppercase"><span>Women</span><i class="fa-solid fa-chevron-down text-[9px]"></i></button>
-            <div class="absolute left-0 top-full hidden group-hover:block w-56 bg-stone-900 border border-amber-500/25 rounded-2xl shadow-2xl p-2 space-y-1 z-50 text-stone-200">
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Jhumka')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">✨ Royal Jhumkas</a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Studs')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">💎 Solitaire Studs</a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Kurtis')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">👗 Flared Kurtis</a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Sarees')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">🥻 Banarasi Sarees</a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Handbags')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">👜 Handbags & Clutches</a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'Bangles')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">💫 Temple Bangles</a>
-              <a href="#catalogSection" onclick="filterBySection('Women', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore All Women's &rarr;</a>
-            </div>
-          </div>
-
-          <div class="relative group">
-            <button onclick="filterBySection('Gifts', 'All')" class="flex items-center gap-1.5 text-rose-300 hover:text-rose-200 py-1.5 px-3 rounded-full bg-rose-950/60 border border-rose-500/30 font-extrabold uppercase">
-              <i class="fa-solid fa-heart text-rose-500 animate-pulse"></i><span>GF & BF Gifts</span><i class="fa-solid fa-chevron-down text-[8px]"></i>
-            </button>
-            <div class="absolute left-0 top-full hidden group-hover:block w-64 bg-stone-900 border border-rose-500/25 rounded-2xl shadow-2xl p-2 space-y-1 z-50 text-stone-200">
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Couples')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300">💑 Couple Sets & Rings</a>
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Romantic')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300">💖 100 Languages & Rose</a>
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Gift Sets')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300">🌹 Luxury Gift Hampers</a>
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'Customized Lamps')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-rose-300">💡 3D Galaxy Crystal Lamps</a>
-              <a href="#catalogSection" onclick="filterBySection('Gifts', 'All')" class="block px-3 py-2 text-[11px] text-rose-400 font-bold border-t border-stone-800 mt-1">Explore All Gifts &rarr;</a>
-            </div>
-          </div>
-        </nav>
+        <!-- Dynamic Desktop Navigation -->
+        <nav id="desktopDynamicNav" class="hidden lg:flex items-center gap-5 text-xs font-bold tracking-wider text-stone-300 uppercase overflow-x-auto"></nav>
 
         <!-- Desktop Search Input -->
         <div class="hidden md:flex flex-1 max-w-[200px] mx-2 relative">
@@ -108,8 +68,8 @@
           <button onclick="openSupportModal()" title="Help & Support" class="flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-950/75 hover:bg-emerald-900 px-2.5 sm:px-3 py-2 rounded-full border border-emerald-500/40 transition">
             <i class="fa-solid fa-headset text-emerald-400"></i><span class="hidden sm:inline">Help & Support</span>
           </button>
-          <button onclick="openMyOrdersModal()" title="Track Orders" class="flex items-center gap-1.5 text-xs font-bold text-amber-200 bg-stone-900 hover:bg-stone-800 px-2.5 sm:px-3 py-2 rounded-full border border-amber-500/35 transition">
-            <i class="fa-solid fa-bag-shopping text-amber-400"></i><span class="hidden sm:inline">Track Orders</span>
+          <button onclick="openMyOrdersModal()" title="Track Orders & AURA Coins" class="flex items-center gap-1.5 text-xs font-bold text-amber-200 bg-stone-900 hover:bg-stone-800 px-2.5 sm:px-3 py-2 rounded-full border border-amber-500/35 transition">
+            <i class="fa-solid fa-bag-shopping text-amber-400"></i><span class="hidden sm:inline">Orders & Coins</span>
           </button>
           <button onclick="openWishlistModal()" title="My Wishlist" class="relative p-2.5 bg-stone-900 hover:bg-stone-800 rounded-full text-rose-400 border border-rose-500/35 transition">
             <i class="fa-solid fa-heart text-sm"></i>
@@ -144,7 +104,7 @@
       <button type="button" onclick="dismissLiveSaleToast(event)" class="text-stone-500 hover:text-white text-sm px-1">&times;</button>
     </div>
 
-    <!-- Mobile Slide-Out Navigation Drawer -->
+    <!-- Mobile Slide-Out Dynamic Navigation Drawer -->
     <div id="mobileMenuDrawer" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex">
       <div class="bg-stone-950 border-r border-amber-500/30 w-80 max-w-[85vw] h-full flex flex-col justify-between p-5 overflow-y-auto shadow-2xl">
         <div class="space-y-5">
@@ -156,56 +116,7 @@
             <button onclick="toggleMobileDrawer(false)" class="text-stone-400 hover:text-amber-400 text-2xl font-bold">&times;</button>
           </div>
 
-          <div class="space-y-2 text-xs font-bold">
-            <a href="#catalogSection" onclick="showHomeCatalog(); toggleMobileDrawer(false);" class="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30">
-              <i class="fa-solid fa-house"></i> Home Collections
-            </a>
-
-            <div class="bg-stone-900/80 border border-stone-800 rounded-xl overflow-hidden">
-              <button onclick="toggleMobileSub('mobSubMen')" class="w-full flex justify-between items-center p-3 text-stone-200 hover:text-amber-400">
-                <span>👔 MEN'S COLLECTION</span>
-                <i class="fa-solid fa-chevron-down text-[10px]"></i>
-              </button>
-              <div id="mobSubMen" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">
-                <a href="#catalogSection" onclick="filterBySection('Men', 'Shirts'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Oxford Shirts</a>
-                <a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Supima Tees</a>
-                <a href="#catalogSection" onclick="filterBySection('Men', 'Watches'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Chrono Watches</a>
-                <a href="#catalogSection" onclick="filterBySection('Men', 'Trousers'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Formal Trousers</a>
-                <a href="#catalogSection" onclick="filterBySection('Men', 'Perfumes'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Royal Perfumes</a>
-                <a href="#catalogSection" onclick="filterBySection('Men', 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All Men's &rarr;</a>
-              </div>
-            </div>
-
-            <div class="bg-stone-900/80 border border-stone-800 rounded-xl overflow-hidden">
-              <button onclick="toggleMobileSub('mobSubWomen')" class="w-full flex justify-between items-center p-3 text-stone-200 hover:text-amber-400">
-                <span>✨ WOMEN'S COLLECTION</span>
-                <i class="fa-solid fa-chevron-down text-[10px]"></i>
-              </button>
-              <div id="mobSubWomen" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">
-                <a href="#catalogSection" onclick="filterBySection('Women', 'Jhumka'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Royal Jhumkas</a>
-                <a href="#catalogSection" onclick="filterBySection('Women', 'Studs'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Solitaire Studs</a>
-                <a href="#catalogSection" onclick="filterBySection('Women', 'Kurtis'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Flared Kurtis</a>
-                <a href="#catalogSection" onclick="filterBySection('Women', 'Sarees'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Banarasi Sarees</a>
-                <a href="#catalogSection" onclick="filterBySection('Women', 'Handbags'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Handbags & Clutches</a>
-                <a href="#catalogSection" onclick="filterBySection('Women', 'Bangles'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• Temple Bangles</a>
-                <a href="#catalogSection" onclick="filterBySection('Women', 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All Women's &rarr;</a>
-              </div>
-            </div>
-
-            <div class="bg-rose-950/30 border border-rose-500/30 rounded-xl overflow-hidden">
-              <button onclick="toggleMobileSub('mobSubGifts')" class="w-full flex justify-between items-center p-3 text-rose-300">
-                <span>🎁 GF & BF SPECIAL GIFTS</span>
-                <i class="fa-solid fa-chevron-down text-[10px]"></i>
-              </button>
-              <div id="mobSubGifts" class="hidden px-3 pb-3 space-y-1.5 text-rose-200/80 font-semibold border-t border-rose-500/20 pt-2">
-                <a href="#catalogSection" onclick="filterBySection('Gifts', 'Couples'); toggleMobileDrawer(false);" class="block py-1 hover:text-rose-300">• Couple Sets & Rings</a>
-                <a href="#catalogSection" onclick="filterBySection('Gifts', 'Romantic'); toggleMobileDrawer(false);" class="block py-1 hover:text-rose-300">• 100 Languages & Rose</a>
-                <a href="#catalogSection" onclick="filterBySection('Gifts', 'Gift Sets'); toggleMobileDrawer(false);" class="block py-1 hover:text-rose-300">• Luxury Gift Hampers</a>
-                <a href="#catalogSection" onclick="filterBySection('Gifts', 'Customized Lamps'); toggleMobileDrawer(false);" class="block py-1 hover:text-rose-300">• 3D Galaxy Crystal Lamps</a>
-                <a href="#catalogSection" onclick="filterBySection('Gifts', 'All'); toggleMobileDrawer(false);" class="block py-1 text-rose-400 font-bold">All Gifts &rarr;</a>
-              </div>
-            </div>
-          </div>
+          <div id="mobileDynamicCategoriesList" class="space-y-2 text-xs font-bold"></div>
         </div>
 
         <div class="pt-4 border-t border-stone-800 space-y-2 text-xs">
@@ -214,7 +125,7 @@
             <span id="mobDrawerWishCount" class="bg-rose-600 text-white px-2 py-0.5 rounded-full text-[10px]">0</span>
           </button>
           <button onclick="toggleMobileDrawer(false); openMyOrdersModal();" class="w-full py-2.5 px-3 rounded-xl bg-stone-900 border border-amber-500/30 text-amber-300 font-bold text-left">
-            <i class="fa-solid fa-truck-fast mr-1.5"></i> Track My Orders
+            <i class="fa-solid fa-coins mr-1.5"></i> My Orders & AURA Coins
           </button>
           <button onclick="toggleMobileDrawer(false); openSupportModal();" class="w-full py-2.5 px-3 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 font-bold text-left">
             <i class="fa-solid fa-headset mr-1.5"></i> Help & Customer Support
@@ -249,8 +160,8 @@
           <div><h4 class="text-xs font-bold text-stone-100">Free UPI Delivery</h4><p class="text-[10px] text-stone-400">Zero Shipping on Prepaid</p></div>
         </div>
         <div class="bg-stone-900/80 border border-amber-500/15 p-3.5 rounded-2xl flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-lg"><i class="fa-solid fa-shield-halved"></i></div>
-          <div><h4 class="text-xs font-bold text-stone-100">100% Verified UTR</h4><p class="text-[10px] text-stone-400">Safe UPI & Token Support</p></div>
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-lg"><i class="fa-solid fa-coins"></i></div>
+          <div><h4 class="text-xs font-bold text-stone-100">Earn AURA Coins</h4><p class="text-[10px] text-stone-400">Cashback on Every Order</p></div>
         </div>
         <div class="bg-stone-900/80 border border-amber-500/15 p-3.5 rounded-2xl flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center text-lg"><i class="fa-solid fa-arrows-rotate"></i></div>
@@ -272,12 +183,8 @@
             <h3 id="currentCategoryHeading" class="font-cinzel font-bold text-2xl sm:text-3xl text-amber-50 mt-0.5">Home Collections</h3>
             <p class="text-xs text-stone-400 mt-1">Presenting <span id="countDisplay" class="font-bold text-amber-400">0</span> master creations</p>
           </div>
-          <div class="flex items-center gap-2 overflow-x-auto pb-1" id="categoryTabs">
-            <button onclick="showHomeCatalog(this)" class="cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold border border-amber-400"><i class="fa-solid fa-house mr-1"></i> Home</button>
-            <button onclick="filterBySection('Men', 'All', this)" class="cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 px-5 py-2 rounded-full text-xs font-bold text-stone-300">Men</button>
-            <button onclick="filterBySection('Women', 'All', this)" class="cat-btn bg-stone-900 hover:bg-stone-800 border border-stone-700 px-5 py-2 rounded-full text-xs font-bold text-stone-300">Women</button>
-            <button onclick="filterBySection('Gifts', 'All', this)" class="cat-btn bg-rose-950/60 hover:bg-rose-900/70 border border-rose-500/40 px-5 py-2 rounded-full text-xs font-bold text-rose-300">🎁 GF & BF Gifts</button>
-          </div>
+          <!-- Dynamic Category Filter Tabs -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-1" id="categoryTabs"></div>
         </div>
 
         <!-- Sort & Price Range Filter Controls -->
@@ -320,7 +227,7 @@
     </main>
   </div>
 
-  <!-- Quick View Modal (With Smart Size Guide & Deep Product Share Link) -->
+  <!-- Quick View Modal -->
   <div id="quickViewModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto border border-amber-500/30">
       <button onclick="closeQuickView()" class="absolute top-5 right-5 text-stone-400 hover:text-amber-400 text-3xl font-bold">&times;</button>
@@ -387,7 +294,7 @@
         </div>
       </div>
 
-      <!-- Customer Reviews Section (With Compressed Photo Upload) -->
+      <!-- Customer Reviews Section -->
       <div class="mt-8 pt-6 border-t border-stone-800 space-y-4">
         <div class="flex justify-between items-center">
           <h4 class="font-cinzel font-bold text-lg text-amber-300"><i class="fa-solid fa-star text-amber-400 mr-1.5"></i>Customer Reviews & Ratings</h4>
@@ -503,7 +410,7 @@
     </div>
   </div>
 
-  <!-- Cart Drawer (With Free Gift Progress Bar & localStorage Persistence) -->
+  <!-- Cart Drawer (With Free Gift Progress Bar & Timed Coupons) -->
   <div id="cartDrawer" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden z-50 flex justify-end">
     <div class="bg-stone-900 text-stone-100 w-full max-w-md h-full flex flex-col p-6 shadow-2xl border-l border-amber-500/20">
       <div class="flex justify-between items-center pb-3 border-b border-stone-800">
@@ -544,7 +451,7 @@
     </div>
   </div>
 
-  <!-- 2-Step Checkout Modal -->
+  <!-- 2-Step Checkout Modal (With AURA Coins Wallet Redemption & Clean Layout) -->
   <div id="checkoutModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto border border-amber-500/25">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
@@ -587,9 +494,15 @@
             <i class="fa-solid fa-gift mr-1"></i> Congratulations! <span id="checkoutUnlockedGiftName"></span> will be packed FREE with your order!
           </div>
 
-          <div class="bg-rose-950/30 border border-rose-500/30 p-3 rounded-xl space-y-1.5">
-            <label class="block font-bold text-rose-300 text-[11px]"><i class="fa-solid fa-gift mr-1"></i> Add a Free Gift Note / Love Message (Optional):</label>
-            <input type="text" id="ordGiftNote" maxlength="120" placeholder="e.g. Happy Birthday My Love! From Rahul ❤️" class="w-full bg-stone-950 border border-rose-500/30 text-white rounded-lg px-2.5 py-2 text-xs">
+          <!-- AURA Coins Loyalty Wallet Redemption Box -->
+          <div id="auraCoinsCheckoutBox" class="hidden bg-amber-950/40 border border-amber-500/40 p-3 rounded-xl space-y-1.5">
+            <label class="flex items-center justify-between gap-2 cursor-pointer">
+              <span class="font-bold text-amber-300 text-xs flex items-center gap-1.5">
+                <input type="checkbox" id="useAuraCoinsCheckbox" onchange="handlePaymentModeChange(document.getElementById('ordPaymentMethod').value)" class="w-4 h-4 accent-amber-500">
+                <span><i class="fa-solid fa-coins text-amber-400 mr-1"></i> Redeem <b id="availableCoinsLabel">0</b> AURA Coins (-₹<b id="redeemableCoinsAmt">0</b>)</span>
+              </span>
+              <span class="text-[10px] bg-amber-500/20 text-amber-200 px-2 py-0.5 rounded-full font-mono">1 Coin = ₹1</span>
+            </label>
           </div>
 
           <div class="bg-stone-950 border border-stone-800 p-2.5 rounded-xl space-y-1.5">
@@ -610,9 +523,11 @@
           </div>
           <div class="bg-emerald-950/60 border border-emerald-500/30 p-3 rounded-xl space-y-1">
             <div class="flex justify-between text-stone-300 text-[11px]"><span>Bag Value:</span><span id="chkSubtotal" class="font-bold">₹0</span></div>
-            <div class="flex justify-between text-emerald-400 font-bold text-[11px]"><span>Discount (<span id="chkCouponCodeName">None</span>):</span><span id="chkDiscountAmt">-₹0</span></div>
+            <div class="flex justify-between text-emerald-400 font-bold text-[11px]"><span>Coupon Discount (<span id="chkCouponCodeName">None</span>):</span><span id="chkDiscountAmt">-₹0</span></div>
+            <div id="chkCoinsRow" class="hidden flex justify-between text-amber-300 font-bold text-[11px]"><span>AURA Coins Redeemed:</span><span id="chkCoinsAmt">-₹0</span></div>
             <div class="flex justify-between text-stone-300 text-[11px]"><span>Delivery Charge:</span><span id="chkDeliveryAmt" class="font-bold text-emerald-400">FREE</span></div>
             <div class="flex justify-between text-amber-400 font-extrabold text-xs pt-1 border-t border-emerald-500/20"><span>Total Order Value:</span><span id="chkFinalPayable">₹0</span></div>
+            <p id="chkEarnCoinsHint" class="hidden text-[10px] text-amber-300 pt-1"><i class="fa-solid fa-sparkles mr-1"></i>You will earn <b id="chkWillEarnCoins">0</b> AURA Coins upon delivery!</p>
           </div>
           <div class="bg-stone-950 p-4 rounded-2xl border border-amber-500/30 space-y-3 text-center">
             <div id="codNoticeBanner" class="hidden text-left bg-amber-950/60 border border-amber-500/30 p-2.5 rounded-xl space-y-1">
@@ -641,18 +556,25 @@
     </div>
   </div>
 
-  <!-- My Orders & Multi-Courier Live Tracking Modal -->
+  <!-- My Orders, AURA Coins Wallet & Multi-Courier Tracking Modal -->
   <div id="myOrdersModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto text-xs border border-amber-500/25">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
-        <div><h4 class="font-cinzel font-bold text-xl text-amber-300">My Orders & Tracking</h4><p class="text-[11px] text-stone-400">Live status timeline, multi-courier tracking & official PDF invoice</p></div>
+        <div><h4 class="font-cinzel font-bold text-xl text-amber-300">My Orders & AURA Coins Wallet</h4><p class="text-[11px] text-stone-400">Check your loyalty coins balance, live tracking & PDF invoices</p></div>
         <button onclick="closeMyOrdersModal()" class="text-stone-400 hover:text-amber-400 text-2xl font-bold">&times;</button>
       </div>
       <div class="flex gap-2">
         <input type="tel" id="myOrdersPhoneInput" placeholder="Enter 10-digit mobile number or Order ID" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl font-mono text-xs">
         <button onclick="fetchMyOrders()" class="bg-amber-500 text-stone-950 px-5 py-2.5 rounded-xl font-extrabold whitespace-nowrap">Find Orders</button>
       </div>
-      <div id="myOrdersListContainer" class="space-y-4 pt-2"><p class="text-center py-8 text-stone-500">Enter your phone number to check your purchases.</p></div>
+      <div id="myWalletSummaryBanner" class="hidden bg-gradient-to-r from-amber-950/80 to-stone-950 border border-amber-500/40 p-3.5 rounded-2xl flex items-center justify-between">
+        <div>
+          <p class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">Your AURA Loyalty Wallet</p>
+          <p class="text-lg font-black text-white mt-0.5"><i class="fa-solid fa-coins text-amber-400 mr-1.5"></i><span id="myWalletCoinsCount">0</span> AURA Coins</p>
+        </div>
+        <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full font-bold text-[11px]">Worth ₹<span id="myWalletRupeesWorth">0</span></span>
+      </div>
+      <div id="myOrdersListContainer" class="space-y-4 pt-2"><p class="text-center py-8 text-stone-500">Enter your phone number to check your purchases & wallet coins.</p></div>
     </div>
   </div>
 
@@ -751,19 +673,14 @@
       </div>
 
       <div class="space-y-3">
-        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">EXCLUSIVE WARDROBE</h4>
-        <ul class="space-y-2 text-stone-400">
-          <li><a href="#catalogSection" onclick="filterBySection('Men', 'Shirts')" class="hover:text-amber-300 transition">Formal & Casual Shirts</a></li>
-          <li><a href="#catalogSection" onclick="filterBySection('Men', 'T-Shirts')" class="hover:text-amber-300 transition">Supima Heavyweight Tees</a></li>
-          <li><a href="#catalogSection" onclick="filterBySection('Men', 'Watches')" class="hover:text-amber-300 transition">Chronograph Master Watches</a></li>
-          <li><a href="#catalogSection" onclick="filterBySection('Women', 'All')" class="hover:text-amber-300 transition">Royal Jhumkas & Sarees</a></li>
-        </ul>
+        <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">COLLECTIONS</h4>
+        <ul id="footerDynamicCategories" class="space-y-2 text-stone-400"></ul>
       </div>
 
       <div class="space-y-3">
         <h4 class="font-bold text-xs uppercase tracking-widest text-amber-400 font-cinzel">POLICIES & CONCIERGE</h4>
         <ul class="space-y-2 text-stone-400">
-          <li><a href="#" onclick="openMyOrdersModal(); return false;" class="hover:text-amber-300 transition">My Orders & Tracking Desk</a></li>
+          <li><a href="#" onclick="openMyOrdersModal(); return false;" class="hover:text-amber-300 transition">My Orders & AURA Coins</a></li>
           <li><a href="#" onclick="openSupportModal(); return false;" class="hover:text-emerald-400 transition font-bold text-emerald-400">Help & Support Desk</a></li>
           <li><a href="#" onclick="openLegalModal('privacy'); return false;" class="hover:text-amber-300 transition">Privacy Policy</a></li>
           <li><a href="#" onclick="openLegalModal('terms'); return false;" class="hover:text-amber-300 transition">Terms & Conditions</a></li>
@@ -800,14 +717,16 @@
   <script>
     const STORE_UPI_ID = "6289145092@ptsbi";
 
+    let dynamicCategories = [];
     let allProducts = [], dealBanners = [], currentDealIndex = 0, dealSliderInterval = null;
     let activeMainSection = 'Home', activeSubCategory = 'All', activeCoupons = [];
     let cart = JSON.parse(localStorage.getItem('aura_saved_cart') || '[]');
     let wishlistIds = JSON.parse(localStorage.getItem('aura_wishlist') || '[]');
     let recentlyViewedIds = JSON.parse(localStorage.getItem('aura_recent_views') || '[]');
-    let appliedDiscountRate = 0, appliedCouponCode = localStorage.getItem('aura_saved_coupon') || "", appliedCouponMinSpend = 0;
+    let appliedDiscountRate = 0, appliedCouponCode = localStorage.getItem('aura_saved_coupon') || "", appliedCouponMinSpend = 0, appliedCouponExpiresAt = 0;
     let storeDeliveryCharge = 0, storeCodAdvancePct = 15, storeMaxCodAmount = 2000;
     let storeFreeGiftThreshold = 1499, storeFreeGiftTitle = "Luxury Surprise Jewellery Box";
+    let storeCoinsEarnPct = 5, storeMaxCoinsRedeem = 200, customerAvailableCoins = 0;
     let dealEndTimeMs = 0, isPincodeValid = false;
     let currentOpenedProduct = null, currentSelectedSize = "", currentSelectedColor = "";
     let currentReviewPhotoBase64 = "";
@@ -839,6 +758,75 @@
       "IndiaPost": () => `https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx`,
       "Shiprocket": (awb) => `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`
     };
+
+    // Render Dynamic Categories across Desktop Header, Mobile Drawer, Filter Tabs & Footer
+    function renderDynamicNavigation() {
+      const desktopNav = document.getElementById('desktopDynamicNav');
+      const mobileList = document.getElementById('mobileDynamicCategoriesList');
+      const catTabs = document.getElementById('categoryTabs');
+      const footerCats = document.getElementById('footerDynamicCategories');
+
+      // 1. Desktop Nav
+      let desktopHtml = `<a href="#catalogSection" onclick="showHomeCatalog()" class="text-amber-400 hover:text-amber-300 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-house text-amber-500"></i> Home</a>`;
+      dynamicCategories.forEach(cat => {
+        const subs = cat.subCategories || [];
+        if (subs.length > 0) {
+          desktopHtml += `
+            <div class="relative group">
+              <button onclick="filterBySection('${cat.name}', 'All')" class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition uppercase whitespace-nowrap">
+                <span>${cat.name}</span><i class="fa-solid fa-chevron-down text-[9px]"></i>
+              </button>
+              <div class="absolute left-0 top-full hidden group-hover:block w-52 bg-stone-900 border border-amber-500/25 rounded-2xl shadow-2xl p-2 space-y-1 z-50 text-stone-200 normal-case">
+                ${subs.map(s => `<a href="#catalogSection" onclick="filterBySection('${cat.name}', '${s}')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">• ${s}</a>`).join('')}
+                <a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore All ${cat.name} &rarr;</a>
+              </div>
+            </div>
+          `;
+        } else {
+          desktopHtml += `<button onclick="filterBySection('${cat.name}', 'All')" class="hover:text-amber-400 py-3 transition uppercase whitespace-nowrap">${cat.name}</button>`;
+        }
+      });
+      desktopNav.innerHTML = desktopHtml;
+
+      // 2. Mobile Slide Drawer
+      let mobileHtml = `
+        <a href="#catalogSection" onclick="showHomeCatalog(); toggleMobileDrawer(false);" class="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          <i class="fa-solid fa-house"></i> Home Collections
+        </a>
+      `;
+      dynamicCategories.forEach((cat, idx) => {
+        const subs = cat.subCategories || [];
+        const subDivId = `mobDynSub_${idx}`;
+        mobileHtml += `
+          <div class="bg-stone-900/80 border border-stone-800 rounded-xl overflow-hidden">
+            <button onclick="${subs.length ? `toggleMobileSub('${subDivId}')` : `filterBySection('${cat.name}', 'All'); toggleMobileDrawer(false);`}" class="w-full flex justify-between items-center p-3 text-stone-200 hover:text-amber-400 uppercase">
+              <span>${cat.name}</span>
+              ${subs.length ? `<i class="fa-solid fa-chevron-down text-[10px]"></i>` : `<i class="fa-solid fa-arrow-right text-[10px]"></i>`}
+            </button>
+            ${subs.length ? `
+              <div id="${subDivId}" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">
+                ${subs.map(s => `<a href="#catalogSection" onclick="filterBySection('${cat.name}', '${s}'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• ${s}</a>`).join('')}
+                <a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All ${cat.name} &rarr;</a>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+      mobileList.innerHTML = mobileHtml;
+
+      // 3. Catalog Top Filter Pills
+      catTabs.innerHTML = [
+        `<button onclick="showHomeCatalog(this)" class="cat-btn ${activeMainSection === 'Home' ? 'active bg-amber-500 text-stone-950 font-extrabold border-amber-400' : 'bg-stone-900 hover:bg-stone-800 border-stone-700 font-bold text-stone-300'} px-5 py-2 rounded-full text-xs border whitespace-nowrap"><i class="fa-solid fa-house mr-1"></i> Home</button>`,
+        ...dynamicCategories.map(cat => `
+          <button onclick="filterBySection('${cat.name}', 'All', this)" class="cat-btn ${activeMainSection === cat.name ? 'active bg-amber-500 text-stone-950 font-extrabold border-amber-400' : 'bg-stone-900 hover:bg-stone-800 border-stone-700 font-bold text-stone-300'} px-5 py-2 rounded-full text-xs border whitespace-nowrap">${cat.name}</button>
+        `)
+      ].join('');
+
+      // 4. Footer Links
+      footerCats.innerHTML = dynamicCategories.map(cat => `
+        <li><a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All')" class="hover:text-amber-300 transition">${cat.name} Collection</a></li>
+      `).join('');
+    }
 
     function persistCartLocal() {
       localStorage.setItem('aura_saved_cart', JSON.stringify(cart));
@@ -1113,12 +1101,6 @@
       document.getElementById('legalPolicyModal').classList.add('hidden');
     }
 
-    const sectionSubCategories = {
-      "Men": ["Shirts", "T-Shirts", "Watches", "Trousers", "Perfumes"],
-      "Women": ["Jhumka", "Studs", "Kurtis", "Sarees", "Handbags", "Bangles"],
-      "Gifts": ["Couples", "Romantic", "Gift Sets", "Customized Lamps"]
-    };
-
     function toggleMobileDrawer(open) {
       const drawer = document.getElementById('mobileMenuDrawer');
       if (open) drawer.classList.remove('hidden');
@@ -1253,7 +1235,32 @@
         <span class="bg-black px-1.5 py-0.5 rounded font-bold text-amber-400">${s}</span>s
       `;
     }
-    setInterval(updateFlashTimerUI, 1000);
+
+    // Live Coupon Expiry Checker & Countdown
+    function getCouponTimeTag(expiresAt) {
+      if (!expiresAt || expiresAt <= 0) return "";
+      const diff = expiresAt - Date.now();
+      if (diff <= 0) return "EXPIRED";
+      const sec = Math.floor(diff / 1000);
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return `${h}h ${m}m ${s}s`;
+    }
+
+    setInterval(() => {
+      updateFlashTimerUI();
+      if (activeCoupons.some(c => c.expiresAt && c.expiresAt > 0)) {
+        renderStoreCoupons();
+      }
+      if (appliedCouponCode && appliedCouponExpiresAt > 0 && Date.now() >= appliedCouponExpiresAt) {
+        appliedCouponCode = "";
+        appliedDiscountRate = 0;
+        appliedCouponExpiresAt = 0;
+        persistCartLocal();
+        updateCartUI();
+      }
+    }, 1000);
 
     async function loadStore() {
       try {
@@ -1262,6 +1269,7 @@
         const hash = JSON.stringify(data);
         if (window._lastStoreHash === hash) return;
         window._lastStoreHash = hash;
+        dynamicCategories = data.categories || [];
         allProducts = data.products || [];
         activeCoupons = data.coupons || [];
         dealBanners = data.dealBanners || [];
@@ -1271,6 +1279,8 @@
           storeMaxCodAmount = data.storeSettings.maxCodOrderAmount ?? 2000;
           storeFreeGiftThreshold = data.storeSettings.freeGiftThreshold ?? 1499;
           storeFreeGiftTitle = data.storeSettings.freeGiftTitle || "Luxury Surprise Jewellery Box";
+          storeCoinsEarnPct = data.storeSettings.coinsEarnPercent ?? 5;
+          storeMaxCoinsRedeem = data.storeSettings.maxCoinsRedeemPerOrder ?? 200;
           dealEndTimeMs = data.storeSettings.dealEndTime || 0;
           if (data.storeSettings.metaPixelId) {
             initMetaPixel(data.storeSettings.metaPixelId);
@@ -1279,15 +1289,19 @@
         }
         if (appliedCouponCode) {
           const found = activeCoupons.find(c => c.code === appliedCouponCode);
-          if (found) {
+          const isExpired = found && found.expiresAt > 0 && Date.now() >= found.expiresAt;
+          if (found && !isExpired) {
             appliedDiscountRate = found.discountPercent;
             appliedCouponMinSpend = found.minSpend || 0;
+            appliedCouponExpiresAt = found.expiresAt || 0;
             document.getElementById('couponInput').value = appliedCouponCode;
           } else {
             appliedCouponCode = "";
             appliedDiscountRate = 0;
+            appliedCouponExpiresAt = 0;
           }
         }
+        renderDynamicNavigation();
         updateWishlistBadges();
         renderStoreCoupons(); setupDealCarousel(); renderStore(); renderRecentlyViewed(); updateCartUI();
 
@@ -1304,8 +1318,23 @@
 
     function renderStoreCoupons() {
       const visible = activeCoupons.filter(c => c.showOnStore);
-      document.getElementById('topCouponsContainer').innerHTML = visible.length ? visible.map(c => `<span class="cursor-pointer bg-stone-900 px-2.5 py-0.5 rounded-full border border-amber-500/30 text-[11px]" onclick="quickApplyCoupon('${c.code}')">${c.code} (${c.discountPercent}% OFF)</span>`).join('') : `<span>Flat 20% OFF with AURA20</span>`;
-      document.getElementById('cartCouponsBadges').innerHTML = visible.map(c => `<div onclick="quickApplyCoupon('${c.code}')" class="cursor-pointer bg-stone-950 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2"><span class="font-mono font-bold text-amber-300">${c.code}</span><span class="text-emerald-400 font-bold">(${c.discountPercent}% OFF)</span></div>`).join('');
+      document.getElementById('topCouponsContainer').innerHTML = visible.length
+        ? visible.map(c => {
+            const tag = getCouponTimeTag(c.expiresAt);
+            const isExp = tag === "EXPIRED";
+            return isExp
+              ? `<span class="bg-rose-950/80 px-2.5 py-0.5 rounded-full border border-rose-500/40 text-[10px] text-rose-400 line-through">${c.code} (Expired)</span>`
+              : `<span class="cursor-pointer bg-stone-900 px-2.5 py-0.5 rounded-full border border-amber-500/30 text-[11px] whitespace-nowrap" onclick="quickApplyCoupon('${c.code}')">${c.code} (${c.discountPercent}% OFF${tag ? ` • ⏳ ${tag}` : ''})</span>`;
+          }).join('')
+        : `<span>Flat 20% OFF with AURA20</span>`;
+
+      document.getElementById('cartCouponsBadges').innerHTML = visible.map(c => {
+        const tag = getCouponTimeTag(c.expiresAt);
+        const isExp = tag === "EXPIRED";
+        return isExp
+          ? `<div class="bg-rose-950/60 border border-rose-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 opacity-70"><span class="font-mono font-bold text-rose-400 line-through">${c.code}</span><span class="text-rose-400 font-bold text-[10px]">EXPIRED</span></div>`
+          : `<div onclick="quickApplyCoupon('${c.code}')" class="cursor-pointer bg-stone-950 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2"><span class="font-mono font-bold text-amber-300">${c.code}</span><span class="text-emerald-400 font-bold">(${c.discountPercent}% OFF)</span>${tag ? `<span class="text-[10px] text-amber-400 font-mono">⏳ ${tag}</span>` : ''}</div>`;
+      }).join('');
     }
 
     function quickApplyCoupon(code) { document.getElementById('couponInput').value = code; applyCoupon(); }
@@ -1314,15 +1343,14 @@
       activeMainSection = 'Home'; activeSubCategory = 'All';
       document.getElementById('currentCategoryHeading').innerText = "Home Collections";
       document.getElementById('subCategoryTabsBar').classList.add('hidden');
-      document.querySelectorAll('.cat-btn').forEach(b => { b.className = "cat-btn bg-stone-900 border border-stone-700 px-5 py-2 rounded-full text-xs font-bold text-stone-300"; });
-      const homeBtn = btn || document.querySelector('#categoryTabs button');
-      if (homeBtn) homeBtn.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold border border-amber-400";
+      renderDynamicNavigation();
       renderStore();
     }
 
     function renderSubCategoryBar(mainSec, activeSub) {
       const subBar = document.getElementById('subCategoryTabsBar');
-      const subs = sectionSubCategories[mainSec] || [];
+      const catObj = dynamicCategories.find(c => c.name === mainSec);
+      const subs = (catObj && catObj.subCategories) ? catObj.subCategories : [];
       if (!subs.length) { subBar.classList.add('hidden'); return; }
       subBar.classList.remove('hidden');
       subBar.innerHTML = [`<button onclick="filterBySection('${mainSec}', 'All')" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap ${activeSub === 'All' ? 'bg-amber-500/25 text-amber-300 border border-amber-400' : 'bg-stone-950 text-stone-400 border border-stone-800'}">All ${mainSec}</button>`,
@@ -1332,10 +1360,8 @@
 
     function filterBySection(mainSec, subCat = 'All', btn = null) {
       activeMainSection = mainSec; activeSubCategory = subCat;
-      document.getElementById('currentCategoryHeading').innerHTML = (mainSec === 'Gifts' ? 'GF & BF Special Gifts' : mainSec) + (subCat !== 'All' ? ` &rarr; ${subCat}` : '');
-      document.querySelectorAll('.cat-btn').forEach(b => { b.className = "cat-btn bg-stone-900 border border-stone-700 px-5 py-2 rounded-full text-xs font-bold text-stone-300"; });
-      if (btn) btn.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold border border-amber-400";
-      else document.querySelectorAll('#categoryTabs button').forEach(b => { if (b.innerText.includes(mainSec)) b.className = "cat-btn active bg-amber-500 text-stone-950 px-5 py-2 rounded-full text-xs font-extrabold border border-amber-400"; });
+      document.getElementById('currentCategoryHeading').innerHTML = mainSec + (subCat !== 'All' ? ` &rarr; ${subCat}` : '');
+      renderDynamicNavigation();
       renderSubCategoryBar(mainSec, subCat);
       renderStore();
     }
@@ -1347,7 +1373,7 @@
 
       let filtered = allProducts.filter(p => {
         const matchesSearch = search.length > 0
-          ? (p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search) || (p.category && p.category.toLowerCase().includes(search)))
+          ? (p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search) || (p.category && p.category.toLowerCase().includes(search)) || (p.mainCategory && p.mainCategory.toLowerCase().includes(search)))
           : (activeMainSection === 'Home' ? p.showOnHome === true : (p.mainCategory === activeMainSection && (activeSubCategory === 'All' || p.category === activeSubCategory)));
 
         if (!matchesSearch) return false;
@@ -1618,10 +1644,19 @@
 
     function calculateCartTotals(mode = 'UPI') {
       let subTotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
-      let discountAmt = (appliedDiscountRate > 0 && subTotal >= appliedCouponMinSpend) ? Math.round((subTotal * appliedDiscountRate) / 100) : 0;
-      const netBagValue = subTotal - discountAmt;
+      const isCouponExpired = appliedCouponExpiresAt > 0 && Date.now() >= appliedCouponExpiresAt;
+      let discountAmt = (!isCouponExpired && appliedDiscountRate > 0 && subTotal >= appliedCouponMinSpend)
+        ? Math.round((subTotal * appliedDiscountRate) / 100)
+        : 0;
+      const afterCouponValue = Math.max(1, subTotal - discountAmt);
+
+      const useCoinsChecked = document.getElementById('useAuraCoinsCheckbox')?.checked || false;
+      const maxRedeemable = Math.min(customerAvailableCoins, storeMaxCoinsRedeem, Math.max(0, afterCouponValue - 1));
+      const coinsDiscount = (useCoinsChecked && maxRedeemable > 0) ? maxRedeemable : 0;
+
+      const netBagValue = Math.max(1, afterCouponValue - coinsDiscount);
       const deliveryCharge = mode === 'COD' ? storeDeliveryCharge : 0;
-      return { subTotal, discountAmt, netBagValue, finalAmt: netBagValue + deliveryCharge, deliveryCharge };
+      return { subTotal, discountAmt, afterCouponValue, maxRedeemable, coinsDiscount, netBagValue, finalAmt: netBagValue + deliveryCharge, deliveryCharge };
     }
 
     function updateFreeGiftProgressUI(netBagValue) {
@@ -1672,12 +1707,18 @@
       const status = document.getElementById('couponStatusMsg');
       const { subTotal } = calculateCartTotals('UPI');
       const found = activeCoupons.find(c => c.code === code);
-      if (found && subTotal >= (found.minSpend || 0)) {
-        appliedDiscountRate = found.discountPercent; appliedCouponCode = found.code; appliedCouponMinSpend = found.minSpend || 0;
+      const isExpired = found && found.expiresAt > 0 && Date.now() >= found.expiresAt;
+
+      if (found && !isExpired && subTotal >= (found.minSpend || 0)) {
+        appliedDiscountRate = found.discountPercent;
+        appliedCouponCode = found.code;
+        appliedCouponMinSpend = found.minSpend || 0;
+        appliedCouponExpiresAt = found.expiresAt || 0;
         status.innerText = `Applied ${found.discountPercent}% OFF!`; status.className = "text-[11px] text-emerald-400 block font-bold";
       } else {
-        appliedDiscountRate = 0; appliedCouponCode = "";
-        status.innerText = found ? `Min order ₹${found.minSpend} required!` : "Invalid coupon code!"; status.className = "text-[11px] text-rose-400 block font-bold";
+        appliedDiscountRate = 0; appliedCouponCode = ""; appliedCouponExpiresAt = 0;
+        status.innerText = isExpired ? `Coupon "${code}" has expired!` : (found ? `Min order ₹${found.minSpend} required!` : "Invalid coupon code!");
+        status.className = "text-[11px] text-rose-400 block font-bold";
       }
       persistCartLocal();
       status.classList.remove('hidden'); updateCartUI();
@@ -1697,7 +1738,7 @@
     }
     function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
 
-    function goToStep2Payment() {
+    async function goToStep2Payment() {
       const name = document.getElementById('ordName').value.trim(), phone = document.getElementById('ordPhone').value.trim(), pin = document.getElementById('ordPincode').value.trim();
       const city = document.getElementById('ordCity').value.trim(), state = document.getElementById('ordState').value.trim(), house = document.getElementById('addrHouseStreet').value.trim(), village = document.getElementById('addrVillage').value.trim(), po = document.getElementById('addrPostOffice').value.trim();
       if (!name || !phone || !pin || !city || !state || !house || !village || !po) return alert("Please fill all required address fields!");
@@ -1705,6 +1746,16 @@
       if (!isPincodeValid) return alert("Enter valid 6-digit Indian Pincode!");
 
       saveCustomerProfileLocal();
+
+      // Fetch Customer AURA Coins Wallet Balance
+      customerAvailableCoins = 0;
+      const coinChk = document.getElementById('useAuraCoinsCheckbox');
+      if (coinChk) coinChk.checked = false;
+      try {
+        const wRes = await fetch(`/api/wallet/${phone}`);
+        const wData = await wRes.json();
+        if (wData.success) customerAvailableCoins = wData.coins || 0;
+      } catch (e) {}
 
       const fullAddr = `${house}, ${village}, P.O: ${po}, ${city}, ${state} - ${pin}`;
       const { finalAmt } = calculateCartTotals('UPI');
@@ -1735,9 +1786,20 @@
     }
 
     function handlePaymentModeChange(requestedMode) {
-      const baseTotals = calculateCartTotals('UPI');
-      const netBagValue = baseTotals.netBagValue;
+      const preTotals = calculateCartTotals('UPI');
+      const netBagValue = preTotals.netBagValue;
 
+      // AURA Coins Wallet UI
+      const coinsBox = document.getElementById('auraCoinsCheckoutBox');
+      if (customerAvailableCoins > 0 && preTotals.maxRedeemable > 0 && storeMaxCoinsRedeem > 0) {
+        document.getElementById('availableCoinsLabel').innerText = customerAvailableCoins;
+        document.getElementById('redeemableCoinsAmt').innerText = preTotals.maxRedeemable;
+        coinsBox.classList.remove('hidden');
+      } else {
+        coinsBox.classList.add('hidden');
+      }
+
+      // Free Gift Banner
       const giftBanner = document.getElementById('checkoutUnlockedGiftBanner');
       if (storeFreeGiftThreshold > 0 && netBagValue >= storeFreeGiftThreshold) {
         document.getElementById('checkoutUnlockedGiftName').innerText = storeFreeGiftTitle;
@@ -1746,6 +1808,7 @@
         giftBanner.classList.add('hidden');
       }
 
+      // Max COD Limit Check
       const codOpt = document.getElementById('codOptionElement');
       const codWarn = document.getElementById('codLimitWarningMsg');
       const modeSelect = document.getElementById('ordPaymentMethod');
@@ -1764,14 +1827,32 @@
         codWarn.classList.add('hidden');
       }
 
-      const { subTotal, discountAmt, finalAmt, deliveryCharge } = calculateCartTotals(mode);
+      const { subTotal, discountAmt, coinsDiscount, finalAmt, deliveryCharge } = calculateCartTotals(mode);
       document.getElementById('chkSubtotal').innerText = `₹${subTotal}`;
       document.getElementById('chkDiscountAmt').innerText = `-₹${discountAmt}`;
       document.getElementById('chkCouponCodeName').innerText = appliedCouponCode || "None";
+
+      const coinsRow = document.getElementById('chkCoinsRow');
+      if (coinsDiscount > 0) {
+        coinsRow.classList.remove('hidden');
+        document.getElementById('chkCoinsAmt').innerText = `-₹${coinsDiscount}`;
+      } else {
+        coinsRow.classList.add('hidden');
+      }
+
       const delEl = document.getElementById('chkDeliveryAmt');
       delEl.innerText = (mode === 'COD' && deliveryCharge > 0) ? `+₹${deliveryCharge} (COD Charge)` : "FREE";
       delEl.className = (mode === 'COD' && deliveryCharge > 0) ? "font-bold text-amber-400" : "font-bold text-emerald-400";
       document.getElementById('chkFinalPayable').innerText = `₹${finalAmt}`;
+
+      const earnHint = document.getElementById('chkEarnCoinsHint');
+      const willEarn = storeCoinsEarnPct > 0 ? Math.floor((netBagValue * storeCoinsEarnPct) / 100) : 0;
+      if (willEarn > 0) {
+        document.getElementById('chkWillEarnCoins').innerText = willEarn;
+        earnHint.classList.remove('hidden');
+      } else {
+        earnHint.classList.add('hidden');
+      }
 
       let payAmt = finalAmt;
       if (mode === 'COD') {
@@ -1800,6 +1881,7 @@
       saveCustomerProfileLocal();
       const btn = document.getElementById('submitOrderBtn'); btn.innerText = "Verifying & Placing Order..."; btn.disabled = true;
       const mode = document.getElementById('ordPaymentMethod').value;
+      const useAuraCoins = document.getElementById('useAuraCoinsCheckbox')?.checked || false;
 
       const res = await fetch('/api/orders', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1809,8 +1891,8 @@
           villageOrCity: document.getElementById('addrVillage').value, postOffice: document.getElementById('addrPostOffice').value, policeStation: document.getElementById('addrPoliceStation').value,
           landmark: document.getElementById('addrLandmark').value,
           items: cart.map(i => ({ id: i.id, name: i.name, selectedSize: i.selectedSize, selectedColor: i.selectedColor, qty: i.qty })),
-          giftNote: document.getElementById('ordGiftNote').value.trim(),
           couponCode: appliedCouponCode,
+          useAuraCoins,
           paymentMethod: mode,
           utrNumber: utr
         })
@@ -1818,10 +1900,12 @@
       const data = await res.json();
       if (data.success) {
         trackMetaEvent('Purchase', { value: data.verifiedTotal || 0, currency: 'INR', order_id: data.orderId });
-        alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}\nVerified Bill: ₹${data.verifiedTotal}`);
+        const coinsMsg = data.coinsEarned > 0 ? `\n🪙 You will receive +${data.coinsEarned} AURA Coins upon delivery!` : '';
+        alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}\nVerified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
         cart = [];
         appliedCouponCode = "";
         appliedDiscountRate = 0;
+        appliedCouponExpiresAt = 0;
         persistCartLocal();
         updateCartUI();
         closeCheckoutModal();
@@ -1874,6 +1958,16 @@
       if (!phone) return alert("Enter mobile number or Order ID!");
       const res = await fetch(`/api/orders/track?q=${encodeURIComponent(phone)}`);
       const data = await res.json();
+
+      const walletBanner = document.getElementById('myWalletSummaryBanner');
+      if (typeof data.walletCoins === 'number' && phone.replace(/[^0-9]/g, '').length === 10) {
+        document.getElementById('myWalletCoinsCount').innerText = data.walletCoins;
+        document.getElementById('myWalletRupeesWorth').innerText = data.walletCoins;
+        walletBanner.classList.remove('hidden');
+      } else {
+        walletBanner.classList.add('hidden');
+      }
+
       const box = document.getElementById('myOrdersListContainer');
       if (!data.orders || !data.orders.length) { box.innerHTML = `<p class="text-center py-6 text-rose-400 font-bold">No orders found!</p>`; return; }
       box.innerHTML = data.orders.map(o => {
@@ -1888,7 +1982,7 @@
           ${buildOrderTimelineHTML(o.status)}
           <p class="text-stone-400 text-[11px]">${o.date} • Total: <b class="text-white">₹${o.total}</b> (${o.paymentMethod})</p>
           ${o.freeGiftUnlocked ? `<p class="text-[11px] text-emerald-300 font-bold"><i class="fa-solid fa-award mr-1"></i>Free Bonus Gift: ${o.freeGiftUnlocked}</p>` : ''}
-          ${o.giftNote ? `<p class="text-[11px] text-rose-300 italic"><i class="fa-solid fa-gift mr-1"></i>Gift Note: "${o.giftNote}"</p>` : ''}
+          ${o.coinsEarned > 0 ? `<p class="text-[11px] text-amber-300"><i class="fa-solid fa-coins mr-1"></i>${o.coinsCredited ? `Credited +${o.coinsEarned} AURA Coins ✓` : `Earn +${o.coinsEarned} AURA Coins upon delivery`}</p>` : ''}
           ${o.awbNumber ? `<p class="text-[11px] text-cyan-300 font-mono">Courier: ${courier} | AWB: <b>${o.awbNumber}</b></p>` : ''}
           <div class="flex flex-wrap gap-2 pt-1">
             <a href="/api/orders/${o.id}/invoice" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px]">
