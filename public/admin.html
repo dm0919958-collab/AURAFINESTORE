@@ -41,6 +41,36 @@
   #dashboardContent canvas{max-width:100%}
   @media(max-width:640px){#dashboardContent{padding:12px!important}#dashboardContent header{align-items:flex-start}#dashboardContent .grid{min-width:0}}
 
+
+  /* AURA admin readability refinement — readable status, order rows and form controls */
+  #dashboardContent{color:#20352b!important}
+  #dashboardContent .text-slate-100,#dashboardContent .text-slate-200,
+  #dashboardContent .text-gray-100,#dashboardContent .text-gray-200,
+  #dashboardContent .text-white{color:#20352b!important}
+  #dashboardContent .text-slate-300,#dashboardContent .text-gray-300{color:#52645a!important}
+  #dashboardContent .text-slate-400,#dashboardContent .text-slate-500,
+  #dashboardContent .text-gray-400,#dashboardContent .text-gray-500{color:#68776d!important}
+  #dashboardContent .text-amber-300,#dashboardContent .text-amber-400,
+  #dashboardContent .text-yellow-300,#dashboardContent .text-yellow-400{color:#805b25!important}
+  #dashboardContent .text-emerald-300,#dashboardContent .text-emerald-400{color:#176b4a!important}
+  #dashboardContent .text-rose-300,#dashboardContent .text-rose-400,
+  #dashboardContent .text-red-300,#dashboardContent .text-red-400{color:#a93643!important}
+  #dashboardContent tr{color:#20352b!important}
+  #dashboardContent tbody tr{background:#fffdf8!important}
+  #dashboardContent tbody tr:nth-child(even){background:#f5f3ec!important}
+  #dashboardContent tbody tr:hover{background:#eee9dc!important}
+  #dashboardContent td,#dashboardContent th{color:#34483d}
+  #dashboardContent td .text-slate-400,#dashboardContent td .text-slate-500{color:#68776d!important}
+  #dashboardContent .bg-gray-500,#dashboardContent .bg-gray-600,
+  #dashboardContent .bg-slate-500,#dashboardContent .bg-slate-600{background:#eeeae0!important}
+  #dashboardContent .bg-emerald-600,#dashboardContent .bg-green-600{background:#286b50!important;color:#fff!important}
+  #dashboardContent button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+    outline:3px solid rgba(181,139,72,.42)!important;outline-offset:2px
+  }
+  @media(max-width:768px){
+    #dashboardContent{overflow-x:auto}
+    #dashboardContent table{min-width:980px}
+  }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
