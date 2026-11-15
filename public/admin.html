@@ -591,8 +591,8 @@ label { color: #f1e5ce; }
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-slate-400 block mb-1">Sizes (Comma separated)</label>
-              <input type="text" id="prodSizes" placeholder="M, L, XL, XXL" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
+              <label class="text-slate-400 block mb-1" title="Type M:1, L:2, XL:3 for individual size stock">Sizes (e.g. M:1, L:2, XL:3)</label>
+              <input type="text" id="prodSizes" oninput="syncSizeStockTotalPreview()" placeholder="M:1, L:2, XL:3 or M, L, XL" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
             </div>
             <div>
               <label class="text-slate-400 block mb-1">Colors (Comma separated)</label>
@@ -1593,11 +1593,36 @@ label { color: #f1e5ce; }
       btn.innerText = "Saving..."; btn.disabled = true;
       if (!currentFormImages.length) { btn.innerText = editId ? "Update Product" : "Publish to Store"; btn.disabled = false; return alert("Add at least 1 product photo!"); }
       const sizesRaw = document.getElementById('prodSizes').value, colorsRaw = document.getElementById('prodColors').value;
+      const parsedSizes = [];
+      const sizeStockObj = {};
+      if (sizesRaw) {
+        sizesRaw.split(',').map(s => s.trim()).filter(Boolean).forEach(entry => {
+          if (entry.includes(':')) {
+            const parts = entry.split(':');
+            const szName = parts[0].trim();
+            const szQty = Math.max(0, parseInt(parts[1], 10) || 0);
+            if (szName) {
+              parsedSizes.push(szName);
+              sizeStockObj[szName] = szQty;
+            }
+          } else {
+            parsedSizes.push(entry);
+          }
+        });
+      }
+      if (!parsedSizes.length) parsedSizes.push("Standard");
+
+      const sizeStockKeys = Object.keys(sizeStockObj);
+      const computedStock = sizeStockKeys.length > 0
+        ? sizeStockKeys.reduce((s, k) => s + sizeStockObj[k], 0)
+        : (Number(document.getElementById('prodStock').value) || 0);
+
       const payload = {
         name: document.getElementById('prodName').value, mainCategory: document.getElementById('prodMainCategory').value, category: document.getElementById('prodCategory').value,
         price: document.getElementById('prodPrice').value, originalPrice: document.getElementById('prodOrigPrice').value, costPrice: document.getElementById('prodCostPrice').value,
-        stockQuantity: document.getElementById('prodStock').value, showOnHome: document.getElementById('prodShowOnHome').checked,
-        sizeOptions: sizesRaw ? sizesRaw.split(',').map(s => s.trim()).filter(Boolean) : ["Standard"],
+        stockQuantity: computedStock, showOnHome: document.getElementById('prodShowOnHome').checked,
+        sizeOptions: parsedSizes,
+        sizeStock: sizeStockObj,
         colorOptions: colorsRaw ? colorsRaw.split(',').map(c => c.trim()).filter(Boolean) : ["Standard"],
         badge: document.getElementById('prodBadge').value || "New", images: [...currentFormImages], description: document.getElementById('prodDesc').value
       };
@@ -1605,6 +1630,18 @@ label { color: #f1e5ce; }
       if (handleUnauthorized(res)) return;
       if ((await res.json()).success) { alert(editId ? "Product Updated!" : "Product Published!"); resetProductForm(); loadAdminDashboard(true); }
       btn.innerText = "Publish to Store"; btn.disabled = false;
+    }
+
+    function syncSizeStockTotalPreview() {
+      const raw = document.getElementById('prodSizes').value || '';
+      let total = 0, hasColon = false;
+      raw.split(',').forEach(part => {
+        if (part.includes(':')) {
+          hasColon = true;
+          total += Math.max(0, parseInt(part.split(':')[1], 10) || 0);
+        }
+      });
+      if (hasColon) document.getElementById('prodStock').value = total;
     }
 
     function editProduct(id) {
@@ -1618,7 +1655,9 @@ label { color: #f1e5ce; }
       populateCategoryDropdowns(p.mainCategory, p.category);
       document.getElementById('prodPrice').value = p.price; document.getElementById('prodOrigPrice').value = p.originalPrice;
       document.getElementById('prodCostPrice').value = p.costPrice || 0; document.getElementById('prodStock').value = p.stockQuantity;
-      document.getElementById('prodSizes').value = (p.sizeOptions || []).join(', '); document.getElementById('prodColors').value = (p.colorOptions || []).join(', ');
+      const sMap = (p.sizeStock && typeof p.sizeStock === 'object') ? p.sizeStock : {};
+      const formattedSizes = (p.sizeOptions || []).map(sz => Object.prototype.hasOwnProperty.call(sMap, sz) ? `${sz}:${sMap[sz]}` : sz).join(', ');
+      document.getElementById('prodSizes').value = formattedSizes; document.getElementById('prodColors').value = (p.colorOptions || []).join(', ');
       document.getElementById('prodBadge').value = p.badge || ""; document.getElementById('prodShowOnHome').checked = p.showOnHome !== false;
       document.getElementById('prodDesc').value = p.description || "";
       currentFormImages = [...(p.images || [])]; renderFormImagesPreview();
@@ -1674,7 +1713,7 @@ label { color: #f1e5ce; }
               <img src="${(p.images && p.images[0]) || ''}" class="w-12 h-12 rounded-xl object-cover border border-slate-600 flex-shrink-0">
               <div class="min-w-0">
                 <p class="font-bold text-white truncate">${p.name} ${isLow ? '<span class="ml-1 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black">LOW</span>' : ''}</p>
-                <p class="text-[10px] text-slate-400">${p.mainCategory} &rarr; ${p.category} • Margin: <b class="${unitMargin >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${unitMargin}/pc</b></p>
+                <p class="text-[10px] text-slate-400">${p.mainCategory} &rarr; ${p.category} • Margin: <b class="${unitMargin >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${unitMargin}/pc</b>${(p.sizeStock && Object.keys(p.sizeStock).length) ? ' • Sizes: ' + Object.entries(p.sizeStock).map(([k,v]) => `<b class="${v<=0?'text-rose-400':'text-amber-300'}">${k}:${v}</b>`).join(', ') : ''}</p>
                 <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
                   <label class="text-[10px] text-amber-300">Sale ₹: <input type="number" id="q_price_${p.id}" value="${p.price}" class="w-16 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold"></label>
                   <label class="text-[10px] text-emerald-300">Cost ₹: <input type="number" id="q_cost_${p.id}" value="${p.costPrice || 0}" class="w-16 bg-slate-950 border border-emerald-500/40 rounded px-1.5 py-0.5 text-emerald-300 font-bold"></label>
