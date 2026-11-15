@@ -20,6 +20,8 @@
     .lux-card { background: linear-gradient(155deg, rgba(38, 33, 36, 0.95) 0%, rgba(20, 19, 25, 0.98) 100%); transition: all 0.35s ease; }
     .lux-card:hover { transform: translateY(-5px); box-shadow: 0 20px 35px -10px rgba(245, 158, 11, 0.28); border-color: rgba(251, 191, 36, 0.55); }
     .fade-carousel { transition: opacity 0.5s ease-in-out; }
+    @keyframes popScaleIn { 0% { opacity: 0; transform: scale(0.92) translateY(14px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+    .animate-pop-in { animation: popScaleIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #161318; }
     ::-webkit-scrollbar-thumb { background: #d97706; border-radius: 999px; }
@@ -90,6 +92,40 @@
         </div>
       </div>
     </header>
+
+    <!-- FIRST-ORDER AUTO-WELCOME POPUP MODAL (5-SECOND OFFER) -->
+    <div id="firstOrderWelcomeModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden z-[70] flex items-center justify-center p-4">
+      <div class="bg-stone-950 border-2 border-amber-500/50 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl relative animate-pop-in">
+        <button onclick="dismissFirstOrderPopup()" aria-label="Close Offer" class="absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-full bg-black/75 hover:bg-rose-600 text-white flex items-center justify-center text-lg font-bold border border-white/20 transition">&times;</button>
+
+        <!-- Admin Uploaded Photo Banner -->
+        <div class="relative h-48 sm:h-52 w-full bg-stone-900 overflow-hidden">
+          <img id="firstWelcomePopupImg" src="https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=700&q=75" alt="First Order Gift" class="w-full h-full object-cover">
+          <div class="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/35 to-transparent"></div>
+          <span class="absolute top-3.5 left-3.5 bg-gradient-to-r from-amber-400 to-amber-600 text-stone-950 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow">
+            <i class="fa-solid fa-crown mr-1"></i> First Order Gift
+          </span>
+        </div>
+
+        <div class="p-6 pt-3 text-center space-y-3.5">
+          <h3 id="firstWelcomePopupTitle" class="font-cinzel font-extrabold text-xl sm:text-2xl text-amber-100 leading-snug">Exclusive First-Order Privilege</h3>
+          <p id="firstWelcomePopupSubtitle" class="text-xs text-stone-300 leading-relaxed">Unlock instant savings on your very first luxury order at AURA Fine Store!</p>
+
+          <div class="bg-stone-900 border border-dashed border-amber-500/60 rounded-2xl p-3 flex items-center justify-between gap-2">
+            <div class="text-left">
+              <span class="block text-[9px] uppercase tracking-widest text-stone-400 font-bold">First-Order Promo Code</span>
+              <span id="firstWelcomePopupCode" class="font-mono font-black text-lg text-amber-400 tracking-wider">AURA20</span>
+            </div>
+            <span id="firstWelcomePopupPctBadge" class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-xl text-xs font-extrabold">20% OFF</span>
+          </div>
+
+          <button onclick="claimFirstOrderCoupon()" class="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:brightness-110 text-stone-950 font-extrabold py-3.5 rounded-xl text-xs uppercase tracking-wider shadow-lg transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Copy & Apply Offer Now
+          </button>
+          <p class="text-[10px] text-stone-500">* Valid exclusively on your first order (1 use per mobile number).</p>
+        </div>
+      </div>
+    </div>
 
     <!-- Live Sales Social Proof Toast Popup -->
     <div id="liveSalesToast" onclick="handleLiveSaleToastClick()" class="fixed bottom-4 left-4 z-50 max-w-xs sm:max-w-sm bg-stone-950/95 backdrop-blur-md border border-amber-500/40 rounded-2xl p-3 shadow-2xl flex items-center gap-3 cursor-pointer transform translate-y-24 opacity-0 transition-all duration-500">
@@ -183,11 +219,9 @@
             <h3 id="currentCategoryHeading" class="font-cinzel font-bold text-2xl sm:text-3xl text-amber-50 mt-0.5">Home Collections</h3>
             <p class="text-xs text-stone-400 mt-1">Presenting <span id="countDisplay" class="font-bold text-amber-400">0</span> master creations</p>
           </div>
-          <!-- Dynamic Category Filter Tabs -->
           <div class="flex items-center gap-2 overflow-x-auto pb-1" id="categoryTabs"></div>
         </div>
 
-        <!-- Sort & Price Range Filter Controls -->
         <div class="flex flex-wrap items-center justify-between gap-3 bg-stone-900/75 border border-stone-800 p-3 rounded-2xl text-xs">
           <div class="flex items-center gap-2 overflow-x-auto">
             <span class="text-stone-400 font-bold whitespace-nowrap"><i class="fa-solid fa-filter text-amber-400 mr-1"></i> Price:</span>
@@ -227,7 +261,7 @@
     </main>
   </div>
 
-  <!-- Quick View Modal -->
+  <!-- Quick View Modal WITH PINCODE DELIVERY TIME (ETA) CHECKER -->
   <div id="quickViewModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto border border-amber-500/30">
       <button onclick="closeQuickView()" class="absolute top-5 right-5 text-stone-400 hover:text-amber-400 text-3xl font-bold">&times;</button>
@@ -272,10 +306,21 @@
             <label class="block text-xs font-bold text-stone-300">Select Color: <span id="qvSelectedColorDisplay" class="text-amber-400 font-extrabold ml-1"></span></label>
             <div id="qvColorContainer" class="flex flex-wrap gap-2"></div>
           </div>
-          <p id="qvDesc" class="text-xs text-stone-400 leading-relaxed pt-2"></p>
+
+          <!-- Pincode-wise Delivery Time (ETA) Checker Box -->
+          <div class="bg-stone-950 border border-stone-800 p-3 rounded-2xl space-y-2 text-xs">
+            <label class="block font-bold text-stone-300 text-[11px]"><i class="fa-solid fa-location-dot text-amber-400 mr-1"></i> Check Delivery Time & COD Availability:</label>
+            <div class="flex gap-2">
+              <input type="text" id="qvPincodeInput" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault(); checkQuickViewPincodeEta();}" placeholder="Enter 6-digit Pincode (e.g. 731235)" class="w-full bg-stone-900 border border-stone-700 rounded-xl px-3 py-2 text-white font-mono font-bold text-xs focus:outline-none focus:border-amber-500">
+              <button type="button" id="qvPincodeCheckBtn" onclick="checkQuickViewPincodeEta()" class="bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold px-4 py-2 rounded-xl text-xs whitespace-nowrap transition">Check</button>
+            </div>
+            <div id="qvPincodeEtaResult" class="hidden text-[11px] font-semibold pt-0.5"></div>
+          </div>
+
+          <p id="qvDesc" class="text-xs text-stone-400 leading-relaxed pt-1"></p>
 
           <!-- In-Stock Buy Buttons -->
-          <div id="qvInStockActions" class="flex gap-2 pt-3">
+          <div id="qvInStockActions" class="flex gap-2 pt-2">
             <button id="qvAddToCartBtn" class="flex-1 bg-stone-800 hover:bg-stone-700 text-white border border-stone-700 py-3.5 rounded-xl text-xs font-bold">Add to Bag</button>
             <button id="qvBuyNowBtn" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-3.5 rounded-xl text-xs font-extrabold">⚡ Instant Checkout</button>
           </div>
@@ -293,7 +338,6 @@
           </form>
         </div>
       </div>
-
       <!-- Customer Reviews Section -->
       <div class="mt-8 pt-6 border-t border-stone-800 space-y-4">
         <div class="flex justify-between items-center">
@@ -410,7 +454,7 @@
     </div>
   </div>
 
-  <!-- Cart Drawer (With Free Gift Progress Bar & Timed Coupons) -->
+  <!-- Cart Drawer -->
   <div id="cartDrawer" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden z-50 flex justify-end">
     <div class="bg-stone-900 text-stone-100 w-full max-w-md h-full flex flex-col p-6 shadow-2xl border-l border-amber-500/20">
       <div class="flex justify-between items-center pb-3 border-b border-stone-800">
@@ -451,7 +495,7 @@
     </div>
   </div>
 
-  <!-- 2-Step Checkout Modal (With AURA Coins Wallet Redemption & Clean Layout) -->
+  <!-- 2-Step Checkout Modal -->
   <div id="checkoutModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto border border-amber-500/25">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
@@ -727,6 +771,8 @@
     let storeDeliveryCharge = 0, storeCodAdvancePct = 15, storeMaxCodAmount = 2000;
     let storeFreeGiftThreshold = 1499, storeFreeGiftTitle = "Luxury Surprise Jewellery Box";
     let storeCoinsEarnPct = 5, storeMaxCoinsRedeem = 200, customerAvailableCoins = 0;
+    let firstOrderPopupConfig = { enabled: true, title: "Exclusive First-Order Privilege", subtitle: "", coupon: "AURA20", image: "" };
+    let firstOrderPopupScheduled = false;
     let dealEndTimeMs = 0, isPincodeValid = false;
     let currentOpenedProduct = null, currentSelectedSize = "", currentSelectedColor = "";
     let currentReviewPhotoBase64 = "";
@@ -738,18 +784,10 @@
     let activeLiveSaleProductId = null;
     let lastShownBuyerKey = "";
     const fallbackBuyers = [
-      { name: "Ankita", city: "Kolkata" },
-      { name: "Priya", city: "Bolpur" },
-      { name: "Soumya", city: "Durgapur" },
-      { name: "Riya", city: "Siliguri" },
-      { name: "Arindam", city: "Asansol" },
-      { name: "Sneha", city: "Howrah" },
-      { name: "Subhajit", city: "Bardhaman" },
-      { name: "Moumita", city: "Kharagpur" },
-      { name: "Rahul", city: "Delhi" },
-      { name: "Neha", city: "Mumbai" },
-      { name: "Debjani", city: "Santiniketan" },
-      { name: "Abhishek", city: "Malda" }
+      { name: "Ankita", city: "Kolkata" }, { name: "Priya", city: "Bolpur" }, { name: "Soumya", city: "Durgapur" },
+      { name: "Riya", city: "Siliguri" }, { name: "Arindam", city: "Asansol" }, { name: "Sneha", city: "Howrah" },
+      { name: "Subhajit", city: "Bardhaman" }, { name: "Moumita", city: "Kharagpur" }, { name: "Rahul", city: "Delhi" },
+      { name: "Neha", city: "Mumbai" }, { name: "Debjani", city: "Santiniketan" }, { name: "Abhishek", city: "Malda" }
     ];
 
     const courierTrackingUrls = {
@@ -759,14 +797,114 @@
       "Shiprocket": (awb) => `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`
     };
 
-    // Render Dynamic Categories across Desktop Header, Mobile Drawer, Filter Tabs & Footer
+    // 5-Second First-Order Welcome Popup Logic (Never shows again once user completes first order)
+    function scheduleFirstOrderWelcomePopup() {
+      if (firstOrderPopupScheduled) return;
+      firstOrderPopupScheduled = true;
+
+      if (localStorage.getItem('aura_first_order_completed') === 'true') return;
+      if (sessionStorage.getItem('aura_first_popup_dismissed') === 'true') return;
+
+      setTimeout(() => {
+        if (!firstOrderPopupConfig.enabled) return;
+        if (localStorage.getItem('aura_first_order_completed') === 'true') return;
+        if (sessionStorage.getItem('aura_first_popup_dismissed') === 'true') return;
+
+        const code = String(firstOrderPopupConfig.coupon || 'AURA20').trim().toUpperCase();
+        const couponObj = activeCoupons.find(c => c.code === code);
+        if (couponObj && couponObj.expiresAt > 0 && Date.now() >= couponObj.expiresAt) return;
+
+        document.getElementById('firstWelcomePopupTitle').innerText = firstOrderPopupConfig.title || "Exclusive First-Order Privilege";
+        document.getElementById('firstWelcomePopupSubtitle').innerText = firstOrderPopupConfig.subtitle || "Unlock instant savings on your very first luxury order at AURA Fine Store!";
+        document.getElementById('firstWelcomePopupCode').innerText = code;
+        if (firstOrderPopupConfig.image) {
+          document.getElementById('firstWelcomePopupImg').src = firstOrderPopupConfig.image;
+        }
+        const pctBadge = document.getElementById('firstWelcomePopupPctBadge');
+        if (couponObj && couponObj.discountPercent) {
+          pctBadge.innerText = `${couponObj.discountPercent}% OFF`;
+          pctBadge.classList.remove('hidden');
+        } else {
+          pctBadge.classList.add('hidden');
+        }
+
+        document.getElementById('firstOrderWelcomeModal').classList.remove('hidden');
+      }, 5000);
+    }
+
+    function dismissFirstOrderPopup() {
+      sessionStorage.setItem('aura_first_popup_dismissed', 'true');
+      document.getElementById('firstOrderWelcomeModal').classList.add('hidden');
+    }
+
+    function claimFirstOrderCoupon() {
+      const code = String(firstOrderPopupConfig.coupon || 'AURA20').trim().toUpperCase();
+      sessionStorage.setItem('aura_first_popup_dismissed', 'true');
+      document.getElementById('firstOrderWelcomeModal').classList.add('hidden');
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).catch(() => {});
+      }
+      document.getElementById('couponInput').value = code;
+      applyCoupon();
+      if (cart.length > 0) {
+        toggleCart(true);
+      } else {
+        alert(`🎉 First-Order Coupon "${code}" copied & activated! Add any item to your bag to enjoy your discount.`);
+      }
+    }
+
+    // Quick View Pincode Delivery Time (ETA) Checker
+    async function checkQuickViewPincodeEta() {
+      const inp = document.getElementById('qvPincodeInput');
+      const resBox = document.getElementById('qvPincodeEtaResult');
+      const btn = document.getElementById('qvPincodeCheckBtn');
+      const pin = String(inp.value || '').trim();
+
+      if (pin.length !== 6 || isNaN(pin)) {
+        resBox.className = "text-[11px] font-bold text-rose-400 pt-0.5 block";
+        resBox.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1"></i> Please enter a valid 6-digit Indian Pincode.`;
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Checking...";
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+        const data = await res.json();
+        if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice && data[0].PostOffice.length > 0) {
+          const po = data[0].PostOffice[0];
+          const district = po.District || po.Name;
+          const state = po.State || "";
+          const isWB = state.toLowerCase().includes('west bengal');
+          const etaDays = isWB ? "2–3 Days" : "4–6 Days";
+
+          const prodPrice = currentOpenedProduct ? Number(currentOpenedProduct.price) || 0 : 0;
+          const codAllowed = !(storeMaxCodAmount > 0 && prodPrice > storeMaxCodAmount);
+          const codText = codAllowed ? "COD Available" : `Prepaid Only (COD limit ₹${storeMaxCodAmount})`;
+
+          localStorage.setItem('aura_last_checked_pincode', pin);
+          resBox.className = "text-[11px] font-bold text-emerald-400 pt-0.5 block leading-relaxed";
+          resBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Delivery to <span class="text-amber-300">${district} (${pin})</span> within <span class="text-white underline">${etaDays}</span> | <span class="${codAllowed ? 'text-emerald-300' : 'text-amber-300'}">${codText}</span>`;
+        } else {
+          resBox.className = "text-[11px] font-bold text-rose-400 pt-0.5 block";
+          resBox.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Pincode ${pin} not serviceable. Try another Indian Pincode.`;
+        }
+      } catch (e) {
+        resBox.className = "text-[11px] font-bold text-amber-400 pt-0.5 block";
+        resBox.innerHTML = `Standard Express Delivery within 3–6 Days across India.`;
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Check";
+      }
+    }
+
     function renderDynamicNavigation() {
       const desktopNav = document.getElementById('desktopDynamicNav');
       const mobileList = document.getElementById('mobileDynamicCategoriesList');
       const catTabs = document.getElementById('categoryTabs');
       const footerCats = document.getElementById('footerDynamicCategories');
 
-      // 1. Desktop Nav
       let desktopHtml = `<a href="#catalogSection" onclick="showHomeCatalog()" class="text-amber-400 hover:text-amber-300 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-house text-amber-500"></i> Home</a>`;
       dynamicCategories.forEach(cat => {
         const subs = cat.subCategories || [];
@@ -780,52 +918,33 @@
                 ${subs.map(s => `<a href="#catalogSection" onclick="filterBySection('${cat.name}', '${s}')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">• ${s}</a>`).join('')}
                 <a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore All ${cat.name} &rarr;</a>
               </div>
-            </div>
-          `;
+            </div>`;
         } else {
           desktopHtml += `<button onclick="filterBySection('${cat.name}', 'All')" class="hover:text-amber-400 py-3 transition uppercase whitespace-nowrap">${cat.name}</button>`;
         }
       });
       desktopNav.innerHTML = desktopHtml;
 
-      // 2. Mobile Slide Drawer
-      let mobileHtml = `
-        <a href="#catalogSection" onclick="showHomeCatalog(); toggleMobileDrawer(false);" class="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30">
-          <i class="fa-solid fa-house"></i> Home Collections
-        </a>
-      `;
+      let mobileHtml = `<a href="#catalogSection" onclick="showHomeCatalog(); toggleMobileDrawer(false);" class="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30"><i class="fa-solid fa-house"></i> Home Collections</a>`;
       dynamicCategories.forEach((cat, idx) => {
         const subs = cat.subCategories || [];
         const subDivId = `mobDynSub_${idx}`;
         mobileHtml += `
           <div class="bg-stone-900/80 border border-stone-800 rounded-xl overflow-hidden">
             <button onclick="${subs.length ? `toggleMobileSub('${subDivId}')` : `filterBySection('${cat.name}', 'All'); toggleMobileDrawer(false);`}" class="w-full flex justify-between items-center p-3 text-stone-200 hover:text-amber-400 uppercase">
-              <span>${cat.name}</span>
-              ${subs.length ? `<i class="fa-solid fa-chevron-down text-[10px]"></i>` : `<i class="fa-solid fa-arrow-right text-[10px]"></i>`}
+              <span>${cat.name}</span>${subs.length ? `<i class="fa-solid fa-chevron-down text-[10px]"></i>` : `<i class="fa-solid fa-arrow-right text-[10px]"></i>`}
             </button>
-            ${subs.length ? `
-              <div id="${subDivId}" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">
-                ${subs.map(s => `<a href="#catalogSection" onclick="filterBySection('${cat.name}', '${s}'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• ${s}</a>`).join('')}
-                <a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All ${cat.name} &rarr;</a>
-              </div>
-            ` : ''}
-          </div>
-        `;
+            ${subs.length ? `<div id="${subDivId}" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">${subs.map(s => `<a href="#catalogSection" onclick="filterBySection('${cat.name}', '${s}'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• ${s}</a>`).join('')}<a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All ${cat.name} &rarr;</a></div>` : ''}
+          </div>`;
       });
       mobileList.innerHTML = mobileHtml;
 
-      // 3. Catalog Top Filter Pills
       catTabs.innerHTML = [
         `<button onclick="showHomeCatalog(this)" class="cat-btn ${activeMainSection === 'Home' ? 'active bg-amber-500 text-stone-950 font-extrabold border-amber-400' : 'bg-stone-900 hover:bg-stone-800 border-stone-700 font-bold text-stone-300'} px-5 py-2 rounded-full text-xs border whitespace-nowrap"><i class="fa-solid fa-house mr-1"></i> Home</button>`,
-        ...dynamicCategories.map(cat => `
-          <button onclick="filterBySection('${cat.name}', 'All', this)" class="cat-btn ${activeMainSection === cat.name ? 'active bg-amber-500 text-stone-950 font-extrabold border-amber-400' : 'bg-stone-900 hover:bg-stone-800 border-stone-700 font-bold text-stone-300'} px-5 py-2 rounded-full text-xs border whitespace-nowrap">${cat.name}</button>
-        `)
+        ...dynamicCategories.map(cat => `<button onclick="filterBySection('${cat.name}', 'All', this)" class="cat-btn ${activeMainSection === cat.name ? 'active bg-amber-500 text-stone-950 font-extrabold border-amber-400' : 'bg-stone-900 hover:bg-stone-800 border-stone-700 font-bold text-stone-300'} px-5 py-2 rounded-full text-xs border whitespace-nowrap">${cat.name}</button>`)
       ].join('');
 
-      // 4. Footer Links
-      footerCats.innerHTML = dynamicCategories.map(cat => `
-        <li><a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All')" class="hover:text-amber-300 transition">${cat.name} Collection</a></li>
-      `).join('');
+      footerCats.innerHTML = dynamicCategories.map(cat => `<li><a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All')" class="hover:text-amber-300 transition">${cat.name} Collection</a></li>`).join('');
     }
 
     function persistCartLocal() {
@@ -841,23 +960,12 @@
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            let quality = 0.72;
-            let dataUrl = canvas.toDataURL('image/jpeg', quality);
-            while (dataUrl.length * 0.75 > targetKB * 1024 && quality > 0.2) {
-              quality -= 0.1;
-              dataUrl = canvas.toDataURL('image/jpeg', quality);
-            }
+            let width = img.width, height = img.height;
+            if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
+            canvas.width = width; canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            let quality = 0.72, dataUrl = canvas.toDataURL('image/jpeg', quality);
+            while (dataUrl.length * 0.75 > targetKB * 1024 && quality > 0.2) { quality -= 0.1; dataUrl = canvas.toDataURL('image/jpeg', quality); }
             resolve(dataUrl);
           };
           img.src = event.target.result;
@@ -867,8 +975,7 @@
     }
 
     async function handleReviewPhotoSelect(input) {
-      const file = input.files && input.files[0];
-      if (!file) return;
+      const file = input.files && input.files[0]; if (!file) return;
       document.getElementById('revPhotoLabel').innerText = "Compressing...";
       currentReviewPhotoBase64 = await compressReviewImage(file);
       document.getElementById('revPhotoPreviewImg').src = currentReviewPhotoBase64;
@@ -887,104 +994,50 @@
       try {
         const res = await fetch('/api/recent-sales?t=' + Date.now());
         const data = await res.json();
-        if (data.success && Array.isArray(data.sales)) {
-          realRecentSales = data.sales;
-        }
+        if (data.success && Array.isArray(data.sales)) realRecentSales = data.sales;
       } catch (e) {}
     }
 
     function showRandomLiveSaleToast() {
       if (!allProducts.length) return;
-      const toast = document.getElementById('liveSalesToast');
-      if (!toast) return;
-
+      const toast = document.getElementById('liveSalesToast'); if (!toast) return;
       let chosen = null;
       for (let attempt = 0; attempt < 6; attempt++) {
         if (realRecentSales.length > 0 && Math.random() < 0.65) {
           const r = realRecentSales[Math.floor(Math.random() * realRecentSales.length)];
           const prod = allProducts.find(p => p.id === r.productId) || allProducts[0];
           const key = `${r.customerName}_${r.city}_${prod.id}`;
-          if (key !== lastShownBuyerKey) {
-            lastShownBuyerKey = key;
-            chosen = {
-              name: r.customerName,
-              city: r.city,
-              productId: prod.id,
-              productName: prod.name,
-              image: r.productImage || (prod.images && prod.images[0]) || ""
-            };
-            break;
-          }
+          if (key !== lastShownBuyerKey) { lastShownBuyerKey = key; chosen = { name: r.customerName, city: r.city, productId: prod.id, productName: prod.name, image: r.productImage || (prod.images && prod.images[0]) || "" }; break; }
         } else {
           const buyer = fallbackBuyers[Math.floor(Math.random() * fallbackBuyers.length)];
           const prod = allProducts[Math.floor(Math.random() * allProducts.length)];
           const key = `${buyer.name}_${buyer.city}_${prod.id}`;
-          if (key !== lastShownBuyerKey) {
-            lastShownBuyerKey = key;
-            chosen = {
-              name: buyer.name,
-              city: buyer.city,
-              productId: prod.id,
-              productName: prod.name,
-              image: (prod.images && prod.images[0]) || ""
-            };
-            break;
-          }
+          if (key !== lastShownBuyerKey) { lastShownBuyerKey = key; chosen = { name: buyer.name, city: buyer.city, productId: prod.id, productName: prod.name, image: (prod.images && prod.images[0]) || "" }; break; }
         }
       }
-
       if (!chosen) return;
       activeLiveSaleProductId = chosen.productId;
       document.getElementById('liveSaleImg').src = chosen.image;
       document.getElementById('liveSaleText').innerHTML = `<span class="text-amber-300 font-bold">${chosen.city}</span> থেকে <span class="text-white font-bold">${chosen.name}</span> এইমাত্র <span class="text-amber-200">${chosen.productName}</span> অর্ডার করলেন`;
-
-      toast.classList.remove('translate-y-24', 'opacity-0');
-      toast.classList.add('translate-y-0', 'opacity-100');
-
-      setTimeout(() => {
-        toast.classList.add('translate-y-24', 'opacity-0');
-        toast.classList.remove('translate-y-0', 'opacity-100');
-      }, 5500);
+      toast.classList.remove('translate-y-24', 'opacity-0'); toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => { toast.classList.add('translate-y-24', 'opacity-0'); toast.classList.remove('translate-y-0', 'opacity-100'); }, 5500);
     }
 
-    function dismissLiveSaleToast(e) {
-      if (e) e.stopPropagation();
-      const toast = document.getElementById('liveSalesToast');
-      toast.classList.add('translate-y-24', 'opacity-0');
-      toast.classList.remove('translate-y-0', 'opacity-100');
-    }
+    function dismissLiveSaleToast(e) { if (e) e.stopPropagation(); const toast = document.getElementById('liveSalesToast'); toast.classList.add('translate-y-24', 'opacity-0'); toast.classList.remove('translate-y-0', 'opacity-100'); }
+    function handleLiveSaleToastClick() { if (activeLiveSaleProductId) { dismissLiveSaleToast(); openQuickView(activeLiveSaleProductId); } }
 
-    function handleLiveSaleToastClick() {
-      if (activeLiveSaleProductId) {
-        dismissLiveSaleToast();
-        openQuickView(activeLiveSaleProductId);
-      }
-    }
+    setTimeout(() => { showRandomLiveSaleToast(); setInterval(showRandomLiveSaleToast, 18000); }, 12000);
 
-    setTimeout(() => {
-      showRandomLiveSaleToast();
-      setInterval(showRandomLiveSaleToast, 18000);
-    }, 6000);
-
-    function openSizeGuideModal() {
-      document.getElementById('sizeGuideModal').classList.remove('hidden');
-    }
-    function closeSizeGuideModal() {
-      document.getElementById('sizeGuideModal').classList.add('hidden');
-    }
+    function openSizeGuideModal() { document.getElementById('sizeGuideModal').classList.remove('hidden'); }
+    function closeSizeGuideModal() { document.getElementById('sizeGuideModal').classList.add('hidden'); }
 
     function saveCustomerProfileLocal() {
       const profile = {
-        name: document.getElementById('ordName').value.trim(),
-        phone: document.getElementById('ordPhone').value.trim(),
-        pincode: document.getElementById('ordPincode').value.trim(),
-        city: document.getElementById('ordCity').value.trim(),
-        state: document.getElementById('ordState').value.trim(),
-        house: document.getElementById('addrHouseStreet').value.trim(),
-        village: document.getElementById('addrVillage').value.trim(),
-        po: document.getElementById('addrPostOffice').value.trim(),
-        ps: document.getElementById('addrPoliceStation').value.trim(),
-        landmark: document.getElementById('addrLandmark').value.trim()
+        name: document.getElementById('ordName').value.trim(), phone: document.getElementById('ordPhone').value.trim(),
+        pincode: document.getElementById('ordPincode').value.trim(), city: document.getElementById('ordCity').value.trim(),
+        state: document.getElementById('ordState').value.trim(), house: document.getElementById('addrHouseStreet').value.trim(),
+        village: document.getElementById('addrVillage').value.trim(), po: document.getElementById('addrPostOffice').value.trim(),
+        ps: document.getElementById('addrPoliceStation').value.trim(), landmark: document.getElementById('addrLandmark').value.trim()
       };
       localStorage.setItem('aura_customer_profile', JSON.stringify(profile));
     }
@@ -995,10 +1048,7 @@
         if (!saved) return;
         if (saved.name) document.getElementById('ordName').value = saved.name;
         if (saved.phone) document.getElementById('ordPhone').value = saved.phone;
-        if (saved.pincode) {
-          document.getElementById('ordPincode').value = saved.pincode;
-          if (saved.pincode.length === 6) isPincodeValid = true;
-        }
+        if (saved.pincode) { document.getElementById('ordPincode').value = saved.pincode; if (saved.pincode.length === 6) isPincodeValid = true; }
         if (saved.city) document.getElementById('ordCity').value = saved.city;
         if (saved.state) document.getElementById('ordState').value = saved.state;
         if (saved.house) document.getElementById('addrHouseStreet').value = saved.house;
@@ -1015,106 +1065,47 @@
       renderRecentlyViewed();
     }
 
-    function clearRecentlyViewed() {
-      recentlyViewedIds = [];
-      localStorage.removeItem('aura_recent_views');
-      renderRecentlyViewed();
-    }
+    function clearRecentlyViewed() { recentlyViewedIds = []; localStorage.removeItem('aura_recent_views'); renderRecentlyViewed(); }
 
     function renderRecentlyViewed() {
-      const sec = document.getElementById('recentlyViewedSection');
-      const grid = document.getElementById('recentlyViewedGrid');
+      const sec = document.getElementById('recentlyViewedSection'), grid = document.getElementById('recentlyViewedGrid');
       const items = recentlyViewedIds.map(id => allProducts.find(p => p.id === id)).filter(Boolean);
-      if (!items.length) {
-        sec.classList.add('hidden');
-        return;
-      }
+      if (!items.length) { sec.classList.add('hidden'); return; }
       sec.classList.remove('hidden');
       grid.innerHTML = items.map(p => `
         <div onclick="openQuickView(${p.id})" class="cursor-pointer bg-stone-900/90 border border-stone-800 hover:border-amber-500/40 rounded-2xl p-3 flex items-center gap-3 transition">
           <img src="${(p.images && p.images[0]) || ''}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0 border border-stone-700">
-          <div class="min-w-0">
-            <h5 class="text-xs font-bold text-stone-100 truncate">${p.name}</h5>
-            <p class="text-xs font-black text-amber-400 mt-0.5">₹${p.price} <span class="line-through text-stone-500 font-normal text-[10px]">₹${p.originalPrice}</span></p>
-          </div>
-        </div>
-      `).join('');
+          <div class="min-w-0"><h5 class="text-xs font-bold text-stone-100 truncate">${p.name}</h5><p class="text-xs font-black text-amber-400 mt-0.5">₹${p.price} <span class="line-through text-stone-500 font-normal text-[10px]">₹${p.originalPrice}</span></p></div>
+        </div>`).join('');
     }
 
     function initMetaPixel(pixelId) {
       if (!pixelId || initializedMetaPixelId === pixelId) return;
       initializedMetaPixelId = pixelId;
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      window.fbq('init', pixelId);
-      window.fbq('track', 'PageView');
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      window.fbq('init', pixelId); window.fbq('track', 'PageView');
     }
 
-    function trackMetaEvent(eventName, params = {}) {
-      if (typeof window.fbq === 'function' && initializedMetaPixelId) {
-        window.fbq('track', eventName, params);
-      }
-    }
+    function trackMetaEvent(eventName, params = {}) { if (typeof window.fbq === 'function' && initializedMetaPixelId) window.fbq('track', eventName, params); }
 
     const legalPoliciesData = {
-      privacy: {
-        title: "Privacy Policy — AURA Fine Store",
-        html: `
-          <p>At <strong>AURA Fine Store</strong>, we value your trust and are committed to protecting your personal data.</p>
-          <p><strong>1. Information We Collect:</strong> When you place an order or contact support, we collect your name, mobile number, shipping address, pincode, and UPI transaction reference (UTR) solely to process and deliver your order.</p>
-          <p><strong>2. How We Use Information:</strong> Your details are used strictly for order confirmation, courier dispatch (Delhivery/DTDC/Shiprocket/IndiaPost), customer support, and tax invoice generation.</p>
-          <p><strong>3. Payment Security:</strong> All UPI payments are processed directly through verified banking channels. We do not store bank passwords or UPI PINs.</p>
-        `
-      },
-      terms: {
-        title: "Terms & Conditions — AURA Fine Store",
-        html: `
-          <p>Welcome to <strong>AURA Fine Store</strong>. By purchasing from our website, you agree to the following terms:</p>
-          <p><strong>1. Order Verification:</strong> All prepaid UPI and COD token orders are verified against the submitted 12-digit UTR number before dispatch.</p>
-          <p><strong>2. Shipping & Delivery:</strong> Orders are dispatched from Bolpur, Birbhum, West Bengal within 24–48 hours of verification. Delivery takes 4–7 business days.</p>
-        `
-      },
-      refund: {
-        title: "Refund & 7-Day Replacement Policy",
-        html: `
-          <p><strong>1. 7-Day Easy Replacement:</strong> Report transit damage or wrong item within <strong>7 days of delivery</strong> via our <em>Help & Support Desk</em>.</p>
-          <p><strong>2. Mandatory Unboxing Video:</strong> A clear, uncut 360-degree parcel unboxing video is mandatory for transit damage replacement.</p>
-        `
-      }
+      privacy: { title: "Privacy Policy — AURA Fine Store", html: `<p>At <strong>AURA Fine Store</strong>, we protect your personal data. Your name, mobile number, shipping address, and UPI UTR are used solely for order fulfillment and courier dispatch.</p>` },
+      terms: { title: "Terms & Conditions — AURA Fine Store", html: `<p>All prepaid UPI and COD token orders are verified against the submitted 12-digit UTR number before dispatch from Bolpur, Birbhum, West Bengal.</p>` },
+      refund: { title: "Refund & 7-Day Replacement Policy", html: `<p>Report transit damage or wrong item within <strong>7 days of delivery</strong> via our <em>Help & Support Desk</em> with a continuous 360-degree parcel unboxing video.</p>` }
     };
 
     function openLegalModal(type) {
-      const data = legalPoliciesData[type];
-      if (!data) return;
+      const data = legalPoliciesData[type]; if (!data) return;
       document.getElementById('legalModalTitle').innerText = data.title;
       document.getElementById('legalModalBody').innerHTML = data.html;
       document.getElementById('legalPolicyModal').classList.remove('hidden');
     }
-
-    function closeLegalModal() {
-      document.getElementById('legalPolicyModal').classList.add('hidden');
-    }
-
-    function toggleMobileDrawer(open) {
-      const drawer = document.getElementById('mobileMenuDrawer');
-      if (open) drawer.classList.remove('hidden');
-      else drawer.classList.add('hidden');
-    }
-
-    function toggleMobileSub(id) {
-      const el = document.getElementById(id);
-      if (el) el.classList.toggle('hidden');
-    }
+    function closeLegalModal() { document.getElementById('legalPolicyModal').classList.add('hidden'); }
+    function toggleMobileDrawer(open) { const d = document.getElementById('mobileMenuDrawer'); if (open) d.classList.remove('hidden'); else d.classList.add('hidden'); }
+    function toggleMobileSub(id) { const el = document.getElementById(id); if (el) el.classList.toggle('hidden'); }
 
     function syncSearchInputs(val) {
-      const desk = document.getElementById('searchInput');
-      const mob = document.getElementById('mobileSearchInput');
+      const desk = document.getElementById('searchInput'), mob = document.getElementById('mobileSearchInput');
       if (desk && desk.value !== val) desk.value = val;
       if (mob && mob.value !== val) mob.value = val;
       renderStore();
@@ -1122,72 +1113,45 @@
 
     function updateWishlistBadges() {
       const count = wishlistIds.length;
-      const b1 = document.getElementById('wishlistCountBadge');
-      const b2 = document.getElementById('mobDrawerWishCount');
-      if (b1) b1.innerText = count;
-      if (b2) b2.innerText = count;
+      if (document.getElementById('wishlistCountBadge')) document.getElementById('wishlistCountBadge').innerText = count;
+      if (document.getElementById('mobDrawerWishCount')) document.getElementById('mobDrawerWishCount').innerText = count;
     }
 
     function toggleWishlist(prodId, event = null) {
       if (event) event.stopPropagation();
       const idx = wishlistIds.indexOf(prodId);
-      if (idx > -1) wishlistIds.splice(idx, 1);
-      else wishlistIds.push(prodId);
+      if (idx > -1) wishlistIds.splice(idx, 1); else wishlistIds.push(prodId);
       localStorage.setItem('aura_wishlist', JSON.stringify(wishlistIds));
-      updateWishlistBadges();
-      renderStore();
-      if (currentOpenedProduct && currentOpenedProduct.id === prodId) {
-        updateQuickViewWishlistBtn(prodId);
-      }
+      updateWishlistBadges(); renderStore();
+      if (currentOpenedProduct && currentOpenedProduct.id === prodId) updateQuickViewWishlistBtn(prodId);
     }
 
-    function toggleWishlistFromQuickView() {
-      if (!currentOpenedProduct) return;
-      toggleWishlist(currentOpenedProduct.id);
-    }
-
+    function toggleWishlistFromQuickView() { if (currentOpenedProduct) toggleWishlist(currentOpenedProduct.id); }
     function updateQuickViewWishlistBtn(prodId) {
-      const btn = document.getElementById('qvWishlistBtn');
-      if (!btn) return;
-      const isSaved = wishlistIds.includes(prodId);
-      btn.innerHTML = isSaved ? `<i class="fa-solid fa-heart text-rose-500 mr-1"></i> Saved` : `<i class="fa-regular fa-heart mr-1"></i> Save`;
+      const btn = document.getElementById('qvWishlistBtn'); if (!btn) return;
+      btn.innerHTML = wishlistIds.includes(prodId) ? `<i class="fa-solid fa-heart text-rose-500 mr-1"></i> Saved` : `<i class="fa-regular fa-heart mr-1"></i> Save`;
     }
 
     function openWishlistModal() {
-      const box = document.getElementById('wishlistItemsContainer');
-      const savedProducts = allProducts.filter(p => wishlistIds.includes(p.id));
-      if (!savedProducts.length) {
-        box.innerHTML = `<p class="text-center py-10 text-stone-500 text-xs">Your wishlist is empty. Tap the ❤️ icon on any design to save it here!</p>`;
-      } else {
-        box.innerHTML = savedProducts.map(p => `
+      const box = document.getElementById('wishlistItemsContainer'), savedProducts = allProducts.filter(p => wishlistIds.includes(p.id));
+      box.innerHTML = !savedProducts.length
+        ? `<p class="text-center py-10 text-stone-500 text-xs">Your wishlist is empty.</p>`
+        : savedProducts.map(p => `
           <div class="flex items-center justify-between gap-3 bg-stone-950 border border-stone-800 p-3 rounded-2xl">
             <div onclick="closeWishlistModal(); openQuickView(${p.id});" class="flex items-center gap-3 cursor-pointer flex-1">
               <img src="${(p.images && p.images[0]) || ''}" class="w-14 h-14 rounded-xl object-cover border border-stone-700">
-              <div>
-                <h5 class="font-bold text-xs text-stone-100 line-clamp-1">${p.name}</h5>
-                <p class="text-[11px] text-amber-400 font-extrabold mt-0.5">₹${p.price} <span class="line-through text-stone-500 font-normal ml-1">₹${p.originalPrice}</span></p>
-              </div>
+              <div><h5 class="font-bold text-xs text-stone-100 line-clamp-1">${p.name}</h5><p class="text-[11px] text-amber-400 font-extrabold mt-0.5">₹${p.price}</p></div>
             </div>
-            <div class="flex items-center gap-2">
-              <button onclick="closeWishlistModal(); openQuickView(${p.id});" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-xl text-[11px] font-extrabold">Buy</button>
-              <button onclick="toggleWishlist(${p.id}); openWishlistModal();" class="text-rose-400 hover:text-rose-300 p-1.5 text-xs"><i class="fa-solid fa-trash"></i></button>
-            </div>
-          </div>
-        `).join('');
-      }
+            <div class="flex items-center gap-2"><button onclick="closeWishlistModal(); openQuickView(${p.id});" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-xl text-[11px] font-extrabold">Buy</button><button onclick="toggleWishlist(${p.id}); openWishlistModal();" class="text-rose-400 p-1.5 text-xs"><i class="fa-solid fa-trash"></i></button></div>
+          </div>`).join('');
       document.getElementById('wishlistModal').classList.remove('hidden');
     }
-
-    function closeWishlistModal() {
-      document.getElementById('wishlistModal').classList.add('hidden');
-    }
+    function closeWishlistModal() { document.getElementById('wishlistModal').classList.add('hidden'); }
 
     function shareCurrentProductWhatsApp() {
       if (!currentOpenedProduct) return;
-      const p = currentOpenedProduct;
-      const productUrl = `${window.location.origin}/?product=${p.id}`;
-      const text = `✨ *AURA Fine Store* ✨\nCheck out this luxury design:\n\n*${p.name}*\nPrice: *₹${p.price}* (MRP ₹${p.originalPrice})\n\nView & Order directly here: ${productUrl}`;
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+      const p = currentOpenedProduct, productUrl = `${window.location.origin}/?product=${p.id}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(`✨ *AURA Fine Store* ✨\nCheck out: *${p.name}*\nPrice: *₹${p.price}* (MRP ₹${p.originalPrice})\nOrder here: ${productUrl}`)}`, '_blank');
     }
 
     function setupDealCarousel() {
@@ -1200,8 +1164,7 @@
 
     function renderCurrentDealSlide() {
       if (!dealBanners.length) return;
-      const b = dealBanners[currentDealIndex];
-      const img = document.getElementById('carouselImg');
+      const b = dealBanners[currentDealIndex], img = document.getElementById('carouselImg');
       img.style.opacity = '0.3';
       setTimeout(() => { img.src = b.image; document.getElementById('carouselTag').innerText = b.tag || 'SPECIAL'; document.getElementById('carouselTitle').innerText = b.title; img.style.opacity = '1'; }, 200);
       document.querySelectorAll('#carouselDots button').forEach((d, idx) => { d.className = `h-2 rounded-full transition-all ${idx === currentDealIndex ? 'bg-amber-400 w-6' : 'bg-white/40 w-2'}`; });
@@ -1213,52 +1176,31 @@
     function handleDealBannerClick() {
       if (!dealBanners.length) return;
       const b = dealBanners[currentDealIndex];
-      if (b && b.productId) openQuickView(Number(b.productId));
-      else if (allProducts.length > 0) openQuickView(allProducts[0].id);
+      if (b && b.productId) openQuickView(Number(b.productId)); else if (allProducts.length > 0) openQuickView(allProducts[0].id);
     }
 
     function updateFlashTimerUI() {
       const box = document.getElementById('flashDealContainer');
       if (!dealEndTimeMs || dealEndTimeMs <= Date.now()) {
-        dealEndTimeMs = 0;
-        box.innerHTML = `<span class="text-rose-400 font-bold tracking-wider uppercase"><i class="fa-solid fa-clock mr-1"></i> Deal End</span>`;
-        return;
+        dealEndTimeMs = 0; box.innerHTML = `<span class="text-rose-400 font-bold tracking-wider uppercase"><i class="fa-solid fa-clock mr-1"></i> Deal End</span>`; return;
       }
       const diffSec = Math.floor((dealEndTimeMs - Date.now()) / 1000);
-      const h = String(Math.floor(diffSec / 3600)).padStart(2, '0');
-      const m = String(Math.floor((diffSec % 3600) / 60)).padStart(2, '0');
-      const s = String(diffSec % 60).padStart(2, '0');
-      box.innerHTML = `
-        <span class="text-amber-400 font-bold"><i class="fa-solid fa-stopwatch animate-pulse"></i> Flash Deals End:</span>
-        <span class="bg-black px-1.5 py-0.5 rounded font-bold text-white">${h}</span>h :
-        <span class="bg-black px-1.5 py-0.5 rounded font-bold text-white">${m}</span>m :
-        <span class="bg-black px-1.5 py-0.5 rounded font-bold text-amber-400">${s}</span>s
-      `;
+      box.innerHTML = `<span class="text-amber-400 font-bold"><i class="fa-solid fa-stopwatch animate-pulse"></i> Flash Deals End:</span><span class="bg-black px-1.5 py-0.5 rounded font-bold text-white">${String(Math.floor(diffSec / 3600)).padStart(2, '0')}</span>h :<span class="bg-black px-1.5 py-0.5 rounded font-bold text-white">${String(Math.floor((diffSec % 3600) / 60)).padStart(2, '0')}</span>m :<span class="bg-black px-1.5 py-0.5 rounded font-bold text-amber-400">${String(diffSec % 60).padStart(2, '0')}</span>s`;
     }
 
-    // Live Coupon Expiry Checker & Countdown
     function getCouponTimeTag(expiresAt) {
       if (!expiresAt || expiresAt <= 0) return "";
       const diff = expiresAt - Date.now();
       if (diff <= 0) return "EXPIRED";
       const sec = Math.floor(diff / 1000);
-      const h = Math.floor(sec / 3600);
-      const m = Math.floor((sec % 3600) / 60);
-      const s = sec % 60;
-      return `${h}h ${m}m ${s}s`;
+      return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m ${sec % 60}s`;
     }
 
     setInterval(() => {
       updateFlashTimerUI();
-      if (activeCoupons.some(c => c.expiresAt && c.expiresAt > 0)) {
-        renderStoreCoupons();
-      }
+      if (activeCoupons.some(c => c.expiresAt && c.expiresAt > 0)) renderStoreCoupons();
       if (appliedCouponCode && appliedCouponExpiresAt > 0 && Date.now() >= appliedCouponExpiresAt) {
-        appliedCouponCode = "";
-        appliedDiscountRate = 0;
-        appliedCouponExpiresAt = 0;
-        persistCartLocal();
-        updateCartUI();
+        appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0; persistCartLocal(); updateCartUI();
       }
     }, 1000);
 
@@ -1274,44 +1216,40 @@
         activeCoupons = data.coupons || [];
         dealBanners = data.dealBanners || [];
         if (data.storeSettings) {
-          storeDeliveryCharge = data.storeSettings.deliveryCharge || 0;
-          storeCodAdvancePct = data.storeSettings.codAdvancePercent || 15;
-          storeMaxCodAmount = data.storeSettings.maxCodOrderAmount ?? 2000;
-          storeFreeGiftThreshold = data.storeSettings.freeGiftThreshold ?? 1499;
-          storeFreeGiftTitle = data.storeSettings.freeGiftTitle || "Luxury Surprise Jewellery Box";
-          storeCoinsEarnPct = data.storeSettings.coinsEarnPercent ?? 5;
-          storeMaxCoinsRedeem = data.storeSettings.maxCoinsRedeemPerOrder ?? 200;
-          dealEndTimeMs = data.storeSettings.dealEndTime || 0;
-          if (data.storeSettings.metaPixelId) {
-            initMetaPixel(data.storeSettings.metaPixelId);
-          }
+          const st = data.storeSettings;
+          storeDeliveryCharge = st.deliveryCharge || 0;
+          storeCodAdvancePct = st.codAdvancePercent || 15;
+          storeMaxCodAmount = st.maxCodOrderAmount ?? 2000;
+          storeFreeGiftThreshold = st.freeGiftThreshold ?? 1499;
+          storeFreeGiftTitle = st.freeGiftTitle || "Luxury Surprise Jewellery Box";
+          storeCoinsEarnPct = st.coinsEarnPercent ?? 5;
+          storeMaxCoinsRedeem = st.maxCoinsRedeemPerOrder ?? 200;
+          dealEndTimeMs = st.dealEndTime || 0;
+          firstOrderPopupConfig = {
+            enabled: st.firstOrderPopupEnabled !== false,
+            title: st.firstOrderPopupTitle || "Exclusive First-Order Privilege",
+            subtitle: st.firstOrderPopupSubtitle || "Unlock instant savings on your very first luxury order at AURA Fine Store!",
+            coupon: st.firstOrderPopupCoupon || "AURA20",
+            image: st.firstOrderPopupImage || ""
+          };
+          if (st.metaPixelId) initMetaPixel(st.metaPixelId);
           updateFlashTimerUI();
+          scheduleFirstOrderWelcomePopup();
         }
         if (appliedCouponCode) {
           const found = activeCoupons.find(c => c.code === appliedCouponCode);
           const isExpired = found && found.expiresAt > 0 && Date.now() >= found.expiresAt;
           if (found && !isExpired) {
-            appliedDiscountRate = found.discountPercent;
-            appliedCouponMinSpend = found.minSpend || 0;
-            appliedCouponExpiresAt = found.expiresAt || 0;
+            appliedDiscountRate = found.discountPercent; appliedCouponMinSpend = found.minSpend || 0; appliedCouponExpiresAt = found.expiresAt || 0;
             document.getElementById('couponInput').value = appliedCouponCode;
-          } else {
-            appliedCouponCode = "";
-            appliedDiscountRate = 0;
-            appliedCouponExpiresAt = 0;
-          }
+          } else { appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0; }
         }
-        renderDynamicNavigation();
-        updateWishlistBadges();
-        renderStoreCoupons(); setupDealCarousel(); renderStore(); renderRecentlyViewed(); updateCartUI();
+        renderDynamicNavigation(); updateWishlistBadges(); renderStoreCoupons(); setupDealCarousel(); renderStore(); renderRecentlyViewed(); updateCartUI();
 
         if (!hasCheckedDeepLink) {
           hasCheckedDeepLink = true;
-          const urlParams = new URLSearchParams(window.location.search);
-          const sharedProdId = Number(urlParams.get('product'));
-          if (sharedProdId && allProducts.some(p => p.id === sharedProdId)) {
-            openQuickView(sharedProdId);
-          }
+          const sharedProdId = Number(new URLSearchParams(window.location.search).get('product'));
+          if (sharedProdId && allProducts.some(p => p.id === sharedProdId)) openQuickView(sharedProdId);
         }
       } catch (e) {}
     }
@@ -1321,8 +1259,7 @@
       document.getElementById('topCouponsContainer').innerHTML = visible.length
         ? visible.map(c => {
             const tag = getCouponTimeTag(c.expiresAt);
-            const isExp = tag === "EXPIRED";
-            return isExp
+            return tag === "EXPIRED"
               ? `<span class="bg-rose-950/80 px-2.5 py-0.5 rounded-full border border-rose-500/40 text-[10px] text-rose-400 line-through">${c.code} (Expired)</span>`
               : `<span class="cursor-pointer bg-stone-900 px-2.5 py-0.5 rounded-full border border-amber-500/30 text-[11px] whitespace-nowrap" onclick="quickApplyCoupon('${c.code}')">${c.code} (${c.discountPercent}% OFF${tag ? ` • ⏳ ${tag}` : ''})</span>`;
           }).join('')
@@ -1330,8 +1267,7 @@
 
       document.getElementById('cartCouponsBadges').innerHTML = visible.map(c => {
         const tag = getCouponTimeTag(c.expiresAt);
-        const isExp = tag === "EXPIRED";
-        return isExp
+        return tag === "EXPIRED"
           ? `<div class="bg-rose-950/60 border border-rose-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 opacity-70"><span class="font-mono font-bold text-rose-400 line-through">${c.code}</span><span class="text-rose-400 font-bold text-[10px]">EXPIRED</span></div>`
           : `<div onclick="quickApplyCoupon('${c.code}')" class="cursor-pointer bg-stone-950 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2"><span class="font-mono font-bold text-amber-300">${c.code}</span><span class="text-emerald-400 font-bold">(${c.discountPercent}% OFF)</span>${tag ? `<span class="text-[10px] text-amber-400 font-mono">⏳ ${tag}</span>` : ''}</div>`;
       }).join('');
@@ -1339,12 +1275,11 @@
 
     function quickApplyCoupon(code) { document.getElementById('couponInput').value = code; applyCoupon(); }
 
-    function showHomeCatalog(btn = null) {
+    function showHomeCatalog() {
       activeMainSection = 'Home'; activeSubCategory = 'All';
       document.getElementById('currentCategoryHeading').innerText = "Home Collections";
       document.getElementById('subCategoryTabsBar').classList.add('hidden');
-      renderDynamicNavigation();
-      renderStore();
+      renderDynamicNavigation(); renderStore();
     }
 
     function renderSubCategoryBar(mainSec, activeSub) {
@@ -1358,12 +1293,10 @@
       ].join('');
     }
 
-    function filterBySection(mainSec, subCat = 'All', btn = null) {
+    function filterBySection(mainSec, subCat = 'All') {
       activeMainSection = mainSec; activeSubCategory = subCat;
       document.getElementById('currentCategoryHeading').innerHTML = mainSec + (subCat !== 'All' ? ` &rarr; ${subCat}` : '');
-      renderDynamicNavigation();
-      renderSubCategoryBar(mainSec, subCat);
-      renderStore();
+      renderDynamicNavigation(); renderSubCategoryBar(mainSec, subCat); renderStore();
     }
 
     function renderStore() {
@@ -1375,7 +1308,6 @@
         const matchesSearch = search.length > 0
           ? (p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search) || (p.category && p.category.toLowerCase().includes(search)) || (p.mainCategory && p.mainCategory.toLowerCase().includes(search)))
           : (activeMainSection === 'Home' ? p.showOnHome === true : (p.mainCategory === activeMainSection && (activeSubCategory === 'All' || p.category === activeSubCategory)));
-
         if (!matchesSearch) return false;
         if (priceFilter === 'under500' && p.price >= 500) return false;
         if (priceFilter === '500to1500' && (p.price < 500 || p.price > 1500)) return false;
@@ -1392,19 +1324,14 @@
 
       grid.innerHTML = filtered.map(p => {
         const discountPct = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
-        const qtyLeft = Number(p.stockQuantity) || 0;
-        const isOut = p.inStock === false || qtyLeft <= 0;
-        const isLowUrgency = !isOut && qtyLeft < 5;
-        const mainImage = (p.images && p.images[0]) || "";
-        const isWished = wishlistIds.includes(p.id);
+        const qtyLeft = Number(p.stockQuantity) || 0, isOut = p.inStock === false || qtyLeft <= 0, isLowUrgency = !isOut && qtyLeft < 5;
+        const mainImage = (p.images && p.images[0]) || "", isWished = wishlistIds.includes(p.id);
         return `
           <div class="rounded-3xl border border-amber-500/20 overflow-hidden shadow-lg lux-card flex flex-col justify-between group">
             <div onclick="openQuickView(${p.id})" class="relative overflow-hidden aspect-square bg-stone-950 cursor-pointer">
               <img src="${mainImage}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isOut ? 'opacity-40 grayscale' : ''}">
               <span class="absolute top-3.5 left-3.5 ${isOut ? 'bg-rose-600 text-white' : 'bg-stone-950/90 text-amber-300 border border-amber-500/30'} text-[10px] font-extrabold uppercase px-3 py-1 rounded-full">${isOut ? 'Sold Out' : p.badge}</span>
-              <button onclick="toggleWishlist(${p.id}, event)" title="Save to Wishlist" class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-stone-950/85 hover:bg-stone-900 border border-rose-500/30 flex items-center justify-center transition shadow">
-                <i class="${isWished ? 'fa-solid text-rose-500' : 'fa-regular text-stone-300'} fa-heart text-sm"></i>
-              </button>
+              <button onclick="toggleWishlist(${p.id}, event)" title="Save to Wishlist" class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-stone-950/85 hover:bg-stone-900 border border-rose-500/30 flex items-center justify-center transition shadow"><i class="${isWished ? 'fa-solid text-rose-500' : 'fa-regular text-stone-300'} fa-heart text-sm"></i></button>
               ${isLowUrgency ? `<span class="absolute bottom-3.5 left-3.5 bg-rose-600/95 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow animate-pulse">🔥 মাত্র ${qtyLeft}টি পিস বাকি আছে!</span>` : ''}
               <span class="absolute bottom-3.5 right-3.5 bg-black/75 text-white text-[10px] font-bold px-2.5 py-1 rounded-full"><i class="fa-regular fa-images text-amber-400"></i> ${(p.images || []).length} Photos</span>
             </div>
@@ -1419,16 +1346,8 @@
                   <div><span class="text-2xl font-black text-amber-400">₹${p.price}</span><span class="text-xs line-through text-stone-500 ml-1.5">₹${p.originalPrice}</span></div>
                   <span class="text-[10px] text-emerald-300 font-extrabold bg-emerald-950 px-2.5 py-0.5 rounded-full">${discountPct}% OFF</span>
                 </div>
-                ${isOut ? `
-                  <button onclick="openQuickView(${p.id})" class="w-full bg-purple-600/30 hover:bg-purple-600 text-purple-200 hover:text-white border border-purple-500/40 py-2.5 rounded-xl text-xs font-extrabold transition">
-                    <i class="fa-solid fa-bell mr-1"></i> Sold Out • Notify Me
-                  </button>
-                ` : `
-                  <div class="grid grid-cols-2 gap-2">
-                    <button onclick="openQuickView(${p.id})" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700 py-2.5 rounded-xl text-xs font-bold">Add</button>
-                    <button onclick="openQuickView(${p.id})" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-2.5 rounded-xl text-xs font-extrabold">⚡ View & Buy • ₹${p.price}</button>
-                  </div>
-                `}
+                ${isOut ? `<button onclick="openQuickView(${p.id})" class="w-full bg-purple-600/30 hover:bg-purple-600 text-purple-200 hover:text-white border border-purple-500/40 py-2.5 rounded-xl text-xs font-extrabold transition"><i class="fa-solid fa-bell mr-1"></i> Sold Out • Notify Me</button>`
+                : `<div class="grid grid-cols-2 gap-2"><button onclick="openQuickView(${p.id})" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700 py-2.5 rounded-xl text-xs font-bold">Add</button><button onclick="openQuickView(${p.id})" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-2.5 rounded-xl text-xs font-extrabold">⚡ View & Buy • ₹${p.price}</button></div>`}
               </div>
             </div>
           </div>`;
@@ -1438,41 +1357,31 @@
     function openQuickView(id) {
       const prod = allProducts.find(p => p.id === id);
       if (!prod) return;
-      currentOpenedProduct = prod;
-      clearReviewPhoto();
-      recordRecentlyViewed(prod.id);
+      currentOpenedProduct = prod; clearReviewPhoto(); recordRecentlyViewed(prod.id);
       trackMetaEvent('ViewContent', { content_name: prod.name, value: prod.price, currency: 'INR' });
       updateQuickViewWishlistBtn(prod.id);
+      try { window.history.replaceState({}, '', `?product=${prod.id}`); } catch (e) {}
 
-      try {
-        window.history.replaceState({}, '', `?product=${prod.id}`);
-      } catch (e) {}
+      // Pre-fill saved pincode in ETA checker if available
+      const savedPin = localStorage.getItem('aura_last_checked_pincode') || (JSON.parse(localStorage.getItem('aura_customer_profile') || '{}').pincode) || "";
+      const qvPinInp = document.getElementById('qvPincodeInput');
+      const qvPinRes = document.getElementById('qvPincodeEtaResult');
+      if (qvPinInp) {
+        qvPinInp.value = savedPin;
+        if (savedPin.length === 6) checkQuickViewPincodeEta();
+        else if (qvPinRes) qvPinRes.classList.add('hidden');
+      }
 
-      const qtyLeft = Number(prod.stockQuantity) || 0;
-      const isOut = prod.inStock === false || qtyLeft <= 0;
-
+      const qtyLeft = Number(prod.stockQuantity) || 0, isOut = prod.inStock === false || qtyLeft <= 0;
       const lowBanner = document.getElementById('qvLowStockBanner');
-      if (!isOut && qtyLeft < 5) {
-        lowBanner.innerText = `🔥 দ্রুত করুন! স্টকে মাত্র ${qtyLeft}টি পিস বাকি আছে!`;
-        lowBanner.classList.remove('hidden');
-      } else {
-        lowBanner.classList.add('hidden');
-      }
+      if (!isOut && qtyLeft < 5) { lowBanner.innerText = `🔥 দ্রুত করুন! স্টকে মাত্র ${qtyLeft}টি পিস বাকি আছে!`; lowBanner.classList.remove('hidden'); } else lowBanner.classList.add('hidden');
 
-      const inStockBox = document.getElementById('qvInStockActions');
-      const notifyForm = document.getElementById('qvNotifyMeForm');
+      const inStockBox = document.getElementById('qvInStockActions'), notifyForm = document.getElementById('qvNotifyMeForm');
       if (isOut) {
-        inStockBox.classList.add('hidden');
-        notifyForm.classList.remove('hidden');
+        inStockBox.classList.add('hidden'); notifyForm.classList.remove('hidden');
         const saved = JSON.parse(localStorage.getItem('aura_customer_profile') || 'null');
-        if (saved) {
-          if (saved.name) document.getElementById('notifyCustomerName').value = saved.name;
-          if (saved.phone) document.getElementById('notifyCustomerPhone').value = saved.phone;
-        }
-      } else {
-        inStockBox.classList.remove('hidden');
-        notifyForm.classList.add('hidden');
-      }
+        if (saved) { if (saved.name) document.getElementById('notifyCustomerName').value = saved.name; if (saved.phone) document.getElementById('notifyCustomerPhone').value = saved.phone; }
+      } else { inStockBox.classList.remove('hidden'); notifyForm.classList.add('hidden'); }
 
       const images = (prod.images && prod.images.length) ? prod.images : [""];
       document.getElementById('qvMainImage').src = images[0];
@@ -1485,62 +1394,38 @@
       document.getElementById('qvDesc').innerText = prod.description;
 
       const sizes = (prod.sizeOptions && prod.sizeOptions.length) ? prod.sizeOptions : ["Standard"];
-      currentSelectedSize = sizes[0];
-      document.getElementById('qvSelectedSizeDisplay').innerText = currentSelectedSize;
+      currentSelectedSize = sizes[0]; document.getElementById('qvSelectedSizeDisplay').innerText = currentSelectedSize;
       document.getElementById('qvSizeContainer').innerHTML = sizes.map((s, i) => `<button type="button" onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300'}">${s}</button>`).join('');
 
       const colors = (prod.colorOptions && prod.colorOptions.length) ? prod.colorOptions : ["Standard"];
-      currentSelectedColor = colors[0];
-      document.getElementById('qvSelectedColorDisplay').innerText = currentSelectedColor;
+      currentSelectedColor = colors[0]; document.getElementById('qvSelectedColorDisplay').innerText = currentSelectedColor;
       document.getElementById('qvColorContainer').innerHTML = colors.map((c, i) => `<button type="button" onclick="selectVariantColor('${c}', ${i}, this)" class="color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300'}">${c}</button>`).join('');
 
       document.getElementById('qvAddToCartBtn').onclick = () => { addToCartWithVariant(prod); closeQuickView(); };
       document.getElementById('qvBuyNowBtn').onclick = () => { closeQuickView(); instantBuyNowWithVariant(prod); };
-      renderProductReviews(prod);
-      renderRelatedProducts(prod);
+      renderProductReviews(prod); renderRelatedProducts(prod);
       document.getElementById('quickViewModal').classList.remove('hidden');
     }
 
     async function submitNotifyMe(e) {
-      e.preventDefault();
-      if (!currentOpenedProduct) return;
-      const btn = document.getElementById('notifySubmitBtn');
-      btn.disabled = true;
-      btn.innerText = "Saving...";
+      e.preventDefault(); if (!currentOpenedProduct) return;
+      const btn = document.getElementById('notifySubmitBtn'); btn.disabled = true; btn.innerText = "Saving...";
       try {
-        const res = await fetch(`/api/products/${currentOpenedProduct.id}/notify`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            customerName: document.getElementById('notifyCustomerName').value.trim(),
-            phone: document.getElementById('notifyCustomerPhone').value.trim()
-          })
-        });
-        const data = await res.json();
-        alert(data.message || "Saved!");
-      } catch (err) {
-        alert("Network error. Try again.");
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<i class="fa-brands fa-whatsapp mr-1"></i> Notify Me When Available`;
-      }
+        const res = await fetch(`/api/products/${currentOpenedProduct.id}/notify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerName: document.getElementById('notifyCustomerName').value.trim(), phone: document.getElementById('notifyCustomerPhone').value.trim() }) });
+        alert((await res.json()).message || "Saved!");
+      } finally { btn.disabled = false; btn.innerHTML = `<i class="fa-brands fa-whatsapp mr-1"></i> Notify Me When Available`; }
     }
 
     function renderRelatedProducts(prod) {
-      const relSection = document.getElementById('qvRelatedSection');
-      const relGrid = document.getElementById('qvRelatedGrid');
+      const relSection = document.getElementById('qvRelatedSection'), relGrid = document.getElementById('qvRelatedGrid');
       const related = allProducts.filter(p => p.id !== prod.id && (p.category === prod.category || p.mainCategory === prod.mainCategory)).slice(0, 3);
       if (!related.length) { relSection.classList.add('hidden'); return; }
       relSection.classList.remove('hidden');
       relGrid.innerHTML = related.map(r => `
         <div onclick="openQuickView(${r.id})" class="cursor-pointer bg-stone-950 border border-stone-800 hover:border-amber-500/40 rounded-2xl p-2.5 flex items-center gap-2.5 transition">
           <img src="${(r.images && r.images[0]) || ''}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0">
-          <div class="min-w-0">
-            <p class="text-[11px] font-bold text-stone-100 truncate">${r.name}</p>
-            <p class="text-xs font-black text-amber-400 mt-0.5">₹${r.price}</p>
-          </div>
-        </div>
-      `).join('');
+          <div class="min-w-0"><p class="text-[11px] font-bold text-stone-100 truncate">${r.name}</p><p class="text-xs font-black text-amber-400 mt-0.5">₹${r.price}</p></div>
+        </div>`).join('');
     }
 
     function renderProductReviews(prod) {
@@ -1548,47 +1433,24 @@
       const revs = prod.reviews || [];
       document.getElementById('qvReviewsList').innerHTML = revs.length ? revs.map(r => `
         <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl text-xs space-y-1.5">
-          <div class="flex justify-between font-bold">
-            <span>${r.customerName} <span class="text-[10px] text-emerald-400 font-normal ml-1">✓ Verified</span></span>
-            <span class="text-amber-400">${'★'.repeat(r.rating || 5)}</span>
-          </div>
+          <div class="flex justify-between font-bold"><span>${r.customerName} <span class="text-[10px] text-emerald-400 font-normal ml-1">✓ Verified</span></span><span class="text-amber-400">${'★'.repeat(r.rating || 5)}</span></div>
           <p class="text-stone-300">${r.comment}</p>
-          ${r.photoUrl ? `<a href="${r.photoUrl}" target="_blank" class="inline-block pt-1"><img src="${r.photoUrl}" class="w-16 h-16 object-cover rounded-xl border border-amber-500/30 hover:scale-105 transition"></a>` : ''}
-        </div>
-      `).join('') : `<p class="text-xs text-stone-500 text-center py-2">No reviews yet. Be the first to review!</p>`;
+          ${r.photoUrl ? `<a href="${r.photoUrl}" target="_blank" class="inline-block pt-1"><img src="${r.photoUrl}" class="w-16 h-16 object-cover rounded-xl border border-amber-500/30"></a>` : ''}
+        </div>`).join('') : `<p class="text-xs text-stone-500 text-center py-2">No reviews yet.</p>`;
     }
 
     async function submitProductReview(e) {
-      e.preventDefault();
-      if (!currentOpenedProduct) return;
-      const btn = document.getElementById('revSubmitBtn');
-      btn.disabled = true;
-      btn.innerText = "Submitting...";
+      e.preventDefault(); if (!currentOpenedProduct) return;
+      const btn = document.getElementById('revSubmitBtn'); btn.disabled = true; btn.innerText = "Submitting...";
       try {
-        const res = await fetch(`/api/products/${currentOpenedProduct.id}/reviews`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            customerName: document.getElementById('revCustomerName').value,
-            rating: document.getElementById('revRatingSelect').value,
-            comment: document.getElementById('revCommentInput').value,
-            photoBase64: currentReviewPhotoBase64
-          })
-        });
+        const res = await fetch(`/api/products/${currentOpenedProduct.id}/reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerName: document.getElementById('revCustomerName').value, rating: document.getElementById('revRatingSelect').value, comment: document.getElementById('revCommentInput').value, photoBase64: currentReviewPhotoBase64 }) });
         const data = await res.json();
         if (data.success && data.product) {
-          alert("Review submitted!");
-          document.getElementById('revCustomerName').value = "";
-          document.getElementById('revCommentInput').value = "";
-          clearReviewPhoto();
-          currentOpenedProduct = data.product;
-          const idx = allProducts.findIndex(p => p.id === data.product.id);
-          if (idx > -1) allProducts[idx] = data.product;
+          alert("Review submitted!"); document.getElementById('revCustomerName').value = ""; document.getElementById('revCommentInput').value = ""; clearReviewPhoto();
+          currentOpenedProduct = data.product; const idx = allProducts.findIndex(p => p.id === data.product.id); if (idx > -1) allProducts[idx] = data.product;
           renderProductReviews(data.product); renderStore();
         }
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Submit Review";
-      }
+      } finally { btn.disabled = false; btn.innerText = "Submit Review"; }
     }
 
     function setMainImage(u, idx = -1) {
@@ -1615,72 +1477,41 @@
       const exist = cart.find(i => i.itemKey === key);
       if (exist) exist.qty += 1; else cart.push({ ...prod, itemKey: key, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 });
       trackMetaEvent('AddToCart', { content_name: prod.name, value: prod.price, currency: 'INR' });
-      persistCartLocal();
-      updateCartUI(); toggleCart(true);
+      persistCartLocal(); updateCartUI(); toggleCart(true);
     }
 
     function instantBuyNowWithVariant(prod) {
       cart = [{ ...prod, itemKey: `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 }];
       trackMetaEvent('InitiateCheckout', { content_name: prod.name, value: prod.price, currency: 'INR' });
-      persistCartLocal();
-      updateCartUI(); openCheckoutModal();
+      persistCartLocal(); updateCartUI(); openCheckoutModal();
     }
 
-    function closeQuickView() {
-      document.getElementById('quickViewModal').classList.add('hidden');
-      try {
-        window.history.replaceState({}, '', window.location.pathname);
-      } catch (e) {}
-    }
-
-    function updateQty(idx, ch) {
-      cart[idx].qty += ch;
-      if (cart[idx].qty <= 0) cart.splice(idx, 1);
-      persistCartLocal();
-      updateCartUI();
-    }
-
+    function closeQuickView() { document.getElementById('quickViewModal').classList.add('hidden'); try { window.history.replaceState({}, '', window.location.pathname); } catch (e) {} }
+    function updateQty(idx, ch) { cart[idx].qty += ch; if (cart[idx].qty <= 0) cart.splice(idx, 1); persistCartLocal(); updateCartUI(); }
     function toggleCart(forceOpen = false) { const d = document.getElementById('cartDrawer'); if (forceOpen) d.classList.remove('hidden'); else d.classList.toggle('hidden'); }
 
     function calculateCartTotals(mode = 'UPI') {
       let subTotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
       const isCouponExpired = appliedCouponExpiresAt > 0 && Date.now() >= appliedCouponExpiresAt;
-      let discountAmt = (!isCouponExpired && appliedDiscountRate > 0 && subTotal >= appliedCouponMinSpend)
-        ? Math.round((subTotal * appliedDiscountRate) / 100)
-        : 0;
+      let discountAmt = (!isCouponExpired && appliedDiscountRate > 0 && subTotal >= appliedCouponMinSpend) ? Math.round((subTotal * appliedDiscountRate) / 100) : 0;
       const afterCouponValue = Math.max(1, subTotal - discountAmt);
-
       const useCoinsChecked = document.getElementById('useAuraCoinsCheckbox')?.checked || false;
       const maxRedeemable = Math.min(customerAvailableCoins, storeMaxCoinsRedeem, Math.max(0, afterCouponValue - 1));
       const coinsDiscount = (useCoinsChecked && maxRedeemable > 0) ? maxRedeemable : 0;
-
       const netBagValue = Math.max(1, afterCouponValue - coinsDiscount);
       const deliveryCharge = mode === 'COD' ? storeDeliveryCharge : 0;
       return { subTotal, discountAmt, afterCouponValue, maxRedeemable, coinsDiscount, netBagValue, finalAmt: netBagValue + deliveryCharge, deliveryCharge };
     }
 
     function updateFreeGiftProgressUI(netBagValue) {
-      const box = document.getElementById('freeGiftProgressBox');
-      const label = document.getElementById('freeGiftProgressLabel');
-      const pctLabel = document.getElementById('freeGiftPercentLabel');
-      const bar = document.getElementById('freeGiftProgressBar');
-
-      if (!storeFreeGiftThreshold || storeFreeGiftThreshold <= 0 || cart.length === 0) {
-        box.classList.add('hidden');
-        return;
-      }
+      const box = document.getElementById('freeGiftProgressBox'), label = document.getElementById('freeGiftProgressLabel'), pctLabel = document.getElementById('freeGiftPercentLabel'), bar = document.getElementById('freeGiftProgressBar');
+      if (!storeFreeGiftThreshold || storeFreeGiftThreshold <= 0 || cart.length === 0) { box.classList.add('hidden'); return; }
       box.classList.remove('hidden');
-
       if (netBagValue >= storeFreeGiftThreshold) {
-        label.innerHTML = `🎉 অভিনন্দন! আপনি ফ্রি <b class="text-emerald-300">${storeFreeGiftTitle}</b> আনলক করেছেন!`;
-        pctLabel.innerText = "UNLOCKED ✓";
-        bar.style.width = "100%";
+        label.innerHTML = `🎉 অভিনন্দন! আপনি ফ্রি <b class="text-emerald-300">${storeFreeGiftTitle}</b> আনলক করেছেন!`; pctLabel.innerText = "UNLOCKED ✓"; bar.style.width = "100%";
       } else {
-        const remaining = storeFreeGiftThreshold - netBagValue;
-        const pct = Math.min(99, Math.round((netBagValue / storeFreeGiftThreshold) * 100));
-        label.innerHTML = `আর মাত্র <b class="text-amber-300">₹${remaining}</b> কেনাকাটা করলে ফ্রি <b class="text-emerald-300">${storeFreeGiftTitle}</b> পাবেন!`;
-        pctLabel.innerText = `${pct}%`;
-        bar.style.width = `${pct}%`;
+        const remaining = storeFreeGiftThreshold - netBagValue, pct = Math.min(99, Math.round((netBagValue / storeFreeGiftThreshold) * 100));
+        label.innerHTML = `আর মাত্র <b class="text-amber-300">₹${remaining}</b> কেনাকাটা করলে ফ্রি <b class="text-emerald-300">${storeFreeGiftTitle}</b> পাবেন!`; pctLabel.innerText = `${pct}%`; bar.style.width = `${pct}%`;
       }
     }
 
@@ -1690,14 +1521,11 @@
       if (!cart.length) {
         list.innerHTML = `<p class="text-center py-16 text-stone-500 text-xs">Your shopping bag is empty.</p>`;
         document.getElementById('subTotalDisplay').innerText = "₹0"; document.getElementById('discountDisplay').innerText = "-₹0"; document.getElementById('finalTotalDisplay').innerText = "₹0";
-        document.getElementById('checkoutProceedBtn').disabled = true;
-        updateFreeGiftProgressUI(0);
-        return;
+        document.getElementById('checkoutProceedBtn').disabled = true; updateFreeGiftProgressUI(0); return;
       }
       document.getElementById('checkoutProceedBtn').disabled = false;
       const { subTotal, discountAmt, netBagValue, finalAmt } = calculateCartTotals('UPI');
       updateFreeGiftProgressUI(netBagValue);
-
       list.innerHTML = cart.map((item, idx) => `<div class="flex items-center gap-3 border-b border-stone-800 pb-3"><img src="${(item.images && item.images[0]) || ''}" class="w-14 h-14 object-cover rounded-xl"><div class="flex-1"><h5 class="text-xs font-bold line-clamp-1">${item.name}</h5><p class="text-[10px] text-amber-400">${item.selectedSize} | ${item.selectedColor}</p><p class="text-xs font-black text-amber-400">₹${item.price}</p><div class="flex items-center gap-2 mt-1"><button onclick="updateQty(${idx}, -1)" class="w-6 h-6 bg-stone-800 rounded">-</button><span>${item.qty}</span><button onclick="updateQty(${idx}, 1)" class="w-6 h-6 bg-stone-800 rounded">+</button></div></div><button onclick="cart.splice(${idx}, 1); persistCartLocal(); updateCartUI();" class="text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button></div>`).join('');
       document.getElementById('subTotalDisplay').innerText = `₹${subTotal}`; document.getElementById('discountDisplay').innerText = `-₹${discountAmt}`; document.getElementById('finalTotalDisplay').innerText = `₹${finalAmt}`;
     }
@@ -1708,34 +1536,23 @@
       const { subTotal } = calculateCartTotals('UPI');
       const found = activeCoupons.find(c => c.code === code);
       const isExpired = found && found.expiresAt > 0 && Date.now() >= found.expiresAt;
-
       if (found && !isExpired && subTotal >= (found.minSpend || 0)) {
-        appliedDiscountRate = found.discountPercent;
-        appliedCouponCode = found.code;
-        appliedCouponMinSpend = found.minSpend || 0;
-        appliedCouponExpiresAt = found.expiresAt || 0;
+        appliedDiscountRate = found.discountPercent; appliedCouponCode = found.code; appliedCouponMinSpend = found.minSpend || 0; appliedCouponExpiresAt = found.expiresAt || 0;
         status.innerText = `Applied ${found.discountPercent}% OFF!`; status.className = "text-[11px] text-emerald-400 block font-bold";
       } else {
         appliedDiscountRate = 0; appliedCouponCode = ""; appliedCouponExpiresAt = 0;
         status.innerText = isExpired ? `Coupon "${code}" has expired!` : (found ? `Min order ₹${found.minSpend} required!` : "Invalid coupon code!");
         status.className = "text-[11px] text-rose-400 block font-bold";
       }
-      persistCartLocal();
-      status.classList.remove('hidden'); updateCartUI();
+      persistCartLocal(); status.classList.remove('hidden'); updateCartUI();
     }
 
     function applyCouponFromStep2() {
       document.getElementById('couponInput').value = document.getElementById('step2CouponInput').value;
-      applyCoupon();
-      handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
+      applyCoupon(); handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
     }
 
-    function openCheckoutModal() {
-      loadSavedCustomerProfile();
-      toggleCart();
-      document.getElementById('checkoutModal').classList.remove('hidden');
-      backToStep1Address();
-    }
+    function openCheckoutModal() { loadSavedCustomerProfile(); toggleCart(); document.getElementById('checkoutModal').classList.remove('hidden'); backToStep1Address(); }
     function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
 
     async function goToStep2Payment() {
@@ -1747,23 +1564,28 @@
 
       saveCustomerProfileLocal();
 
-      // Fetch Customer AURA Coins Wallet Balance
+      // Check Wallet Coins + Whether This Mobile Number Already Placed an Order
       customerAvailableCoins = 0;
       const coinChk = document.getElementById('useAuraCoinsCheckbox');
       if (coinChk) coinChk.checked = false;
       try {
         const wRes = await fetch(`/api/wallet/${phone}`);
         const wData = await wRes.json();
-        if (wData.success) customerAvailableCoins = wData.coins || 0;
+        if (wData.success) {
+          customerAvailableCoins = wData.coins || 0;
+          const firstOrderCode = String(firstOrderPopupConfig.coupon || '').trim().toUpperCase();
+          if (wData.hasPriorOrders && firstOrderCode && appliedCouponCode === firstOrderCode) {
+            appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0;
+            persistCartLocal(); updateCartUI();
+            localStorage.setItem('aura_first_order_completed', 'true');
+            alert(`Note: Coupon "${firstOrderCode}" is for First-Time Customers only and was removed because +91 ${phone} already has an existing order.`);
+          }
+        }
       } catch (e) {}
 
       const fullAddr = `${house}, ${village}, P.O: ${po}, ${city}, ${state} - ${pin}`;
       const { finalAmt } = calculateCartTotals('UPI');
-      fetch('/api/abandoned-cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerName: name, phone, address: fullAddr, items: cart, totalAmount: finalAmt })
-      }).catch(() => {});
+      fetch('/api/abandoned-cart', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerName: name, phone, address: fullAddr, items: cart, totalAmount: finalAmt }) }).catch(() => {});
 
       document.getElementById('checkoutStep1').classList.add('hidden'); document.getElementById('checkoutStep2').classList.remove('hidden');
       document.getElementById('checkoutStepIndicator').innerText = "Step 2 of 2: Payment & Offer Verification";
@@ -1786,46 +1608,25 @@
     }
 
     function handlePaymentModeChange(requestedMode) {
-      const preTotals = calculateCartTotals('UPI');
-      const netBagValue = preTotals.netBagValue;
-
-      // AURA Coins Wallet UI
+      const preTotals = calculateCartTotals('UPI'), netBagValue = preTotals.netBagValue;
       const coinsBox = document.getElementById('auraCoinsCheckoutBox');
       if (customerAvailableCoins > 0 && preTotals.maxRedeemable > 0 && storeMaxCoinsRedeem > 0) {
         document.getElementById('availableCoinsLabel').innerText = customerAvailableCoins;
         document.getElementById('redeemableCoinsAmt').innerText = preTotals.maxRedeemable;
         coinsBox.classList.remove('hidden');
-      } else {
-        coinsBox.classList.add('hidden');
-      }
+      } else coinsBox.classList.add('hidden');
 
-      // Free Gift Banner
       const giftBanner = document.getElementById('checkoutUnlockedGiftBanner');
       if (storeFreeGiftThreshold > 0 && netBagValue >= storeFreeGiftThreshold) {
-        document.getElementById('checkoutUnlockedGiftName').innerText = storeFreeGiftTitle;
-        giftBanner.classList.remove('hidden');
-      } else {
-        giftBanner.classList.add('hidden');
-      }
+        document.getElementById('checkoutUnlockedGiftName').innerText = storeFreeGiftTitle; giftBanner.classList.remove('hidden');
+      } else giftBanner.classList.add('hidden');
 
-      // Max COD Limit Check
-      const codOpt = document.getElementById('codOptionElement');
-      const codWarn = document.getElementById('codLimitWarningMsg');
-      const modeSelect = document.getElementById('ordPaymentMethod');
+      const codOpt = document.getElementById('codOptionElement'), codWarn = document.getElementById('codLimitWarningMsg'), modeSelect = document.getElementById('ordPaymentMethod');
       let mode = requestedMode;
-
       if (storeMaxCodAmount > 0 && netBagValue > storeMaxCodAmount) {
-        codOpt.disabled = true;
-        codOpt.innerText = `🚫 COD Unavailable above ₹${storeMaxCodAmount}`;
-        modeSelect.value = 'UPI';
-        mode = 'UPI';
-        codWarn.innerText = `Note: Cash on Delivery is only available for orders up to ₹${storeMaxCodAmount}.`;
-        codWarn.classList.remove('hidden');
-      } else {
-        codOpt.disabled = false;
-        codOpt.innerText = `🛡️ Cash on Delivery (COD Charge + Advance Token)`;
-        codWarn.classList.add('hidden');
-      }
+        codOpt.disabled = true; codOpt.innerText = `🚫 COD Unavailable above ₹${storeMaxCodAmount}`; modeSelect.value = 'UPI'; mode = 'UPI';
+        codWarn.innerText = `Note: Cash on Delivery is only available for orders up to ₹${storeMaxCodAmount}.`; codWarn.classList.remove('hidden');
+      } else { codOpt.disabled = false; codOpt.innerText = `🛡️ Cash on Delivery (COD Charge + Advance Token)`; codWarn.classList.add('hidden'); }
 
       const { subTotal, discountAmt, coinsDiscount, finalAmt, deliveryCharge } = calculateCartTotals(mode);
       document.getElementById('chkSubtotal').innerText = `₹${subTotal}`;
@@ -1833,26 +1634,15 @@
       document.getElementById('chkCouponCodeName').innerText = appliedCouponCode || "None";
 
       const coinsRow = document.getElementById('chkCoinsRow');
-      if (coinsDiscount > 0) {
-        coinsRow.classList.remove('hidden');
-        document.getElementById('chkCoinsAmt').innerText = `-₹${coinsDiscount}`;
-      } else {
-        coinsRow.classList.add('hidden');
-      }
+      if (coinsDiscount > 0) { coinsRow.classList.remove('hidden'); document.getElementById('chkCoinsAmt').innerText = `-₹${coinsDiscount}`; } else coinsRow.classList.add('hidden');
 
       const delEl = document.getElementById('chkDeliveryAmt');
       delEl.innerText = (mode === 'COD' && deliveryCharge > 0) ? `+₹${deliveryCharge} (COD Charge)` : "FREE";
       delEl.className = (mode === 'COD' && deliveryCharge > 0) ? "font-bold text-amber-400" : "font-bold text-emerald-400";
       document.getElementById('chkFinalPayable').innerText = `₹${finalAmt}`;
 
-      const earnHint = document.getElementById('chkEarnCoinsHint');
-      const willEarn = storeCoinsEarnPct > 0 ? Math.floor((netBagValue * storeCoinsEarnPct) / 100) : 0;
-      if (willEarn > 0) {
-        document.getElementById('chkWillEarnCoins').innerText = willEarn;
-        earnHint.classList.remove('hidden');
-      } else {
-        earnHint.classList.add('hidden');
-      }
+      const earnHint = document.getElementById('chkEarnCoinsHint'), willEarn = storeCoinsEarnPct > 0 ? Math.floor((netBagValue * storeCoinsEarnPct) / 100) : 0;
+      if (willEarn > 0) { document.getElementById('chkWillEarnCoins').innerText = willEarn; earnHint.classList.remove('hidden'); } else earnHint.classList.add('hidden');
 
       let payAmt = finalAmt;
       if (mode === 'COD') {
@@ -1891,25 +1681,18 @@
           villageOrCity: document.getElementById('addrVillage').value, postOffice: document.getElementById('addrPostOffice').value, policeStation: document.getElementById('addrPoliceStation').value,
           landmark: document.getElementById('addrLandmark').value,
           items: cart.map(i => ({ id: i.id, name: i.name, selectedSize: i.selectedSize, selectedColor: i.selectedColor, qty: i.qty })),
-          couponCode: appliedCouponCode,
-          useAuraCoins,
-          paymentMethod: mode,
-          utrNumber: utr
+          couponCode: appliedCouponCode, useAuraCoins, paymentMethod: mode, utrNumber: utr
         })
       });
       const data = await res.json();
       if (data.success) {
+        // Permanently mark first order completed so welcome popup never shows again
+        localStorage.setItem('aura_first_order_completed', 'true');
         trackMetaEvent('Purchase', { value: data.verifiedTotal || 0, currency: 'INR', order_id: data.orderId });
         const coinsMsg = data.coinsEarned > 0 ? `\n🪙 You will receive +${data.coinsEarned} AURA Coins upon delivery!` : '';
         alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}\nVerified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
-        cart = [];
-        appliedCouponCode = "";
-        appliedDiscountRate = 0;
-        appliedCouponExpiresAt = 0;
-        persistCartLocal();
-        updateCartUI();
-        closeCheckoutModal();
-        loadRecentSalesFeed();
+        cart = []; appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0;
+        persistCartLocal(); updateCartUI(); closeCheckoutModal(); loadRecentSalesFeed();
       } else alert(data.message || "Failed to place order.");
       btn.disabled = false;
     }
@@ -1918,39 +1701,18 @@
       document.getElementById('myOrdersModal').classList.remove('hidden');
       const saved = JSON.parse(localStorage.getItem('aura_customer_profile') || 'null');
       const inp = document.getElementById('myOrdersPhoneInput');
-      if (saved && saved.phone && !inp.value) {
-        inp.value = saved.phone;
-        fetchMyOrders();
-      }
+      if (saved && saved.phone && !inp.value) { inp.value = saved.phone; fetchMyOrders(); }
     }
     function closeMyOrdersModal() { document.getElementById('myOrdersModal').classList.add('hidden'); }
 
     function buildOrderTimelineHTML(status) {
-      if (status === 'Cancelled') {
-        return `<div class="bg-rose-950/60 border border-rose-500/40 text-rose-300 px-3 py-2 rounded-xl font-bold text-center">❌ Order Cancelled</div>`;
-      }
+      if (status === 'Cancelled') return `<div class="bg-rose-950/60 border border-rose-500/40 text-rose-300 px-3 py-2 rounded-xl font-bold text-center">❌ Order Cancelled</div>`;
       let step = 1;
       if (status && status.includes('Packing')) step = 2;
       if (status && status.includes('Shipped')) step = 3;
       if (status === 'Delivered') step = 4;
-
-      const steps = [
-        { num: 1, label: 'Placed' },
-        { num: 2, label: 'Verified' },
-        { num: 3, label: 'Shipped' },
-        { num: 4, label: 'Delivered' }
-      ];
-
-      return `
-        <div class="grid grid-cols-4 gap-1.5 pt-1">
-          ${steps.map(s => `
-            <div class="text-center">
-              <div class="h-1.5 rounded-full mb-1 ${step >= s.num ? 'bg-emerald-400' : 'bg-stone-800'}"></div>
-              <span class="text-[10px] font-bold ${step >= s.num ? 'text-emerald-300' : 'text-stone-500'}">${s.label}</span>
-            </div>
-          `).join('')}
-        </div>
-      `;
+      const steps = [{ num: 1, label: 'Placed' }, { num: 2, label: 'Verified' }, { num: 3, label: 'Shipped' }, { num: 4, label: 'Delivered' }];
+      return `<div class="grid grid-cols-4 gap-1.5 pt-1">${steps.map(s => `<div class="text-center"><div class="h-1.5 rounded-full mb-1 ${step >= s.num ? 'bg-emerald-400' : 'bg-stone-800'}"></div><span class="text-[10px] font-bold ${step >= s.num ? 'text-emerald-300' : 'text-stone-500'}">${s.label}</span></div>`).join('')}</div>`;
     }
 
     async function fetchMyOrders() {
@@ -1958,36 +1720,27 @@
       if (!phone) return alert("Enter mobile number or Order ID!");
       const res = await fetch(`/api/orders/track?q=${encodeURIComponent(phone)}`);
       const data = await res.json();
-
       const walletBanner = document.getElementById('myWalletSummaryBanner');
       if (typeof data.walletCoins === 'number' && phone.replace(/[^0-9]/g, '').length === 10) {
         document.getElementById('myWalletCoinsCount').innerText = data.walletCoins;
         document.getElementById('myWalletRupeesWorth').innerText = data.walletCoins;
         walletBanner.classList.remove('hidden');
-      } else {
-        walletBanner.classList.add('hidden');
-      }
+      } else walletBanner.classList.add('hidden');
 
       const box = document.getElementById('myOrdersListContainer');
       if (!data.orders || !data.orders.length) { box.innerHTML = `<p class="text-center py-6 text-rose-400 font-bold">No orders found!</p>`; return; }
       box.innerHTML = data.orders.map(o => {
-        const courier = o.courierPartner || 'Delhivery';
-        const trackFn = courierTrackingUrls[courier] || courierTrackingUrls["Delhivery"];
+        const courier = o.courierPartner || 'Delhivery', trackFn = courierTrackingUrls[courier] || courierTrackingUrls["Delhivery"];
         return `
         <div class="border border-stone-800 bg-stone-950 p-4 rounded-2xl space-y-3">
-          <div class="flex justify-between items-center font-bold">
-            <span class="text-amber-400 font-mono text-sm">#${o.id}</span>
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] ${o.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${o.status}</span>
-          </div>
+          <div class="flex justify-between items-center font-bold"><span class="text-amber-400 font-mono text-sm">#${o.id}</span><span class="px-2.5 py-0.5 rounded-full text-[10px] ${o.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${o.status}</span></div>
           ${buildOrderTimelineHTML(o.status)}
           <p class="text-stone-400 text-[11px]">${o.date} • Total: <b class="text-white">₹${o.total}</b> (${o.paymentMethod})</p>
           ${o.freeGiftUnlocked ? `<p class="text-[11px] text-emerald-300 font-bold"><i class="fa-solid fa-award mr-1"></i>Free Bonus Gift: ${o.freeGiftUnlocked}</p>` : ''}
           ${o.coinsEarned > 0 ? `<p class="text-[11px] text-amber-300"><i class="fa-solid fa-coins mr-1"></i>${o.coinsCredited ? `Credited +${o.coinsEarned} AURA Coins ✓` : `Earn +${o.coinsEarned} AURA Coins upon delivery`}</p>` : ''}
           ${o.awbNumber ? `<p class="text-[11px] text-cyan-300 font-mono">Courier: ${courier} | AWB: <b>${o.awbNumber}</b></p>` : ''}
           <div class="flex flex-wrap gap-2 pt-1">
-            <a href="/api/orders/${o.id}/invoice" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px]">
-              <i class="fa-solid fa-file-pdf"></i> Download Invoice
-            </a>
+            <a href="/api/orders/${o.id}/invoice" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px]"><i class="fa-solid fa-file-pdf"></i> Download Invoice</a>
             ${o.awbNumber ? `<a href="${trackFn(o.awbNumber)}" target="_blank" class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-location-dot"></i> Track on ${courier}</a>` : ''}
             ${o.deliverySlipFile ? `<a href="${o.deliverySlipFile}" download="Slip_${o.id}" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-download"></i> Delivery Slip</a>` : ''}
           </div>
@@ -1997,12 +1750,8 @@
 
     function openSupportModal() {
       document.getElementById('supportModal').classList.remove('hidden'); backToSupportStep1();
-      const saved = JSON.parse(localStorage.getItem('aura_customer_profile') || 'null');
-      const inp = document.getElementById('supportPhoneInput');
-      if (saved && saved.phone && !inp.value) {
-        inp.value = saved.phone;
-        searchOrdersForSupport();
-      }
+      const saved = JSON.parse(localStorage.getItem('aura_customer_profile') || 'null'), inp = document.getElementById('supportPhoneInput');
+      if (saved && saved.phone && !inp.value) { inp.value = saved.phone; searchOrdersForSupport(); }
       if (supportLiveInterval) clearInterval(supportLiveInterval);
       supportLiveInterval = setInterval(() => {
         const p = (document.getElementById('supportPhoneInput').value || "").trim();
@@ -2029,10 +1778,8 @@
       if (p.length < 6) return alert("Enter 10-digit mobile number!");
       const res = await fetch(`/api/support/search?q=${encodeURIComponent(p)}&t=${Date.now()}`);
       const data = await res.json();
-      supportMatchedOrders = data.orders || [];
-      renderCustomerTickets(data.tickets || []);
-      const listDiv = document.getElementById('supportOrdersList');
-      selectedSupportOrder = null; updateSupportNextBtn();
+      supportMatchedOrders = data.orders || []; renderCustomerTickets(data.tickets || []);
+      const listDiv = document.getElementById('supportOrdersList'); selectedSupportOrder = null; updateSupportNextBtn();
       if (!supportMatchedOrders.length) { listDiv.innerHTML = `<p class="text-center py-4 text-rose-400 font-bold">No orders found!</p>`; return; }
       listDiv.innerHTML = supportMatchedOrders.map((o, i) => `<div onclick="selectOrderForSupport(${i}, this)" class="support-order-card cursor-pointer bg-stone-950 border-2 border-stone-800 p-3 rounded-2xl"><div class="flex justify-between font-bold"><span class="font-mono text-amber-400">#${o.id}</span><span>${o.status}</span></div><p class="text-xs font-bold">${o.customerName}</p><p class="text-[11px] text-stone-400">${(o.items || []).map(x => x.name).join(', ')}</p></div>`).join('');
     }
@@ -2040,13 +1787,11 @@
     function selectOrderForSupport(i, el) {
       selectedSupportOrder = supportMatchedOrders[i];
       document.querySelectorAll('.support-order-card').forEach(c => c.classList.replace('border-emerald-500', 'border-stone-800'));
-      el.classList.replace('border-stone-800', 'border-emerald-500');
-      updateSupportNextBtn();
+      el.classList.replace('border-stone-800', 'border-emerald-500'); updateSupportNextBtn();
     }
 
     function updateSupportNextBtn() {
-      const btn = document.getElementById('supportNextBtn');
-      btn.disabled = !selectedSupportOrder;
+      const btn = document.getElementById('supportNextBtn'); btn.disabled = !selectedSupportOrder;
       btn.className = selectedSupportOrder ? "w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-stone-950 py-3.5 rounded-xl font-extrabold text-xs cursor-pointer" : "w-full bg-stone-800 text-stone-500 py-3.5 rounded-xl font-extrabold text-xs cursor-not-allowed";
     }
 
@@ -2060,97 +1805,47 @@
     function backToSupportStep1() { document.getElementById('supportStep2Form').classList.add('hidden'); document.getElementById('supportStep1').classList.remove('hidden'); }
 
     function renderSupportPhotosPreview() {
-      document.getElementById('supportSelectedPhotosPreview').innerHTML = supportPhotoFiles.map((f, i) => {
-        const url = URL.createObjectURL(f);
-        return `<div class="relative w-14 h-14 rounded-lg overflow-hidden border border-stone-700"><img src="${url}" class="w-full h-full object-cover"><button type="button" onclick="supportPhotoFiles.splice(${i},1); renderSupportPhotosPreview();" class="absolute top-0.5 right-0.5 bg-rose-600 text-white w-4 h-4 rounded-full text-[10px] font-bold">&times;</button></div>`;
-      }).join('');
+      document.getElementById('supportSelectedPhotosPreview').innerHTML = supportPhotoFiles.map((f, i) => `<div class="relative w-14 h-14 rounded-lg overflow-hidden border border-stone-700"><img src="${URL.createObjectURL(f)}" class="w-full h-full object-cover"><button type="button" onclick="supportPhotoFiles.splice(${i},1); renderSupportPhotosPreview();" class="absolute top-0.5 right-0.5 bg-rose-600 text-white w-4 h-4 rounded-full text-[10px] font-bold">&times;</button></div>`).join('');
     }
 
     function handleSupportPhotosSelect(inp) {
-      for (const f of Array.from(inp.files || [])) {
-        if (f.size > 10 * 1024 * 1024) { alert(`"${f.name}" exceeds 10MB.`); continue; }
-        supportPhotoFiles.push(f);
-      }
-      inp.value = "";
-      renderSupportPhotosPreview();
+      for (const f of Array.from(inp.files || [])) { if (f.size > 10 * 1024 * 1024) { alert(`"${f.name}" exceeds 10MB.`); continue; } supportPhotoFiles.push(f); }
+      inp.value = ""; renderSupportPhotosPreview();
     }
 
     function handleSupportVideoSelect(inp) {
       const f = inp.files[0]; if (!f) return;
       if (f.size > 50 * 1024 * 1024) { inp.value = ""; return alert("Video must be under 50MB!"); }
-      supportVideoFile = f;
-      document.getElementById('supportVideoFileName').innerText = `${f.name} (${(f.size / (1024 * 1024)).toFixed(1)} MB)`;
-      document.getElementById('supportSelectedVideoPreview').classList.remove('hidden');
-      inp.value = "";
+      supportVideoFile = f; document.getElementById('supportVideoFileName').innerText = `${f.name} (${(f.size / (1024 * 1024)).toFixed(1)} MB)`;
+      document.getElementById('supportSelectedVideoPreview').classList.remove('hidden'); inp.value = "";
     }
 
     function clearSupportVideo() { supportVideoFile = null; document.getElementById('supportSelectedVideoPreview').classList.add('hidden'); }
 
     function uploadFormDataWithProgress(url, formData, onProgress) {
       return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', url, true);
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable && onProgress) {
-            onProgress(Math.round((e.loaded / e.total) * 100), e.loaded, e.total);
-          }
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.responseText);
-          else reject(new Error('Upload failed'));
-        };
-        xhr.onerror = () => reject(new Error('Network error'));
-        xhr.send(formData);
+        const xhr = new XMLHttpRequest(); xhr.open('POST', url, true);
+        xhr.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100), e.loaded, e.total); };
+        xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.responseText); else reject(new Error('Upload failed')); };
+        xhr.onerror = () => reject(new Error('Network error')); xhr.send(formData);
       });
     }
 
     async function submitSupportTicket(e) {
-      e.preventDefault();
-      if (!selectedSupportOrder) return;
-      const btn = document.getElementById('supportSubmitBtn');
-      const progBox = document.getElementById('supportUploadProgressBox');
-      const progLabel = document.getElementById('supportUploadStatusLabel');
-      const progPercent = document.getElementById('supportUploadPercentText');
-      const progBar = document.getElementById('supportUploadProgressBar');
-
-      btn.innerText = "Uploading..."; btn.disabled = true;
-      progBox.classList.remove('hidden');
-      progBar.style.width = "10%"; progPercent.innerText = "10%";
-      progLabel.innerText = "Sending complaint & media securely...";
-
-      const issueText = document.getElementById('supportIssueText').value.trim();
-
+      e.preventDefault(); if (!selectedSupportOrder) return;
+      const btn = document.getElementById('supportSubmitBtn'), progBox = document.getElementById('supportUploadProgressBox'), progLabel = document.getElementById('supportUploadStatusLabel'), progPercent = document.getElementById('supportUploadPercentText'), progBar = document.getElementById('supportUploadProgressBar');
+      btn.innerText = "Uploading..."; btn.disabled = true; progBox.classList.remove('hidden'); progBar.style.width = "10%"; progPercent.innerText = "10%"; progLabel.innerText = "Sending complaint & media securely...";
       try {
-        const formData = new FormData();
-        formData.append('orderId', selectedSupportOrder.id);
-        formData.append('issueText', issueText);
-        supportPhotoFiles.forEach(file => formData.append('photos', file));
-        if (supportVideoFile) formData.append('video', supportVideoFile);
-
-        const rawResp = await uploadFormDataWithProgress('/api/support/ticket', formData, (pct) => {
-          progBar.style.width = `${pct}%`;
-          progPercent.innerText = `${pct}%`;
-          progLabel.innerText = pct < 100 ? `Uploading files (${pct}%)...` : "Forwarding to support desk...";
-        });
-
+        const formData = new FormData(); formData.append('orderId', selectedSupportOrder.id); formData.append('issueText', document.getElementById('supportIssueText').value.trim());
+        supportPhotoFiles.forEach(file => formData.append('photos', file)); if (supportVideoFile) formData.append('video', supportVideoFile);
+        const rawResp = await uploadFormDataWithProgress('/api/support/ticket', formData, (pct) => { progBar.style.width = `${pct}%`; progPercent.innerText = `${pct}%`; progLabel.innerText = pct < 100 ? `Uploading files (${pct}%)...` : "Forwarding to support desk..."; });
         const data = JSON.parse(rawResp);
         if (data.success) {
           alert(`✅ Support request submitted!\nTicket ID: ${data.ticketId}`);
-          document.getElementById('supportIssueText').value = "";
-          supportPhotoFiles = [];
-          renderSupportPhotosPreview();
-          clearSupportVideo();
-          backToSupportStep1();
-          searchOrdersForSupport();
-        } else {
-          alert(data.message || "Failed to submit ticket.");
-        }
-      } catch (err) {
-        alert("Network error while uploading. Please try again.");
-      } finally {
-        progBox.classList.add('hidden');
-        btn.innerText = "Submit Issue"; btn.disabled = false;
-      }
+          document.getElementById('supportIssueText').value = ""; supportPhotoFiles = []; renderSupportPhotosPreview(); clearSupportVideo(); backToSupportStep1(); searchOrdersForSupport();
+        } else alert(data.message || "Failed to submit ticket.");
+      } catch (err) { alert("Network error while uploading."); }
+      finally { progBox.classList.add('hidden'); btn.innerText = "Submit Issue"; btn.disabled = false; }
     }
 
     updateWishlistBadges();
