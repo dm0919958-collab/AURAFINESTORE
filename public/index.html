@@ -100,6 +100,33 @@
   #checkoutStep2{gap:14px}
   @media(max-width:520px){#checkoutStep1 .aura-form-section{grid-template-columns:1fr;padding:12px}#checkoutStep1 .aura-field.full{grid-column:auto}#checkoutStep1 .aura-form-heading{grid-column:auto}}
 
+
+  /* AURA readability refinement: consistent contrast in every storefront section */
+  :root{color-scheme:light}
+  body,#checkoutModal,#cartDrawer,#productModal{color:#20372d}
+  #checkoutModal .text-stone-100,#checkoutModal .text-stone-200,
+  #checkoutModal .text-slate-100,#checkoutModal .text-gray-100{color:#20372d!important}
+  #checkoutModal .text-stone-300,#checkoutModal .text-slate-300,
+  #checkoutModal .text-gray-300{color:#52645a!important}
+  #checkoutModal .text-stone-400,#checkoutModal .text-stone-500,
+  #checkoutModal .text-slate-400,#checkoutModal .text-slate-500,
+  #checkoutModal .text-gray-400,#checkoutModal .text-gray-500{color:#68776d!important}
+  #checkoutModal .text-amber-400,#checkoutModal .text-amber-500,
+  #checkoutModal .text-amber-600{color:#805b25!important}
+  #checkoutModal .bg-stone-950,#checkoutModal .bg-stone-900,
+  #checkoutModal .bg-slate-950,#checkoutModal .bg-slate-900{background:#f6f3eb!important}
+  #checkoutModal #checkoutStep2{color:#20372d}
+  #checkoutModal #checkoutStep2 .text-emerald-300,
+  #checkoutModal #checkoutStep2 .text-emerald-400{color:#176b4a!important}
+  #checkoutModal #checkoutStep2 .text-amber-300,
+  #checkoutModal #checkoutStep2 .text-amber-400{color:#805b25!important}
+  #checkoutModal #checkoutStep2 .text-stone-400,
+  #checkoutModal #checkoutStep2 .text-stone-500{color:#68776d!important}
+  #checkoutModal button:focus-visible,input:focus-visible,select:focus-visible{
+    outline:3px solid rgba(181,139,72,.42)!important;outline-offset:2px
+  }
+  #checkoutModal>div{scroll-behavior:smooth;overscroll-behavior:contain}
+  #checkoutStep2{scroll-margin-top:12px}
   </style>
 </head>
 <body class="selection:bg-amber-500 selection:text-stone-950 relative min-h-screen flex flex-col justify-between">
@@ -1674,9 +1701,20 @@
       document.getElementById('checkoutStepIndicator').innerText = "Step 2 of 2: Payment & Offer Verification";
       document.getElementById('step2SummaryName').innerText = `${name} (${phone})`; document.getElementById('step2SummaryAddr').innerText = `${house}, ${village}, P.O: ${po}, ${city} - ${pin}`;
       handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
+      // Keep the payment step at the top of the checkout panel (not below the fold).
+      const checkoutPanel = document.querySelector('#checkoutModal > div');
+      if (checkoutPanel) {
+        checkoutPanel.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => checkoutPanel.scrollTo({ top: 0, behavior: 'smooth' }), 120);
+      }
     }
 
-    function backToStep1Address() { document.getElementById('checkoutStep2').classList.add('hidden'); document.getElementById('checkoutStep1').classList.remove('hidden'); }
+    function backToStep1Address() {
+      document.getElementById('checkoutStep2').classList.add('hidden');
+      document.getElementById('checkoutStep1').classList.remove('hidden');
+      const checkoutPanel = document.querySelector('#checkoutModal > div');
+      if (checkoutPanel) checkoutPanel.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     async function validateAndLookupPincode(pin) {
       const clean = pin.trim(), err = document.getElementById('pincodeErrorMsg'), succ = document.getElementById('pincodeSuccessMsg');
