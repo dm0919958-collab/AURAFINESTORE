@@ -127,6 +127,50 @@
   }
   #checkoutModal>div{scroll-behavior:smooth;overscroll-behavior:contain}
   #checkoutStep2{scroll-margin-top:12px}
+  
+  /* AURA payment is a dedicated full-screen step, not a long modal section */
+  body.aura-payment-open{overflow:hidden!important}
+  #checkoutStep2:not(.hidden){position:fixed!important;inset:0!important;z-index:120!important;width:100vw!important;height:100dvh!important;max-height:100dvh!important;overflow-y:auto!important;overscroll-behavior:contain!important;background:#fbfaf6!important;color:#20352b!important;padding:22px max(18px,calc((100vw - 620px)/2)) 30px!important;display:flex!important;flex-direction:column!important;gap:14px!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+  .payment-page-top{width:100%;max-width:620px;margin:0 auto 2px;padding:4px 0 14px;border-bottom:1px solid #e7dfd0}
+  .payment-close{width:40px;height:40px;border-radius:50%;background:#eee9de!important;color:#263b30!important;font-size:25px;font-weight:700}
+  .checkout-items-summary,.checkout-total-card,#checkoutStep2>.bg-stone-950{width:100%;max-width:620px;margin-left:auto;margin-right:auto}
+  .checkout-items-summary{background:#fff!important;border:1px solid #e6dfd2;border-radius:16px;padding:12px 14px}
+  .checkout-items-heading{font-size:12px;font-weight:800;color:#214b3a;margin-bottom:8px}
+  .checkout-item-row{display:flex;align-items:center;gap:11px;padding:8px 0;border-top:1px solid #eee9df}
+  .checkout-item-row img{width:48px;height:48px;object-fit:cover;border-radius:10px;background:#f1eee6}
+  .checkout-item-details{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+  .checkout-item-details strong{font-size:12px;line-height:1.35;color:#24382e;white-space:normal}
+  .checkout-item-details span{font-size:10px;color:#65756a}
+  .checkout-item-row> b{font-size:12px;color:#174c3c;white-space:nowrap}
+  #checkoutStep2 .checkout-total-card{background:#e9f2eb!important;border:1px solid #b8d1c0!important;border-radius:16px;padding:15px!important;color:#20352b!important}
+  #checkoutStep2 .checkout-total-card .text-stone-300{color:#465b4e!important}
+  #checkoutStep2 .checkout-total-card .text-emerald-400{color:#087747!important}
+  #checkoutStep2 .checkout-total-card .text-amber-400{color:#805313!important}
+  #checkoutStep2 .checkout-grand-total{font-size:17px!important;color:#173f31!important;border-color:#b7cdbd!important}
+  #checkoutStep2 .checkout-grand-total #chkFinalPayable{font-size:23px;font-weight:900;color:#0b7048}
+  #checkoutStep2 .bg-stone-950{background:#fff!important;border-color:#e6ddca!important}
+  #checkoutStep2 label{color:#354b3e!important}
+  #checkoutStep2 input,#checkoutStep2 select{background:#fff!important;color:#20352b!important}
+  #checkoutStep2 .text-stone-300{color:#52645a!important}
+  #checkoutStep2 .text-stone-400{color:#68776d!important}
+  #checkoutStep2 .text-amber-300,#checkoutStep2 .text-amber-400{color:#805b25!important}
+  #checkoutStep2 .text-emerald-400{color:#087747!important}
+  #checkoutStep2 #qrBoxTitle{color:#805b25!important}
+  #checkoutStep2 #submitOrderBtn{min-height:52px;font-size:14px;box-shadow:0 8px 20px rgba(181,139,72,.2)}
+  #checkoutStep2 #directUpiAppBtn{min-height:46px}
+  #checkoutStep2 .payment-close:focus-visible{outline:3px solid #b58b48;outline-offset:3px}
+  #checkoutStep1 .aura-hint{color:#52645a!important}
+  #pincodeSuccessMsg{color:#087747!important;background:#e6f4eb;border:1px solid #b9dfc7;padding:7px 9px;border-radius:8px}
+  #pincodeErrorMsg{color:#a52d3a!important;background:#fff0f0;padding:7px 9px;border-radius:8px}
+  #qvPincodeEtaResult{background:#173f31!important;color:#fff!important;border:1px solid #b58b48;border-radius:10px;padding:9px 10px;line-height:1.55}
+  #qvPincodeEtaResult span,#qvPincodeEtaResult .text-amber-300,#qvPincodeEtaResult .text-white{color:#fff!important;font-weight:800;text-decoration:underline;text-decoration-color:#dfc18c}
+  #qvPincodeEtaResult .text-emerald-300{color:#b9f2d0!important;font-weight:800}
+  #carouselSlide:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(8,18,14,.76) 0%,rgba(8,18,14,.48) 48%,rgba(8,18,14,.12) 100%);z-index:1}
+  #carouselSlide>div{z-index:2}
+  #carouselTitle{color:#fff!important;text-shadow:0 2px 12px rgba(0,0,0,.95),0 1px 3px rgba(0,0,0,.9)!important}
+  #carouselTag{box-shadow:0 2px 12px rgba(0,0,0,.28)}
+  @media(max-width:520px){#checkoutStep2:not(.hidden){padding:16px 14px 24px!important}.checkout-item-row img{width:42px;height:42px}.payment-page-top h3{font-size:18px}}
+
   </style>
 </head>
 <body class="selection:bg-amber-500 selection:text-stone-950 relative min-h-screen flex flex-col justify-between">
@@ -639,6 +683,11 @@
         </div>
 
         <div id="checkoutStep2" class="hidden space-y-3">
+          <div class="payment-page-top flex items-center justify-between gap-3">
+            <div><p class="text-[10px] font-extrabold tracking-[.18em] uppercase text-emerald-700">AURA Secure Checkout</p><h3 class="text-xl font-extrabold text-slate-900">Payment & Order Summary</h3><p class="text-xs text-slate-600">Review your items and complete payment</p></div>
+            <button type="button" onclick="closeCheckoutModal()" class="payment-close" aria-label="Close payment">&times;</button>
+          </div>
+          <div id="checkoutItemsSummary" class="checkout-items-summary" aria-label="Products in this order"></div>
           <div class="bg-stone-950 p-3 rounded-xl border border-amber-500/30 text-xs flex justify-between items-center">
             <div><p class="font-bold text-amber-300" id="step2SummaryName"></p><p class="text-[10px] text-stone-400 truncate max-w-[260px]" id="step2SummaryAddr"></p></div>
             <button type="button" onclick="backToStep1Address()" class="text-[11px] text-amber-400 font-bold underline">Edit</button>
@@ -675,12 +724,12 @@
             </select>
             <p id="codLimitWarningMsg" class="hidden text-[11px] text-amber-400 font-semibold mt-1"></p>
           </div>
-          <div class="bg-emerald-950/60 border border-emerald-500/30 p-3 rounded-xl space-y-1">
+          <div class="checkout-total-card bg-emerald-950/60 border border-emerald-500/30 p-3 rounded-xl space-y-1">
             <div class="flex justify-between text-stone-300 text-[11px]"><span>Bag Value:</span><span id="chkSubtotal" class="font-bold">₹0</span></div>
             <div class="flex justify-between text-emerald-400 font-bold text-[11px]"><span>Coupon Discount (<span id="chkCouponCodeName">None</span>):</span><span id="chkDiscountAmt">-₹0</span></div>
             <div id="chkCoinsRow" class="hidden flex justify-between text-amber-300 font-bold text-[11px]"><span>AURA Coins Redeemed:</span><span id="chkCoinsAmt">-₹0</span></div>
             <div class="flex justify-between text-stone-300 text-[11px]"><span>Delivery Charge:</span><span id="chkDeliveryAmt" class="font-bold text-emerald-400">FREE</span></div>
-            <div class="flex justify-between text-amber-400 font-extrabold text-xs pt-1 border-t border-emerald-500/20"><span>Total Order Value:</span><span id="chkFinalPayable">₹0</span></div>
+            <div class="checkout-grand-total flex justify-between items-center text-amber-400 font-extrabold text-base pt-3 mt-2 border-t border-emerald-500/30"><span>Total Payable</span><span id="chkFinalPayable">₹0</span></div>
             <p id="chkEarnCoinsHint" class="hidden text-[10px] text-amber-300 pt-1"><i class="fa-solid fa-sparkles mr-1"></i>You will earn <b id="chkWillEarnCoins">0</b> AURA Coins upon delivery!</p>
           </div>
           <div class="bg-stone-950 p-4 rounded-2xl border border-amber-500/30 space-y-3 text-center">
@@ -1663,7 +1712,24 @@
     }
 
     function openCheckoutModal() { loadSavedCustomerProfile(); toggleCart(); document.getElementById('checkoutModal').classList.remove('hidden'); backToStep1Address(); }
-    function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
+    function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); document.body.classList.remove('aura-payment-open'); }
+
+    function renderCheckoutItemsSummary() {
+      const box = document.getElementById('checkoutItemsSummary');
+      if (!box) return;
+      box.replaceChildren();
+      const heading = document.createElement('div'); heading.className = 'checkout-items-heading'; heading.textContent = `Your Items (${cart.reduce((n, item) => n + (Number(item.qty) || 1), 0)})`; box.appendChild(heading);
+      cart.forEach(item => {
+        const row = document.createElement('div'); row.className = 'checkout-item-row';
+        const img = document.createElement('img'); img.src = (item.images && item.images[0]) || ''; img.alt = item.name || 'Product';
+        const details = document.createElement('div'); details.className = 'checkout-item-details';
+        const name = document.createElement('strong'); name.textContent = item.name || 'Product';
+        const meta = document.createElement('span'); meta.textContent = `${item.selectedSize || 'Standard'}${item.selectedColor ? ' · ' + item.selectedColor : ''} · Qty ${item.qty || 1}`;
+        details.append(name, meta);
+        const price = document.createElement('b'); price.textContent = `₹${(Number(item.price) || 0) * (Number(item.qty) || 1)}`;
+        row.append(img, details, price); box.appendChild(row);
+      });
+    }
 
     async function goToStep2Payment() {
       const name = document.getElementById('ordName').value.trim(), phone = document.getElementById('ordPhone').value.trim(), pin = document.getElementById('ordPincode').value.trim();
@@ -1697,7 +1763,9 @@
       const { finalAmt } = calculateCartTotals('UPI');
       fetch('/api/abandoned-cart', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerName: name, phone, address: fullAddr, items: cart, totalAmount: finalAmt }) }).catch(() => {});
 
+      renderCheckoutItemsSummary();
       document.getElementById('checkoutStep1').classList.add('hidden'); document.getElementById('checkoutStep2').classList.remove('hidden');
+      document.body.classList.add('aura-payment-open');
       document.getElementById('checkoutStepIndicator').innerText = "Step 2 of 2: Payment & Offer Verification";
       document.getElementById('step2SummaryName').innerText = `${name} (${phone})`; document.getElementById('step2SummaryAddr').innerText = `${house}, ${village}, P.O: ${po}, ${city} - ${pin}`;
       handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
@@ -1710,6 +1778,7 @@
     }
 
     function backToStep1Address() {
+      document.body.classList.remove('aura-payment-open');
       document.getElementById('checkoutStep2').classList.add('hidden');
       document.getElementById('checkoutStep1').classList.remove('hidden');
       const checkoutPanel = document.querySelector('#checkoutModal > div');
