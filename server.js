@@ -1476,7 +1476,7 @@ app.post('/api/admin/change-pin', async (req, res) => {
     }
     const hashedPin = await bcrypt.hash(cleanNew, 10);
     await Settings.findOneAndUpdate({ key: 'main' }, { adminPin: hashedPin }, { upsert: true });
-    const newToken = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
+    const newToken = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
     res.json({ success: true, token: newToken, message: "Admin PIN encrypted & updated successfully!" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
