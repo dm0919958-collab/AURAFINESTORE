@@ -591,12 +591,32 @@ label { color: #f1e5ce; }
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-slate-400 block mb-1" title="Type M:1, L:2, XL:3 for individual size stock">Sizes (e.g. M:1, L:2, XL:3)</label>
-              <input type="text" id="prodSizes" oninput="syncSizeStockTotalPreview()" placeholder="M:1, L:2, XL:3 or M, L, XL" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
+              <label class="text-slate-400 block mb-1">Sizes (Comma separated)</label>
+              <input type="text" id="prodSizes" oninput="rebuildVariantStockMatrixUI()" placeholder="M, L, XL, XXL" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
             </div>
             <div>
               <label class="text-slate-400 block mb-1">Colors (Comma separated)</label>
-              <input type="text" id="prodColors" placeholder="Black, White, Navy" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
+              <input type="text" id="prodColors" oninput="rebuildVariantStockMatrixUI()" placeholder="Black, White, Navy" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
+            </div>
+          </div>
+
+          <!-- Interactive Color + Size Auto Stock Table -->
+          <div id="variantStockMatrixBox" class="hidden bg-slate-800/80 p-3 rounded-2xl border border-amber-500/35 space-y-2">
+            <div class="flex justify-between items-center">
+              <label class="text-amber-300 font-bold text-[11px]"><i class="fa-solid fa-table-cells mr-1"></i> Color & Size Stock Table (Auto-Generated)</label>
+              <span class="text-[10px] text-emerald-400 font-bold">Total: <b id="matrixTotalStockBadge">0</b> pcs</span>
+            </div>
+            <div class="max-h-44 overflow-y-auto rounded-xl border border-slate-700">
+              <table class="w-full text-left text-[11px]">
+                <thead class="bg-slate-950 text-amber-300 sticky top-0">
+                  <tr>
+                    <th class="p-2">Color</th>
+                    <th class="p-2">Size</th>
+                    <th class="p-2 w-24 text-center">Stock Qty</th>
+                  </tr>
+                </thead>
+                <tbody id="variantStockMatrixBody" class="divide-y divide-slate-700"></tbody>
+              </table>
             </div>
           </div>
 
@@ -1593,28 +1613,21 @@ label { color: #f1e5ce; }
       btn.innerText = "Saving..."; btn.disabled = true;
       if (!currentFormImages.length) { btn.innerText = editId ? "Update Product" : "Publish to Store"; btn.disabled = false; return alert("Add at least 1 product photo!"); }
       const sizesRaw = document.getElementById('prodSizes').value, colorsRaw = document.getElementById('prodColors').value;
-      const parsedSizes = [];
-      const sizeStockObj = {};
-      if (sizesRaw) {
-        sizesRaw.split(',').map(s => s.trim()).filter(Boolean).forEach(entry => {
-          if (entry.includes(':')) {
-            const parts = entry.split(':');
-            const szName = parts[0].trim();
-            const szQty = Math.max(0, parseInt(parts[1], 10) || 0);
-            if (szName) {
-              parsedSizes.push(szName);
-              sizeStockObj[szName] = szQty;
-            }
-          } else {
-            parsedSizes.push(entry);
-          }
-        });
-      }
+      const parsedSizes = sizesRaw ? sizesRaw.split(',').map(s => s.split(':')[0].trim()).filter(Boolean) : [];
       if (!parsedSizes.length) parsedSizes.push("Standard");
 
-      const sizeStockKeys = Object.keys(sizeStockObj);
-      const computedStock = sizeStockKeys.length > 0
-        ? sizeStockKeys.reduce((s, k) => s + sizeStockObj[k], 0)
+      const parsedColors = colorsRaw ? colorsRaw.split(',').map(c => c.trim()).filter(Boolean) : [];
+      if (!parsedColors.length) parsedColors.push("Standard");
+
+      const variantStockObj = {};
+      document.querySelectorAll('.variant-stock-qty-input').forEach(inp => {
+        const vKey = inp.getAttribute('data-vkey');
+        if (vKey) variantStockObj[vKey] = Math.max(0, parseInt(inp.value, 10) || 0);
+      });
+
+      const varKeys = Object.keys(variantStockObj);
+      const computedStock = varKeys.length > 0
+        ? varKeys.reduce((s, k) => s + variantStockObj[k], 0)
         : (Number(document.getElementById('prodStock').value) || 0);
 
       const payload = {
@@ -1622,8 +1635,8 @@ label { color: #f1e5ce; }
         price: document.getElementById('prodPrice').value, originalPrice: document.getElementById('prodOrigPrice').value, costPrice: document.getElementById('prodCostPrice').value,
         stockQuantity: computedStock, showOnHome: document.getElementById('prodShowOnHome').checked,
         sizeOptions: parsedSizes,
-        sizeStock: sizeStockObj,
-        colorOptions: colorsRaw ? colorsRaw.split(',').map(c => c.trim()).filter(Boolean) : ["Standard"],
+        variantStock: variantStockObj,
+        colorOptions: parsedColors,
         badge: document.getElementById('prodBadge').value || "New", images: [...currentFormImages], description: document.getElementById('prodDesc').value
       };
       const res = await fetch(editId ? `/api/admin/products/${editId}` : '/api/admin/products', { method: editId ? 'PUT' : 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
@@ -1632,16 +1645,59 @@ label { color: #f1e5ce; }
       btn.innerText = "Publish to Store"; btn.disabled = false;
     }
 
-    function syncSizeStockTotalPreview() {
-      const raw = document.getElementById('prodSizes').value || '';
-      let total = 0, hasColon = false;
-      raw.split(',').forEach(part => {
-        if (part.includes(':')) {
-          hasColon = true;
-          total += Math.max(0, parseInt(part.split(':')[1], 10) || 0);
-        }
+    function updateMatrixTotalStock() {
+      let total = 0;
+      document.querySelectorAll('.variant-stock-qty-input').forEach(inp => {
+        total += Math.max(0, parseInt(inp.value, 10) || 0);
       });
-      if (hasColon) document.getElementById('prodStock').value = total;
+      const badge = document.getElementById('matrixTotalStockBadge');
+      if (badge) badge.innerText = total;
+      document.getElementById('prodStock').value = total;
+    }
+
+    function rebuildVariantStockMatrixUI(existingMap = null) {
+      const sizesRaw = document.getElementById('prodSizes').value || '';
+      const colorsRaw = document.getElementById('prodColors').value || '';
+      const sizes = sizesRaw.split(',').map(s => s.split(':')[0].trim()).filter(Boolean);
+      const colors = colorsRaw.split(',').map(c => c.trim()).filter(Boolean);
+
+      const box = document.getElementById('variantStockMatrixBox');
+      const tbody = document.getElementById('variantStockMatrixBody');
+      if (!sizes.length && !colors.length) {
+        box.classList.add('hidden');
+        tbody.innerHTML = '';
+        return;
+      }
+
+      const currentVals = {};
+      document.querySelectorAll('.variant-stock-qty-input').forEach(inp => {
+        currentVals[inp.getAttribute('data-vkey')] = Math.max(0, parseInt(inp.value, 10) || 0);
+      });
+      const sourceMap = existingMap || currentVals;
+
+      const finalColors = colors.length ? colors : ['Standard'];
+      const finalSizes = sizes.length ? sizes : ['Standard'];
+      const defaultPerCell = Math.max(1, Math.floor((Number(document.getElementById('prodStock').value) || 5) / (finalColors.length * finalSizes.length)));
+
+      let rowsHtml = '';
+      finalColors.forEach(col => {
+        finalSizes.forEach(sz => {
+          const vKey = `${col}__${sz}`;
+          const val = Object.prototype.hasOwnProperty.call(sourceMap, vKey) ? sourceMap[vKey] : defaultPerCell;
+          rowsHtml += `
+            <tr>
+              <td class="p-2 font-bold text-cyan-300">${col}</td>
+              <td class="p-2 font-bold text-amber-300">${sz}</td>
+              <td class="p-1.5 text-center">
+                <input type="number" min="0" data-vkey="${vKey}" value="${val}" oninput="updateMatrixTotalStock()" class="variant-stock-qty-input w-20 text-center bg-slate-950 border border-slate-600 rounded-lg p-1 text-white font-bold">
+              </td>
+            </tr>`;
+        });
+      });
+
+      tbody.innerHTML = rowsHtml;
+      box.classList.remove('hidden');
+      updateMatrixTotalStock();
     }
 
     function editProduct(id) {
@@ -1655,9 +1711,18 @@ label { color: #f1e5ce; }
       populateCategoryDropdowns(p.mainCategory, p.category);
       document.getElementById('prodPrice').value = p.price; document.getElementById('prodOrigPrice').value = p.originalPrice;
       document.getElementById('prodCostPrice').value = p.costPrice || 0; document.getElementById('prodStock').value = p.stockQuantity;
-      const sMap = (p.sizeStock && typeof p.sizeStock === 'object') ? p.sizeStock : {};
-      const formattedSizes = (p.sizeOptions || []).map(sz => Object.prototype.hasOwnProperty.call(sMap, sz) ? `${sz}:${sMap[sz]}` : sz).join(', ');
-      document.getElementById('prodSizes').value = formattedSizes; document.getElementById('prodColors').value = (p.colorOptions || []).join(', ');
+      document.getElementById('prodSizes').value = (p.sizeOptions || []).join(', ');
+      document.getElementById('prodColors').value = (p.colorOptions || []).join(', ');
+
+      const vMap = (p.variantStock && typeof p.variantStock === 'object' && Object.keys(p.variantStock).length) ? { ...p.variantStock } : {};
+      if (!Object.keys(vMap).length && p.sizeStock && typeof p.sizeStock === 'object') {
+        const cols = (p.colorOptions && p.colorOptions.length) ? p.colorOptions : ['Standard'];
+        cols.forEach(c => {
+          Object.entries(p.sizeStock).forEach(([sz, q]) => { vMap[`${c}__${sz}`] = q; });
+        });
+      }
+      rebuildVariantStockMatrixUI(vMap);
+
       document.getElementById('prodBadge').value = p.badge || ""; document.getElementById('prodShowOnHome').checked = p.showOnHome !== false;
       document.getElementById('prodDesc').value = p.description || "";
       currentFormImages = [...(p.images || [])]; renderFormImagesPreview();
@@ -1668,7 +1733,10 @@ label { color: #f1e5ce; }
       document.getElementById('productForm').reset(); document.getElementById('editProdId').value = "";
       document.getElementById('productFormHeading').innerHTML = `<i class="fa-solid fa-plus-circle mr-1"></i> Add New Product`;
       document.getElementById('cancelEditBtn').classList.add('hidden'); document.getElementById('saveProdBtn').innerText = "Publish to Store";
-      document.getElementById('prodShowOnHome').checked = true; populateCategoryDropdowns(); currentFormImages = []; renderFormImagesPreview();
+      document.getElementById('prodShowOnHome').checked = true;
+      document.getElementById('variantStockMatrixBox').classList.add('hidden');
+      document.getElementById('variantStockMatrixBody').innerHTML = '';
+      populateCategoryDropdowns(); currentFormImages = []; renderFormImagesPreview();
     }
 
     async function saveQuickCatalogRow(id) {
@@ -1713,7 +1781,7 @@ label { color: #f1e5ce; }
               <img src="${(p.images && p.images[0]) || ''}" class="w-12 h-12 rounded-xl object-cover border border-slate-600 flex-shrink-0">
               <div class="min-w-0">
                 <p class="font-bold text-white truncate">${p.name} ${isLow ? '<span class="ml-1 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black">LOW</span>' : ''}</p>
-                <p class="text-[10px] text-slate-400">${p.mainCategory} &rarr; ${p.category} • Margin: <b class="${unitMargin >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${unitMargin}/pc</b>${(p.sizeStock && Object.keys(p.sizeStock).length) ? ' • Sizes: ' + Object.entries(p.sizeStock).map(([k,v]) => `<b class="${v<=0?'text-rose-400':'text-amber-300'}">${k}:${v}</b>`).join(', ') : ''}</p>
+                <p class="text-[10px] text-slate-400">${p.mainCategory} &rarr; ${p.category} • Margin: <b class="${unitMargin >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${unitMargin}/pc</b>${(p.variantStock && Object.keys(p.variantStock).length) ? ' • Stock: ' + Object.entries(p.variantStock).map(([k,v]) => `<b class="${v<=0?'text-rose-400':'text-amber-300'}">${k.replace('__','-')}:${v}</b>`).join(', ') : ((p.sizeStock && Object.keys(p.sizeStock).length) ? ' • Sizes: ' + Object.entries(p.sizeStock).map(([k,v]) => `<b class="${v<=0?'text-rose-400':'text-amber-300'}">${k}:${v}</b>`).join(', ') : '')}</p>
                 <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
                   <label class="text-[10px] text-amber-300">Sale ₹: <input type="number" id="q_price_${p.id}" value="${p.price}" class="w-16 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold"></label>
                   <label class="text-[10px] text-emerald-300">Cost ₹: <input type="number" id="q_cost_${p.id}" value="${p.costPrice || 0}" class="w-16 bg-slate-950 border border-emerald-500/40 rounded px-1.5 py-0.5 text-emerald-300 font-bold"></label>
