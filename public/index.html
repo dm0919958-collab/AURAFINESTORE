@@ -1578,24 +1578,12 @@
       document.getElementById('qvDiscount').innerText = `${Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100)}% OFF`;
       document.getElementById('qvDesc').innerText = prod.description;
 
-      const sizes = (prod.sizeOptions && prod.sizeOptions.length) ? prod.sizeOptions : ["Standard"];
-      const sMap = (prod.sizeStock && typeof prod.sizeStock === 'object') ? prod.sizeStock : {};
-      const hasSMap = Object.keys(sMap).length > 0;
-      const firstInStockSize = sizes.find(s => !hasSMap || !Object.prototype.hasOwnProperty.call(sMap, s) || (Number(sMap[s]) || 0) > 0) || sizes[0];
-      currentSelectedSize = firstInStockSize;
-      document.getElementById('qvSelectedSizeDisplay').innerText = currentSelectedSize;
-      document.getElementById('qvSizeContainer').innerHTML = sizes.map((s) => {
-        const hasSz = hasSMap && Object.prototype.hasOwnProperty.call(sMap, s);
-        const szQty = hasSz ? (Number(sMap[s]) || 0) : qtyLeft;
-        const szOut = szQty <= 0;
-        const isSel = s === currentSelectedSize;
-        const tagHtml = hasSz ? (szOut ? `<span class="text-[9px] text-rose-400 ml-1">(Out)</span>` : (szQty <= 3 ? `<span class="text-[9px] text-rose-500 font-black ml-1">(${szQty} left)</span>` : '')) : '';
-        return `<button type="button" ${szOut ? 'disabled' : ''} onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${szOut ? 'opacity-45 line-through cursor-not-allowed bg-stone-950 border-stone-800 text-stone-500' : (isSel ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300')}">${s}${tagHtml}</button>`;
-      }).join('');
-
       const colors = (prod.colorOptions && prod.colorOptions.length) ? prod.colorOptions : ["Standard"];
-      currentSelectedColor = colors[0]; document.getElementById('qvSelectedColorDisplay').innerText = currentSelectedColor;
+      currentSelectedColor = colors[0];
+      document.getElementById('qvSelectedColorDisplay').innerText = currentSelectedColor;
       document.getElementById('qvColorContainer').innerHTML = colors.map((c, i) => `<button type="button" onclick="selectVariantColor('${c}', ${i}, this)" class="color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300'}">${c}</button>`).join('');
+
+      renderQuickViewSizePills(prod, currentSelectedColor);
 
       document.getElementById('qvAddToCartBtn').onclick = () => { addToCartWithVariant(prod); closeQuickView(); };
       document.getElementById('qvBuyNowBtn').onclick = () => { closeQuickView(); instantBuyNowWithVariant(prod); };
@@ -1655,9 +1643,46 @@
       if (idx >= 0 && document.getElementById(`thumb_img_${idx}`)) document.getElementById(`thumb_img_${idx}`).classList.replace('border-transparent', 'border-amber-400');
     }
 
+    function renderQuickViewSizePills(prod, colorName) {
+      const sizes = (prod.sizeOptions && prod.sizeOptions.length) ? prod.sizeOptions : ["Standard"];
+      const qtyLeft = Number(prod.stockQuantity) || 0;
+      const vMap = (prod.variantStock && typeof prod.variantStock === 'object') ? prod.variantStock : {};
+      const hasVMap = Object.keys(vMap).length > 0;
+      const sMap = (prod.sizeStock && typeof prod.sizeStock === 'object') ? prod.sizeStock : {};
+      const hasSMap = Object.keys(sMap).length > 0;
+
+      const getSzInfo = (s) => {
+        const vKey = `${colorName}__${s}`;
+        if (hasVMap && Object.prototype.hasOwnProperty.call(vMap, vKey)) {
+          return { tracked: true, qty: Math.max(0, Number(vMap[vKey]) || 0) };
+        }
+        if (hasSMap && Object.prototype.hasOwnProperty.call(sMap, s)) {
+          return { tracked: true, qty: Math.max(0, Number(sMap[s]) || 0) };
+        }
+        return { tracked: false, qty: qtyLeft };
+      };
+
+      if (!currentSelectedSize || !sizes.includes(currentSelectedSize) || getSzInfo(currentSelectedSize).qty <= 0) {
+        currentSelectedSize = sizes.find(s => getSzInfo(s).qty > 0) || sizes[0];
+      }
+      document.getElementById('qvSelectedSizeDisplay').innerText = currentSelectedSize;
+
+      document.getElementById('qvSizeContainer').innerHTML = sizes.map((s) => {
+        const info = getSzInfo(s);
+        const szOut = info.qty <= 0;
+        const isSel = s === currentSelectedSize && !szOut;
+        const tagHtml = info.tracked
+          ? (szOut ? `<span class="text-[9px] text-rose-400 ml-1">(Out)</span>` : (info.qty <= 3 ? `<span class="text-[9px] text-rose-500 font-black ml-1">(${info.qty} left)</span>` : ''))
+          : '';
+        return `<button type="button" ${szOut ? 'disabled' : ''} onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${szOut ? 'opacity-45 line-through cursor-not-allowed bg-stone-950 border-stone-800 text-stone-500' : (isSel ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300')}">${s}${tagHtml}</button>`;
+      }).join('');
+    }
+
     function selectVariantSize(val, btn) {
       currentSelectedSize = val; document.getElementById('qvSelectedSizeDisplay').innerText = val;
-      document.querySelectorAll('.size-pill-btn').forEach(b => { b.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-stone-950 border-stone-700 text-stone-300"; });
+      document.querySelectorAll('.size-pill-btn').forEach(b => {
+        if (!b.disabled) b.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-stone-950 border-stone-700 text-stone-300";
+      });
       btn.className = "size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-amber-500 text-stone-950 border-amber-400";
     }
 
@@ -1665,31 +1690,48 @@
       currentSelectedColor = val; document.getElementById('qvSelectedColorDisplay').innerText = val;
       document.querySelectorAll('.color-pill-btn').forEach(b => { b.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-stone-950 border-stone-700 text-stone-300"; });
       btn.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-amber-500 text-stone-950 border-amber-400";
-      if (currentOpenedProduct && currentOpenedProduct.images && currentOpenedProduct.images.length) setMainImage(currentOpenedProduct.images[idx < currentOpenedProduct.images.length ? idx : 0], idx);
+      if (currentOpenedProduct) {
+        renderQuickViewSizePills(currentOpenedProduct, val);
+        if (currentOpenedProduct.images && currentOpenedProduct.images.length) {
+          setMainImage(currentOpenedProduct.images[idx < currentOpenedProduct.images.length ? idx : 0], idx);
+        }
+      }
     }
 
-    function getMaxStockForVariant(prod, sizeName) {
+    function getVariantStockInfo(prod, colorName, sizeName) {
       const liveProd = allProducts.find(p => p.id === prod.id) || prod;
+      const vMap = (liveProd.variantStock && typeof liveProd.variantStock === 'object') ? liveProd.variantStock : {};
+      const vKey = `${colorName || 'Standard'}__${sizeName || 'Standard'}`;
+      if (Object.keys(vMap).length > 0 && Object.prototype.hasOwnProperty.call(vMap, vKey)) {
+        return { scope: 'variant', max: Math.max(0, Number(vMap[vKey]) || 0) };
+      }
       const sMap = (liveProd.sizeStock && typeof liveProd.sizeStock === 'object') ? liveProd.sizeStock : {};
       if (Object.keys(sMap).length > 0 && sizeName && Object.prototype.hasOwnProperty.call(sMap, sizeName)) {
-        return Math.max(0, Number(sMap[sizeName]) || 0);
+        return { scope: 'size', max: Math.max(0, Number(sMap[sizeName]) || 0) };
       }
-      return Math.max(0, Number(liveProd.stockQuantity) || 0);
+      return { scope: 'product', max: Math.max(0, Number(liveProd.stockQuantity) || 0) };
+    }
+
+    function getMaxStockForVariant(prod, sizeName, colorName = '') {
+      return getVariantStockInfo(prod, colorName, sizeName).max;
     }
 
     function addToCartWithVariant(prod) {
-      const sMap = (prod.sizeStock && typeof prod.sizeStock === 'object') ? prod.sizeStock : {};
-      const hasPerSize = Object.keys(sMap).length > 0 && Object.prototype.hasOwnProperty.call(sMap, currentSelectedSize);
-      const maxAllowed = getMaxStockForVariant(prod, currentSelectedSize);
-
+      const info = getVariantStockInfo(prod, currentSelectedColor, currentSelectedSize);
       const currentInBag = cart
-        .filter(i => i.id === prod.id && (!hasPerSize || i.selectedSize === currentSelectedSize))
+        .filter(i => {
+          if (i.id !== prod.id) return false;
+          if (info.scope === 'variant') return i.selectedColor === currentSelectedColor && i.selectedSize === currentSelectedSize;
+          if (info.scope === 'size') return i.selectedSize === currentSelectedSize;
+          return true;
+        })
         .reduce((sum, i) => sum + (Number(i.qty) || 1), 0);
 
-      if (currentInBag + 1 > maxAllowed) {
-        return alert(maxAllowed <= 0
-          ? `⚠️ Sorry! Size "${currentSelectedSize}" of "${prod.name}" is Out of Stock.`
-          : `⚠️ Sorry! Only ${maxAllowed} piece(s) of "${prod.name}"${hasPerSize ? ` (Size: ${currentSelectedSize})` : ''} available in stock.`);
+      if (currentInBag + 1 > info.max) {
+        const label = info.scope === 'variant' ? ` (${currentSelectedColor}, Size: ${currentSelectedSize})` : (info.scope === 'size' ? ` (Size: ${currentSelectedSize})` : '');
+        return alert(info.max <= 0
+          ? `⚠️ Sorry! "${prod.name}"${label} is Out of Stock.`
+          : `⚠️ Sorry! Only ${info.max} piece(s) of "${prod.name}"${label} available in stock.`);
       }
 
       const key = `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`;
@@ -1700,9 +1742,9 @@
     }
 
     function instantBuyNowWithVariant(prod) {
-      const maxAllowed = getMaxStockForVariant(prod, currentSelectedSize);
-      if (maxAllowed <= 0) {
-        return alert(`⚠️ Sorry! Size "${currentSelectedSize}" of "${prod.name}" is Out of Stock.`);
+      const info = getVariantStockInfo(prod, currentSelectedColor, currentSelectedSize);
+      if (info.max <= 0) {
+        return alert(`⚠️ Sorry! "${prod.name}" (${currentSelectedColor}, Size: ${currentSelectedSize}) is Out of Stock.`);
       }
       cart = [{ ...prod, itemKey: `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 }];
       trackMetaEvent('InitiateCheckout', { content_name: prod.name, value: prod.price, currency: 'INR' });
@@ -1716,15 +1758,19 @@
       if (!item) return;
       if (ch > 0) {
         const liveProd = allProducts.find(p => p.id === item.id) || item;
-        const sMap = (liveProd.sizeStock && typeof liveProd.sizeStock === 'object') ? liveProd.sizeStock : {};
-        const hasPerSize = Object.keys(sMap).length > 0 && Object.prototype.hasOwnProperty.call(sMap, item.selectedSize);
-        const maxAllowed = getMaxStockForVariant(liveProd, item.selectedSize);
+        const info = getVariantStockInfo(liveProd, item.selectedColor, item.selectedSize);
         const currentInBag = cart
-          .filter(i => i.id === item.id && (!hasPerSize || i.selectedSize === item.selectedSize))
+          .filter(i => {
+            if (i.id !== item.id) return false;
+            if (info.scope === 'variant') return i.selectedColor === item.selectedColor && i.selectedSize === item.selectedSize;
+            if (info.scope === 'size') return i.selectedSize === item.selectedSize;
+            return true;
+          })
           .reduce((sum, i) => sum + (Number(i.qty) || 1), 0);
 
-        if (currentInBag + ch > maxAllowed) {
-          return alert(`⚠️ Maximum available stock (${maxAllowed} pcs) reached for "${item.name}"${hasPerSize ? ` (${item.selectedSize})` : ''}.`);
+        if (currentInBag + ch > info.max) {
+          const label = info.scope === 'variant' ? ` (${item.selectedColor}, ${item.selectedSize})` : (info.scope === 'size' ? ` (${item.selectedSize})` : '');
+          return alert(`⚠️ Maximum available stock (${info.max} pcs) reached for "${item.name}"${label}.`);
         }
       }
       cart[idx].qty += ch;
@@ -1833,7 +1879,7 @@
 
       list.innerHTML = cart.map((item, idx) => {
         const liveProd = allProducts.find(p => p.id === item.id) || item;
-        const maxLeft = getMaxStockForVariant(liveProd, item.selectedSize);
+        const maxLeft = getMaxStockForVariant(liveProd, item.selectedSize, item.selectedColor);
         const origP = Number(liveProd.originalPrice || item.originalPrice || item.price);
         const discPct = origP > item.price ? Math.round(((origP - item.price) / origP) * 100) : 0;
         const ratingVal = liveProd.rating || 4.9;
