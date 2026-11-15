@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURA Fine Store | Executive Admin Command</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
@@ -39,9 +40,12 @@
           <h1 class="text-2xl font-cinzel font-bold text-amber-400">AURA Fine Store Command</h1>
           <span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">● JWT SECURED</span>
         </div>
-        <p class="text-xs text-slate-400 mt-0.5">Categories, Timed Coupons, AURA Coins Wallet, Net Profit & 4x6 Labels</p>
+        <p class="text-xs text-slate-400 mt-0.5">Categories, First-Order Popup, Sales Analytics Chart, Net Profit & Bulk 4x6 Labels</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
+        <a href="#firstOrderPopupSection" class="bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-gift"></i> 1st Order Popup
+        </a>
         <a href="#categoryManagerSection" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
           <i class="fa-solid fa-layer-group"></i> Categories (<span id="headerCatBadge">0</span>)
         </a>
@@ -110,7 +114,74 @@
       </div>
     </div>
 
-    <!-- DYNAMIC CATEGORY & SUB-CATEGORY MANAGER (WITH CASCADE DELETE) -->
+    <!-- VISUAL SALES & PROFIT CHART (7 DAYS / 30 DAYS) -->
+    <div class="bg-slate-900 border border-amber-500/30 p-5 rounded-3xl space-y-4 shadow-xl">
+      <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-chart-line mr-1.5"></i> Visual Revenue & Net Profit Analytics</h3>
+          <p class="text-[11px] text-slate-400">Track daily sales revenue vs net profit performance (excludes cancelled orders)</p>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <button id="chartRange7Btn" onclick="setSalesChartDays(7)" class="bg-amber-500 text-slate-950 font-extrabold px-3.5 py-1.5 rounded-xl transition">Last 7 Days</button>
+          <button id="chartRange30Btn" onclick="setSalesChartDays(30)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-3.5 py-1.5 rounded-xl transition">Last 30 Days</button>
+        </div>
+      </div>
+      <div class="w-full h-64 sm:h-72 relative">
+        <canvas id="salesProfitChartCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- FIRST-ORDER WELCOME POPUP CUSTOMIZER (ADMIN CONTROLLED + PHOTO UPLOAD) -->
+    <div id="firstOrderPopupSection" class="bg-slate-900 border-2 border-pink-500/35 p-5 rounded-3xl space-y-4 shadow-xl">
+      <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-pink-400"><i class="fa-solid fa-sparkles mr-1.5"></i> First-Order Auto-Welcome Popup Manager (5-Sec Offer)</h3>
+          <p class="text-[11px] text-slate-400">Customize the 5-second welcome popup for new visitors. <span class="text-emerald-400 font-bold">Valid strictly once per mobile number!</span></p>
+        </div>
+        <label class="flex items-center gap-2 bg-slate-800 border border-pink-500/40 px-3.5 py-1.5 rounded-xl text-xs cursor-pointer">
+          <input type="checkbox" id="firstPopupEnabledInput" checked class="w-4 h-4 accent-pink-500">
+          <span class="font-bold text-pink-300">Enable Popup on Storefront</span>
+        </label>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-center text-xs">
+        <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700">
+          <div>
+            <label class="block text-[11px] font-bold text-amber-300 mb-1">Popup Headline Title *</label>
+            <input type="text" id="firstPopupTitleInput" placeholder="Exclusive First-Order Privilege" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-semibold">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-emerald-300 mb-1">First-Order Coupon Code * (Create in Coupon Manager below)</label>
+            <input type="text" id="firstPopupCouponInput" placeholder="e.g. AURA20 or FIRST25" class="uppercase w-full bg-slate-950 border border-emerald-500/40 rounded-xl p-2 text-emerald-300 font-mono font-bold">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">Offer Description / Subtitle *</label>
+            <input type="text" id="firstPopupSubtitleInput" placeholder="Unlock instant savings on your very first luxury order!" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-pink-300 mb-1">Upload Popup Banner Photo (Optional)</label>
+            <input type="file" id="firstPopupPhotoFile" accept="image/*" onchange="previewFirstOrderPopupPhoto(this)" class="w-full text-[11px] text-slate-300 file:bg-pink-500 file:text-slate-950 file:font-bold file:border-0 file:rounded-lg file:px-2.5 file:py-1 cursor-pointer">
+          </div>
+          <div class="flex items-end">
+            <button type="button" id="saveFirstPopupBtn" onclick="saveFirstOrderPopupSettings()" class="w-full bg-gradient-to-r from-pink-500 to-amber-500 hover:opacity-95 text-slate-950 font-extrabold py-2.5 rounded-xl shadow transition">
+              Save Welcome Popup Settings
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Preview Box -->
+        <div class="bg-slate-950 border border-pink-500/30 rounded-2xl overflow-hidden flex items-center gap-3 p-3">
+          <img id="firstPopupPreviewImg" src="https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=400&q=70" class="w-24 h-24 rounded-xl object-cover border border-amber-500/40 flex-shrink-0">
+          <div class="min-w-0 space-y-1">
+            <span class="bg-amber-500/20 text-amber-300 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Live Preview</span>
+            <p id="firstPopupPreviewTitle" class="font-bold text-white text-xs truncate">Exclusive First-Order Privilege</p>
+            <p class="text-[10px] text-slate-400 line-clamp-2">Code: <b id="firstPopupPreviewCode" class="text-emerald-400 font-mono">AURA20</b></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DYNAMIC CATEGORY & SUB-CATEGORY MANAGER -->
     <div id="categoryManagerSection" class="bg-slate-900 border-2 border-amber-500/35 p-5 rounded-3xl space-y-4 shadow-xl">
       <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
         <div>
@@ -120,7 +191,6 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-        <!-- Add Main Category -->
         <form onsubmit="handleAddMainCategory(event)" class="bg-slate-800/70 border border-slate-700 p-3.5 rounded-2xl flex items-end gap-2">
           <div class="flex-1">
             <label class="block text-[11px] font-bold text-amber-300 mb-1">New Main Category Name *</label>
@@ -129,7 +199,6 @@
           <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl whitespace-nowrap shadow">+ Add Category</button>
         </form>
 
-        <!-- Add Sub-Category -->
         <form onsubmit="handleAddSubCategory(event)" class="bg-slate-800/70 border border-slate-700 p-3.5 rounded-2xl flex items-end gap-2">
           <div class="w-40">
             <label class="block text-[11px] font-bold text-cyan-300 mb-1">Main Category *</label>
@@ -185,7 +254,6 @@
         <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-sliders mr-1.5"></i> Store Controls, AURA Coins & Limits</h3>
         
         <div class="space-y-3 text-xs">
-          <!-- AURA Coins Loyalty Wallet Rules -->
           <div class="bg-amber-950/35 p-3.5 rounded-2xl border border-amber-500/35 space-y-2">
             <label class="block font-bold text-amber-300"><i class="fa-solid fa-coins mr-1"></i> AURA Coins Loyalty Wallet (1 Coin = ₹1):</label>
             <div class="grid grid-cols-2 gap-2">
@@ -201,7 +269,6 @@
             <button onclick="saveAuraCoinsSettings()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 py-2 rounded-xl font-extrabold transition shadow">Save AURA Coins Rules</button>
           </div>
 
-          <!-- Free Gift Progress Bar Settings -->
           <div class="bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-500/35 space-y-2">
             <label class="block font-bold text-emerald-300"><i class="fa-solid fa-gift mr-1"></i> Free Gift Progress Bar (0 = Disabled):</label>
             <div class="grid grid-cols-2 gap-2">
@@ -217,7 +284,6 @@
             <button onclick="saveFreeGiftSettings()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-2 rounded-xl font-extrabold transition shadow">Save Free Gift Rule</button>
           </div>
 
-          <!-- Max COD Order Amount Limit -->
           <div class="bg-purple-950/35 p-3 rounded-2xl border border-purple-500/35 space-y-2">
             <label class="block font-bold text-purple-300"><i class="fa-solid fa-shield-halved mr-1"></i> Max Order Amount for COD (₹):</label>
             <div class="flex gap-2">
@@ -226,7 +292,6 @@
             </div>
           </div>
 
-          <!-- Flash Deal Timer -->
           <div class="bg-slate-800/90 p-3.5 rounded-2xl border border-amber-500/30 space-y-2.5">
             <div class="flex justify-between items-center">
               <label class="font-bold text-amber-300">Flash Deal Countdown Timer:</label>
@@ -250,7 +315,6 @@
             </div>
           </div>
 
-          <!-- COD Delivery Charge & Advance Token -->
           <div class="grid grid-cols-2 gap-2">
             <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-1.5">
               <label class="block font-bold text-slate-200 text-[11px]">COD Delivery Fee (₹):</label>
@@ -268,7 +332,6 @@
             </div>
           </div>
 
-          <!-- Meta Pixel ID Setting -->
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-blue-500/30 space-y-1.5">
             <label class="block font-bold text-blue-300"><i class="fa-brands fa-meta mr-1"></i> Meta (Facebook) Pixel ID:</label>
             <div class="flex gap-2">
@@ -277,7 +340,6 @@
             </div>
           </div>
 
-          <!-- Change Admin Security PIN -->
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-rose-500/30 space-y-1.5">
             <label class="block font-bold text-rose-300"><i class="fa-solid fa-key mr-1"></i> Change Admin Login PIN (Encrypted):</label>
             <div class="flex gap-2">
@@ -292,17 +354,17 @@
       <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
         <div>
           <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-ticket mr-1.5"></i> Discount Coupons & Auto-Expire Timer Manager</h3>
-          <p class="text-[11px] text-slate-400">Set optional Hours/Minutes timer for any coupon—once time runs out, it automatically shows <b>Expired</b> and blocks checkout usage!</p>
+          <p class="text-[11px] text-slate-400">Create your First-Order coupon code here (e.g. <b class="text-amber-300">AURA20</b> or <b class="text-amber-300">FIRST25</b>) and link it in the Welcome Popup section above!</p>
         </div>
         
         <form onsubmit="handleCreateCoupon(event)" class="grid grid-cols-2 sm:grid-cols-6 gap-2.5 text-xs bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700">
           <div>
             <label class="text-[10px] text-slate-400 block mb-1">Coupon Code *</label>
-            <input type="text" id="cpCode" required placeholder="e.g. FLASH30" class="uppercase w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-mono font-bold">
+            <input type="text" id="cpCode" required placeholder="e.g. FIRST25" class="uppercase w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-mono font-bold">
           </div>
           <div>
             <label class="text-[10px] text-slate-400 block mb-1">Discount (%) *</label>
-            <input type="number" id="cpDiscount" required min="1" max="90" placeholder="30" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
+            <input type="number" id="cpDiscount" required min="1" max="90" placeholder="25" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
           </div>
           <div>
             <label class="text-[10px] text-slate-400 block mb-1">Min Order (₹)</label>
@@ -324,7 +386,6 @@
         <div id="adminCouponsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-96 overflow-y-auto pr-1"></div>
       </div>
     </div>
-
     <!-- Hero Deal Banners -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-2">
@@ -360,7 +421,8 @@
         <div id="adminBannersGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
       </div>
     </div>
-    <!-- Product Add/Edit & Store Catalog (With Dynamic Categories & Quick Inline Edit) -->
+
+    <!-- Product Add/Edit & Store Catalog -->
     <div id="adminCatalogSection" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
         <div class="flex justify-between items-center">
@@ -501,14 +563,17 @@
       </div>
     </div>
 
-    <!-- Customer Orders & Logistics Table -->
+    <!-- Customer Orders & Logistics Table WITH BULK CHECKBOXES & BULK 4x6 LABEL PRINT -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
         <div>
           <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-truck-fast mr-1"></i> Customer Orders & Logistics</h3>
-          <p class="text-[10px] text-emerald-400">Mark as <b>Delivered</b> to automatically credit customer AURA Coins, or print 4x6 Thermal Labels.</p>
+          <p class="text-[10px] text-emerald-400">Select multiple orders using checkboxes to print all <b>4x6 Thermal Labels</b> in one PDF!</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
+          <button id="bulkPrintLabelsBtn" onclick="printBulkSelectedLabels()" class="hidden text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 px-3.5 py-1.5 rounded-xl font-extrabold shadow transition flex items-center gap-1.5">
+            <i class="fa-solid fa-print"></i> Print Selected Labels (<span id="selectedOrdersCountBadge">0</span>)
+          </button>
           <input type="text" id="adminOrderSearch" oninput="renderAdminOrders()" placeholder="Search ID, Phone, UTR..." class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
           <button onclick="exportOrdersCSV()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl font-bold shadow transition">
             <i class="fa-solid fa-file-excel mr-1"></i> Export Excel (CSV)
@@ -517,7 +582,6 @@
         </div>
       </div>
 
-      <!-- Status Filter Tabs -->
       <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs" id="orderStatusFilterTabs">
         <button onclick="setOrderStatusFilter('ALL', this)" class="ord-tab-btn bg-amber-500 text-slate-950 font-extrabold px-3.5 py-1.5 rounded-xl whitespace-nowrap">All Orders</button>
         <button onclick="setOrderStatusFilter('Pending Verification', this)" class="ord-tab-btn bg-slate-800 text-slate-300 font-bold px-3.5 py-1.5 rounded-xl whitespace-nowrap">Pending Verify</button>
@@ -531,6 +595,9 @@
         <table class="w-full text-left border-collapse text-xs">
           <thead>
             <tr class="border-b border-slate-800 text-slate-400">
+              <th class="p-3 w-8">
+                <input type="checkbox" id="selectAllOrdersCheckbox" onchange="toggleSelectAllOrders(this.checked)" title="Select All Visible Orders" class="w-4 h-4 accent-amber-500 cursor-pointer">
+              </th>
               <th class="p-3">Order & Date</th>
               <th class="p-3">Customer & Address</th>
               <th class="p-3">Purchased Items & Bonus</th>
@@ -558,7 +625,11 @@
     let cachedBanners = [];
     let cachedSupportTickets = [];
     let currentFormImages = [];
+    let firstOrderPopupPendingImg = "";
     let activeOrderStatusFilter = 'ALL';
+    let selectedOrderIdsSet = new Set();
+    let salesChartDays = 7;
+    let salesProfitChartInstance = null;
     let adminLiveTimer = null;
     let adminDealEndMs = 0;
 
@@ -586,25 +657,190 @@
       "Shiprocket": (awb) => `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`
     };
 
-    // Dynamic Category & Sub-Category Sync Functions
+    // First-Order Popup Photo Preview & Save
+    async function previewFirstOrderPopupPhoto(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const compressed = await compressImageFile(file, 750, 55);
+      firstOrderPopupPendingImg = compressed;
+      document.getElementById('firstPopupPreviewImg').src = compressed;
+    }
+
+    async function saveFirstOrderPopupSettings() {
+      const btn = document.getElementById('saveFirstPopupBtn');
+      btn.disabled = true;
+      btn.innerText = "Saving...";
+      try {
+        const payload = {
+          firstOrderPopupEnabled: document.getElementById('firstPopupEnabledInput').checked,
+          firstOrderPopupTitle: document.getElementById('firstPopupTitleInput').value.trim(),
+          firstOrderPopupSubtitle: document.getElementById('firstPopupSubtitleInput').value.trim(),
+          firstOrderPopupCoupon: document.getElementById('firstPopupCouponInput').value.trim().toUpperCase()
+        };
+        if (firstOrderPopupPendingImg) {
+          payload.firstOrderPopupImage = firstOrderPopupPendingImg;
+        }
+        const res = await fetch('/api/admin/store-settings', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload)
+        });
+        if (handleUnauthorized(res)) return;
+        const data = await res.json();
+        if (data.success && data.storeSettings) {
+          firstOrderPopupPendingImg = "";
+          document.getElementById('firstPopupPreviewTitle').innerText = data.storeSettings.firstOrderPopupTitle;
+          document.getElementById('firstPopupPreviewCode').innerText = data.storeSettings.firstOrderPopupCoupon;
+          if (data.storeSettings.firstOrderPopupImage) {
+            document.getElementById('firstPopupPreviewImg').src = data.storeSettings.firstOrderPopupImage;
+          }
+          alert("✅ First-Order Welcome Popup Settings Saved! Make sure the coupon code is active in Coupon Manager.");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Save Welcome Popup Settings";
+      }
+    }
+
+    // Visual Revenue & Net Profit Chart (7D / 30D)
+    function setSalesChartDays(days) {
+      salesChartDays = days;
+      const b7 = document.getElementById('chartRange7Btn');
+      const b30 = document.getElementById('chartRange30Btn');
+      if (days === 7) {
+        b7.className = "bg-amber-500 text-slate-950 font-extrabold px-3.5 py-1.5 rounded-xl transition";
+        b30.className = "bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-3.5 py-1.5 rounded-xl transition";
+      } else {
+        b30.className = "bg-amber-500 text-slate-950 font-extrabold px-3.5 py-1.5 rounded-xl transition";
+        b7.className = "bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-3.5 py-1.5 rounded-xl transition";
+      }
+      renderSalesProfitChart();
+    }
+
+    function renderSalesProfitChart() {
+      const canvas = document.getElementById('salesProfitChartCanvas');
+      if (!canvas || typeof Chart === 'undefined') return;
+
+      const labels = [];
+      const dayKeys = [];
+      const now = new Date();
+
+      for (let i = salesChartDays - 1; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const keyStr = d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+        const shortLabel = d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
+        dayKeys.push(keyStr);
+        labels.push(shortLabel);
+      }
+
+      const revMap = new Map(dayKeys.map(k => [k, 0]));
+      const profMap = new Map(dayKeys.map(k => [k, 0]));
+
+      cachedOrders.forEach(o => {
+        if (o.status === 'Cancelled') return;
+        let oKey = o.orderDateRaw || "";
+        if (!oKey && o.createdAt) {
+          oKey = new Date(o.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+        }
+        if (revMap.has(oKey)) {
+          revMap.set(oKey, revMap.get(oKey) + (Number(o.total) || 0));
+          profMap.set(oKey, profMap.get(oKey) + (Number(o.netProfit) || 0));
+        }
+      });
+
+      const revenueData = dayKeys.map(k => revMap.get(k));
+      const profitData = dayKeys.map(k => profMap.get(k));
+
+      if (salesProfitChartInstance) {
+        salesProfitChartInstance.destroy();
+      }
+
+      salesProfitChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Daily Revenue (₹)',
+              data: revenueData,
+              backgroundColor: 'rgba(245, 158, 11, 0.75)',
+              borderColor: '#f59e0b',
+              borderWidth: 1.5,
+              borderRadius: 6
+            },
+            {
+              label: 'Net Profit (₹)',
+              data: profitData,
+              backgroundColor: 'rgba(16, 185, 129, 0.85)',
+              borderColor: '#10b981',
+              borderWidth: 1.5,
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: '#e2e8f0', font: { size: 11, weight: 'bold' } } },
+            tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ₹${ctx.parsed.y}` } }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.08)' } },
+            y: { beginAtZero: true, ticks: { color: '#94a3b8', font: { size: 10 }, callback: (val) => '₹' + val }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
+          }
+        }
+      });
+    }
+
+    function updateBulkPrintButtonUI() {
+      const btn = document.getElementById('bulkPrintLabelsBtn');
+      const badge = document.getElementById('selectedOrdersCountBadge');
+      const count = selectedOrderIdsSet.size;
+      if (count > 0) {
+        badge.innerText = count;
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+    }
+
+    function toggleOrderCheckbox(orderId, checked) {
+      if (checked) selectedOrderIdsSet.add(orderId);
+      else selectedOrderIdsSet.delete(orderId);
+      updateBulkPrintButtonUI();
+    }
+
+    function toggleSelectAllOrders(checked) {
+      document.querySelectorAll('.order-row-checkbox').forEach(cb => {
+        cb.checked = checked;
+        const oid = cb.getAttribute('data-order-id');
+        if (checked) selectedOrderIdsSet.add(oid);
+        else selectedOrderIdsSet.delete(oid);
+      });
+      updateBulkPrintButtonUI();
+    }
+
+    function printBulkSelectedLabels() {
+      const ids = Array.from(selectedOrderIdsSet);
+      if (!ids.length) return alert("Please select at least 1 order using the checkboxes!");
+      window.open(`/api/admin/orders/bulk-shipping-labels?ids=${encodeURIComponent(ids.join(','))}&token=${encodeURIComponent(adminToken)}`, '_blank');
+    }
+
     function populateCategoryDropdowns(selectedMain = "", selectedSub = "") {
       const targetMainSel = document.getElementById('targetMainCatSelect');
       const prodMainSel = document.getElementById('prodMainCategory');
-
       if (!cachedCategories.length) {
         targetMainSel.innerHTML = `<option value="">No Category</option>`;
         prodMainSel.innerHTML = `<option value="">No Category</option>`;
         document.getElementById('prodCategory').innerHTML = `<option value="General">General</option>`;
         return;
       }
-
       const mainOptsHtml = cachedCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
       targetMainSel.innerHTML = mainOptsHtml;
       prodMainSel.innerHTML = mainOptsHtml;
-
-      if (selectedMain && cachedCategories.some(c => c.name === selectedMain)) {
-        prodMainSel.value = selectedMain;
-      }
+      if (selectedMain && cachedCategories.some(c => c.name === selectedMain)) prodMainSel.value = selectedMain;
       updateSubCategories(selectedSub);
     }
 
@@ -614,9 +850,7 @@
       const catObj = cachedCategories.find(c => c.name === mainCatName);
       const subs = (catObj && catObj.subCategories && catObj.subCategories.length) ? catObj.subCategories : ["General"];
       subSelect.innerHTML = subs.map(o => `<option value="${o}">${o}</option>`).join('');
-      if (selectedSub && subs.includes(selectedSub)) {
-        subSelect.value = selectedSub;
-      }
+      if (selectedSub && subs.includes(selectedSub)) subSelect.value = selectedSub;
     }
 
     function renderAdminCategories() {
@@ -626,7 +860,6 @@
         grid.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No categories added yet. Create one above!</p>`;
         return;
       }
-
       grid.innerHTML = cachedCategories.map(cat => {
         const prodCountInCat = cachedProducts.filter(p => p.mainCategory === cat.name).length;
         const subsHtml = (cat.subCategories || []).length
@@ -666,11 +899,7 @@
       e.preventDefault();
       const name = document.getElementById('newMainCatInput').value.trim();
       if (!name) return;
-      const res = await fetch('/api/admin/categories', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ name })
-      });
+      const res = await fetch('/api/admin/categories', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ name }) });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
@@ -678,10 +907,8 @@
         document.getElementById('newMainCatInput').value = "";
         populateCategoryDropdowns(name);
         renderAdminCategories();
-        alert(`✅ Category "${name}" created! Now add sub-categories or publish products under it.`);
-      } else {
-        alert(data.message || "Failed to add category.");
-      }
+        alert(`✅ Category "${name}" created!`);
+      } else alert(data.message || "Failed to add category.");
     }
 
     async function handleAddSubCategory(e) {
@@ -689,12 +916,7 @@
       const mainCat = document.getElementById('targetMainCatSelect').value;
       const subName = document.getElementById('newSubCatInput').value.trim();
       if (!mainCat || !subName) return;
-
-      const res = await fetch(`/api/admin/categories/${encodeURIComponent(mainCat)}/subcategories`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ subName })
-      });
+      const res = await fetch(`/api/admin/categories/${encodeURIComponent(mainCat)}/subcategories`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ subName }) });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
@@ -703,17 +925,12 @@
         populateCategoryDropdowns(mainCat, subName);
         renderAdminCategories();
         alert(`✅ Sub-Category "${subName}" added inside "${mainCat}"!`);
-      } else {
-        alert(data.message || "Failed to add sub-category.");
-      }
+      } else alert(data.message || "Failed to add sub-category.");
     }
 
     async function deleteSubCategory(mainCat, subName, prodCount) {
       if (!confirm(`⚠️ WARNING: Delete sub-category "${subName}"?\n\nAll ${prodCount} product(s) inside "${subName}" will be PERMANENTLY DELETED!`)) return;
-      const res = await fetch(`/api/admin/categories/${encodeURIComponent(mainCat)}/subcategories/${encodeURIComponent(subName)}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
+      const res = await fetch(`/api/admin/categories/${encodeURIComponent(mainCat)}/subcategories/${encodeURIComponent(subName)}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
@@ -722,16 +939,13 @@
         populateCategoryDropdowns();
         renderAdminCategories();
         renderAdminCatalog();
-        alert(`🗑️ Sub-category "${subName}" and ${data.deletedProductsCount || 0} product(s) inside it were deleted!`);
+        alert(`🗑️ Deleted "${subName}" and ${data.deletedProductsCount || 0} product(s)!`);
       }
     }
 
     async function deleteMainCategory(mainCat, prodCount) {
       if (!confirm(`⚠️ DANGER: Delete entire category "${mainCat}"?\n\nAll its sub-categories AND all ${prodCount} product(s) inside "${mainCat}" will be PERMANENTLY DELETED!`)) return;
-      const res = await fetch(`/api/admin/categories/${encodeURIComponent(mainCat)}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
+      const res = await fetch(`/api/admin/categories/${encodeURIComponent(mainCat)}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
@@ -740,15 +954,13 @@
         populateCategoryDropdowns();
         renderAdminCategories();
         renderAdminCatalog();
-        alert(`🗑️ Category "${mainCat}" and all ${data.deletedProductsCount || 0} product(s) inside it were deleted!`);
+        alert(`🗑️ Deleted "${mainCat}" and ${data.deletedProductsCount || 0} product(s)!`);
       }
     }
 
     function setOrderStatusFilter(status, btn) {
       activeOrderStatusFilter = status;
-      document.querySelectorAll('.ord-tab-btn').forEach(b => {
-        b.className = "ord-tab-btn bg-slate-800 text-slate-300 font-bold px-3.5 py-1.5 rounded-xl whitespace-nowrap";
-      });
+      document.querySelectorAll('.ord-tab-btn').forEach(b => b.className = "ord-tab-btn bg-slate-800 text-slate-300 font-bold px-3.5 py-1.5 rounded-xl whitespace-nowrap");
       if (btn) btn.className = "ord-tab-btn bg-amber-500 text-slate-950 font-extrabold px-3.5 py-1.5 rounded-xl whitespace-nowrap";
       renderAdminOrders();
     }
@@ -758,35 +970,23 @@
       const headers = ["Order ID", "Date", "Customer Name", "Phone", "Address", "Pincode", "Items", "Free Gift", "Coins Used", "Total (INR)", "Net Profit (INR)", "Payment Mode", "UTR", "Status", "Courier", "AWB"];
       const rows = cachedOrders.map(o => {
         const itemsStr = (o.items || []).map(i => `${i.name} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join(' | ');
-        return [
-          o.id, o.date, o.customerName, o.phone, o.address, o.pincode,
-          itemsStr, o.freeGiftUnlocked || "", o.coinsUsed || 0, o.total, o.netProfit || 0, o.paymentMethod, o.utrNumber, o.status, o.courierPartner || "Delhivery", o.awbNumber || ""
-        ].map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(',');
+        return [o.id, o.date, o.customerName, o.phone, o.address, o.pincode, itemsStr, o.freeGiftUnlocked || "", o.coinsUsed || 0, o.total, o.netProfit || 0, o.paymentMethod, o.utrNumber, o.status, o.courierPartner || "Delhivery", o.awbNumber || ""].map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(',');
       });
-
-      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
-      const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
+      link.setAttribute("href", encodeURI("data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n')));
       link.setAttribute("download", `AURA_Orders_${new Date().toISOString().slice(0,10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 
     function updateAdminTimerBadge() {
       const badge = document.getElementById('adminDealTimerStatus');
       if (!adminDealEndMs || adminDealEndMs <= Date.now()) {
-        adminDealEndMs = 0;
-        badge.innerText = "Deal End";
+        adminDealEndMs = 0; badge.innerText = "Deal End";
         badge.className = "text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-400";
         return;
       }
       const diff = Math.floor((adminDealEndMs - Date.now()) / 1000);
-      const h = String(Math.floor(diff / 3600)).padStart(2, '0');
-      const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
-      const s = String(diff % 60).padStart(2, '0');
-      badge.innerText = `LIVE: ${h}h ${m}m ${s}s`;
+      badge.innerText = `LIVE: ${String(Math.floor(diff / 3600)).padStart(2, '0')}h ${String(Math.floor((diff % 3600) / 60)).padStart(2, '0')}m ${String(diff % 60).padStart(2, '0')}s`;
       badge.className = "text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400";
     }
     setInterval(updateAdminTimerBadge, 1000);
@@ -794,154 +994,81 @@
     async function saveAuraCoinsSettings() {
       const coinsEarnPercent = Number(document.getElementById('coinsEarnPctInput').value) || 0;
       const maxCoinsRedeemPerOrder = Number(document.getElementById('maxCoinsRedeemInput').value) || 0;
-      const res = await fetch('/api/admin/store-settings', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ coinsEarnPercent, maxCoinsRedeemPerOrder })
-      });
+      const res = await fetch('/api/admin/store-settings', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ coinsEarnPercent, maxCoinsRedeemPerOrder }) });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
-        alert(`✅ AURA Coins Rules Saved! Customers earn ${coinsEarnPercent}% on Delivered orders (Max ₹${maxCoinsRedeemPerOrder} redeem per order).`);
-      }
+      if ((await res.json()).success) alert(`✅ AURA Coins Rules Saved!`);
     }
 
     async function saveFreeGiftSettings() {
       const threshold = Number(document.getElementById('freeGiftThresholdInput').value) || 0;
       const title = (document.getElementById('freeGiftTitleInput').value || "Luxury Surprise Jewellery Box").trim();
-      const res = await fetch('/api/admin/store-settings', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ freeGiftThreshold: threshold, freeGiftTitle: title })
-      });
+      const res = await fetch('/api/admin/store-settings', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ freeGiftThreshold: threshold, freeGiftTitle: title }) });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
-        alert(threshold > 0 ? `✅ Free Gift ("${title}") enabled on orders above ₹${threshold}!` : "Free Gift Progress Bar disabled.");
-      }
+      if ((await res.json()).success) alert(threshold > 0 ? `✅ Free Gift enabled above ₹${threshold}!` : "Free Gift disabled.");
     }
 
     async function saveMaxCodLimit() {
       const limit = Number(document.getElementById('maxCodAmountInput').value) || 0;
-      const res = await fetch('/api/admin/store-settings', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ maxCodOrderAmount: limit })
-      });
+      const res = await fetch('/api/admin/store-settings', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ maxCodOrderAmount: limit }) });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
-        alert(limit > 0 ? `✅ Max COD Limit set to ₹${limit}!` : "✅ Max COD Limit removed.");
-      }
+      if ((await res.json()).success) alert(limit > 0 ? `✅ Max COD Limit set to ₹${limit}!` : "✅ Max COD Limit removed.");
     }
 
     async function setFlashDealTimer() {
-      const h = Number(document.getElementById('dealHoursInput').value) || 0;
-      const m = Number(document.getElementById('dealMinsInput').value) || 0;
+      const h = Number(document.getElementById('dealHoursInput').value) || 0, m = Number(document.getElementById('dealMinsInput').value) || 0;
       const totalMs = (h * 3600 + m * 60) * 1000;
-      if (totalMs <= 0) return alert("Please enter hours or minutes greater than 0!");
+      if (totalMs <= 0) return alert("Enter hours or minutes > 0!");
       const endTime = Date.now() + totalMs;
-
-      const res = await fetch('/api/admin/store-settings', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ dealEndTime: endTime })
-      });
+      const res = await fetch('/api/admin/store-settings', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ dealEndTime: endTime }) });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
-        adminDealEndMs = endTime;
-        updateAdminTimerBadge();
-        alert(`Flash Deal Timer started for ${h}h ${m}m!`);
-      }
+      if ((await res.json()).success) { adminDealEndMs = endTime; updateAdminTimerBadge(); alert(`Flash Deal Timer started!`); }
     }
 
     async function deleteFlashDealTimer() {
-      if (!confirm("Stop and delete the active Flash Deal Timer?")) return;
-      const res = await fetch('/api/admin/store-settings', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ dealEndTime: 0 })
-      });
+      if (!confirm("Stop active Flash Deal Timer?")) return;
+      const res = await fetch('/api/admin/store-settings', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ dealEndTime: 0 }) });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
-        adminDealEndMs = 0;
-        updateAdminTimerBadge();
-        alert("Deal Timer deleted! Store now shows 'Deal End'.");
-      }
+      if ((await res.json()).success) { adminDealEndMs = 0; updateAdminTimerBadge(); alert("Deal Timer deleted!"); }
     }
 
     async function saveMetaPixelId() {
       const pixelId = (document.getElementById('metaPixelIdInput').value || "").trim();
-      const res = await fetch('/api/admin/store-settings', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ metaPixelId: pixelId })
-      });
+      const res = await fetch('/api/admin/store-settings', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ metaPixelId: pixelId }) });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
-        alert(pixelId ? `✅ Meta Pixel ID (${pixelId}) saved!` : "Meta Pixel ID cleared!");
-      }
+      if ((await res.json()).success) alert(pixelId ? `✅ Meta Pixel ID saved!` : "Meta Pixel ID cleared!");
     }
 
     async function changeAdminPin() {
       const newPin = (document.getElementById('newAdminPinInput').value || "").trim();
       if (newPin.length < 4) return alert("New PIN must be at least 4 characters!");
-      if (!confirm("Are you sure you want to change your Admin Login PIN?")) return;
-
-      const res = await fetch('/api/admin/change-pin', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ newPin })
-      });
+      if (!confirm("Change Admin Login PIN?")) return;
+      const res = await fetch('/api/admin/change-pin', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ newPin }) });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
-        if (data.token) {
-          adminToken = data.token;
-          sessionStorage.setItem('aura_admin_jwt', data.token);
-        }
-        document.getElementById('newAdminPinInput').value = "";
-        alert("✅ Admin PIN encrypted & updated successfully!");
-      } else {
-        alert(data.message || "Failed to update PIN!");
-      }
+        if (data.token) { adminToken = data.token; sessionStorage.setItem('aura_admin_jwt', data.token); }
+        document.getElementById('newAdminPinInput').value = ""; alert("✅ Admin PIN updated!");
+      } else alert(data.message || "Failed!");
     }
 
     if (adminToken) {
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('dashboardContent').classList.remove('hidden');
-      loadAdminDashboard(true);
-      loadAdminSupportTickets(true);
-      startAdminLiveSync();
+      loadAdminDashboard(true); loadAdminSupportTickets(true); startAdminLiveSync();
     }
 
     async function attemptLogin() {
       const pin = document.getElementById('adminPinInput').value.trim();
       const errEl = document.getElementById('loginError');
       try {
-        const res = await fetch('/api/admin/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin })
-        });
+        const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) });
         const data = await res.json();
         if (data.success && data.token) {
-          adminToken = data.token;
-          sessionStorage.setItem('aura_admin_jwt', data.token);
-          errEl.classList.add('hidden');
-          document.getElementById('loginScreen').classList.add('hidden');
-          document.getElementById('dashboardContent').classList.remove('hidden');
-          loadAdminDashboard(true);
-          loadAdminSupportTickets(true);
-          startAdminLiveSync();
-        } else {
-          errEl.innerText = data.message || "Incorrect PIN!";
-          errEl.classList.remove('hidden');
-        }
-      } catch (e) { console.error(e); }
+          adminToken = data.token; sessionStorage.setItem('aura_admin_jwt', data.token); errEl.classList.add('hidden');
+          document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('dashboardContent').classList.remove('hidden');
+          loadAdminDashboard(true); loadAdminSupportTickets(true); startAdminLiveSync();
+        } else { errEl.innerText = data.message || "Incorrect PIN!"; errEl.classList.remove('hidden'); }
+      } catch (e) {}
     }
 
     function startAdminLiveSync() {
@@ -950,25 +1077,15 @@
         if (!adminToken) return;
         const activeTag = document.activeElement ? document.activeElement.tagName : '';
         if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
-        loadAdminOrdersOnlySilently();
-        loadAdminSupportTickets(false);
-        renderAdminCoupons();
+        loadAdminOrdersOnlySilently(); loadAdminSupportTickets(false); renderAdminCoupons();
       }, 5000);
     }
 
-    function logout() {
-      if (adminLiveTimer) clearInterval(adminLiveTimer);
-      sessionStorage.removeItem('aura_admin_jwt');
-      location.reload();
-    }
+    function logout() { if (adminLiveTimer) clearInterval(adminLiveTimer); sessionStorage.removeItem('aura_admin_jwt'); location.reload(); }
 
     function renderLowStockAlerts(lowList) {
-      const box = document.getElementById('lowStockAlertBox');
-      const txt = document.getElementById('lowStockListText');
-      if (!lowList || lowList.length === 0) {
-        box.classList.add('hidden');
-        return;
-      }
+      const box = document.getElementById('lowStockAlertBox'), txt = document.getElementById('lowStockListText');
+      if (!lowList || lowList.length === 0) { box.classList.add('hidden'); return; }
       box.classList.remove('hidden');
       txt.innerHTML = lowList.map(p => `<span class="inline-block bg-rose-900/90 border border-rose-500/40 px-2 py-0.5 rounded mr-1.5 mb-1"><b>${p.name}</b> (Only ${p.stockQuantity} left)</span>`).join('');
     }
@@ -977,95 +1094,61 @@
       const list = document.getElementById('adminStockWaitlistGrid');
       document.getElementById('headerWaitlistBadge').innerText = cachedStockNotifies.length;
       document.getElementById('waitlistCountText').innerText = cachedStockNotifies.length;
-
-      if (!cachedStockNotifies.length) {
-        list.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No pending restock notification requests.</p>`;
-        return;
-      }
-
+      if (!cachedStockNotifies.length) { list.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No pending restock requests.</p>`; return; }
       list.innerHTML = cachedStockNotifies.map(n => {
         const prod = cachedProducts.find(p => p.id === n.productId);
         const inStockNow = prod && (prod.stockQuantity || 0) > 0;
-        const productUrl = `${window.location.origin}/?product=${n.productId}`;
-        const waMsg = `✨ *AURA FINE STORE RESTOCK ALERT* ✨\nHello *${n.customerName}*,\n\nGreat news! Your requested item *${n.productName}* is now *BACK IN STOCK* (Limited pieces)!\n\nOrder directly here before it sells out again:\n${productUrl}`;
-
+        const waMsg = `✨ *AURA FINE STORE RESTOCK ALERT* ✨\nHello *${n.customerName}*,\n\nYour requested item *${n.productName}* is now *BACK IN STOCK*!\nOrder here: ${window.location.origin}/?product=${n.productId}`;
         return `
           <div class="bg-slate-800/80 border ${inStockNow ? 'border-emerald-500/40' : 'border-purple-500/30'} p-3.5 rounded-2xl text-xs space-y-2 flex flex-col justify-between">
             <div>
               <div class="flex justify-between items-start gap-2">
-                <div>
-                  <p class="font-bold text-white">${n.customerName}</p>
-                  <p class="text-emerald-400 font-mono text-[11px]">+91 ${n.phone}</p>
-                </div>
-                <button onclick="deleteStockNotify('${n._id}')" title="Remove" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                <div><p class="font-bold text-white">${n.customerName}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${n.phone}</p></div>
+                <button onclick="deleteStockNotify('${n._id}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
               </div>
               <p class="text-amber-300 font-bold mt-1 line-clamp-1">${n.productName}</p>
-              <p class="text-[10px] mt-0.5 ${inStockNow ? 'text-emerald-400 font-bold' : 'text-rose-400'}">
-                ${inStockNow ? `● Ready to Notify (${prod.stockQuantity} in stock)` : '● Currently Sold Out'}
-              </p>
+              <p class="text-[10px] mt-0.5 ${inStockNow ? 'text-emerald-400 font-bold' : 'text-rose-400'}">${inStockNow ? `● Ready (${prod.stockQuantity} in stock)` : '● Sold Out'}</p>
             </div>
-            <a href="https://wa.me/91${n.phone}?text=${encodeURIComponent(waMsg)}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-xl font-bold text-center block shadow">
-              <i class="fa-brands fa-whatsapp mr-1"></i> Send Back-in-Stock Alert
-            </a>
-          </div>
-        `;
+            <a href="https://wa.me/91${n.phone}?text=${encodeURIComponent(waMsg)}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-xl font-bold text-center block shadow"><i class="fa-brands fa-whatsapp mr-1"></i> Send Restock Alert</a>
+          </div>`;
       }).join('');
     }
 
     async function deleteStockNotify(id) {
       if (!confirm("Remove this waitlist entry?")) return;
-      const res = await fetch(`/api/admin/stock-notify/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
+      const res = await fetch(`/api/admin/stock-notify/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) loadAdminDashboard(true);
+      if ((await res.json()).success) loadAdminDashboard(true);
     }
 
     function renderAbandonedCarts() {
       const list = document.getElementById('adminAbandonedCartsList');
       document.getElementById('headerAbandonedBadge').innerText = cachedAbandonedCarts.length;
       document.getElementById('abandonedCountText').innerText = cachedAbandonedCarts.length;
-
-      if (!cachedAbandonedCarts.length) {
-        list.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No incomplete / abandoned carts right now.</p>`;
-        return;
-      }
-
+      if (!cachedAbandonedCarts.length) { list.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No incomplete carts right now.</p>`; return; }
       list.innerHTML = cachedAbandonedCarts.map(c => {
         const itemsSummary = (c.items || []).map(i => `${i.name} x${i.qty || 1}`).join(', ');
-        const waMsg = `✨ *AURA FINE STORE* ✨\nHello *${c.customerName}*,\nWe noticed you left items in your bag (${itemsSummary}) worth *₹${c.totalAmount}*.\n\nComplete your order now and enjoy *FREE UPI Delivery*!`;
+        const waMsg = `✨ *AURA FINE STORE* ✨\nHello *${c.customerName}*,\nWe noticed you left items in your bag (${itemsSummary}) worth *₹${c.totalAmount}*.\nComplete your order now and enjoy *FREE UPI Delivery*!`;
         return `
           <div class="bg-slate-800/80 border border-rose-500/30 p-3.5 rounded-2xl text-xs space-y-2 flex flex-col justify-between">
             <div>
               <div class="flex justify-between items-start">
-                <div>
-                  <p class="font-bold text-white">${c.customerName}</p>
-                  <p class="text-emerald-400 font-mono text-[11px]">+91 ${c.phone}</p>
-                </div>
-                <button onclick="deleteAbandonedCart('${c.phone}')" title="Dismiss" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                <div><p class="font-bold text-white">${c.customerName}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${c.phone}</p></div>
+                <button onclick="deleteAbandonedCart('${c.phone}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
               </div>
               <p class="text-amber-300 font-semibold mt-1 line-clamp-2">${itemsSummary}</p>
-              <p class="text-slate-400 text-[10px] mt-1">Bag Value: <b class="text-white">₹${c.totalAmount}</b> • ${c.updatedAtStr || ''}</p>
+              <p class="text-slate-400 text-[10px] mt-1">Bag Value: <b class="text-white">₹${c.totalAmount}</b></p>
             </div>
-            <a href="https://wa.me/91${c.phone}?text=${encodeURIComponent(waMsg)}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-xl font-bold text-center block shadow">
-              <i class="fa-brands fa-whatsapp mr-1"></i> Recover via WhatsApp
-            </a>
-          </div>
-        `;
+            <a href="https://wa.me/91${c.phone}?text=${encodeURIComponent(waMsg)}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-xl font-bold text-center block shadow"><i class="fa-brands fa-whatsapp mr-1"></i> Recover via WhatsApp</a>
+          </div>`;
       }).join('');
     }
 
     async function deleteAbandonedCart(phone) {
       if (!confirm("Remove this incomplete cart entry?")) return;
-      const res = await fetch(`/api/admin/abandoned-carts/${phone}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
+      const res = await fetch(`/api/admin/abandoned-carts/${phone}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) loadAdminDashboard(true);
+      if ((await res.json()).success) loadAdminDashboard(true);
     }
 
     function renderRepeatCustomers() {
@@ -1075,27 +1158,17 @@
         if (o.status === 'Cancelled') return;
         const phone = String(o.phone || '').trim();
         if (!phone) return;
-        if (!map.has(phone)) {
-          map.set(phone, { phone, name: o.customerName, ordersCount: 0, totalSpent: 0, lastCity: o.city || '', coins: walletMap.get(phone) || 0 });
-        }
-        const entry = map.get(phone);
-        entry.ordersCount += 1;
-        entry.totalSpent += (o.total || 0);
+        if (!map.has(phone)) map.set(phone, { phone, name: o.customerName, ordersCount: 0, totalSpent: 0, lastCity: o.city || '', coins: walletMap.get(phone) || 0 });
+        const entry = map.get(phone); entry.ordersCount += 1; entry.totalSpent += (o.total || 0);
       });
-
       const customers = Array.from(map.values()).sort((a, b) => b.totalSpent - a.totalSpent);
       document.getElementById('headerCustomersBadge').innerText = customers.length;
       document.getElementById('totalCustomersCountText').innerText = customers.length;
-
       const list = document.getElementById('adminRepeatCustomersList');
-      if (!customers.length) {
-        list.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No confirmed customer history yet.</p>`;
-        return;
-      }
-
+      if (!customers.length) { list.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No confirmed customer history yet.</p>`; return; }
       list.innerHTML = customers.map(c => {
         const isRepeat = c.ordersCount > 1;
-        const vipMsg = `👑 *AURA FINE STORE VIP PRIVILEGE* 👑\nHello *${c.name}*,\nYou currently have *${c.coins} AURA Coins (₹${c.coins})* in your loyalty wallet! Shop now and redeem your coins for instant discount.`;
+        const vipMsg = `👑 *AURA FINE STORE VIP* 👑\nHello *${c.name}*,\nYou have *${c.coins} AURA Coins (₹${c.coins})* in your wallet!`;
         return `
           <div class="bg-slate-800/80 border ${isRepeat ? 'border-amber-500/40' : 'border-slate-700'} p-3.5 rounded-2xl text-xs flex flex-col justify-between space-y-2">
             <div>
@@ -1103,17 +1176,14 @@
                 <p class="font-bold text-white">${c.name}</p>
                 ${isRepeat ? `<span class="bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full">REPEAT (${c.ordersCount}x)</span>` : `<span class="bg-slate-700 text-slate-300 text-[9px] px-2 py-0.5 rounded-full">1 Order</span>`}
               </div>
-              <p class="text-emerald-400 font-mono text-[11px] mt-0.5">+91 ${c.phone} ${c.lastCity ? `• ${c.lastCity}` : ''}</p>
+              <p class="text-emerald-400 font-mono text-[11px] mt-0.5">+91 ${c.phone}</p>
               <div class="flex justify-between items-center mt-1">
                 <p class="text-slate-300">Spent: <b class="text-amber-400">₹${c.totalSpent}</b></p>
                 <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold"><i class="fa-solid fa-coins mr-1"></i>${c.coins} Coins</span>
               </div>
             </div>
-            <a href="https://wa.me/91${c.phone}?text=${encodeURIComponent(vipMsg)}" target="_blank" class="w-full bg-cyan-600/30 hover:bg-cyan-600 text-cyan-200 hover:text-white border border-cyan-500/40 py-1.5 rounded-xl font-bold text-center block transition">
-              <i class="fa-brands fa-whatsapp mr-1"></i> Send Wallet Offer
-            </a>
-          </div>
-        `;
+            <a href="https://wa.me/91${c.phone}?text=${encodeURIComponent(vipMsg)}" target="_blank" class="w-full bg-cyan-600/30 hover:bg-cyan-600 text-cyan-200 hover:text-white border border-cyan-500/40 py-1.5 rounded-xl font-bold text-center block transition"><i class="fa-brands fa-whatsapp mr-1"></i> Send Wallet Offer</a>
+          </div>`;
       }).join('');
     }
 
@@ -1130,27 +1200,16 @@
 
     async function loadAdminOrdersOnlySilently() {
       try {
-        const ordRes = await fetch('/api/admin/orders?t=' + Date.now(), {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({})
-        });
+        const ordRes = await fetch('/api/admin/orders?t=' + Date.now(), { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({}) });
         if (handleUnauthorized(ordRes)) return;
         const ordData = await ordRes.json();
         if (ordData.success) {
           const newHash = JSON.stringify({ o: ordData.orders, a: ordData.abandonedCarts, w: ordData.stockNotifies, wl: ordData.wallets });
           if (window._lastOrdersHash !== newHash) {
             window._lastOrdersHash = newHash;
-            cachedOrders = ordData.orders || [];
-            cachedAbandonedCarts = ordData.abandonedCarts || [];
-            cachedStockNotifies = ordData.stockNotifies || [];
-            cachedWallets = ordData.wallets || [];
-            updateAnalyticsUI(ordData.analytics);
-            renderLowStockAlerts(ordData.lowStockProducts || []);
-            renderStockWaitlist();
-            renderAbandonedCarts();
-            renderRepeatCustomers();
-            renderAdminOrders();
+            cachedOrders = ordData.orders || []; cachedAbandonedCarts = ordData.abandonedCarts || []; cachedStockNotifies = ordData.stockNotifies || []; cachedWallets = ordData.wallets || [];
+            updateAnalyticsUI(ordData.analytics); renderSalesProfitChart(); renderLowStockAlerts(ordData.lowStockProducts || []);
+            renderStockWaitlist(); renderAbandonedCarts(); renderRepeatCustomers(); renderAdminOrders();
           }
         }
       } catch (e) {}
@@ -1163,307 +1222,175 @@
           fetch('/api/store?t=' + Date.now())
         ]);
         if (handleUnauthorized(ordRes)) return;
-
-        const ordData = await ordRes.json();
-        const storeData = await storeRes.json();
+        const ordData = await ordRes.json(), storeData = await storeRes.json();
 
         if (ordData.success) {
-          cachedOrders = ordData.orders || [];
-          cachedAbandonedCarts = ordData.abandonedCarts || [];
-          cachedStockNotifies = ordData.stockNotifies || [];
-          cachedWallets = ordData.wallets || [];
-          cachedCategories = ordData.categories || storeData.categories || [];
-          cachedProducts = ordData.products || storeData.products || [];
+          cachedOrders = ordData.orders || []; cachedAbandonedCarts = ordData.abandonedCarts || []; cachedStockNotifies = ordData.stockNotifies || []; cachedWallets = ordData.wallets || [];
+          cachedCategories = ordData.categories || storeData.categories || []; cachedProducts = ordData.products || storeData.products || [];
           window._lastOrdersHash = JSON.stringify({ o: cachedOrders, a: cachedAbandonedCarts, w: cachedStockNotifies, wl: cachedWallets });
           cachedCoupons = ordData.coupons || [];
           
-          updateAnalyticsUI(ordData.analytics);
-          renderLowStockAlerts(ordData.lowStockProducts || []);
+          updateAnalyticsUI(ordData.analytics); renderSalesProfitChart(); renderLowStockAlerts(ordData.lowStockProducts || []);
 
           if (ordData.storeSettings) {
-            document.getElementById('deliveryChargeInput').value = ordData.storeSettings.deliveryCharge || 0;
-            document.getElementById('codAdvanceInput').value = ordData.storeSettings.codAdvancePercent || 15;
-            document.getElementById('maxCodAmountInput').value = ordData.storeSettings.maxCodOrderAmount ?? 2000;
-            document.getElementById('freeGiftThresholdInput').value = ordData.storeSettings.freeGiftThreshold ?? 1499;
-            document.getElementById('freeGiftTitleInput').value = ordData.storeSettings.freeGiftTitle || "Luxury Surprise Jewellery Box";
-            document.getElementById('coinsEarnPctInput').value = ordData.storeSettings.coinsEarnPercent ?? 5;
-            document.getElementById('maxCoinsRedeemInput').value = ordData.storeSettings.maxCoinsRedeemPerOrder ?? 200;
-            document.getElementById('metaPixelIdInput').value = ordData.storeSettings.metaPixelId || "";
-            adminDealEndMs = ordData.storeSettings.dealEndTime || 0;
-            updateAdminTimerBadge();
+            const st = ordData.storeSettings;
+            document.getElementById('deliveryChargeInput').value = st.deliveryCharge || 0;
+            document.getElementById('codAdvanceInput').value = st.codAdvancePercent || 15;
+            document.getElementById('maxCodAmountInput').value = st.maxCodOrderAmount ?? 2000;
+            document.getElementById('freeGiftThresholdInput').value = st.freeGiftThreshold ?? 1499;
+            document.getElementById('freeGiftTitleInput').value = st.freeGiftTitle || "Luxury Surprise Jewellery Box";
+            document.getElementById('coinsEarnPctInput').value = st.coinsEarnPercent ?? 5;
+            document.getElementById('maxCoinsRedeemInput').value = st.maxCoinsRedeemPerOrder ?? 200;
+            document.getElementById('metaPixelIdInput').value = st.metaPixelId || "";
+            adminDealEndMs = st.dealEndTime || 0; updateAdminTimerBadge();
+
+            document.getElementById('firstPopupEnabledInput').checked = st.firstOrderPopupEnabled !== false;
+            document.getElementById('firstPopupTitleInput').value = st.firstOrderPopupTitle || "Exclusive First-Order Privilege";
+            document.getElementById('firstPopupSubtitleInput').value = st.firstOrderPopupSubtitle || "";
+            document.getElementById('firstPopupCouponInput').value = st.firstOrderPopupCoupon || "AURA20";
+            document.getElementById('firstPopupPreviewTitle').innerText = st.firstOrderPopupTitle || "Exclusive First-Order Privilege";
+            document.getElementById('firstPopupPreviewCode').innerText = st.firstOrderPopupCoupon || "AURA20";
+            if (st.firstOrderPopupImage) document.getElementById('firstPopupPreviewImg').src = st.firstOrderPopupImage;
           }
 
-          populateCategoryDropdowns();
-          renderAdminCategories();
-          renderStockWaitlist();
-          renderAbandonedCarts();
-          renderRepeatCustomers();
-          renderAdminCoupons();
-          renderAdminOrders();
-          renderAdminCatalog();
-          updateBannerProductDropdown();
-          renderAdminReviewsModeration();
+          populateCategoryDropdowns(); renderAdminCategories(); renderStockWaitlist(); renderAbandonedCarts(); renderRepeatCustomers();
+          renderAdminCoupons(); renderAdminOrders(); renderAdminCatalog(); updateBannerProductDropdown(); renderAdminReviewsModeration();
         }
-
-        if (storeData.dealBanners) {
-          cachedBanners = storeData.dealBanners || [];
-          renderAdminBanners();
-        }
+        if (storeData.dealBanners) { cachedBanners = storeData.dealBanners || []; renderAdminBanners(); }
       } catch (err) { console.error("Dashboard load error", err); }
     }
 
     function renderAdminReviewsModeration() {
-      const container = document.getElementById('adminReviewsModerationList');
-      const allRevs = [];
-      cachedProducts.forEach(p => {
-        (p.reviews || []).forEach(r => {
-          allRevs.push({ productId: p.id, productName: p.name, ...r });
-        });
-      });
-
+      const container = document.getElementById('adminReviewsModerationList'), allRevs = [];
+      cachedProducts.forEach(p => (p.reviews || []).forEach(r => allRevs.push({ productId: p.id, productName: p.name, ...r })));
       document.getElementById('totalReviewsCountText').innerText = allRevs.length;
-
-      if (!allRevs.length) {
-        container.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No customer reviews submitted yet.</p>`;
-        return;
-      }
-
+      if (!allRevs.length) { container.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No reviews yet.</p>`; return; }
       container.innerHTML = allRevs.map(r => `
         <div class="bg-slate-800/80 border border-slate-700 p-3 rounded-2xl space-y-1.5 text-xs flex flex-col justify-between">
           <div>
             <div class="flex justify-between items-start gap-2">
               <span class="font-bold text-amber-300 line-clamp-1">${r.productName}</span>
-              <button onclick="deleteCustomerReview(${r.productId}, '${r._id}')" title="Delete Review" class="text-rose-400 hover:text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded text-[10px] font-bold">
-                <i class="fa-solid fa-trash"></i> Delete
-              </button>
+              <button onclick="deleteCustomerReview(${r.productId}, '${r._id}')" class="text-rose-400 hover:text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-trash"></i> Delete</button>
             </div>
             <p class="text-amber-400 text-[11px] mt-0.5">${'★'.repeat(r.rating || 5)} <span class="text-slate-400">by ${r.customerName}</span></p>
             <p class="text-slate-200 mt-1">${r.comment}</p>
             ${r.photoUrl ? `<a href="${r.photoUrl}" target="_blank"><img src="${r.photoUrl}" class="w-16 h-16 object-cover rounded-lg border border-slate-600 mt-2"></a>` : ''}
           </div>
           <p class="text-[10px] text-slate-500 pt-1">${r.date || ''}</p>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
 
     async function deleteCustomerReview(productId, reviewId) {
-      if (!confirm("Delete this customer review permanently?")) return;
-      try {
-        const res = await fetch(`/api/admin/products/${productId}/reviews/${reviewId}`, {
-          method: 'DELETE',
-          headers: getAuthHeaders()
-        });
-        if (handleUnauthorized(res)) return;
-        const data = await res.json();
-        if (data.success) loadAdminDashboard(true);
-      } catch (err) {
-        alert("Failed to delete review.");
-      }
+      if (!confirm("Delete this review permanently?")) return;
+      const res = await fetch(`/api/admin/products/${productId}/reviews/${reviewId}`, { method: 'DELETE', headers: getAuthHeaders() });
+      if (handleUnauthorized(res)) return;
+      if ((await res.json()).success) loadAdminDashboard(true);
     }
 
     async function loadAdminSupportTickets(force = false) {
       try {
-        const res = await fetch('/api/admin/support/tickets?t=' + Date.now(), {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({})
-        });
+        const res = await fetch('/api/admin/support/tickets?t=' + Date.now(), { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({}) });
         if (handleUnauthorized(res)) return;
         const data = await res.json();
         if (data.success) {
           const newHash = JSON.stringify(data.tickets);
           if (force || window._lastTicketsHash !== newHash) {
-            window._lastTicketsHash = newHash;
-            cachedSupportTickets = data.tickets || [];
-            document.getElementById('headerTicketsBadge').innerText = cachedSupportTickets.length;
-            renderAdminSupportTickets();
+            window._lastTicketsHash = newHash; cachedSupportTickets = data.tickets || [];
+            document.getElementById('headerTicketsBadge').innerText = cachedSupportTickets.length; renderAdminSupportTickets();
           }
         }
-      } catch (err) { console.error(err); }
+      } catch (err) {}
     }
 
     function renderAdminSupportTickets() {
       const query = (document.getElementById('adminSupportSearchInput').value || "").trim().toLowerCase();
-      const filtered = cachedSupportTickets.filter(t =>
-        (t.phone && t.phone.includes(query)) ||
-        (t.orderId && t.orderId.toLowerCase().includes(query)) ||
-        (t.customerName && t.customerName.toLowerCase().includes(query))
-      );
-
+      const filtered = cachedSupportTickets.filter(t => (t.phone && t.phone.includes(query)) || (t.orderId && t.orderId.toLowerCase().includes(query)) || (t.customerName && t.customerName.toLowerCase().includes(query)));
       const container = document.getElementById('adminSupportTicketsList');
-      if (filtered.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-6">No customer support tickets found.</p>`;
-        return;
-      }
-
+      if (!filtered.length) { container.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-6">No support tickets found.</p>`; return; }
       container.innerHTML = filtered.map(t => `
         <div class="bg-slate-800/80 border ${t.adminReply ? 'border-emerald-500/30' : 'border-amber-500/40'} p-4 rounded-2xl space-y-2.5 text-xs shadow">
           <div class="flex justify-between items-start border-b border-slate-700 pb-2">
-            <div>
-              <span class="font-mono font-bold text-amber-400 text-sm">Order #${t.orderId}</span>
-              <span class="text-[10px] text-slate-400 ml-1.5">(${t.ticketId})</span>
-              <p class="font-bold text-white mt-0.5"><i class="fa-solid fa-phone text-emerald-400 mr-1"></i>${t.phone} • ${t.customerName}</p>
-            </div>
+            <div><span class="font-mono font-bold text-amber-400 text-sm">Order #${t.orderId}</span> <span class="text-[10px] text-slate-400">(${t.ticketId})</span><p class="font-bold text-white mt-0.5"><i class="fa-solid fa-phone text-emerald-400 mr-1"></i>${t.phone} • ${t.customerName}</p></div>
             <div class="flex items-center gap-1.5">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.adminReply ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">
-                ${t.adminReply ? 'Replied ✓' : 'Needs Reply'}
-              </span>
-              <button onclick="deleteAdminSupportTicket('${t.ticketId}')" title="Delete Ticket" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white px-2 py-1 rounded-lg text-[10px] font-bold transition">
-                <i class="fa-solid fa-trash"></i> Delete
-              </button>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.adminReply ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">${t.adminReply ? 'Replied ✓' : 'Needs Reply'}</span>
+              <button onclick="deleteAdminSupportTicket('${t.ticketId}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white px-2 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
-
-          <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700">
-            <p class="text-[10px] text-rose-400 font-bold uppercase">Customer Issue (${t.createdAtStr || ''}):</p>
-            <p class="text-slate-200 mt-1 leading-relaxed">${t.issueText}</p>
-          </div>
-
-          ${t.adminReply ? `
-            <div class="bg-emerald-950/60 border border-emerald-500/30 p-2.5 rounded-xl">
-              <p class="text-[10px] text-emerald-400 font-bold">Your Reply (${t.repliedAt || ''}):</p>
-              <p class="text-emerald-200 mt-0.5">${t.adminReply}</p>
-            </div>
-          ` : ''}
-
+          <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700"><p class="text-[10px] text-rose-400 font-bold uppercase">Issue:</p><p class="text-slate-200 mt-1">${t.issueText}</p></div>
+          ${t.adminReply ? `<div class="bg-emerald-950/60 border border-emerald-500/30 p-2.5 rounded-xl"><p class="text-[10px] text-emerald-400 font-bold">Reply:</p><p class="text-emerald-200 mt-0.5">${t.adminReply}</p></div>` : ''}
           <div class="flex gap-2 pt-1">
-            <input type="text" id="reply_input_${t.ticketId}" value="${t.adminReply || ''}" placeholder="Write reply for customer..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
-            <button onclick="sendAdminSupportReply('${t.ticketId}')" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl transition whitespace-nowrap shadow">
-              Send Reply
-            </button>
+            <input type="text" id="reply_input_${t.ticketId}" value="${t.adminReply || ''}" placeholder="Write reply..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+            <button onclick="sendAdminSupportReply('${t.ticketId}')" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl whitespace-nowrap">Send Reply</button>
           </div>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
 
     async function sendAdminSupportReply(ticketId) {
-      const replyInput = document.getElementById(`reply_input_${ticketId}`);
-      const replyText = (replyInput.value || "").trim();
-      if (!replyText) return alert("Please write a reply message!");
-
-      try {
-        const res = await fetch('/api/admin/support/reply', {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ ticketId, replyText })
-        });
-        if (handleUnauthorized(res)) return;
-        const data = await res.json();
-        if (data.success) {
-          alert("Reply sent! Customer will see it live within 3 seconds.");
-          loadAdminSupportTickets(true);
-        }
-      } catch (err) {
-        alert("Server error while sending reply.");
-      }
+      const replyText = (document.getElementById(`reply_input_${ticketId}`).value || "").trim();
+      if (!replyText) return alert("Write a reply message!");
+      const res = await fetch('/api/admin/support/reply', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ ticketId, replyText }) });
+      if (handleUnauthorized(res)) return;
+      if ((await res.json()).success) { alert("Reply sent!"); loadAdminSupportTickets(true); }
     }
 
     async function deleteAdminSupportTicket(ticketId) {
-      if (!confirm(`Delete support ticket ${ticketId} permanently?`)) return;
-      try {
-        const res = await fetch(`/api/admin/support/tickets/${ticketId}`, {
-          method: 'DELETE',
-          headers: getAuthHeaders()
-        });
-        if (handleUnauthorized(res)) return;
-        const data = await res.json();
-        if (data.success) loadAdminSupportTickets(true);
-      } catch (err) {
-        alert("Failed to delete support ticket.");
-      }
+      if (!confirm(`Delete ticket ${ticketId}?`)) return;
+      const res = await fetch(`/api/admin/support/tickets/${ticketId}`, { method: 'DELETE', headers: getAuthHeaders() });
+      if (handleUnauthorized(res)) return;
+      if ((await res.json()).success) loadAdminSupportTickets(true);
     }
 
     async function saveDeliveryCharge() {
       const fee = document.getElementById('deliveryChargeInput').value;
-      const res = await fetch('/api/admin/store-settings', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ deliveryCharge: fee })
-      });
+      const res = await fetch('/api/admin/store-settings', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ deliveryCharge: fee }) });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) alert(`COD Delivery Charge updated to ₹${fee}!`);
+      if ((await res.json()).success) alert(`COD Delivery Charge updated to ₹${fee}!`);
     }
 
     async function saveCodSettings() {
       const pct = document.getElementById('codAdvanceInput').value;
-      const res = await fetch('/api/admin/store-settings', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ codAdvancePercent: pct })
-      });
+      const res = await fetch('/api/admin/store-settings', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ codAdvancePercent: pct }) });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) alert(`COD Advance Token updated to ${pct}%!`);
+      if ((await res.json()).success) alert(`COD Advance Token updated to ${pct}%!`);
     }
 
     async function handleCreateCoupon(e) {
       e.preventDefault();
-      const payload = {
-        code: document.getElementById('cpCode').value,
-        discountPercent: document.getElementById('cpDiscount').value,
-        minSpend: document.getElementById('cpMinSpend').value,
-        validHours: document.getElementById('cpValidHours').value,
-        validMinutes: document.getElementById('cpValidMins').value,
-        showOnStore: true
-      };
-      const res = await fetch('/api/admin/coupons', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload)
-      });
+      const payload = { code: document.getElementById('cpCode').value, discountPercent: document.getElementById('cpDiscount').value, minSpend: document.getElementById('cpMinSpend').value, validHours: document.getElementById('cpValidHours').value, validMinutes: document.getElementById('cpValidMins').value, showOnStore: true };
+      const res = await fetch('/api/admin/coupons', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
-        cachedCoupons = data.coupons;
-        renderAdminCoupons();
-        document.getElementById('cpCode').value = "";
-        document.getElementById('cpDiscount').value = "";
-        document.getElementById('cpValidHours').value = "0";
-        document.getElementById('cpValidMins').value = "0";
+        cachedCoupons = data.coupons; renderAdminCoupons();
+        document.getElementById('cpCode').value = ""; document.getElementById('cpDiscount').value = ""; document.getElementById('cpValidHours').value = "0"; document.getElementById('cpValidMins').value = "0";
         alert("Coupon created!");
       }
     }
 
     async function deleteCoupon(code) {
       if (!confirm(`Delete coupon ${code}?`)) return;
-      const res = await fetch(`/api/admin/coupons/${code}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
+      const res = await fetch(`/api/admin/coupons/${code}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
-      if (data.success) {
-        cachedCoupons = data.coupons;
-        renderAdminCoupons();
-      }
+      if (data.success) { cachedCoupons = data.coupons; renderAdminCoupons(); }
     }
 
     function formatRemainingCouponTime(expiresAt) {
-      if (!expiresAt || expiresAt <= 0) return `<span class="text-cyan-400">No Expiry (Permanent)</span>`;
+      if (!expiresAt || expiresAt <= 0) return `<span class="text-cyan-400">Permanent</span>`;
       const diff = expiresAt - Date.now();
       if (diff <= 0) return `<span class="text-rose-400 font-extrabold">● EXPIRED</span>`;
       const totalSec = Math.floor(diff / 1000);
-      const h = Math.floor(totalSec / 3600);
-      const m = Math.floor((totalSec % 3600) / 60);
-      const s = totalSec % 60;
-      return `<span class="text-emerald-400 font-mono font-bold">⏳ ${h}h ${m}m ${s}s left</span>`;
+      return `<span class="text-emerald-400 font-mono font-bold">⏳ ${Math.floor(totalSec / 3600)}h ${Math.floor((totalSec % 3600) / 60)}m ${totalSec % 60}s</span>`;
     }
 
     function renderAdminCoupons() {
-      const list = document.getElementById('adminCouponsList');
-      list.innerHTML = cachedCoupons.map(c => {
+      document.getElementById('adminCouponsList').innerHTML = cachedCoupons.map(c => {
         const isExpired = c.expiresAt && c.expiresAt > 0 && Date.now() >= c.expiresAt;
         return `
           <div class="bg-slate-800 border ${isExpired ? 'border-rose-500/50 opacity-75' : 'border-slate-700'} p-2.5 rounded-xl flex justify-between items-center text-xs">
-            <div>
-              <span class="font-mono font-bold ${isExpired ? 'text-rose-400 line-through' : 'text-amber-400'}">${c.code}</span>
-              <span class="text-emerald-400 font-bold ml-1">${c.discountPercent}% OFF</span>
-              <p class="text-[10px] text-slate-400">Min: ₹${c.minSpend || 0} • ${formatRemainingCouponTime(c.expiresAt)}</p>
-            </div>
+            <div><span class="font-mono font-bold ${isExpired ? 'text-rose-400 line-through' : 'text-amber-400'}">${c.code}</span> <span class="text-emerald-400 font-bold ml-1">${c.discountPercent}% OFF</span><p class="text-[10px] text-slate-400">Min: ₹${c.minSpend || 0} • ${formatRemainingCouponTime(c.expiresAt)}</p></div>
             <button onclick="deleteCoupon('${c.code}')" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        `;
+          </div>`;
       }).join('');
     }
 
@@ -1474,23 +1401,12 @@
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            let quality = 0.75;
-            let dataUrl = canvas.toDataURL('image/jpeg', quality);
-            while (dataUrl.length * 0.75 > targetKB * 1024 && quality > 0.2) {
-              quality -= 0.1;
-              dataUrl = canvas.toDataURL('image/jpeg', quality);
-            }
+            let width = img.width, height = img.height;
+            if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
+            canvas.width = width; canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            let quality = 0.75, dataUrl = canvas.toDataURL('image/jpeg', quality);
+            while (dataUrl.length * 0.75 > targetKB * 1024 && quality > 0.2) { quality -= 0.1; dataUrl = canvas.toDataURL('image/jpeg', quality); }
             resolve(dataUrl);
           };
           img.src = event.target.result;
@@ -1500,228 +1416,123 @@
     }
 
     async function handleAddMultipleProductPhotos(input) {
-      const files = Array.from(input.files || []);
-      if (!files.length) return;
-      for (const file of files) {
-        const compressed = await compressImageFile(file);
-        currentFormImages.push(compressed);
-      }
-      input.value = "";
-      renderFormImagesPreview();
+      for (const file of Array.from(input.files || [])) currentFormImages.push(await compressImageFile(file));
+      input.value = ""; renderFormImagesPreview();
     }
 
-    function removeFormImageAt(idx) {
-      currentFormImages.splice(idx, 1);
-      renderFormImagesPreview();
-    }
+    function removeFormImageAt(idx) { currentFormImages.splice(idx, 1); renderFormImagesPreview(); }
 
     function renderFormImagesPreview() {
-      const grid = document.getElementById('dynamicProdImagesPreview');
-      const hint = document.getElementById('noPhotosHint');
-      if (currentFormImages.length === 0) {
-        grid.innerHTML = "";
-        hint.classList.remove('hidden');
-        return;
-      }
+      const grid = document.getElementById('dynamicProdImagesPreview'), hint = document.getElementById('noPhotosHint');
+      if (!currentFormImages.length) { grid.innerHTML = ""; hint.classList.remove('hidden'); return; }
       hint.classList.add('hidden');
       grid.innerHTML = currentFormImages.map((src, idx) => `
-        <div class="relative rounded-xl overflow-hidden border border-slate-600 aspect-square bg-slate-900 group">
+        <div class="relative rounded-xl overflow-hidden border border-slate-600 aspect-square bg-slate-900">
           <img src="${src}" class="w-full h-full object-cover">
           ${idx === 0 ? `<span class="absolute bottom-1 left-1 bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded">MAIN</span>` : ''}
-          <button type="button" onclick="removeFormImageAt(${idx})" title="Delete Photo" class="absolute top-1 right-1 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center shadow">
-            &times;
-          </button>
-        </div>
-      `).join('');
+          <button type="button" onclick="removeFormImageAt(${idx})" class="absolute top-1 right-1 bg-rose-600 text-white w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center shadow">&times;</button>
+        </div>`).join('');
     }
 
     function updateBannerProductDropdown() {
-      const sel = document.getElementById('bannerProductSelect');
-      sel.innerHTML = cachedProducts.map(p => `<option value="${p.id}">${p.name} (₹${p.price})</option>`).join('');
+      document.getElementById('bannerProductSelect').innerHTML = cachedProducts.map(p => `<option value="${p.id}">${p.name} (₹${p.price})</option>`).join('');
     }
 
     async function handleAddDealBanner(e) {
       e.preventDefault();
       const file = document.getElementById('bannerFileInput').files[0];
-      if (!file) return alert("Please select a banner image!");
-      const btn = document.getElementById('bannerSubmitBtn');
-      btn.innerText = "Uploading...";
-      btn.disabled = true;
-
+      if (!file) return alert("Select a banner image!");
+      const btn = document.getElementById('bannerSubmitBtn'); btn.innerText = "Uploading..."; btn.disabled = true;
       const compressedImg = await compressImageFile(file, 900, 65);
-      const payload = {
-        title: document.getElementById('bannerTitleInput').value,
-        tag: document.getElementById('bannerTagInput').value,
-        productId: document.getElementById('bannerProductSelect').value,
-        image: compressedImg
-      };
-
-      const res = await fetch('/api/admin/banners/add', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload)
-      });
+      const res = await fetch('/api/admin/banners/add', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ title: document.getElementById('bannerTitleInput').value, tag: document.getElementById('bannerTagInput').value, productId: document.getElementById('bannerProductSelect').value, image: compressedImg }) });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success) {
-        cachedBanners = data.dealBanners;
-        renderAdminBanners();
-        document.getElementById('bannerTitleInput').value = "";
-        document.getElementById('bannerTagInput').value = "";
-        document.getElementById('bannerFileInput').value = "";
+        cachedBanners = data.dealBanners; renderAdminBanners();
+        document.getElementById('bannerTitleInput').value = ""; document.getElementById('bannerTagInput').value = ""; document.getElementById('bannerFileInput').value = "";
         alert("Banner Published!");
       }
-      btn.innerText = "Publish Deal Banner";
-      btn.disabled = false;
+      btn.innerText = "Publish Deal Banner"; btn.disabled = false;
     }
 
     async function deleteBanner(id) {
       if (!confirm("Delete this banner?")) return;
-      const res = await fetch(`/api/admin/banners/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
+      const res = await fetch(`/api/admin/banners/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
-      if (data.success) {
-        cachedBanners = data.dealBanners;
-        renderAdminBanners();
-      }
+      if (data.success) { cachedBanners = data.dealBanners; renderAdminBanners(); }
     }
 
     function renderAdminBanners() {
-      const grid = document.getElementById('adminBannersGrid');
-      grid.innerHTML = cachedBanners.map(b => `
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden relative group">
+      document.getElementById('adminBannersGrid').innerHTML = cachedBanners.map(b => `
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden relative">
           <img src="${b.image}" class="w-full h-24 object-cover">
-          <div class="p-2 text-xs">
-            <p class="font-bold text-white truncate">${b.title}</p>
-            <p class="text-[10px] text-amber-400">${b.tag}</p>
-          </div>
+          <div class="p-2 text-xs"><p class="font-bold text-white truncate">${b.title}</p><p class="text-[10px] text-amber-400">${b.tag}</p></div>
           <button onclick="deleteBanner(${b.id})" class="absolute top-2 right-2 bg-rose-600 text-white w-6 h-6 rounded-full text-xs shadow"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
 
     async function handleSaveProduct(e) {
       e.preventDefault();
-      const editId = document.getElementById('editProdId').value;
-      const btn = document.getElementById('saveProdBtn');
-      btn.innerText = "Saving...";
-      btn.disabled = true;
-
-      if (currentFormImages.length === 0) {
-        btn.innerText = editId ? "Update Product" : "Publish to Store";
-        btn.disabled = false;
-        return alert("Please add at least 1 product photo!");
-      }
-
-      const sizesRaw = document.getElementById('prodSizes').value;
-      const colorsRaw = document.getElementById('prodColors').value;
-
+      const editId = document.getElementById('editProdId').value, btn = document.getElementById('saveProdBtn');
+      btn.innerText = "Saving..."; btn.disabled = true;
+      if (!currentFormImages.length) { btn.innerText = editId ? "Update Product" : "Publish to Store"; btn.disabled = false; return alert("Add at least 1 product photo!"); }
+      const sizesRaw = document.getElementById('prodSizes').value, colorsRaw = document.getElementById('prodColors').value;
       const payload = {
-        name: document.getElementById('prodName').value,
-        mainCategory: document.getElementById('prodMainCategory').value,
-        category: document.getElementById('prodCategory').value,
-        price: document.getElementById('prodPrice').value,
-        originalPrice: document.getElementById('prodOrigPrice').value,
-        costPrice: document.getElementById('prodCostPrice').value,
-        stockQuantity: document.getElementById('prodStock').value,
-        showOnHome: document.getElementById('prodShowOnHome').checked,
+        name: document.getElementById('prodName').value, mainCategory: document.getElementById('prodMainCategory').value, category: document.getElementById('prodCategory').value,
+        price: document.getElementById('prodPrice').value, originalPrice: document.getElementById('prodOrigPrice').value, costPrice: document.getElementById('prodCostPrice').value,
+        stockQuantity: document.getElementById('prodStock').value, showOnHome: document.getElementById('prodShowOnHome').checked,
         sizeOptions: sizesRaw ? sizesRaw.split(',').map(s => s.trim()).filter(Boolean) : ["Standard"],
         colorOptions: colorsRaw ? colorsRaw.split(',').map(c => c.trim()).filter(Boolean) : ["Standard"],
-        badge: document.getElementById('prodBadge').value || "New",
-        images: [...currentFormImages],
-        description: document.getElementById('prodDesc').value
+        badge: document.getElementById('prodBadge').value || "New", images: [...currentFormImages], description: document.getElementById('prodDesc').value
       };
-
-      const url = editId ? `/api/admin/products/${editId}` : '/api/admin/products';
-      const method = editId ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload)
-      });
+      const res = await fetch(editId ? `/api/admin/products/${editId}` : '/api/admin/products', { method: editId ? 'PUT' : 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
-        alert(editId ? "Product Updated!" : "Product Published!");
-        resetProductForm();
-        loadAdminDashboard(true);
-      }
-      btn.innerText = "Publish to Store";
-      btn.disabled = false;
+      if ((await res.json()).success) { alert(editId ? "Product Updated!" : "Product Published!"); resetProductForm(); loadAdminDashboard(true); }
+      btn.innerText = "Publish to Store"; btn.disabled = false;
     }
 
     function editProduct(id) {
       const p = cachedProducts.find(item => item.id === id);
       if (!p) return;
-
       document.getElementById('editProdId').value = p.id;
       document.getElementById('productFormHeading').innerHTML = `<i class="fa-solid fa-pen-to-square mr-1"></i> Edit Product #${p.id}`;
       document.getElementById('cancelEditBtn').classList.remove('hidden');
       document.getElementById('saveProdBtn').innerText = "Update Product";
-
       document.getElementById('prodName').value = p.name;
       populateCategoryDropdowns(p.mainCategory, p.category);
-      document.getElementById('prodPrice').value = p.price;
-      document.getElementById('prodOrigPrice').value = p.originalPrice;
-      document.getElementById('prodCostPrice').value = p.costPrice || 0;
-      document.getElementById('prodStock').value = p.stockQuantity;
-      document.getElementById('prodSizes').value = (p.sizeOptions || []).join(', ');
-      document.getElementById('prodColors').value = (p.colorOptions || []).join(', ');
-      document.getElementById('prodBadge').value = p.badge || "";
-      document.getElementById('prodShowOnHome').checked = p.showOnHome !== false;
+      document.getElementById('prodPrice').value = p.price; document.getElementById('prodOrigPrice').value = p.originalPrice;
+      document.getElementById('prodCostPrice').value = p.costPrice || 0; document.getElementById('prodStock').value = p.stockQuantity;
+      document.getElementById('prodSizes').value = (p.sizeOptions || []).join(', '); document.getElementById('prodColors').value = (p.colorOptions || []).join(', ');
+      document.getElementById('prodBadge').value = p.badge || ""; document.getElementById('prodShowOnHome').checked = p.showOnHome !== false;
       document.getElementById('prodDesc').value = p.description || "";
-
-      currentFormImages = [...(p.images || [])];
-      renderFormImagesPreview();
+      currentFormImages = [...(p.images || [])]; renderFormImagesPreview();
       window.scrollTo({ top: 300, behavior: 'smooth' });
     }
 
     function resetProductForm() {
-      document.getElementById('productForm').reset();
-      document.getElementById('editProdId').value = "";
+      document.getElementById('productForm').reset(); document.getElementById('editProdId').value = "";
       document.getElementById('productFormHeading').innerHTML = `<i class="fa-solid fa-plus-circle mr-1"></i> Add New Product`;
-      document.getElementById('cancelEditBtn').classList.add('hidden');
-      document.getElementById('saveProdBtn').innerText = "Publish to Store";
-      document.getElementById('prodShowOnHome').checked = true;
-      populateCategoryDropdowns();
-      currentFormImages = [];
-      renderFormImagesPreview();
+      document.getElementById('cancelEditBtn').classList.add('hidden'); document.getElementById('saveProdBtn').innerText = "Publish to Store";
+      document.getElementById('prodShowOnHome').checked = true; populateCategoryDropdowns(); currentFormImages = []; renderFormImagesPreview();
     }
 
     async function saveQuickCatalogRow(id) {
-      const price = document.getElementById(`q_price_${id}`).value;
-      const costPrice = document.getElementById(`q_cost_${id}`).value;
-      const stockQuantity = document.getElementById(`q_stock_${id}`).value;
-
-      const res = await fetch(`/api/admin/products/${id}/quick-update`, {
-        method: 'PATCH',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ price, costPrice, stockQuantity })
-      });
+      const price = document.getElementById(`q_price_${id}`).value, costPrice = document.getElementById(`q_cost_${id}`).value, stockQuantity = document.getElementById(`q_stock_${id}`).value;
+      const res = await fetch(`/api/admin/products/${id}/quick-update`, { method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify({ price, costPrice, stockQuantity }) });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
       if (data.success && data.product) {
         const idx = cachedProducts.findIndex(p => p.id === id);
         if (idx > -1) cachedProducts[idx] = data.product;
-        alert(`✅ Updated "${data.product.name}" (Sale: ₹${data.product.price}, Cost: ₹${data.product.costPrice}, Stock: ${data.product.stockQuantity})`);
-        renderAdminCatalog();
-        renderStockWaitlist();
+        alert(`✅ Updated "${data.product.name}"!`); renderAdminCatalog(); renderStockWaitlist();
       }
     }
 
     async function toggleShowOnHome(id, currentStatus) {
-      const res = await fetch(`/api/admin/products/${id}/toggle-home`, {
-        method: 'PATCH',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ showOnHome: !currentStatus })
-      });
+      const res = await fetch(`/api/admin/products/${id}/toggle-home`, { method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify({ showOnHome: !currentStatus }) });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
+      if ((await res.json()).success) {
         const idx = cachedProducts.findIndex(p => p.id === id);
         if (idx > -1) cachedProducts[idx].showOnHome = !currentStatus;
         renderAdminCatalog();
@@ -1730,28 +1541,18 @@
 
     async function deleteProduct(id) {
       if (!confirm("Delete this product permanently?")) return;
-      const res = await fetch(`/api/admin/products/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
+      const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
-      if (data.success) {
-        cachedProducts = data.products;
-        renderAdminCatalog();
-        renderAdminCategories();
-      }
+      if (data.success) { cachedProducts = data.products; renderAdminCatalog(); renderAdminCategories(); }
     }
 
     function renderAdminCatalog() {
       const q = (document.getElementById('adminProdSearch').value || "").toLowerCase();
       const filtered = cachedProducts.filter(p => p.name.toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q));
       document.getElementById('adminCatalogCount').innerText = filtered.length;
-
       document.getElementById('adminCatalogList').innerHTML = filtered.map(p => {
-        const isHome = p.showOnHome === true;
-        const isLow = (p.stockQuantity || 0) < 3;
-        const unitMargin = (p.price || 0) - (p.costPrice || 0);
+        const isHome = p.showOnHome === true, isLow = (p.stockQuantity || 0) < 3, unitMargin = (p.price || 0) - (p.costPrice || 0);
         return `
           <div class="bg-slate-800/70 border ${isLow ? 'border-rose-500/60' : 'border-slate-700'} p-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div class="flex items-center gap-3 min-w-0">
@@ -1759,30 +1560,20 @@
               <div class="min-w-0">
                 <p class="font-bold text-white truncate">${p.name} ${isLow ? '<span class="ml-1 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black">LOW</span>' : ''}</p>
                 <p class="text-[10px] text-slate-400">${p.mainCategory} &rarr; ${p.category} • Margin: <b class="${unitMargin >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${unitMargin}/pc</b></p>
-                
                 <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
-                  <label class="text-[10px] text-amber-300">Sale ₹:
-                    <input type="number" id="q_price_${p.id}" value="${p.price}" class="w-16 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold">
-                  </label>
-                  <label class="text-[10px] text-emerald-300">Cost ₹:
-                    <input type="number" id="q_cost_${p.id}" value="${p.costPrice || 0}" class="w-16 bg-slate-950 border border-emerald-500/40 rounded px-1.5 py-0.5 text-emerald-300 font-bold">
-                  </label>
-                  <label class="text-[10px] text-cyan-300">Stock:
-                    <input type="number" id="q_stock_${p.id}" value="${p.stockQuantity}" class="w-14 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold">
-                  </label>
+                  <label class="text-[10px] text-amber-300">Sale ₹: <input type="number" id="q_price_${p.id}" value="${p.price}" class="w-16 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold"></label>
+                  <label class="text-[10px] text-emerald-300">Cost ₹: <input type="number" id="q_cost_${p.id}" value="${p.costPrice || 0}" class="w-16 bg-slate-950 border border-emerald-500/40 rounded px-1.5 py-0.5 text-emerald-300 font-bold"></label>
+                  <label class="text-[10px] text-cyan-300">Stock: <input type="number" id="q_stock_${p.id}" value="${p.stockQuantity}" class="w-14 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold"></label>
                   <button onclick="saveQuickCatalogRow(${p.id})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-0.5 rounded font-extrabold text-[10px] shadow">Save</button>
                 </div>
               </div>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
-              <button onclick="toggleShowOnHome(${p.id}, ${isHome})" class="px-2.5 py-1.5 rounded-xl font-bold transition text-[11px] ${isHome ? 'bg-emerald-500 text-slate-950' : 'bg-slate-700 text-slate-300'}">
-                <i class="fa-solid ${isHome ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i> ${isHome ? 'Home: YES' : 'Home: NO'}
-              </button>
+              <button onclick="toggleShowOnHome(${p.id}, ${isHome})" class="px-2.5 py-1.5 rounded-xl font-bold transition text-[11px] ${isHome ? 'bg-emerald-500 text-slate-950' : 'bg-slate-700 text-slate-300'}"><i class="fa-solid ${isHome ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i> ${isHome ? 'Home: YES' : 'Home: NO'}</button>
               <button onclick="editProduct(${p.id})" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-2.5 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-pen"></i> Full Edit</button>
               <button onclick="deleteProduct(${p.id})" class="bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 px-2.5 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button>
             </div>
-          </div>
-        `;
+          </div>`;
       }).join('');
     }
 
@@ -1791,14 +1582,10 @@
       if (!o) return;
       const cleanPhone = String(o.phone || '').replace(/[^0-9]/g, '');
       const fullPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-
       const courier = o.courierPartner || 'Delhivery';
       const trackFn = courierTrackingUrls[courier] || courierTrackingUrls["Delhivery"];
       const itemsSummary = (o.items || []).map(i => `• ${i.name} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join('\n');
-      const trackingLine = o.awbNumber
-        ? `\n🚚 *Courier:* ${courier}\n📦 *Tracking AWB:* ${o.awbNumber}\n🔗 *Track Here:* ${trackFn(o.awbNumber)}`
-        : '';
-
+      const trackingLine = o.awbNumber ? `\n🚚 *Courier:* ${courier}\n📦 *Tracking AWB:* ${o.awbNumber}\n🔗 *Track Here:* ${trackFn(o.awbNumber)}` : '';
       const message = `✨ *AURA FINE STORE* ✨\nHello *${o.customerName}*,\n\nYour order *#${o.id}* status is now: *${o.status}*\n\n🛍️ *Items:*\n${itemsSummary}\n\n💰 *Total Bill:* ₹${o.total} (${o.paymentMethod})${trackingLine}\n\nThank you for shopping with AURA Fine Store!`;
       window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, '_blank');
     }
@@ -1811,47 +1598,32 @@
       const q = (document.getElementById('adminOrderSearch').value || "").toLowerCase();
       const filtered = cachedOrders.filter(o => {
         const matchesTab = activeOrderStatusFilter === 'ALL' || o.status === activeOrderStatusFilter;
-        const matchesQuery = o.id.toLowerCase().includes(q) ||
-          o.customerName.toLowerCase().includes(q) ||
-          o.phone.includes(q) ||
-          (o.utrNumber && o.utrNumber.toLowerCase().includes(q));
+        const matchesQuery = o.id.toLowerCase().includes(q) || o.customerName.toLowerCase().includes(q) || o.phone.includes(q) || (o.utrNumber && o.utrNumber.toLowerCase().includes(q));
         return matchesTab && matchesQuery;
       });
 
+      const selectAllCb = document.getElementById('selectAllOrdersCheckbox');
+      if (selectAllCb) selectAllCb.checked = filtered.length > 0 && filtered.every(o => selectedOrderIdsSet.has(o.id));
+      updateBulkPrintButtonUI();
+
       const tbody = document.getElementById('ordersTableBody');
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">No orders found in this view.</td></tr>`;
-        return;
-      }
+      if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">No orders found in this view.</td></tr>`; return; }
 
       tbody.innerHTML = filtered.map(o => {
-        const itemsText = (o.items || []).map(i => `
-          <div class="mb-1 border-b border-slate-800 pb-1">
-            <span class="font-bold text-slate-200">${i.name}</span> x${i.qty}
-            <span class="block text-[10px] text-amber-400">Size: ${i.selectedSize || 'N/A'} | Color: ${i.selectedColor || 'N/A'}</span>
-          </div>
-        `).join('');
-
-        const freeGiftHtml = o.freeGiftUnlocked
-          ? `<div class="mt-1.5 bg-emerald-950/80 border border-emerald-500/40 p-2 rounded-lg text-[10px] text-emerald-300 font-bold"><i class="fa-solid fa-award text-emerald-400 mr-1"></i>FREE BONUS GIFT: ${o.freeGiftUnlocked}</div>`
-          : '';
-
+        const isChecked = selectedOrderIdsSet.has(o.id);
+        const itemsText = (o.items || []).map(i => `<div class="mb-1 border-b border-slate-800 pb-1"><span class="font-bold text-slate-200">${i.name}</span> x${i.qty}<span class="block text-[10px] text-amber-400">Size: ${i.selectedSize || 'N/A'} | Color: ${i.selectedColor || 'N/A'}</span></div>`).join('');
+        const freeGiftHtml = o.freeGiftUnlocked ? `<div class="mt-1.5 bg-emerald-950/80 border border-emerald-500/40 p-2 rounded-lg text-[10px] text-emerald-300 font-bold"><i class="fa-solid fa-award text-emerald-400 mr-1"></i>FREE GIFT: ${o.freeGiftUnlocked}</div>` : '';
         const curPartner = o.courierPartner || 'Delhivery';
 
         return `
-          <tr class="hover:bg-slate-900/60 align-top">
+          <tr class="hover:bg-slate-900/60 align-top ${isChecked ? 'bg-amber-500/5' : ''}">
+            <td class="p-3"><input type="checkbox" data-order-id="${o.id}" ${isChecked ? 'checked' : ''} onchange="toggleOrderCheckbox('${o.id}', this.checked)" class="order-row-checkbox w-4 h-4 accent-amber-500 cursor-pointer"></td>
             <td class="p-3">
               <span class="font-mono font-bold text-amber-400">#${o.id}</span>
               <span class="block text-[10px] text-slate-400 mt-0.5">${o.date}</span>
-              <button onclick="openThermalShippingLabel('${o.id}')" class="mt-2 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-lg text-[10px] font-extrabold shadow flex items-center gap-1">
-                <i class="fa-solid fa-print"></i> Label (4x6)
-              </button>
+              <button onclick="openThermalShippingLabel('${o.id}')" class="mt-2 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-lg text-[10px] font-extrabold shadow flex items-center gap-1"><i class="fa-solid fa-print"></i> Label (4x6)</button>
             </td>
-            <td class="p-3 max-w-[210px]">
-              <p class="font-bold text-white">${o.customerName}</p>
-              <p class="text-emerald-400 font-mono text-[11px]">+91 ${o.phone}</p>
-              <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${o.address}</p>
-            </td>
+            <td class="p-3 max-w-[210px]"><p class="font-bold text-white">${o.customerName}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${o.phone}</p><p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${o.address}</p></td>
             <td class="p-3 min-w-[180px]">${itemsText}${freeGiftHtml}</td>
             <td class="p-3">
               <p class="font-bold text-emerald-400 text-sm">₹${o.total}</p>
@@ -1883,76 +1655,41 @@
                 <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
                 <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
               </select>
-              <button onclick="sendWhatsAppOrderUpdate('${o.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5 shadow">
-                <i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp Update
-              </button>
-              <button onclick="deleteCustomerOrder('${o.id}')" class="w-full bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1">
-                <i class="fa-solid fa-trash-can"></i> Delete Order
-              </button>
+              <button onclick="sendWhatsAppOrderUpdate('${o.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5 shadow"><i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp Update</button>
+              <button onclick="deleteCustomerOrder('${o.id}')" class="w-full bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1"><i class="fa-solid fa-trash-can"></i> Delete Order</button>
             </td>
-          </tr>
-        `;
+          </tr>`;
       }).join('');
     }
 
     async function updateOrderStatus(orderId, status) {
-      const res = await fetch(`/api/admin/orders/${orderId}/status`, {
-        method: 'PATCH',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ status })
-      });
+      const res = await fetch(`/api/admin/orders/${orderId}/status`, { method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify({ status }) });
       if (handleUnauthorized(res)) return;
       loadAdminDashboard(true);
     }
 
     async function saveOrderTracking(orderId) {
-      const courierPartner = document.getElementById(`courier_${orderId}`).value;
-      const awbNumber = document.getElementById(`awb_${orderId}`).value.trim();
-      const res = await fetch(`/api/admin/orders/${orderId}/dispatch-tracking`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ courierPartner, awbNumber })
-      });
+      const courierPartner = document.getElementById(`courier_${orderId}`).value, awbNumber = document.getElementById(`awb_${orderId}`).value.trim();
+      const res = await fetch(`/api/admin/orders/${orderId}/dispatch-tracking`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ courierPartner, awbNumber }) });
       if (handleUnauthorized(res)) return;
-      alert(`Tracking updated (${courierPartner}) & marked as Shipped!`);
-      loadAdminDashboard(true);
+      alert(`Tracking updated (${courierPartner}) & marked as Shipped!`); loadAdminDashboard(true);
     }
 
     async function uploadDeliverySlip(orderId, input) {
-      const file = input.files[0];
-      if (!file) return;
-      const formData = new FormData();
-      formData.append('slipFile', file);
-
-      const res = await fetch(`/api/admin/orders/${orderId}/upload-slip`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${adminToken}` },
-        body: formData
-      });
+      const file = input.files[0]; if (!file) return;
+      const formData = new FormData(); formData.append('slipFile', file);
+      const res = await fetch(`/api/admin/orders/${orderId}/upload-slip`, { method: 'POST', headers: { 'Authorization': `Bearer ${adminToken}` }, body: formData });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
-      if (data.success) {
-        alert("Delivery Slip Uploaded directly to Cloudinary!");
-        loadAdminDashboard(true);
-      } else {
-        alert(data.message || "Slip upload failed!");
-      }
+      if (data.success) { alert("Delivery Slip Uploaded!"); loadAdminDashboard(true); } else alert(data.message || "Slip upload failed!");
     }
 
     async function deleteCustomerOrder(orderId) {
-      if (!confirm(`Delete Order #${orderId} permanently from MongoDB?`)) return;
-      const res = await fetch(`/api/admin/orders/${orderId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
+      if (!confirm(`Delete Order #${orderId} permanently?`)) return;
+      const res = await fetch(`/api/admin/orders/${orderId}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
-        alert(`Order #${orderId} deleted from MongoDB!`);
-        loadAdminDashboard(true);
-      }
+      if ((await res.json()).success) { selectedOrderIdsSet.delete(orderId); alert(`Order #${orderId} deleted!`); loadAdminDashboard(true); }
     }
   </script>
 </body>
 </html>
-    
