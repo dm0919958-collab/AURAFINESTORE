@@ -1771,7 +1771,7 @@ app.post('/api/admin/login', async (req, res) => {
 
   if (isValid) {
     loginAttempts.delete(clientIp);
-    const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
+    const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
     return res.json({ success: true, token });
   }
 
