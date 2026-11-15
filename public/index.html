@@ -26,6 +26,92 @@
     ::-webkit-scrollbar-track { background: #161318; }
     ::-webkit-scrollbar-thumb { background: #d97706; border-radius: 999px; }
   </style>
+
+  <style id="aura-luxury-refresh">
+/* AURA Fine Store — premium ivory, champagne & emerald refresh.
+   Presentation-only overrides: existing markup, IDs, scripts and integrations stay intact. */
+:root{
+  --aura-ink:#202b28;--aura-muted:#78827d;--aura-emerald:#126b55;--aura-emerald-deep:#0d493d;
+  --aura-gold:#b68a45;--aura-gold-light:#e5c995;--aura-ivory:#fbf9f4;--aura-paper:#fffefa;
+  --aura-line:#e9e1d3;--aura-soft:#f3eee4;
+}
+html{scroll-behavior:smooth;scroll-padding-top:110px}
+body{
+  font-family:'Plus Jakarta Sans',sans-serif!important;color:var(--aura-ink)!important;
+  background:linear-gradient(180deg,#f8f6ef 0%,#fffefa 38%,#f6f3eb 100%)!important;
+}
+/* Announcement strip */
+body>div>div:first-child{
+  background:linear-gradient(100deg,#103e34,#155b49 55%,#103e34)!important;
+  border-color:rgba(229,201,149,.38)!important;color:#fff!important;
+}
+#topCouponsContainer{color:#f2dfb9!important}
+#flashDealContainer{background:rgba(255,255,255,.10)!important;color:#fff!important;border-color:rgba(229,201,149,.45)!important}
+#flashDealContainer span{color:#f1d59f!important}
+/* Navigation */
+.glass-nav{background:rgba(255,254,250,.94)!important;backdrop-filter:blur(18px);border-color:var(--aura-line)!important;box-shadow:0 8px 28px rgba(48,57,48,.07)}
+.glass-nav a .font-cinzel,.glass-nav .font-cinzel{color:var(--aura-emerald-deep)!important}
+.glass-nav nav a{color:#52615a!important}
+.glass-nav nav a:hover{color:var(--aura-gold)!important}
+/* Store surfaces: scoped to page content, not full-screen modal backdrops */
+.lux-card{background:var(--aura-paper)!important;color:var(--aura-ink)!important;border:1px solid var(--aura-line)!important;border-radius:22px!important;box-shadow:0 10px 28px rgba(50,57,46,.055);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+.lux-card:hover{transform:translateY(-5px);box-shadow:0 18px 38px rgba(50,57,46,.12)!important;border-color:#d7c39c!important}
+#productsGrid .lux-card,#recentlyViewedGrid .lux-card{overflow:hidden}
+#productsGrid .lux-card img,#recentlyViewedGrid .lux-card img{transition:transform .45s ease}
+#productsGrid .lux-card:hover img,#recentlyViewedGrid .lux-card:hover img{transform:scale(1.035)}
+/* Soft ivory content panels */
+#recentlyViewedSection{border-color:var(--aura-line)!important}
+#categoryTabs button,#subCategoryTabsBar button{border-radius:999px!important}
+/* Gold and emerald action palette */
+button.bg-amber-500,button.bg-amber-600,button[class*="from-amber-"],a[class*="from-amber-"]{
+  background:linear-gradient(135deg,#c9a363,#a77a38)!important;color:#fff!important;border-color:transparent!important;
+  box-shadow:0 7px 18px rgba(166,125,59,.20)
+}
+button.bg-amber-500:hover,button.bg-amber-600:hover,button[class*="from-amber-"]:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.bg-emerald-600,.bg-emerald-700{background:var(--aura-emerald)!important}
+.text-amber-100,.text-amber-200,.text-amber-300,.text-amber-400,.text-amber-500{color:var(--aura-gold)!important}
+.text-stone-100,.text-stone-200{color:var(--aura-ink)!important}
+.text-stone-300,.text-stone-400,.text-stone-500{color:var(--aura-muted)!important}
+/* Borders and fields */
+[class*="border-amber-"],[class*="border-stone-700"],[class*="border-stone-800"]{border-color:var(--aura-line)!important}
+input,select,textarea{background:#fffefa!important;color:var(--aura-ink)!important;border-color:#ded6c8!important;border-radius:12px!important}
+input:focus,select:focus,textarea:focus{outline:none!important;border-color:var(--aura-gold)!important;box-shadow:0 0 0 3px rgba(182,138,69,.12)!important}
+input::placeholder,textarea::placeholder{color:#9b9d94!important}
+/* Trust tiles and store details */
+body .bg-stone-900\/80,body .bg-stone-900\/90,body .bg-stone-900,body .bg-stone-800{
+  background:#fffefa!important;color:var(--aura-ink)!important
+}
+body .bg-stone-950\/70,body .bg-stone-900\/70{background:#f3eee4!important}
+/* Keep image overlays and dialogs intentionally dark for contrast */
+#carouselSlide .absolute.inset-0.bg-gradient-to-t{
+  background:linear-gradient(to top,rgba(10,28,23,.88),rgba(10,28,23,.32),transparent)!important;color:#fff!important
+}
+#carouselSlide .absolute.inset-0.bg-gradient-to-t h2,
+#carouselSlide .absolute.inset-0.bg-gradient-to-t span{color:#fff!important}
+#firstOrderWelcomeModal,#quickViewModal,#sizeGuideModal,#wishlistModal,#cartDrawer,#checkoutModal,#myOrdersModal,#supportModal,#legalPolicyModal{color:#fff}
+#firstOrderWelcomeModal>div,#quickViewModal>div,#sizeGuideModal>div,#wishlistModal>div,#checkoutModal>div,#myOrdersModal>div,#supportModal>div,#legalPolicyModal>div{border-color:rgba(201,163,99,.55)!important}
+#firstOrderWelcomeModal .absolute.inset-0.bg-gradient-to-t{background:linear-gradient(to top,rgba(10,28,23,.82),rgba(10,28,23,.18),transparent)!important}
+#liveSalesToast{background:#173c32!important;border-color:rgba(229,201,149,.5)!important;color:#fff!important}
+#liveSalesToast p{color:#fff!important}
+/* Cart drawer and modal cards retain readable light surfaces */
+#cartDrawer>div,#mobileMenuDrawer>div{background:#fffefa!important;color:var(--aura-ink)!important;border-color:var(--aura-line)!important}
+#cartDrawer h2,#cartDrawer h3,#mobileMenuDrawer h2{color:var(--aura-emerald-deep)!important}
+/* Elegant section rhythm */
+section{scroll-margin-top:112px}
+.rounded-3xl{border-radius:26px}
+.shadow-2xl{box-shadow:0 18px 48px rgba(47,55,45,.12)!important}
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-track{background:#f1ede4}
+::-webkit-scrollbar-thumb{background:#c8ad7b;border-radius:999px}
+@media(max-width:640px){
+  .glass-nav .h-20{height:68px}
+  #productsGrid{gap:14px}
+  .lux-card:hover{transform:none}
+  #carouselSlide{min-height:250px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+  </style>
 </head>
 <body class="selection:bg-amber-500 selection:text-stone-950 relative min-h-screen flex flex-col justify-between">
   <div>
