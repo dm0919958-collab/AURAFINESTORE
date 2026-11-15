@@ -120,6 +120,7 @@ const productSchema = new mongoose.Schema({
   showOnHome: { type: Boolean, default: true },
   sizeOptions: [String],
   sizeStock: { type: mongoose.Schema.Types.Mixed, default: {} },
+  variantStock: { type: mongoose.Schema.Types.Mixed, default: {} },
   colorOptions: [String],
   images: [String],
   description: String,
@@ -415,10 +416,10 @@ const defaultProducts = [
   }
 ];
 
-function parseSizeStockMap(rawSizeStock, sizeOptions, fallbackTotal) {
+function parseCleanStockMap(rawMap) {
   const map = {};
-  if (rawSizeStock && typeof rawSizeStock === 'object' && !Array.isArray(rawSizeStock)) {
-    for (const [k, v] of Object.entries(rawSizeStock)) {
+  if (rawMap && typeof rawMap === 'object' && !Array.isArray(rawMap)) {
+    for (const [k, v] of Object.entries(rawMap)) {
       const cleanK = String(k || '').trim();
       if (cleanK) map[cleanK] = Math.max(0, parseInt(v, 10) || 0);
     }
@@ -1263,17 +1264,22 @@ app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
 app.post('/api/admin/products', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, sizeStock, colorOptions, badge, images, description } = req.body;
+    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, sizeStock, variantStock, colorOptions, badge, images, description } = req.body;
 
     const uploadedUrls = await Promise.all(
       (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
     );
 
-    const parsedSizeStock = parseSizeStockMap(sizeStock, sizeOptions, stockQuantity);
-    const sizeKeys = Object.keys(parsedSizeStock);
-    const finalTotalStock = sizeKeys.length > 0
-      ? sizeKeys.reduce((sum, k) => sum + (Number(parsedSizeStock[k]) || 0), 0)
-      : (Number(stockQuantity) || 0);
+    const parsedVariantStock = parseCleanStockMap(variantStock);
+    const parsedSizeStock = parseCleanStockMap(sizeStock);
+    const vKeys = Object.keys(parsedVariantStock);
+    const sKeys = Object.keys(parsedSizeStock);
+
+    const finalTotalStock = vKeys.length > 0
+      ? vKeys.reduce((sum, k) => sum + (Number(parsedVariantStock[k]) || 0), 0)
+      : (sKeys.length > 0
+          ? sKeys.reduce((sum, k) => sum + (Number(parsedSizeStock[k]) || 0), 0)
+          : (Number(stockQuantity) || 0));
 
     const newProd = await Product.create({
       id: Date.now(),
@@ -1287,6 +1293,7 @@ app.post('/api/admin/products', async (req, res) => {
       showOnHome: showOnHome !== false,
       sizeOptions: sizeOptions || [],
       sizeStock: parsedSizeStock,
+      variantStock: parsedVariantStock,
       colorOptions: colorOptions || [],
       badge: badge || "New",
       rating: 5.0,
@@ -1305,17 +1312,22 @@ app.post('/api/admin/products', async (req, res) => {
 app.put('/api/admin/products/:id', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, sizeStock, colorOptions, badge, images, description } = req.body;
+    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, sizeStock, variantStock, colorOptions, badge, images, description } = req.body;
 
     const uploadedUrls = await Promise.all(
       (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
     );
 
-    const parsedSizeStock = parseSizeStockMap(sizeStock, sizeOptions, stockQuantity);
-    const sizeKeys = Object.keys(parsedSizeStock);
-    const finalTotalStock = sizeKeys.length > 0
-      ? sizeKeys.reduce((sum, k) => sum + (Number(parsedSizeStock[k]) || 0), 0)
-      : (Number(stockQuantity) || 0);
+    const parsedVariantStock = parseCleanStockMap(variantStock);
+    const parsedSizeStock = parseCleanStockMap(sizeStock);
+    const vKeys = Object.keys(parsedVariantStock);
+    const sKeys = Object.keys(parsedSizeStock);
+
+    const finalTotalStock = vKeys.length > 0
+      ? vKeys.reduce((sum, k) => sum + (Number(parsedVariantStock[k]) || 0), 0)
+      : (sKeys.length > 0
+          ? sKeys.reduce((sum, k) => sum + (Number(parsedSizeStock[k]) || 0), 0)
+          : (Number(stockQuantity) || 0));
 
     const prodId = Number(req.params.id);
     const updated = await Product.findOneAndUpdate(
@@ -1331,6 +1343,7 @@ app.put('/api/admin/products/:id', async (req, res) => {
         showOnHome: showOnHome !== false,
         sizeOptions,
         sizeStock: parsedSizeStock,
+        variantStock: parsedVariantStock,
         colorOptions,
         badge,
         description,
@@ -1577,17 +1590,19 @@ app.post('/api/orders', async (req, res) => {
     let verifiedTotalCost = 0;
     const verifiedItems = [];
 
-    // Aggregate requested quantities per product & per size
+    // Aggregate requested quantities per product, per size, and per Color+Size variant
     const requestedPerProd = new Map();
     const requestedPerSize = new Map();
+    const requestedPerVariant = new Map();
 
     for (const cartItem of items) {
       const pid = Number(cartItem.id);
       const sz = String(cartItem.selectedSize || "Standard").trim();
+      const col = String(cartItem.selectedColor || "Standard").trim();
       const qty = Math.max(1, parseInt(cartItem.qty, 10) || 1);
       requestedPerProd.set(pid, (requestedPerProd.get(pid) || 0) + qty);
-      const szKey = `${pid}__${sz}`;
-      requestedPerSize.set(szKey, (requestedPerSize.get(szKey) || 0) + qty);
+      requestedPerSize.set(`${pid}__${sz}`, (requestedPerSize.get(`${pid}__${sz}`) || 0) + qty);
+      requestedPerVariant.set(`${pid}__${col}__${sz}`, (requestedPerVariant.get(`${pid}__${col}__${sz}`) || 0) + qty);
     }
 
     for (const cartItem of items) {
@@ -1597,10 +1612,26 @@ app.post('/api/orders', async (req, res) => {
       }
       const qty = Math.max(1, parseInt(cartItem.qty, 10) || 1);
       const selSize = String(cartItem.selectedSize || "Standard").trim();
+      const selColor = String(cartItem.selectedColor || "Standard").trim();
+      const varKey = `${selColor}__${selSize}`;
+
+      const varMap = (dbProd.variantStock && typeof dbProd.variantStock === 'object') ? dbProd.variantStock : {};
+      const hasVarMap = Object.keys(varMap).length > 0;
       const sizeMap = (dbProd.sizeStock && typeof dbProd.sizeStock === 'object') ? dbProd.sizeStock : {};
       const hasSizeMap = Object.keys(sizeMap).length > 0;
 
-      if (hasSizeMap && Object.prototype.hasOwnProperty.call(sizeMap, selSize)) {
+      if (hasVarMap && Object.prototype.hasOwnProperty.call(varMap, varKey)) {
+        const availVarQty = Number(varMap[varKey]) || 0;
+        const reqVarQty = requestedPerVariant.get(`${dbProd.id}__${varKey}`) || qty;
+        if (availVarQty < reqVarQty) {
+          return res.status(400).json({
+            success: false,
+            message: availVarQty <= 0
+              ? `Sorry! "${dbProd.name}" (${selColor}, Size: ${selSize}) is Out of Stock.`
+              : `Insufficient stock for "${dbProd.name}" (${selColor}, Size: ${selSize}). Only ${availVarQty} left.`
+          });
+        }
+      } else if (hasSizeMap && Object.prototype.hasOwnProperty.call(sizeMap, selSize)) {
         const availSizeQty = Number(sizeMap[selSize]) || 0;
         const reqSizeQty = requestedPerSize.get(`${dbProd.id}__${selSize}`) || qty;
         if (availSizeQty < reqSizeQty) {
@@ -1630,7 +1661,7 @@ app.post('/api/orders', async (req, res) => {
         price: dbProd.price,
         costPrice: dbProd.costPrice || 0,
         selectedSize: selSize,
-        selectedColor: cartItem.selectedColor || "Standard",
+        selectedColor: selColor,
         qty,
         images: dbProd.images || []
       });
@@ -1717,8 +1748,16 @@ app.post('/api/orders', async (req, res) => {
     for (const vItem of verifiedItems) {
       const p = prodMap.get(vItem.id);
       if (p) {
+        const varMap = (p.variantStock && typeof p.variantStock === 'object') ? { ...p.variantStock } : {};
+        const vKey = `${vItem.selectedColor}__${vItem.selectedSize}`;
         const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
-        if (Object.keys(sizeMap).length > 0 && Object.prototype.hasOwnProperty.call(sizeMap, vItem.selectedSize)) {
+
+        if (Object.keys(varMap).length > 0 && Object.prototype.hasOwnProperty.call(varMap, vKey)) {
+          varMap[vKey] = Math.max(0, (Number(varMap[vKey]) || 0) - vItem.qty);
+          p.variantStock = varMap;
+          p.markModified('variantStock');
+          p.stockQuantity = Object.values(varMap).reduce((s, n) => s + (Number(n) || 0), 0);
+        } else if (Object.keys(sizeMap).length > 0 && Object.prototype.hasOwnProperty.call(sizeMap, vItem.selectedSize)) {
           sizeMap[vItem.selectedSize] = Math.max(0, (Number(sizeMap[vItem.selectedSize]) || 0) - vItem.qty);
           p.sizeStock = sizeMap;
           p.markModified('sizeStock');
@@ -2017,8 +2056,16 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
       for (const item of (order.items || [])) {
         const p = await Product.findOne({ id: item.id });
         if (p) {
+          const varMap = (p.variantStock && typeof p.variantStock === 'object') ? { ...p.variantStock } : {};
+          const vKey = `${item.selectedColor || 'Standard'}__${item.selectedSize || 'Standard'}`;
           const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
-          if (Object.keys(sizeMap).length > 0 && item.selectedSize && Object.prototype.hasOwnProperty.call(sizeMap, item.selectedSize)) {
+
+          if (Object.keys(varMap).length > 0 && Object.prototype.hasOwnProperty.call(varMap, vKey)) {
+            varMap[vKey] = (Number(varMap[vKey]) || 0) + (item.qty || 1);
+            p.variantStock = varMap;
+            p.markModified('variantStock');
+            p.stockQuantity = Object.values(varMap).reduce((s, n) => s + (Number(n) || 0), 0);
+          } else if (Object.keys(sizeMap).length > 0 && item.selectedSize && Object.prototype.hasOwnProperty.call(sizeMap, item.selectedSize)) {
             sizeMap[item.selectedSize] = (Number(sizeMap[item.selectedSize]) || 0) + (item.qty || 1);
             p.sizeStock = sizeMap;
             p.markModified('sizeStock');
@@ -2030,7 +2077,6 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
           await p.save();
         }
       }
-      // Deduct coins if already credited
       if (order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
         const w = await Wallet.findOne({ phone: order.phone });
         if (w) {
@@ -2043,8 +2089,16 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
       for (const item of (order.items || [])) {
         const p = await Product.findOne({ id: item.id });
         if (p) {
+          const varMap = (p.variantStock && typeof p.variantStock === 'object') ? { ...p.variantStock } : {};
+          const vKey = `${item.selectedColor || 'Standard'}__${item.selectedSize || 'Standard'}`;
           const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
-          if (Object.keys(sizeMap).length > 0 && item.selectedSize && Object.prototype.hasOwnProperty.call(sizeMap, item.selectedSize)) {
+
+          if (Object.keys(varMap).length > 0 && Object.prototype.hasOwnProperty.call(varMap, vKey)) {
+            varMap[vKey] = Math.max(0, (Number(varMap[vKey]) || 0) - (item.qty || 1));
+            p.variantStock = varMap;
+            p.markModified('variantStock');
+            p.stockQuantity = Object.values(varMap).reduce((s, n) => s + (Number(n) || 0), 0);
+          } else if (Object.keys(sizeMap).length > 0 && item.selectedSize && Object.prototype.hasOwnProperty.call(sizeMap, item.selectedSize)) {
             sizeMap[item.selectedSize] = Math.max(0, (Number(sizeMap[item.selectedSize]) || 0) - (item.qty || 1));
             p.sizeStock = sizeMap;
             p.markModified('sizeStock');
