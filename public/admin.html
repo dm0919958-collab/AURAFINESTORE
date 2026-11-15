@@ -85,7 +85,40 @@
   #dashboardContent #adminCouponsList .text-emerald-400{color:#087747!important}
   #dashboardContent #adminCouponsList .text-rose-400{color:#a93643!important}
 
-  </style>
+  
+/* AURA ADMIN — high contrast readability pass */
+:root { color-scheme: dark; }
+body { color: #f1f5f9; }
+.text-slate-400 { color: #cbd5e1 !important; }
+.text-slate-500 { color: #b6c4d5 !important; }
+.text-slate-600 { color: #9fb0c4 !important; }
+.placeholder\:text-slate-500::placeholder { color: #8798ad !important; opacity: 1; }
+input, select, textarea {
+  color: #172033 !important;
+  background-color: #fffdf8 !important;
+  border-color: #d6c7ad !important;
+}
+input::placeholder, textarea::placeholder { color: #64748b !important; opacity: 1; }
+label { color: #f1e5ce; }
+#lowStockAlertBox {
+  background: #4b1720 !important; border-color: #fb7185 !important; color: #fff1f2 !important;
+}
+#lowStockAlertBox * { color: #ffe4e6 !important; }
+#firstOrderPopupSection {
+  background: #182a25 !important; border-color: #c8a66b !important;
+}
+#firstOrderPopupSection h2, #firstOrderPopupSection h3,
+#firstOrderPopupSection label { color: #f5d99d !important; }
+#firstOrderPopupSection p, #firstOrderPopupSection small,
+#firstOrderPopupSection .text-slate-400,
+#firstOrderPopupSection .text-slate-500 { color: #e2e8f0 !important; }
+#firstOrderPopupSection input, #firstOrderPopupSection select,
+#firstOrderPopupSection textarea { color: #172033 !important; background: #fffdf8 !important; }
+#adminCouponsList > *, #adminCouponsList .text-slate-400,
+#adminCouponsList .text-slate-500 { color: #e2e8f0 !important; }
+#adminCouponsList input { color: #172033 !important; background: #fffdf8 !important; }
+
+</style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
