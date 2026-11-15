@@ -162,12 +162,7 @@ const settingsSchema = new mongoose.Schema({
   maxCoinsRedeemPerOrder: { type: Number, default: 200 },
   dealEndTime: { type: Number, default: 0 },
   adminPin: { type: String, default: "" },
-  metaPixelId: { type: String, default: "" },
-  firstOrderPopupEnabled: { type: Boolean, default: true },
-  firstOrderPopupTitle: { type: String, default: "Exclusive First-Order Privilege" },
-  firstOrderPopupSubtitle: { type: String, default: "Unlock instant savings on your very first luxury order at AURA Fine Store!" },
-  firstOrderPopupCoupon: { type: String, default: "AURA20" },
-  firstOrderPopupImage: { type: String, default: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=700&q=75" }
+  metaPixelId: { type: String, default: "" }
 });
 
 const orderSchema = new mongoose.Schema({
@@ -442,12 +437,7 @@ async function seedInitialData() {
         maxCoinsRedeemPerOrder: 200,
         dealEndTime: 0,
         adminPin: hashedDefaultPin,
-        metaPixelId: "",
-        firstOrderPopupEnabled: true,
-        firstOrderPopupTitle: "Exclusive First-Order Privilege",
-        firstOrderPopupSubtitle: "Unlock instant savings on your very first luxury order at AURA Fine Store!",
-        firstOrderPopupCoupon: "AURA20",
-        firstOrderPopupImage: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=700&q=75"
+        metaPixelId: ""
       });
     } else {
       let dirty = false;
@@ -462,14 +452,13 @@ async function seedInitialData() {
       if (existingSettings.freeGiftThreshold === undefined) { existingSettings.freeGiftThreshold = 1499; dirty = true; }
       if (existingSettings.coinsEarnPercent === undefined) { existingSettings.coinsEarnPercent = 5; dirty = true; }
       if (existingSettings.maxCoinsRedeemPerOrder === undefined) { existingSettings.maxCoinsRedeemPerOrder = 200; dirty = true; }
-      if (existingSettings.firstOrderPopupEnabled === undefined) { existingSettings.firstOrderPopupEnabled = true; dirty = true; }
-      if (!existingSettings.firstOrderPopupCoupon) { existingSettings.firstOrderPopupCoupon = "AURA20"; dirty = true; }
       if (dirty) await existingSettings.save();
     }
   } catch (err) {
     console.error('Seed error:', err.message);
   }
 }
+
 function generateOrderInvoicePDF(order) {
   return new Promise((resolve, reject) => {
     try {
@@ -589,93 +578,7 @@ function generateOrderInvoicePDF(order) {
   });
 }
 
-function drawThermalLabelPage(doc, order) {
-  const isCOD = order.paymentMethod === 'COD';
-  const carrier = (order.courierPartner || 'Delhivery').toUpperCase();
-  const trackingCode = String(order.awbNumber || order.id || 'AUR000000').toUpperCase();
-
-  doc.rect(6, 6, 276, 420).lineWidth(2.0).strokeColor('#000000').stroke();
-  doc.rect(9, 9, 270, 414).lineWidth(0.5).strokeColor('#000000').stroke();
-
-  doc.rect(9, 9, 270, 38).fill('#000000');
-  doc.fillColor('#FFFFFF').fontSize(14).font('Helvetica-Bold').text('AURA FINE STORE', 15, 15);
-  doc.fontSize(7).font('Helvetica').text('EXPRESS PARCEL • FRAGILE / HANDLE WITH CARE', 15, 32);
-
-  doc.rect(208, 13, 66, 30).fill('#FFFFFF');
-  doc.fillColor('#000000').fontSize(11).font('Helvetica-Bold').text(isCOD ? 'COD' : 'PREPAID', 208, 17, { width: 66, align: 'center' });
-  doc.fontSize(6.5).font('Helvetica').text(isCOD ? 'COLLECT CASH' : 'DO NOT COLLECT', 208, 31, { width: 66, align: 'center' });
-
-  doc.fillColor('#000000').fontSize(8.5).font('Helvetica-Bold').text(`CARRIER: ${carrier}`, 15, 53);
-  doc.fontSize(8).font('Helvetica').text(`DATE: ${order.orderDateRaw || order.date || ''}`, 175, 53, { width: 98, align: 'right' });
-  doc.fontSize(9.5).font('Helvetica-Bold').text(`ORDER ID: #${order.id}`, 15, 65);
-  doc.fontSize(8.5).font('Helvetica-Bold').text(`AWB NO: ${order.awbNumber || 'AWAITING PICKUP'}`, 15, 78);
-
-  let bx = 152;
-  for (let i = 0; i < 42; i++) {
-    const val = trackingCode.charCodeAt(i % trackingCode.length) * (i + 3);
-    const bw = (val % 3 === 0) ? 2.2 : 1.0;
-    if (bx + bw < 273) {
-      doc.rect(bx, 64, bw, 24).fill('#000000');
-      bx += bw + ((val % 2 === 0) ? 1.8 : 1.1);
-    }
-  }
-  doc.fontSize(6.5).font('Helvetica-Bold').text(`*${trackingCode}*`, 150, 89, { width: 124, align: 'center' });
-
-  doc.moveTo(9, 98).lineTo(279, 98).lineWidth(1.4).stroke();
-
-  doc.fontSize(7.5).font('Helvetica-Bold').text('DELIVER TO (CUSTOMER DETAILS):', 15, 103);
-  doc.fontSize(13).font('Helvetica-Bold').text((order.customerName || 'Valued Customer').toUpperCase(), 15, 114, { width: 258, lineBreak: false, ellipsis: true });
-  doc.fontSize(11).font('Helvetica-Bold').text(`MOBILE: +91 ${order.phone}`, 15, 130);
-  doc.fontSize(8.5).font('Helvetica').text(order.address || '', 15, 145, { width: 258, height: 52, lineGap: 1.8 });
-
-  const gridY = 200;
-  doc.rect(15, gridY, 108, 34).lineWidth(1.5).strokeColor('#000000').stroke();
-  doc.fontSize(7).font('Helvetica-Bold').text('ROUTING PINCODE', 19, gridY + 4);
-  doc.fontSize(15).font('Helvetica-Bold').text(String(order.pincode || '731204'), 19, gridY + 14);
-
-  if (isCOD) {
-    doc.rect(128, gridY, 145, 34).fill('#000000');
-    doc.fillColor('#FFFFFF').fontSize(7.5).font('Helvetica-Bold').text('COLLECT CASH FROM BUYER', 132, gridY + 5, { width: 137, align: 'center' });
-    doc.fontSize(14).font('Helvetica-Bold').text(`Rs. ${order.balanceDue}/-`, 132, gridY + 15, { width: 137, align: 'center' });
-  } else {
-    doc.rect(128, gridY, 145, 34).lineWidth(1.5).strokeColor('#000000').stroke();
-    doc.fillColor('#000000').fontSize(7.5).font('Helvetica-Bold').text('PREPAID - ALREADY PAID', 132, gridY + 5, { width: 137, align: 'center' });
-    doc.fontSize(13).font('Helvetica-Bold').text('COLLECT: Rs. 0/-', 132, gridY + 16, { width: 137, align: 'center' });
-  }
-
-  doc.moveTo(9, 241).lineTo(279, 241).lineWidth(1.4).stroke();
-
-  doc.fillColor('#000000').rect(9, 241, 270, 15).fill('#e5e7eb');
-  doc.fillColor('#000000').fontSize(7.5).font('Helvetica-Bold');
-  doc.text('ITEM NAME & VARIANT (SIZE / COLOR)', 15, 245);
-  doc.text('QTY', 246, 245, { width: 27, align: 'right' });
-
-  let itemY = 260;
-  const itemsList = (order.items || []).slice(0, 4);
-  itemsList.forEach((item, idx) => {
-    const desc = `${idx + 1}. ${item.name} (${item.selectedSize || 'Std'}, ${item.selectedColor || 'Std'})`;
-    doc.fontSize(7.8).font('Helvetica').text(desc, 15, itemY, { width: 230, lineBreak: false, ellipsis: true });
-    doc.font('Helvetica-Bold').text(String(item.qty || 1), 246, itemY, { width: 27, align: 'right' });
-    itemY += 13;
-  });
-
-  if (order.freeGiftUnlocked) {
-    doc.fontSize(7.8).font('Helvetica-Bold').text(`+ BONUS GIFT: ${order.freeGiftUnlocked}`, 15, itemY, { width: 230, lineBreak: false, ellipsis: true });
-    doc.text('1', 246, itemY, { width: 27, align: 'right' });
-  }
-
-  doc.moveTo(9, 326).lineTo(279, 326).lineWidth(1.4).stroke();
-
-  doc.fontSize(7.5).font('Helvetica-Bold').text('RETURN / SHIPPER ADDRESS (IF UNDELIVERED):', 15, 332);
-  doc.fontSize(8.5).font('Helvetica-Bold').text('AURA Fine Store Central Dispatch Hub', 15, 343);
-  doc.fontSize(7.5).font('Helvetica').text('Bolpur, Birbhum, West Bengal - 731204, India', 15, 354);
-  doc.font('Helvetica-Bold').text('Helpline: +91 6289145092 | Weight: 0.50 Kg', 15, 365);
-
-  doc.rect(9, 381, 270, 42).fill('#000000');
-  doc.fillColor('#FFFFFF').fontSize(7.5).font('Helvetica-Bold').text('IMPORTANT CUSTOMER NOTICE:', 15, 387);
-  doc.fontSize(7).font('Helvetica').text('Record a continuous 360-degree unboxing video before opening the sealed package to claim 7-day replacement.', 15, 398, { width: 258 });
-}
-
+// Premium E-Commerce 4x6 Inch Thermal Shipping Label PDF (288 x 432 pt)
 function generateThermalShippingLabelPDF(order) {
   return new Promise((resolve, reject) => {
     try {
@@ -684,26 +587,100 @@ function generateThermalShippingLabelPDF(order) {
       doc.on('data', buffers.push.bind(buffers));
       doc.on('end', () => resolve(Buffer.concat(buffers)));
 
-      drawThermalLabelPage(doc, order);
-      doc.end();
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
+      const isCOD = order.paymentMethod === 'COD';
+      const carrier = (order.courierPartner || 'Delhivery').toUpperCase();
+      const trackingCode = String(order.awbNumber || order.id || 'AUR000000').toUpperCase();
 
-function generateBulkThermalShippingLabelsPDF(orders) {
-  return new Promise((resolve, reject) => {
-    try {
-      const doc = new PDFDocument({ margin: 6, size: [288, 432] });
-      const buffers = [];
-      doc.on('data', buffers.push.bind(buffers));
-      doc.on('end', () => resolve(Buffer.concat(buffers)));
+      // Double Outer Frame
+      doc.rect(6, 6, 276, 420).lineWidth(2.0).strokeColor('#000000').stroke();
+      doc.rect(9, 9, 270, 414).lineWidth(0.5).strokeColor('#000000').stroke();
 
-      orders.forEach((order, idx) => {
-        if (idx > 0) doc.addPage({ margin: 6, size: [288, 432] });
-        drawThermalLabelPage(doc, order);
+      // 1. Top Dark Brand Banner
+      doc.rect(9, 9, 270, 38).fill('#000000');
+      doc.fillColor('#FFFFFF').fontSize(14).font('Helvetica-Bold').text('AURA FINE STORE', 15, 15);
+      doc.fontSize(7).font('Helvetica').text('EXPRESS PARCEL • FRAGILE / HANDLE WITH CARE', 15, 32);
+
+      // Right Mode Stamp
+      doc.rect(208, 13, 66, 30).fill('#FFFFFF');
+      doc.fillColor('#000000').fontSize(11).font('Helvetica-Bold').text(isCOD ? 'COD' : 'PREPAID', 208, 17, { width: 66, align: 'center' });
+      doc.fontSize(6.5).font('Helvetica').text(isCOD ? 'COLLECT CASH' : 'DO NOT COLLECT', 208, 31, { width: 66, align: 'center' });
+
+      // 2. Carrier, Order ID & High-Density Vector Barcode
+      doc.fillColor('#000000').fontSize(8.5).font('Helvetica-Bold').text(`CARRIER: ${carrier}`, 15, 53);
+      doc.fontSize(8).font('Helvetica').text(`DATE: ${order.orderDateRaw || order.date || ''}`, 175, 53, { width: 98, align: 'right' });
+      doc.fontSize(9.5).font('Helvetica-Bold').text(`ORDER ID: #${order.id}`, 15, 65);
+      doc.fontSize(8.5).font('Helvetica-Bold').text(`AWB NO: ${order.awbNumber || 'AWAITING PICKUP'}`, 15, 78);
+
+      // Barcode Box on Right
+      let bx = 152;
+      for (let i = 0; i < 42; i++) {
+        const val = trackingCode.charCodeAt(i % trackingCode.length) * (i + 3);
+        const bw = (val % 3 === 0) ? 2.2 : 1.0;
+        if (bx + bw < 273) {
+          doc.rect(bx, 64, bw, 24).fill('#000000');
+          bx += bw + ((val % 2 === 0) ? 1.8 : 1.1);
+        }
+      }
+      doc.fontSize(6.5).font('Helvetica-Bold').text(`*${trackingCode}*`, 150, 89, { width: 124, align: 'center' });
+
+      doc.moveTo(9, 98).lineTo(279, 98).lineWidth(1.4).stroke();
+
+      // 3. Recipient Delivery Section
+      doc.fontSize(7.5).font('Helvetica-Bold').text('DELIVER TO (CUSTOMER DETAILS):', 15, 103);
+      doc.fontSize(13).font('Helvetica-Bold').text((order.customerName || 'Valued Customer').toUpperCase(), 15, 114, { width: 258, lineBreak: false, ellipsis: true });
+      doc.fontSize(11).font('Helvetica-Bold').text(`MOBILE: +91 ${order.phone}`, 15, 130);
+      doc.fontSize(8.5).font('Helvetica').text(order.address || '', 15, 145, { width: 258, height: 52, lineGap: 1.8 });
+
+      // 4. Prominent Pincode & Payment Collection Grid
+      const gridY = 200;
+      doc.rect(15, gridY, 108, 34).lineWidth(1.5).strokeColor('#000000').stroke();
+      doc.fontSize(7).font('Helvetica-Bold').text('ROUTING PINCODE', 19, gridY + 4);
+      doc.fontSize(15).font('Helvetica-Bold').text(String(order.pincode || '731204'), 19, gridY + 14);
+
+      if (isCOD) {
+        doc.rect(128, gridY, 145, 34).fill('#000000');
+        doc.fillColor('#FFFFFF').fontSize(7.5).font('Helvetica-Bold').text('COLLECT CASH FROM BUYER', 132, gridY + 5, { width: 137, align: 'center' });
+        doc.fontSize(14).font('Helvetica-Bold').text(`Rs. ${order.balanceDue}/-`, 132, gridY + 15, { width: 137, align: 'center' });
+      } else {
+        doc.rect(128, gridY, 145, 34).lineWidth(1.5).strokeColor('#000000').stroke();
+        doc.fillColor('#000000').fontSize(7.5).font('Helvetica-Bold').text('PREPAID - ALREADY PAID', 132, gridY + 5, { width: 137, align: 'center' });
+        doc.fontSize(13).font('Helvetica-Bold').text('COLLECT: Rs. 0/-', 132, gridY + 16, { width: 137, align: 'center' });
+      }
+
+      doc.moveTo(9, 241).lineTo(279, 241).lineWidth(1.4).stroke();
+
+      // 5. Package Contents Table
+      doc.fillColor('#000000').rect(9, 241, 270, 15).fill('#e5e7eb');
+      doc.fillColor('#000000').fontSize(7.5).font('Helvetica-Bold');
+      doc.text('ITEM NAME & VARIANT (SIZE / COLOR)', 15, 245);
+      doc.text('QTY', 246, 245, { width: 27, align: 'right' });
+
+      let itemY = 260;
+      const itemsList = (order.items || []).slice(0, 4);
+      itemsList.forEach((item, idx) => {
+        const desc = `${idx + 1}. ${item.name} (${item.selectedSize || 'Std'}, ${item.selectedColor || 'Std'})`;
+        doc.fontSize(7.8).font('Helvetica').text(desc, 15, itemY, { width: 230, lineBreak: false, ellipsis: true });
+        doc.font('Helvetica-Bold').text(String(item.qty || 1), 246, itemY, { width: 27, align: 'right' });
+        itemY += 13;
       });
+
+      if (order.freeGiftUnlocked) {
+        doc.fontSize(7.8).font('Helvetica-Bold').text(`+ BONUS GIFT: ${order.freeGiftUnlocked}`, 15, itemY, { width: 230, lineBreak: false, ellipsis: true });
+        doc.text('1', 246, itemY, { width: 27, align: 'right' });
+      }
+
+      doc.moveTo(9, 326).lineTo(279, 326).lineWidth(1.4).stroke();
+
+      // 6. Return / Shipper Origin Block
+      doc.fontSize(7.5).font('Helvetica-Bold').text('RETURN / SHIPPER ADDRESS (IF UNDELIVERED):', 15, 332);
+      doc.fontSize(8.5).font('Helvetica-Bold').text('AURA Fine Store Central Dispatch Hub', 15, 343);
+      doc.fontSize(7.5).font('Helvetica').text('Bolpur, Birbhum, West Bengal - 731204, India', 15, 354);
+      doc.font('Helvetica-Bold').text('Helpline: +91 6289145092 | Weight: 0.50 Kg', 15, 365);
+
+      // 7. Bottom Unboxing Video Strip
+      doc.rect(9, 381, 270, 42).fill('#000000');
+      doc.fillColor('#FFFFFF').fontSize(7.5).font('Helvetica-Bold').text('IMPORTANT CUSTOMER NOTICE:', 15, 387);
+      doc.fontSize(7).font('Helvetica').text('Record a continuous 360-degree unboxing video before opening the sealed package to claim 7-day replacement.', 15, 398, { width: 258 });
 
       doc.end();
     } catch (err) {
@@ -799,6 +776,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Public Storefront Endpoint (Includes Dynamic Categories)
 app.get('/api/store', async (req, res) => {
   try {
     res.set({
@@ -828,12 +806,7 @@ app.get('/api/store', async (req, res) => {
           coinsEarnPercent: settings.coinsEarnPercent ?? 5,
           maxCoinsRedeemPerOrder: settings.maxCoinsRedeemPerOrder ?? 200,
           dealEndTime: settings.dealEndTime,
-          metaPixelId: settings.metaPixelId || "",
-          firstOrderPopupEnabled: settings.firstOrderPopupEnabled !== false,
-          firstOrderPopupTitle: settings.firstOrderPopupTitle || "Exclusive First-Order Privilege",
-          firstOrderPopupSubtitle: settings.firstOrderPopupSubtitle || "Unlock instant savings on your very first luxury order at AURA Fine Store!",
-          firstOrderPopupCoupon: settings.firstOrderPopupCoupon || "AURA20",
-          firstOrderPopupImage: settings.firstOrderPopupImage || "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=700&q=75"
+          metaPixelId: settings.metaPixelId || ""
         }
       : {
           deliveryCharge: 0,
@@ -844,12 +817,7 @@ app.get('/api/store', async (req, res) => {
           coinsEarnPercent: 5,
           maxCoinsRedeemPerOrder: 200,
           dealEndTime: 0,
-          metaPixelId: "",
-          firstOrderPopupEnabled: true,
-          firstOrderPopupTitle: "Exclusive First-Order Privilege",
-          firstOrderPopupSubtitle: "Unlock instant savings on your very first luxury order at AURA Fine Store!",
-          firstOrderPopupCoupon: "AURA20",
-          firstOrderPopupImage: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=700&q=75"
+          metaPixelId: ""
         };
 
     if (activeSettings.dealEndTime && activeSettings.dealEndTime > 0 && Date.now() >= activeSettings.dealEndTime) {
@@ -863,24 +831,19 @@ app.get('/api/store', async (req, res) => {
   }
 });
 
+// Check Customer AURA Coins Wallet Balance
 app.get('/api/wallet/:phone', async (req, res) => {
   try {
     const cleanPhone = String(req.params.phone || '').replace(/[^0-9]/g, '');
-    if (cleanPhone.length !== 10) return res.json({ success: true, coins: 0, hasPriorOrders: false });
-    const [wallet, priorOrder] = await Promise.all([
-      Wallet.findOne({ phone: cleanPhone }).lean(),
-      Order.findOne({ phone: cleanPhone, status: { $ne: 'Cancelled' } }).lean()
-    ]);
-    res.json({
-      success: true,
-      coins: wallet ? (wallet.coins || 0) : 0,
-      hasPriorOrders: Boolean(priorOrder)
-    });
+    if (cleanPhone.length !== 10) return res.json({ success: true, coins: 0 });
+    const wallet = await Wallet.findOne({ phone: cleanPhone }).lean();
+    res.json({ success: true, coins: wallet ? (wallet.coins || 0) : 0 });
   } catch (err) {
-    res.json({ success: true, coins: 0, hasPriorOrders: false });
+    res.json({ success: true, coins: 0 });
   }
 });
 
+// Admin Category & Sub-Category Management (With Cascade Delete of Products)
 app.post('/api/admin/categories', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -919,6 +882,7 @@ app.post('/api/admin/categories/:name/subcategories', async (req, res) => {
   }
 });
 
+// Delete Sub-Category & CASCADE DELETE all Products inside it
 app.delete('/api/admin/categories/:name/subcategories/:subName', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -950,6 +914,7 @@ app.delete('/api/admin/categories/:name/subcategories/:subName', async (req, res
   }
 });
 
+// Delete Main Category & CASCADE DELETE all Sub-Categories & Products inside it
 app.delete('/api/admin/categories/:name', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -975,6 +940,7 @@ app.delete('/api/admin/categories/:name', async (req, res) => {
   }
 });
 
+// Live Recent Sales Feed
 app.get('/api/recent-sales', async (req, res) => {
   try {
     const recentOrders = await Order.find({ status: { $ne: 'Cancelled' } })
@@ -1002,6 +968,7 @@ app.get('/api/recent-sales', async (req, res) => {
   }
 });
 
+// Out-of-Stock "Notify Me"
 app.post('/api/products/:id/notify', async (req, res) => {
   try {
     const prodId = Number(req.params.id);
@@ -1226,6 +1193,8 @@ app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+// Admin Product CRUD
 app.post('/api/admin/products', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -1380,6 +1349,7 @@ app.delete('/api/admin/banners/:id', async (req, res) => {
   }
 });
 
+// Coupons With Expiry Timer (expiresAt timestamp)
 app.post('/api/admin/coupons', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -1422,15 +1392,13 @@ app.delete('/api/admin/coupons/:code', async (req, res) => {
   }
 });
 
-// Store Settings Endpoint (Includes First-Order Welcome Popup Photo & Config)
 app.post('/api/admin/store-settings', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     const {
       deliveryCharge, codAdvancePercent, maxCodOrderAmount,
       freeGiftThreshold, freeGiftTitle, coinsEarnPercent, maxCoinsRedeemPerOrder,
-      dealEndTime, metaPixelId,
-      firstOrderPopupEnabled, firstOrderPopupTitle, firstOrderPopupSubtitle, firstOrderPopupCoupon, firstOrderPopupImage
+      dealEndTime, metaPixelId
     } = req.body;
 
     const updateFields = {};
@@ -1443,14 +1411,6 @@ app.post('/api/admin/store-settings', async (req, res) => {
     if (maxCoinsRedeemPerOrder !== undefined) updateFields.maxCoinsRedeemPerOrder = Math.max(0, Number(maxCoinsRedeemPerOrder) || 0);
     if (dealEndTime !== undefined) updateFields.dealEndTime = Number(dealEndTime) || 0;
     if (metaPixelId !== undefined) updateFields.metaPixelId = String(metaPixelId || "").trim();
-
-    if (firstOrderPopupEnabled !== undefined) updateFields.firstOrderPopupEnabled = Boolean(firstOrderPopupEnabled);
-    if (firstOrderPopupTitle !== undefined) updateFields.firstOrderPopupTitle = String(firstOrderPopupTitle || "Exclusive First-Order Privilege").trim();
-    if (firstOrderPopupSubtitle !== undefined) updateFields.firstOrderPopupSubtitle = String(firstOrderPopupSubtitle || "").trim();
-    if (firstOrderPopupCoupon !== undefined) updateFields.firstOrderPopupCoupon = String(firstOrderPopupCoupon || "").trim().toUpperCase();
-    if (firstOrderPopupImage !== undefined && firstOrderPopupImage) {
-      updateFields.firstOrderPopupImage = await uploadToCloudinary(firstOrderPopupImage, 'aura_store/banners');
-    }
 
     const storeSettings = await Settings.findOneAndUpdate(
       { key: 'main' },
@@ -1483,6 +1443,7 @@ app.post('/api/admin/change-pin', async (req, res) => {
   }
 });
 
+// SERVER-SIDE PRICE, COUPON EXPIRY, AURA COINS, FREE GIFT & MAX COD VALIDATION
 app.post('/api/orders', async (req, res) => {
   try {
     const {
@@ -1542,27 +1503,11 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
-    const storeSettings = await Settings.findOne({ key: 'main' }).lean();
-    const cleanPhone = String(phone).replace(/[^0-9]/g, '');
-
+    // Verify coupon + expiry timer server-side
     let verifiedDiscount = 0;
     let verifiedCouponCode = "None";
     if (couponCode && String(couponCode).trim()) {
       const cleanCode = String(couponCode).trim().toUpperCase();
-      const firstOrderCode = storeSettings && storeSettings.firstOrderPopupEnabled && storeSettings.firstOrderPopupCoupon
-        ? String(storeSettings.firstOrderPopupCoupon).trim().toUpperCase()
-        : "";
-
-      if (firstOrderCode && cleanCode === firstOrderCode && cleanPhone.length === 10) {
-        const priorOrder = await Order.findOne({ phone: cleanPhone, status: { $ne: 'Cancelled' } }).lean();
-        if (priorOrder) {
-          return res.status(400).json({
-            success: false,
-            message: `Coupon "${cleanCode}" is strictly for First-Time Customers only! You have already placed an order (#${priorOrder.id}) with +91 ${cleanPhone}.`
-          });
-        }
-      }
-
       const dbCoupon = await Coupon.findOne({ code: cleanCode }).lean();
       if (dbCoupon) {
         if (dbCoupon.expiresAt && dbCoupon.expiresAt > 0 && Date.now() >= dbCoupon.expiresAt) {
@@ -1575,6 +1520,7 @@ app.post('/api/orders', async (req, res) => {
       }
     }
 
+    const storeSettings = await Settings.findOne({ key: 'main' }).lean();
     const deliveryFeeSetting = storeSettings ? (storeSettings.deliveryCharge || 0) : 0;
     const codAdvancePctSetting = storeSettings ? (storeSettings.codAdvancePercent || 15) : 15;
     const maxCodLimit = storeSettings ? (storeSettings.maxCodOrderAmount ?? 2000) : 2000;
@@ -1583,8 +1529,10 @@ app.post('/api/orders', async (req, res) => {
     const coinsEarnPct = storeSettings ? (storeSettings.coinsEarnPercent ?? 5) : 5;
     const maxCoinsRedeem = storeSettings ? (storeSettings.maxCoinsRedeemPerOrder ?? 200) : 200;
 
+    const cleanPhone = String(phone).replace(/[^0-9]/g, '');
     let afterCouponValue = Math.max(1, verifiedSubTotal - verifiedDiscount);
 
+    // Verify & Redeem AURA Coins if requested
     let verifiedCoinsUsed = 0;
     if (useAuraCoins && cleanPhone.length === 10) {
       const wallet = await Wallet.findOne({ phone: cleanPhone });
@@ -1693,25 +1641,6 @@ app.get('/api/orders/:id/invoice', async (req, res) => {
   }
 });
 
-app.get('/api/admin/orders/bulk-shipping-labels', async (req, res) => {
-  try {
-    if (!(await verifyAdminAuth(req))) return res.status(403).send("Unauthorized");
-    const idsParam = String(req.query.ids || '').trim();
-    const orderIds = idsParam.split(',').map(s => s.trim()).filter(Boolean);
-    if (!orderIds.length) return res.status(400).send("No orders selected!");
-
-    const orders = await Order.find({ id: { $in: orderIds } }).lean();
-    if (!orders.length) return res.status(404).send("Selected orders not found!");
-
-    const pdfBuffer = await generateBulkThermalShippingLabelsPDF(orders);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="Bulk_Labels_4x6_${Date.now()}.pdf"`);
-    res.send(pdfBuffer);
-  } catch (err) {
-    res.status(500).send("Failed to generate bulk 4x6 shipping labels");
-  }
-});
-
 app.get('/api/admin/orders/:id/shipping-label', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).send("Unauthorized");
@@ -1816,12 +1745,7 @@ app.post('/api/admin/orders', async (req, res) => {
           coinsEarnPercent: settings.coinsEarnPercent ?? 5,
           maxCoinsRedeemPerOrder: settings.maxCoinsRedeemPerOrder ?? 200,
           dealEndTime: settings.dealEndTime,
-          metaPixelId: settings.metaPixelId || "",
-          firstOrderPopupEnabled: settings.firstOrderPopupEnabled !== false,
-          firstOrderPopupTitle: settings.firstOrderPopupTitle || "Exclusive First-Order Privilege",
-          firstOrderPopupSubtitle: settings.firstOrderPopupSubtitle || "Unlock instant savings on your very first luxury order at AURA Fine Store!",
-          firstOrderPopupCoupon: settings.firstOrderPopupCoupon || "AURA20",
-          firstOrderPopupImage: settings.firstOrderPopupImage || "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=700&q=75"
+          metaPixelId: settings.metaPixelId || ""
         }
       : {
           deliveryCharge: 0,
@@ -1832,12 +1756,7 @@ app.post('/api/admin/orders', async (req, res) => {
           coinsEarnPercent: 5,
           maxCoinsRedeemPerOrder: 200,
           dealEndTime: 0,
-          metaPixelId: "",
-          firstOrderPopupEnabled: true,
-          firstOrderPopupTitle: "Exclusive First-Order Privilege",
-          firstOrderPopupSubtitle: "Unlock instant savings on your very first luxury order at AURA Fine Store!",
-          firstOrderPopupCoupon: "AURA20",
-          firstOrderPopupImage: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=700&q=75"
+          metaPixelId: ""
         };
 
     if (activeSettings.dealEndTime && activeSettings.dealEndTime > 0 && Date.now() >= activeSettings.dealEndTime) {
@@ -1903,6 +1822,7 @@ app.delete('/api/admin/orders/:id', async (req, res) => {
   }
 });
 
+// Order Status Update (Auto-Credits AURA Coins on 'Delivered' & Restores Stock on 'Cancelled')
 app.patch('/api/admin/orders/:id/status', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -1931,6 +1851,7 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
       }
     }
 
+    // Credit AURA Coins automatically when order is marked Delivered (only once)
     if (status === 'Delivered' && !order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
       await Wallet.findOneAndUpdate(
         { phone: order.phone },
