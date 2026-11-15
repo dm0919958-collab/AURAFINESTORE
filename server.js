@@ -119,6 +119,7 @@ const productSchema = new mongoose.Schema({
   inStock: Boolean,
   showOnHome: { type: Boolean, default: true },
   sizeOptions: [String],
+  sizeStock: { type: mongoose.Schema.Types.Mixed, default: {} },
   colorOptions: [String],
   images: [String],
   description: String,
@@ -413,6 +414,17 @@ const defaultProducts = [
     reviews: []
   }
 ];
+
+function parseSizeStockMap(rawSizeStock, sizeOptions, fallbackTotal) {
+  const map = {};
+  if (rawSizeStock && typeof rawSizeStock === 'object' && !Array.isArray(rawSizeStock)) {
+    for (const [k, v] of Object.entries(rawSizeStock)) {
+      const cleanK = String(k || '').trim();
+      if (cleanK) map[cleanK] = Math.max(0, parseInt(v, 10) || 0);
+    }
+  }
+  return map;
+}
 
 async function seedInitialData() {
   try {
@@ -1070,8 +1082,20 @@ app.post('/api/abandoned-cart', async (req, res) => {
   }
 });
 
+const reviewRateMap = new Map();
+
 app.post('/api/products/:id/reviews', async (req, res) => {
   try {
+    const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    const now = Date.now();
+    const recentTimes = (reviewRateMap.get(clientIp) || []).filter(t => now - t < 10 * 60 * 1000);
+    if (recentTimes.length >= 2) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many reviews submitted! Please try again after 10 minutes."
+      });
+    }
+
     const { customerName, rating, comment, photoBase64 } = req.body;
     const prodId = Number(req.params.id);
     const product = await Product.findOne({ id: prodId });
@@ -1079,6 +1103,13 @@ app.post('/api/products/:id/reviews', async (req, res) => {
 
     let uploadedPhotoUrl = "";
     if (photoBase64 && String(photoBase64).startsWith('data:image/')) {
+      const approxBytes = Math.ceil((photoBase64.length * 3) / 4);
+      if (approxBytes > 35 * 1024) {
+        return res.status(400).json({
+          success: false,
+          message: "Review image exceeds 30 KB limit!"
+        });
+      }
       uploadedPhotoUrl = await uploadToCloudinary(photoBase64, 'aura_store/reviews');
     }
 
@@ -1087,9 +1118,9 @@ app.post('/api/products/:id/reviews', async (req, res) => {
 
     if (!product.reviews) product.reviews = [];
     product.reviews.unshift({
-      customerName: (customerName || "Verified Buyer").trim(),
+      customerName: (customerName || "Verified Buyer").trim().slice(0, 50),
       rating: numRating,
-      comment: (comment || "").trim(),
+      comment: (comment || "").trim().slice(0, 500),
       photoUrl: uploadedPhotoUrl,
       date: reviewDate
     });
@@ -1100,6 +1131,9 @@ app.post('/api/products/:id/reviews', async (req, res) => {
     product.rating = Number(((oldTotal + numRating) / newCount).toFixed(1));
 
     await product.save();
+    recentTimes.push(now);
+    reviewRateMap.set(clientIp, recentTimes);
+
     const { costPrice, ...safeProd } = product.toObject();
     res.json({ success: true, product: safeProd });
   } catch (err) {
@@ -1229,11 +1263,17 @@ app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
 app.post('/api/admin/products', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, colorOptions, badge, images, description } = req.body;
+    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, sizeStock, colorOptions, badge, images, description } = req.body;
 
     const uploadedUrls = await Promise.all(
       (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
     );
+
+    const parsedSizeStock = parseSizeStockMap(sizeStock, sizeOptions, stockQuantity);
+    const sizeKeys = Object.keys(parsedSizeStock);
+    const finalTotalStock = sizeKeys.length > 0
+      ? sizeKeys.reduce((sum, k) => sum + (Number(parsedSizeStock[k]) || 0), 0)
+      : (Number(stockQuantity) || 0);
 
     const newProd = await Product.create({
       id: Date.now(),
@@ -1243,14 +1283,15 @@ app.post('/api/admin/products', async (req, res) => {
       price: Number(price) || 0,
       originalPrice: Number(originalPrice) || Number(price) || 0,
       costPrice: Number(costPrice) || 0,
-      stockQuantity: Number(stockQuantity) || 1,
+      stockQuantity: finalTotalStock,
       showOnHome: showOnHome !== false,
       sizeOptions: sizeOptions || [],
+      sizeStock: parsedSizeStock,
       colorOptions: colorOptions || [],
       badge: badge || "New",
       rating: 5.0,
       reviewsCount: 1,
-      inStock: Number(stockQuantity) > 0,
+      inStock: finalTotalStock > 0,
       images: uploadedUrls,
       description: description || "",
       reviews: []
@@ -1264,11 +1305,17 @@ app.post('/api/admin/products', async (req, res) => {
 app.put('/api/admin/products/:id', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, colorOptions, badge, images, description } = req.body;
+    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, sizeStock, colorOptions, badge, images, description } = req.body;
 
     const uploadedUrls = await Promise.all(
       (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
     );
+
+    const parsedSizeStock = parseSizeStockMap(sizeStock, sizeOptions, stockQuantity);
+    const sizeKeys = Object.keys(parsedSizeStock);
+    const finalTotalStock = sizeKeys.length > 0
+      ? sizeKeys.reduce((sum, k) => sum + (Number(parsedSizeStock[k]) || 0), 0)
+      : (Number(stockQuantity) || 0);
 
     const prodId = Number(req.params.id);
     const updated = await Product.findOneAndUpdate(
@@ -1280,14 +1327,15 @@ app.put('/api/admin/products/:id', async (req, res) => {
         price: Number(price),
         originalPrice: Number(originalPrice),
         costPrice: Number(costPrice) || 0,
-        stockQuantity: Number(stockQuantity),
+        stockQuantity: finalTotalStock,
         showOnHome: showOnHome !== false,
         sizeOptions,
+        sizeStock: parsedSizeStock,
         colorOptions,
         badge,
         description,
         images: uploadedUrls,
-        inStock: Number(stockQuantity) > 0
+        inStock: finalTotalStock > 0
       },
       { new: true }
     );
@@ -1493,12 +1541,24 @@ app.post('/api/orders', async (req, res) => {
     } = req.body;
 
     const cleanUtr = String(utrNumber || "").trim();
-    if (!cleanUtr || cleanUtr.length < 8) {
-      return res.status(400).json({ success: false, message: "Please enter a valid 12-digit UPI UTR number!" });
+    const fakeUtrs = new Set(["000000000000", "111111111111", "222222222222", "123456789012", "999999999999"]);
+    if (!/^\d{12}$/.test(cleanUtr) || fakeUtrs.has(cleanUtr)) {
+      return res.status(400).json({ success: false, message: "Please enter a valid 12-digit numeric UPI UTR number!" });
     }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: "Your bag is empty!" });
+    }
+
+    const cleanPhoneForCheck = String(phone || '').replace(/[^0-9]/g, '');
+    if (cleanPhoneForCheck.length === 10) {
+      const pendingCount = await Order.countDocuments({ phone: cleanPhoneForCheck, status: "Pending Verification" });
+      if (pendingCount >= 2) {
+        return res.status(400).json({
+          success: false,
+          message: "You already have 2 orders awaiting payment verification. Please wait for verification before placing another order."
+        });
+      }
     }
 
     const existingUtrOrder = await Order.findOne({ utrNumber: cleanUtr }).lean();
@@ -1517,14 +1577,48 @@ app.post('/api/orders', async (req, res) => {
     let verifiedTotalCost = 0;
     const verifiedItems = [];
 
+    // Aggregate requested quantities per product & per size
+    const requestedPerProd = new Map();
+    const requestedPerSize = new Map();
+
+    for (const cartItem of items) {
+      const pid = Number(cartItem.id);
+      const sz = String(cartItem.selectedSize || "Standard").trim();
+      const qty = Math.max(1, parseInt(cartItem.qty, 10) || 1);
+      requestedPerProd.set(pid, (requestedPerProd.get(pid) || 0) + qty);
+      const szKey = `${pid}__${sz}`;
+      requestedPerSize.set(szKey, (requestedPerSize.get(szKey) || 0) + qty);
+    }
+
     for (const cartItem of items) {
       const dbProd = prodMap.get(Number(cartItem.id));
       if (!dbProd) {
         return res.status(400).json({ success: false, message: `Product "${cartItem.name}" is no longer available.` });
       }
       const qty = Math.max(1, parseInt(cartItem.qty, 10) || 1);
-      if ((dbProd.stockQuantity || 0) < qty) {
-        return res.status(400).json({ success: false, message: `Insufficient stock for "${dbProd.name}". Only ${dbProd.stockQuantity} left.` });
+      const selSize = String(cartItem.selectedSize || "Standard").trim();
+      const sizeMap = (dbProd.sizeStock && typeof dbProd.sizeStock === 'object') ? dbProd.sizeStock : {};
+      const hasSizeMap = Object.keys(sizeMap).length > 0;
+
+      if (hasSizeMap && Object.prototype.hasOwnProperty.call(sizeMap, selSize)) {
+        const availSizeQty = Number(sizeMap[selSize]) || 0;
+        const reqSizeQty = requestedPerSize.get(`${dbProd.id}__${selSize}`) || qty;
+        if (availSizeQty < reqSizeQty) {
+          return res.status(400).json({
+            success: false,
+            message: availSizeQty <= 0
+              ? `Sorry! Size "${selSize}" of "${dbProd.name}" is Out of Stock.`
+              : `Insufficient stock for "${dbProd.name}" (Size: ${selSize}). Only ${availSizeQty} left.`
+          });
+        }
+      } else {
+        const reqTotalQty = requestedPerProd.get(dbProd.id) || qty;
+        if ((dbProd.stockQuantity || 0) < reqTotalQty) {
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient stock for "${dbProd.name}". Only ${dbProd.stockQuantity} left.`
+          });
+        }
       }
 
       verifiedSubTotal += dbProd.price * qty;
@@ -1535,7 +1629,7 @@ app.post('/api/orders', async (req, res) => {
         name: dbProd.name,
         price: dbProd.price,
         costPrice: dbProd.costPrice || 0,
-        selectedSize: cartItem.selectedSize || "Standard",
+        selectedSize: selSize,
         selectedColor: cartItem.selectedColor || "Standard",
         qty,
         images: dbProd.images || []
@@ -1623,7 +1717,15 @@ app.post('/api/orders', async (req, res) => {
     for (const vItem of verifiedItems) {
       const p = prodMap.get(vItem.id);
       if (p) {
-        p.stockQuantity = Math.max(0, (p.stockQuantity || 0) - vItem.qty);
+        const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
+        if (Object.keys(sizeMap).length > 0 && Object.prototype.hasOwnProperty.call(sizeMap, vItem.selectedSize)) {
+          sizeMap[vItem.selectedSize] = Math.max(0, (Number(sizeMap[vItem.selectedSize]) || 0) - vItem.qty);
+          p.sizeStock = sizeMap;
+          p.markModified('sizeStock');
+          p.stockQuantity = Object.values(sizeMap).reduce((s, n) => s + (Number(n) || 0), 0);
+        } else {
+          p.stockQuantity = Math.max(0, (p.stockQuantity || 0) - vItem.qty);
+        }
         p.inStock = p.stockQuantity > 0;
         await p.save();
       }
@@ -1915,16 +2017,41 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
       for (const item of (order.items || [])) {
         const p = await Product.findOne({ id: item.id });
         if (p) {
-          p.stockQuantity = (p.stockQuantity || 0) + (item.qty || 1);
+          const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
+          if (Object.keys(sizeMap).length > 0 && item.selectedSize && Object.prototype.hasOwnProperty.call(sizeMap, item.selectedSize)) {
+            sizeMap[item.selectedSize] = (Number(sizeMap[item.selectedSize]) || 0) + (item.qty || 1);
+            p.sizeStock = sizeMap;
+            p.markModified('sizeStock');
+            p.stockQuantity = Object.values(sizeMap).reduce((s, n) => s + (Number(n) || 0), 0);
+          } else {
+            p.stockQuantity = (p.stockQuantity || 0) + (item.qty || 1);
+          }
           p.inStock = p.stockQuantity > 0;
           await p.save();
         }
+      }
+      // Deduct coins if already credited
+      if (order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
+        const w = await Wallet.findOne({ phone: order.phone });
+        if (w) {
+          w.coins = Math.max(0, (w.coins || 0) - order.coinsEarned);
+          await w.save();
+        }
+        order.coinsCredited = false;
       }
     } else if (prevStatus === 'Cancelled' && status !== 'Cancelled') {
       for (const item of (order.items || [])) {
         const p = await Product.findOne({ id: item.id });
         if (p) {
-          p.stockQuantity = Math.max(0, (p.stockQuantity || 0) - (item.qty || 1));
+          const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
+          if (Object.keys(sizeMap).length > 0 && item.selectedSize && Object.prototype.hasOwnProperty.call(sizeMap, item.selectedSize)) {
+            sizeMap[item.selectedSize] = Math.max(0, (Number(sizeMap[item.selectedSize]) || 0) - (item.qty || 1));
+            p.sizeStock = sizeMap;
+            p.markModified('sizeStock');
+            p.stockQuantity = Object.values(sizeMap).reduce((s, n) => s + (Number(n) || 0), 0);
+          } else {
+            p.stockQuantity = Math.max(0, (p.stockQuantity || 0) - (item.qty || 1));
+          }
           p.inStock = p.stockQuantity > 0;
           await p.save();
         }
