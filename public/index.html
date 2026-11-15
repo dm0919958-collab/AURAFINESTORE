@@ -25,91 +25,80 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #161318; }
     ::-webkit-scrollbar-thumb { background: #d97706; border-radius: 999px; }
-  </style>
-
-  <style id="aura-luxury-refresh">
-/* AURA Fine Store — premium ivory, champagne & emerald refresh.
-   Presentation-only overrides: existing markup, IDs, scripts and integrations stay intact. */
-:root{
-  --aura-ink:#202b28;--aura-muted:#78827d;--aura-emerald:#126b55;--aura-emerald-deep:#0d493d;
-  --aura-gold:#b68a45;--aura-gold-light:#e5c995;--aura-ivory:#fbf9f4;--aura-paper:#fffefa;
-  --aura-line:#e9e1d3;--aura-soft:#f3eee4;
-}
-html{scroll-behavior:smooth;scroll-padding-top:110px}
-body{
-  font-family:'Plus Jakarta Sans',sans-serif!important;color:var(--aura-ink)!important;
-  background:linear-gradient(180deg,#f8f6ef 0%,#fffefa 38%,#f6f3eb 100%)!important;
-}
-/* Announcement strip */
-body>div>div:first-child{
-  background:linear-gradient(100deg,#103e34,#155b49 55%,#103e34)!important;
-  border-color:rgba(229,201,149,.38)!important;color:#fff!important;
-}
-#topCouponsContainer{color:#f2dfb9!important}
-#flashDealContainer{background:rgba(255,255,255,.10)!important;color:#fff!important;border-color:rgba(229,201,149,.45)!important}
-#flashDealContainer span{color:#f1d59f!important}
-/* Navigation */
-.glass-nav{background:rgba(255,254,250,.94)!important;backdrop-filter:blur(18px);border-color:var(--aura-line)!important;box-shadow:0 8px 28px rgba(48,57,48,.07)}
-.glass-nav a .font-cinzel,.glass-nav .font-cinzel{color:var(--aura-emerald-deep)!important}
-.glass-nav nav a{color:#52615a!important}
-.glass-nav nav a:hover{color:var(--aura-gold)!important}
-/* Store surfaces: scoped to page content, not full-screen modal backdrops */
-.lux-card{background:var(--aura-paper)!important;color:var(--aura-ink)!important;border:1px solid var(--aura-line)!important;border-radius:22px!important;box-shadow:0 10px 28px rgba(50,57,46,.055);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
-.lux-card:hover{transform:translateY(-5px);box-shadow:0 18px 38px rgba(50,57,46,.12)!important;border-color:#d7c39c!important}
-#productsGrid .lux-card,#recentlyViewedGrid .lux-card{overflow:hidden}
-#productsGrid .lux-card img,#recentlyViewedGrid .lux-card img{transition:transform .45s ease}
-#productsGrid .lux-card:hover img,#recentlyViewedGrid .lux-card:hover img{transform:scale(1.035)}
-/* Soft ivory content panels */
-#recentlyViewedSection{border-color:var(--aura-line)!important}
-#categoryTabs button,#subCategoryTabsBar button{border-radius:999px!important}
-/* Gold and emerald action palette */
-button.bg-amber-500,button.bg-amber-600,button[class*="from-amber-"],a[class*="from-amber-"]{
-  background:linear-gradient(135deg,#c9a363,#a77a38)!important;color:#fff!important;border-color:transparent!important;
-  box-shadow:0 7px 18px rgba(166,125,59,.20)
-}
-button.bg-amber-500:hover,button.bg-amber-600:hover,button[class*="from-amber-"]:hover{filter:brightness(1.06);transform:translateY(-1px)}
-.bg-emerald-600,.bg-emerald-700{background:var(--aura-emerald)!important}
-.text-amber-100,.text-amber-200,.text-amber-300,.text-amber-400,.text-amber-500{color:var(--aura-gold)!important}
-.text-stone-100,.text-stone-200{color:var(--aura-ink)!important}
-.text-stone-300,.text-stone-400,.text-stone-500{color:var(--aura-muted)!important}
-/* Borders and fields */
-[class*="border-amber-"],[class*="border-stone-700"],[class*="border-stone-800"]{border-color:var(--aura-line)!important}
-input,select,textarea{background:#fffefa!important;color:var(--aura-ink)!important;border-color:#ded6c8!important;border-radius:12px!important}
-input:focus,select:focus,textarea:focus{outline:none!important;border-color:var(--aura-gold)!important;box-shadow:0 0 0 3px rgba(182,138,69,.12)!important}
-input::placeholder,textarea::placeholder{color:#9b9d94!important}
-/* Trust tiles and store details */
-body .bg-stone-900\/80,body .bg-stone-900\/90,body .bg-stone-900,body .bg-stone-800{
-  background:#fffefa!important;color:var(--aura-ink)!important
-}
-body .bg-stone-950\/70,body .bg-stone-900\/70{background:#f3eee4!important}
-/* Keep image overlays and dialogs intentionally dark for contrast */
-#carouselSlide .absolute.inset-0.bg-gradient-to-t{
-  background:linear-gradient(to top,rgba(10,28,23,.88),rgba(10,28,23,.32),transparent)!important;color:#fff!important
-}
-#carouselSlide .absolute.inset-0.bg-gradient-to-t h2,
-#carouselSlide .absolute.inset-0.bg-gradient-to-t span{color:#fff!important}
-#firstOrderWelcomeModal,#quickViewModal,#sizeGuideModal,#wishlistModal,#cartDrawer,#checkoutModal,#myOrdersModal,#supportModal,#legalPolicyModal{color:#fff}
-#firstOrderWelcomeModal>div,#quickViewModal>div,#sizeGuideModal>div,#wishlistModal>div,#checkoutModal>div,#myOrdersModal>div,#supportModal>div,#legalPolicyModal>div{border-color:rgba(201,163,99,.55)!important}
-#firstOrderWelcomeModal .absolute.inset-0.bg-gradient-to-t{background:linear-gradient(to top,rgba(10,28,23,.82),rgba(10,28,23,.18),transparent)!important}
-#liveSalesToast{background:#173c32!important;border-color:rgba(229,201,149,.5)!important;color:#fff!important}
-#liveSalesToast p{color:#fff!important}
-/* Cart drawer and modal cards retain readable light surfaces */
-#cartDrawer>div,#mobileMenuDrawer>div{background:#fffefa!important;color:var(--aura-ink)!important;border-color:var(--aura-line)!important}
-#cartDrawer h2,#cartDrawer h3,#mobileMenuDrawer h2{color:var(--aura-emerald-deep)!important}
-/* Elegant section rhythm */
-section{scroll-margin-top:112px}
-.rounded-3xl{border-radius:26px}
-.shadow-2xl{box-shadow:0 18px 48px rgba(47,55,45,.12)!important}
-::-webkit-scrollbar{width:7px;height:7px}
-::-webkit-scrollbar-track{background:#f1ede4}
-::-webkit-scrollbar-thumb{background:#c8ad7b;border-radius:999px}
-@media(max-width:640px){
-  .glass-nav .h-20{height:68px}
-  #productsGrid{gap:14px}
-  .lux-card:hover{transform:none}
-  #carouselSlide{min-height:250px}
-}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+  
+  /* AURA COUTURE DESIGN SYSTEM — visual-only layer; existing IDs and scripts stay intact */
+  :root{--aura-ink:#18251f;--aura-muted:#68756d;--aura-emerald:#174c3c;--aura-green:#28745a;--aura-gold:#b58b48;--aura-champagne:#e8d8b8;--aura-ivory:#fbfaf6;--aura-line:#e8e3d8;--aura-shadow:0 18px 55px rgba(31,53,43,.09)}
+  html{scroll-behavior:smooth;scroll-padding-top:120px}
+  body{background:linear-gradient(180deg,#f8f7f1 0%,#f4f1e9 52%,#fbfaf6 100%)!important;color:var(--aura-ink)!important}
+  body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse at 12% 0%,rgba(209,226,211,.55),transparent 38%),radial-gradient(ellipse at 90% 12%,rgba(232,216,184,.25),transparent 32%)}
+  .glass-nav{background:rgba(251,250,246,.92)!important;backdrop-filter:blur(22px);border-color:rgba(181,139,72,.24)!important;box-shadow:0 8px 30px rgba(31,53,43,.055)}
+  .glass-nav a span:first-child{color:var(--aura-emerald)!important}
+  .glass-nav input,.glass-nav button{box-shadow:0 3px 12px rgba(25,55,42,.04)}
+  .lux-card{background:linear-gradient(155deg,#fff 0%,#f8f6ef 100%)!important;border:1px solid #e9e1d2!important;box-shadow:0 10px 30px rgba(31,53,43,.055)}
+  .lux-card:hover{transform:translateY(-6px);box-shadow:0 22px 45px rgba(31,53,43,.13)!important;border-color:rgba(181,139,72,.6)!important}
+  main,section{scroll-margin-top:125px}
+  #carouselSlide{min-height:270px}
+  #carouselSlide>img{filter:saturate(.88)}
+  #carouselSlide>div{background:linear-gradient(90deg,rgba(12,29,23,.82),rgba(12,29,23,.38) 62%,rgba(12,29,23,.08))!important}
+  #carouselSlide h2{max-width:720px;text-wrap:balance;letter-spacing:.015em}
+  #categoryTabs button,#categoryTabs a{border-radius:999px}
+  #catalogSection{padding-top:2.5rem}
+  #catalogSection h2,#catalogSection h3{letter-spacing:.015em}
+  #catalogSection .lux-card h3,#catalogSection .lux-card h4{color:#203b30!important}
+  #catalogSection .lux-card .text-stone-400,#catalogSection .lux-card .text-stone-500{color:#78847c!important}
+  #catalogSection .lux-card .text-amber-400,#catalogSection .lux-card .text-amber-300{color:#98703a!important}
+  #catalogSection .lux-card .bg-stone-950{background:#f3f0e8!important}
+  #catalogSection .lux-card .border-stone-800{border-color:#e9e2d5!important}
+  #catalogSection .lux-card button{border-radius:12px}
+  .bg-stone-900{background-color:#fff!important}
+  .bg-stone-950{background-color:#f6f4ee!important}
+  .bg-stone-900\/80,.bg-stone-900\/75,.bg-stone-900\/90{background-color:rgba(255,255,255,.88)!important}
+  .text-stone-100,.text-stone-200{color:#25372e!important}
+  .text-stone-300{color:#53645a!important}
+  .text-stone-400,.text-stone-500{color:#77837a!important}
+  .border-stone-800,.border-stone-700{border-color:#e6e0d4!important}
+  .bg-stone-800{background-color:#eeeae0!important}
+  .text-amber-100,.text-amber-200,.text-amber-300{color:#76572d!important}
+  .text-amber-400,.text-amber-500{color:#98703a!important}
+  .bg-amber-500{background-color:#b58b48!important}
+  .bg-gradient-to-r.from-amber-500{background-image:linear-gradient(110deg,#b58b48,#d5b779)!important}
+  input,select,textarea{accent-color:#28745a}
+  input:not([type=checkbox]):not([type=radio]),select,textarea{background:#fff!important;color:#24372d!important;border-color:#ddd6c8!important;box-shadow:inset 0 1px 2px rgba(30,50,40,.025)}
+  input::placeholder,textarea::placeholder{color:#9aa39c!important}
+  input:focus,select:focus,textarea:focus{outline:none!important;border-color:#b58b48!important;box-shadow:0 0 0 3px rgba(181,139,72,.13)!important}
+  button{transition:transform .2s ease,box-shadow .2s ease,background-color .2s ease}
+  button:hover{filter:brightness(1.025)}
+  .rounded-3xl{border-radius:24px}
+  .shadow-2xl{box-shadow:var(--aura-shadow)!important}
+  #cartDrawer>div,#checkoutModal>div,#productModal>div{background:#fff!important;color:#20372c!important;border-color:#e6ddca!important}
+  #cartDrawer h3,#checkoutModal h4{color:#76572d!important}
+  #cartDrawer .bg-stone-950,#checkoutModal .bg-stone-950{background:#f7f5ef!important}
+  #cartDrawer .text-stone-100,#checkoutModal .text-stone-100{color:#263a30!important}
+  #cartDrawer .text-stone-400,#checkoutModal .text-stone-400{color:#718076!important}
+  #firstOrderWelcomeModal>div{background:#fffdf8!important;color:#20372c!important;border-color:#c8a66b!important}
+  #firstOrderWelcomeModal h3{color:#76572d!important}
+  #firstOrderWelcomeModal p{color:#66746b!important}
+  #mobileMenuDrawer>div:first-child{background:#fbfaf6!important;color:#20372c!important;border-color:#e4d9c5!important}
+  footer{background:#173c30!important;color:#f7f3e9!important;border-color:rgba(181,139,72,.45)!important}
+  footer .text-stone-400,footer .text-stone-500{color:#d4ddd5!important}
+  footer .text-amber-400,footer .text-amber-500{color:#dfc18c!important}
+  ::-webkit-scrollbar-track{background:#f1eee6!important}
+  ::-webkit-scrollbar-thumb{background:#b58b48!important}
+  /* Shipping form: clear sections, easy address entry, responsive field order */
+  #checkoutStep1{display:flex;flex-direction:column;gap:14px}
+  #checkoutStep1 .aura-form-section{background:#faf9f5;border:1px solid #e9e2d5;border-radius:18px;padding:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+  #checkoutStep1 .aura-form-heading{grid-column:1/-1;display:flex;align-items:center;gap:9px;padding-bottom:9px;border-bottom:1px solid #e9e2d5;color:#214b3a;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+  #checkoutStep1 .aura-form-heading i{color:#b58b48;font-size:13px}
+  #checkoutStep1 .aura-field{min-width:0}
+  #checkoutStep1 .aura-field label{color:#53645a!important;font-size:11px;font-weight:700}
+  #checkoutStep1 .aura-field input{width:100%;min-height:43px;padding:10px 12px;border-radius:11px;font-size:12px}
+  #checkoutStep1 .aura-field.full{grid-column:1/-1}
+  #checkoutStep1 .aura-field .aura-hint{font-size:10px;color:#849087;margin-top:5px;line-height:1.45}
+  #checkoutStep1 .aura-country{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:#f1eee5;border:1px solid #e5dece;border-radius:11px;color:#53645a;font-size:11px}
+  #checkoutStep1 .aura-country strong{color:#214b3a}
+  #checkoutStep1>button{margin-top:2px;border-radius:13px;min-height:48px;letter-spacing:.04em}
+  #checkoutStep2{gap:14px}
+  @media(max-width:520px){#checkoutStep1 .aura-form-section{grid-template-columns:1fr;padding:12px}#checkoutStep1 .aura-field.full{grid-column:auto}#checkoutStep1 .aura-form-heading{grid-column:auto}}
 
   </style>
 </head>
@@ -590,28 +579,36 @@ section{scroll-margin-top:112px}
       </div>
       <form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="space-y-3 text-xs">
         <div id="checkoutStep1" class="space-y-3">
-          <div><label class="block font-semibold text-stone-300 mb-1">Full Customer Name *</label><input type="text" id="ordName" required placeholder="Customer Name" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
-          <div><label class="block font-semibold text-stone-300 mb-1">Contact Number *</label><input type="tel" id="ordPhone" maxlength="10" required placeholder="10-digit Mobile Number" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl font-mono"></div>
-          <div>
-            <label class="block font-semibold text-stone-300 mb-1">6-Digit Indian Postal Pincode *</label>
-            <input type="text" id="ordPincode" oninput="validateAndLookupPincode(this.value)" required maxlength="6" placeholder="Postal Pincode" class="w-full bg-stone-950 border-2 border-stone-700 text-white p-2.5 rounded-xl font-mono font-bold">
-            <p id="pincodeErrorMsg" class="text-[11px] font-bold text-rose-400 hidden mt-1">Invalid Indian Pincode!</p>
-            <p id="pincodeSuccessMsg" class="text-[11px] font-bold text-emerald-400 hidden mt-1">Deliverable Location Identified!</p>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div><label class="block font-semibold text-stone-300 mb-1">District / City *</label><input type="text" id="ordCity" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
-            <div><label class="block font-semibold text-stone-300 mb-1">State *</label><input type="text" id="ordState" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div><label class="block font-semibold text-stone-300 mb-1">House No. / Road *</label><input type="text" id="addrHouseStreet" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
-            <div><label class="block font-semibold text-stone-300 mb-1">Village / Town *</label><input type="text" id="addrVillage" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div><label class="block font-semibold text-stone-300 mb-1">Post Office (P.O) *</label><input type="text" id="addrPostOffice" required class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
-            <div><label class="block font-semibold text-stone-300 mb-1">Police Station (P.S)</label><input type="text" id="addrPoliceStation" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
-          </div>
-          <div><label class="block font-semibold text-stone-300 mb-1">Landmark</label><input type="text" id="addrLandmark" class="w-full bg-stone-950 border border-stone-700 text-white p-2.5 rounded-xl"></div>
-          <button type="button" onclick="goToStep2Payment()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-3.5 rounded-xl font-extrabold text-xs shadow mt-2">Next &rarr;</button>
+          <section class="aura-form-section" aria-label="Customer contact details">
+            <div class="aura-form-heading"><i class="fa-solid fa-user"></i> 01 · Contact details</div>
+            <div class="aura-field full"><label class="block mb-1">Full Customer Name *</label><input type="text" id="ordName" required autocomplete="name" placeholder="Enter your full name"></div>
+            <div class="aura-field full"><label class="block mb-1">Mobile / WhatsApp Number *</label><input type="tel" id="ordPhone" maxlength="10" required inputmode="numeric" autocomplete="tel-national" placeholder="10-digit mobile number"></div>
+          </section>
+
+          <section class="aura-form-section" aria-label="Postal location">
+            <div class="aura-form-heading"><i class="fa-solid fa-map-location-dot"></i> 02 · Delivery location</div>
+            <div class="aura-field full">
+              <label class="block mb-1">6-Digit Indian PIN Code *</label>
+              <input type="text" id="ordPincode" oninput="validateAndLookupPincode(this.value)" required maxlength="6" inputmode="numeric" autocomplete="postal-code" placeholder="Enter delivery PIN code">
+              <p class="aura-hint">Enter your PIN code first. District, state and post office will be suggested automatically.</p>
+              <p id="pincodeErrorMsg" class="text-[11px] font-bold text-rose-500 hidden mt-1">Invalid Indian Pincode!</p>
+              <p id="pincodeSuccessMsg" class="text-[11px] font-bold text-emerald-700 hidden mt-1">Deliverable Location Identified!</p>
+            </div>
+            <div class="aura-field"><label class="block mb-1">District / City *</label><input type="text" id="ordCity" required autocomplete="address-level2" placeholder="District or city"></div>
+            <div class="aura-field"><label class="block mb-1">State *</label><input type="text" id="ordState" required autocomplete="address-level1" placeholder="State"></div>
+            <div class="aura-field full"><div class="aura-country"><span><i class="fa-solid fa-earth-asia mr-2"></i>Country / Region</span><strong>India 🇮🇳</strong></div></div>
+          </section>
+
+          <section class="aura-form-section" aria-label="Complete delivery address">
+            <div class="aura-form-heading"><i class="fa-solid fa-house"></i> 03 · Complete delivery address</div>
+            <div class="aura-field full"><label class="block mb-1">House / Flat No. & Street / Road *</label><input type="text" id="addrHouseStreet" required autocomplete="address-line1" placeholder="House no., building, street or road"></div>
+            <div class="aura-field full"><label class="block mb-1">Village / Town / Locality *</label><input type="text" id="addrVillage" required autocomplete="address-line2" placeholder="Village, town, ward or locality"></div>
+            <div class="aura-field"><label class="block mb-1">Post Office (P.O.) *</label><input type="text" id="addrPostOffice" required placeholder="Post office name"></div>
+            <div class="aura-field"><label class="block mb-1">Police Station (P.S.)</label><input type="text" id="addrPoliceStation" placeholder="Police station (optional)"></div>
+            <div class="aura-field full"><label class="block mb-1">Nearby Landmark (Optional)</label><input type="text" id="addrLandmark" placeholder="Nearby school, market, temple, building etc."></div>
+          </section>
+          <p class="text-[10px] leading-relaxed text-stone-500 px-1"><i class="fa-solid fa-shield-halved mr-1 text-emerald-700"></i> Please double-check your PIN code, mobile number and full address so the courier can deliver your order correctly.</p>
+          <button type="button" onclick="goToStep2Payment()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-3.5 rounded-xl font-extrabold text-xs shadow mt-2">Continue to Payment &rarr;</button>
         </div>
 
         <div id="checkoutStep2" class="hidden space-y-3">
