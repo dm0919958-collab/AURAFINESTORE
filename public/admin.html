@@ -119,6 +119,14 @@ label { color: #f1e5ce; }
 #adminCouponsList input { color: #172033 !important; background: #fffdf8 !important; }
 
 </style>
+
+  <style id="aura-banner-editor-readability">
+    .banner-editor-form label { color: #f8fafc !important; font-weight: 700; }
+    .banner-editor-form input, .banner-editor-form select { color: #fff !important; background-color: #020617 !important; border-color: #64748b !important; }
+    .banner-editor-form input::placeholder { color: #cbd5e1 !important; opacity: 1; }
+    .banner-editor-form input:focus, .banner-editor-form select:focus { outline: 2px solid #fbbf24; outline-offset: 1px; }
+    .banner-editor-form input[type="file"] { color: #f1f5f9 !important; }
+  </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
@@ -475,7 +483,7 @@ label { color: #f1e5ce; }
           </div>
           <div>
             <label class="text-[10px] text-slate-400 block mb-1">Min Order (₹)</label>
-            <input type="number" id="cpMinSpend" min="0" value="0" placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white">
+            <input type="number" id="cpMinSpend" min="0" value="0" placeholder="0" class="w-full bg-slate-950 border border-slate-500 rounded-xl p-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
           </div>
           <div>
             <label class="text-[10px] text-amber-300 font-bold block mb-1">Timer Hours</label>
@@ -500,26 +508,26 @@ label { color: #f1e5ce; }
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <form onsubmit="handleAddDealBanner(event)" class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700 space-y-3 text-xs">
-          <p class="font-bold text-amber-300">Add New Front Banner</p>
+        <form onsubmit="handleAddDealBanner(event)" class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700 space-y-3 text-xs banner-editor-form">
+          <p class="font-bold text-amber-200 text-sm">Add New Front Banner</p>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-[11px] text-slate-400 block mb-1">Banner Title *</label>
-              <input type="text" id="bannerTitleInput" required placeholder="e.g. Royal Men's Shirts" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white">
+              <label class="text-[11px] text-slate-100 font-semibold block mb-1">Banner Title *</label>
+              <input type="text" id="bannerTitleInput" required placeholder="e.g. Royal Men's Shirts" class="w-full bg-slate-950 border border-slate-500 rounded-xl p-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
             </div>
             <div>
-              <label class="text-[11px] text-slate-400 block mb-1">Highlight Tag *</label>
-              <input type="text" id="bannerTagInput" required placeholder="e.g. FLAT 50% OFF" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white">
+              <label class="text-[11px] text-slate-100 font-semibold block mb-1">Highlight Tag *</label>
+              <input type="text" id="bannerTagInput" required placeholder="e.g. FLAT 50% OFF" class="w-full bg-slate-950 border border-slate-500 rounded-xl p-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-[11px] text-slate-400 block mb-1">Link to Product</label>
+              <label class="text-[11px] text-slate-100 font-semibold block mb-1">Link to Product</label>
               <select id="bannerProductSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white"></select>
             </div>
             <div>
-              <label class="text-[11px] text-slate-400 block mb-1">Banner Photo *</label>
-              <input type="file" id="bannerFileInput" accept="image/*" required class="w-full text-[11px] text-slate-300 file:bg-amber-500 file:text-slate-950 file:font-bold file:border-0 file:rounded-lg file:px-2.5 file:py-1 cursor-pointer">
+              <label class="text-[11px] text-slate-100 font-semibold block mb-1">Banner Photo *</label>
+              <input type="file" id="bannerFileInput" accept="image/*" required class="w-full text-[11px] text-slate-100 file:bg-amber-500 file:text-slate-950 file:font-bold file:border-0 file:rounded-lg file:px-2.5 file:py-1 cursor-pointer">
             </div>
           </div>
           <button type="submit" id="bannerSubmitBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl transition shadow">Publish Deal Banner</button>
@@ -1572,7 +1580,7 @@ label { color: #f1e5ce; }
 
     function renderAdminBanners() {
       document.getElementById('adminBannersGrid').innerHTML = cachedBanners.map(b => `
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden relative">
+        <div class="bg-slate-800 border border-slate-600 rounded-2xl overflow-hidden relative">
           <img src="${b.image}" class="w-full h-24 object-cover">
           <div class="p-2 text-xs"><p class="font-bold text-white truncate">${b.title}</p><p class="text-[10px] text-amber-400">${b.tag}</p></div>
           <button onclick="deleteBanner(${b.id})" class="absolute top-2 right-2 bg-rose-600 text-white w-6 h-6 rounded-full text-xs shadow"><i class="fa-solid fa-trash"></i></button>
