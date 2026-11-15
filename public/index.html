@@ -612,6 +612,15 @@
         <button onclick="toggleCart()" class="text-stone-400 hover:text-amber-400 text-2xl font-bold">&times;</button>
       </div>
 
+      <!-- Flipkart-style Deliver To Pincode Bar -->
+      <div class="mt-2.5 bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl flex items-center justify-between gap-2 text-xs">
+        <div class="truncate">
+          <span class="text-stone-400">Deliver to: </span>
+          <strong id="cartDeliverToText" class="text-stone-100">India - Enter Pincode</strong>
+        </div>
+        <button type="button" onclick="promptChangeCartPincode()" class="px-2.5 py-1 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-400 font-bold text-[11px] hover:bg-amber-500 hover:text-stone-950 transition whitespace-nowrap">Change</button>
+      </div>
+
       <!-- Free Gift Gamified Progress Bar -->
       <div id="freeGiftProgressBox" class="hidden mt-3 bg-gradient-to-r from-amber-950/60 to-emerald-950/60 border border-amber-500/35 p-3 rounded-2xl space-y-1.5 text-xs">
         <div class="flex items-center justify-between gap-2">
@@ -889,6 +898,7 @@
         <ul class="space-y-2 text-stone-400">
           <li><a href="#" onclick="openMyOrdersModal(); return false;" class="hover:text-amber-300 transition">My Orders & AURA Coins</a></li>
           <li><a href="#" onclick="openSupportModal(); return false;" class="hover:text-emerald-400 transition font-bold text-emerald-400">Help & Support Desk</a></li>
+          <li><a href="#" onclick="openLegalModal('shipping'); return false;" class="hover:text-amber-300 transition">Shipping & Delivery Policy</a></li>
           <li><a href="#" onclick="openLegalModal('privacy'); return false;" class="hover:text-amber-300 transition">Privacy Policy</a></li>
           <li><a href="#" onclick="openLegalModal('terms'); return false;" class="hover:text-amber-300 transition">Terms & Conditions</a></li>
           <li><a href="#" onclick="openLegalModal('refund'); return false;" class="hover:text-amber-300 transition">Refund & Replacement Policy</a></li>
@@ -900,6 +910,7 @@
         <p class="text-stone-400 leading-relaxed">
           Dispatched from Bolpur, Birbhum, West Bengal - 731204. We partner with Delhivery, DTDC, Shiprocket, and IndiaPost across India.
         </p>
+        <p class="text-stone-300 font-semibold"><i class="fa-solid fa-phone mr-1.5 text-emerald-400"></i> +91 6289145092</p>
         <p class="text-stone-300 font-semibold"><i class="fa-solid fa-envelope mr-1.5 text-amber-500"></i> mahatosarita436@gmail.com</p>
         <div class="pt-1">
           <span class="inline-flex items-center gap-1.5 bg-stone-950 border border-stone-800 px-3.5 py-1.5 rounded-xl text-emerald-400 font-semibold text-[11px] shadow">
@@ -960,18 +971,30 @@
       "Shiprocket": (awb) => `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`
     };
 
-    // 5-Second First-Order Welcome Popup Logic (Never shows again once user completes first order)
-    function scheduleFirstOrderWelcomePopup() {
+    // 5-Second First-Order Welcome Popup Logic (Shows on every visit until user places an active order; re-appears if cancelled)
+    async function scheduleFirstOrderWelcomePopup() {
       if (firstOrderPopupScheduled) return;
       firstOrderPopupScheduled = true;
 
-      if (localStorage.getItem('aura_first_order_completed') === 'true') return;
-      if (sessionStorage.getItem('aura_first_popup_dismissed') === 'true') return;
+      let hasActiveOrder = localStorage.getItem('aura_first_order_completed') === 'true';
+      try {
+        const savedProfile = JSON.parse(localStorage.getItem('aura_customer_profile') || 'null');
+        if (savedProfile && savedProfile.phone && savedProfile.phone.length === 10) {
+          const wRes = await fetch(`/api/wallet/${savedProfile.phone}?t=${Date.now()}`);
+          const wData = await wRes.json();
+          if (wData.success) {
+            hasActiveOrder = Boolean(wData.hasPriorOrders);
+            if (hasActiveOrder) localStorage.setItem('aura_first_order_completed', 'true');
+            else localStorage.removeItem('aura_first_order_completed');
+          }
+        }
+      } catch (e) {}
+
+      if (hasActiveOrder) return;
 
       setTimeout(() => {
         if (!firstOrderPopupConfig.enabled) return;
         if (localStorage.getItem('aura_first_order_completed') === 'true') return;
-        if (sessionStorage.getItem('aura_first_popup_dismissed') === 'true') return;
 
         const code = String(firstOrderPopupConfig.coupon || 'AURA20').trim().toUpperCase();
         const couponObj = activeCoupons.find(c => c.code === code);
@@ -996,13 +1019,11 @@
     }
 
     function dismissFirstOrderPopup() {
-      sessionStorage.setItem('aura_first_popup_dismissed', 'true');
       document.getElementById('firstOrderWelcomeModal').classList.add('hidden');
     }
 
     function claimFirstOrderCoupon() {
       const code = String(firstOrderPopupConfig.coupon || 'AURA20').trim().toUpperCase();
-      sessionStorage.setItem('aura_first_popup_dismissed', 'true');
       document.getElementById('firstOrderWelcomeModal').classList.add('hidden');
 
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1252,9 +1273,10 @@
     function trackMetaEvent(eventName, params = {}) { if (typeof window.fbq === 'function' && initializedMetaPixelId) window.fbq('track', eventName, params); }
 
     const legalPoliciesData = {
+      shipping: { title: "Shipping & Delivery Policy — AURA Fine Store", html: `<p>Orders are dispatched within <strong>24–48 business hours</strong> from our Bolpur, West Bengal hub via Delhivery, DTDC, Shiprocket, or IndiaPost. Standard delivery takes <strong>2–3 days within West Bengal</strong> and <strong>4–6 days across Rest of India</strong>. Prepaid UPI orders enjoy <strong>FREE Shipping</strong>.</p>` },
       privacy: { title: "Privacy Policy — AURA Fine Store", html: `<p>At <strong>AURA Fine Store</strong>, we protect your personal data. Your name, mobile number, shipping address, and UPI UTR are used solely for order fulfillment and courier dispatch.</p>` },
       terms: { title: "Terms & Conditions — AURA Fine Store", html: `<p>All prepaid UPI and COD token orders are verified against the submitted 12-digit UTR number before dispatch from Bolpur, Birbhum, West Bengal.</p>` },
-      refund: { title: "Refund & 7-Day Replacement Policy", html: `<p>Report transit damage or wrong item within <strong>7 days of delivery</strong> via our <em>Help & Support Desk</em> with a continuous 360-degree parcel unboxing video.</p>` }
+      refund: { title: "Refund & 7-Day Replacement Policy", html: `<p>Report transit damage or wrong item within <strong>7 days of delivery</strong> via our <em>Help & Support Desk</em> with a continuous 360-degree parcel unboxing video. Approved refunds are processed within 5–7 working days.</p>` }
     };
 
     function openLegalModal(type) {
@@ -1557,8 +1579,19 @@
       document.getElementById('qvDesc').innerText = prod.description;
 
       const sizes = (prod.sizeOptions && prod.sizeOptions.length) ? prod.sizeOptions : ["Standard"];
-      currentSelectedSize = sizes[0]; document.getElementById('qvSelectedSizeDisplay').innerText = currentSelectedSize;
-      document.getElementById('qvSizeContainer').innerHTML = sizes.map((s, i) => `<button type="button" onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300'}">${s}</button>`).join('');
+      const sMap = (prod.sizeStock && typeof prod.sizeStock === 'object') ? prod.sizeStock : {};
+      const hasSMap = Object.keys(sMap).length > 0;
+      const firstInStockSize = sizes.find(s => !hasSMap || !Object.prototype.hasOwnProperty.call(sMap, s) || (Number(sMap[s]) || 0) > 0) || sizes[0];
+      currentSelectedSize = firstInStockSize;
+      document.getElementById('qvSelectedSizeDisplay').innerText = currentSelectedSize;
+      document.getElementById('qvSizeContainer').innerHTML = sizes.map((s) => {
+        const hasSz = hasSMap && Object.prototype.hasOwnProperty.call(sMap, s);
+        const szQty = hasSz ? (Number(sMap[s]) || 0) : qtyLeft;
+        const szOut = szQty <= 0;
+        const isSel = s === currentSelectedSize;
+        const tagHtml = hasSz ? (szOut ? `<span class="text-[9px] text-rose-400 ml-1">(Out)</span>` : (szQty <= 3 ? `<span class="text-[9px] text-rose-500 font-black ml-1">(${szQty} left)</span>` : '')) : '';
+        return `<button type="button" ${szOut ? 'disabled' : ''} onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${szOut ? 'opacity-45 line-through cursor-not-allowed bg-stone-950 border-stone-800 text-stone-500' : (isSel ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300')}">${s}${tagHtml}</button>`;
+      }).join('');
 
       const colors = (prod.colorOptions && prod.colorOptions.length) ? prod.colorOptions : ["Standard"];
       currentSelectedColor = colors[0]; document.getElementById('qvSelectedColorDisplay').innerText = currentSelectedColor;
@@ -1635,7 +1668,30 @@
       if (currentOpenedProduct && currentOpenedProduct.images && currentOpenedProduct.images.length) setMainImage(currentOpenedProduct.images[idx < currentOpenedProduct.images.length ? idx : 0], idx);
     }
 
+    function getMaxStockForVariant(prod, sizeName) {
+      const liveProd = allProducts.find(p => p.id === prod.id) || prod;
+      const sMap = (liveProd.sizeStock && typeof liveProd.sizeStock === 'object') ? liveProd.sizeStock : {};
+      if (Object.keys(sMap).length > 0 && sizeName && Object.prototype.hasOwnProperty.call(sMap, sizeName)) {
+        return Math.max(0, Number(sMap[sizeName]) || 0);
+      }
+      return Math.max(0, Number(liveProd.stockQuantity) || 0);
+    }
+
     function addToCartWithVariant(prod) {
+      const sMap = (prod.sizeStock && typeof prod.sizeStock === 'object') ? prod.sizeStock : {};
+      const hasPerSize = Object.keys(sMap).length > 0 && Object.prototype.hasOwnProperty.call(sMap, currentSelectedSize);
+      const maxAllowed = getMaxStockForVariant(prod, currentSelectedSize);
+
+      const currentInBag = cart
+        .filter(i => i.id === prod.id && (!hasPerSize || i.selectedSize === currentSelectedSize))
+        .reduce((sum, i) => sum + (Number(i.qty) || 1), 0);
+
+      if (currentInBag + 1 > maxAllowed) {
+        return alert(maxAllowed <= 0
+          ? `⚠️ Sorry! Size "${currentSelectedSize}" of "${prod.name}" is Out of Stock.`
+          : `⚠️ Sorry! Only ${maxAllowed} piece(s) of "${prod.name}"${hasPerSize ? ` (Size: ${currentSelectedSize})` : ''} available in stock.`);
+      }
+
       const key = `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`;
       const exist = cart.find(i => i.itemKey === key);
       if (exist) exist.qty += 1; else cart.push({ ...prod, itemKey: key, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 });
@@ -1644,13 +1700,90 @@
     }
 
     function instantBuyNowWithVariant(prod) {
+      const maxAllowed = getMaxStockForVariant(prod, currentSelectedSize);
+      if (maxAllowed <= 0) {
+        return alert(`⚠️ Sorry! Size "${currentSelectedSize}" of "${prod.name}" is Out of Stock.`);
+      }
       cart = [{ ...prod, itemKey: `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 }];
       trackMetaEvent('InitiateCheckout', { content_name: prod.name, value: prod.price, currency: 'INR' });
       persistCartLocal(); updateCartUI(); openCheckoutModal();
     }
 
     function closeQuickView() { document.getElementById('quickViewModal').classList.add('hidden'); try { window.history.replaceState({}, '', window.location.pathname); } catch (e) {} }
-    function updateQty(idx, ch) { cart[idx].qty += ch; if (cart[idx].qty <= 0) cart.splice(idx, 1); persistCartLocal(); updateCartUI(); }
+
+    function updateQty(idx, ch) {
+      const item = cart[idx];
+      if (!item) return;
+      if (ch > 0) {
+        const liveProd = allProducts.find(p => p.id === item.id) || item;
+        const sMap = (liveProd.sizeStock && typeof liveProd.sizeStock === 'object') ? liveProd.sizeStock : {};
+        const hasPerSize = Object.keys(sMap).length > 0 && Object.prototype.hasOwnProperty.call(sMap, item.selectedSize);
+        const maxAllowed = getMaxStockForVariant(liveProd, item.selectedSize);
+        const currentInBag = cart
+          .filter(i => i.id === item.id && (!hasPerSize || i.selectedSize === item.selectedSize))
+          .reduce((sum, i) => sum + (Number(i.qty) || 1), 0);
+
+        if (currentInBag + ch > maxAllowed) {
+          return alert(`⚠️ Maximum available stock (${maxAllowed} pcs) reached for "${item.name}"${hasPerSize ? ` (${item.selectedSize})` : ''}.`);
+        }
+      }
+      cart[idx].qty += ch;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      persistCartLocal(); updateCartUI();
+    }
+
+    function saveCartItemForLater(idx) {
+      const item = cart[idx];
+      if (!item) return;
+      if (!wishlistIds.includes(item.id)) {
+        wishlistIds.push(item.id);
+        localStorage.setItem('aura_wishlist', JSON.stringify(wishlistIds));
+        updateWishlistBadges();
+      }
+      cart.splice(idx, 1);
+      persistCartLocal(); updateCartUI(); renderStore();
+    }
+
+    function buySingleCartItemNow(idx) {
+      const item = cart[idx];
+      if (!item) return;
+      cart = [{ ...item }];
+      persistCartLocal(); updateCartUI();
+      openCheckoutModal();
+    }
+
+    async function promptChangeCartPincode() {
+      const cur = localStorage.getItem('aura_last_checked_pincode') || '';
+      const pin = prompt("Enter your 6-digit Indian Delivery Pincode:", cur);
+      if (!pin) return;
+      const clean = pin.trim();
+      if (clean.length !== 6 || isNaN(clean)) return alert("Please enter a valid 6-digit Indian Pincode!");
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${clean}`);
+        const data = await res.json();
+        if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice && data[0].PostOffice.length > 0) {
+          const po = data[0].PostOffice[0];
+          localStorage.setItem('aura_last_checked_pincode', clean);
+          localStorage.setItem('aura_last_checked_city', po.District || po.Name || '');
+          localStorage.setItem('aura_last_checked_state', po.State || '');
+          updateCartUI();
+        } else {
+          alert("Pincode not serviceable. Please try another Indian Pincode.");
+        }
+      } catch (e) {
+        localStorage.setItem('aura_last_checked_pincode', clean);
+        updateCartUI();
+      }
+    }
+
+    function getCartDeliveryEtaString() {
+      const st = (localStorage.getItem('aura_last_checked_state') || '').toLowerCase();
+      const days = st.includes('west bengal') ? 3 : 5;
+      const d = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+      const dayName = d.toLocaleDateString('en-IN', { weekday: 'short' });
+      return `Delivery in ${days} days, ${dayName}`;
+    }
+
     function toggleCart(forceOpen = false) { const d = document.getElementById('cartDrawer'); if (forceOpen) d.classList.remove('hidden'); else d.classList.toggle('hidden'); }
 
     function calculateCartTotals(mode = 'UPI') {
@@ -1679,6 +1812,13 @@
     }
 
     function updateCartUI() {
+      const savedPin = localStorage.getItem('aura_last_checked_pincode') || (JSON.parse(localStorage.getItem('aura_customer_profile') || '{}').pincode) || '';
+      const savedCity = localStorage.getItem('aura_last_checked_city') || (JSON.parse(localStorage.getItem('aura_customer_profile') || '{}').city) || 'India';
+      const delTextEl = document.getElementById('cartDeliverToText');
+      if (delTextEl) {
+        delTextEl.innerText = savedPin ? `${savedCity} - ${savedPin}` : 'India - Tap Change for Pincode';
+      }
+
       document.getElementById('cartCountBadge').innerText = cart.reduce((s, i) => s + i.qty, 0);
       const list = document.getElementById('cartItemsList');
       if (!cart.length) {
@@ -1689,7 +1829,51 @@
       document.getElementById('checkoutProceedBtn').disabled = false;
       const { subTotal, discountAmt, netBagValue, finalAmt } = calculateCartTotals('UPI');
       updateFreeGiftProgressUI(netBagValue);
-      list.innerHTML = cart.map((item, idx) => `<div class="flex items-center gap-3 border-b border-stone-800 pb-3"><img src="${(item.images && item.images[0]) || ''}" class="w-14 h-14 object-cover rounded-xl"><div class="flex-1"><h5 class="text-xs font-bold line-clamp-1">${item.name}</h5><p class="text-[10px] text-amber-400">${item.selectedSize} | ${item.selectedColor}</p><p class="text-xs font-black text-amber-400">₹${item.price}</p><div class="flex items-center gap-2 mt-1"><button onclick="updateQty(${idx}, -1)" class="w-6 h-6 bg-stone-800 rounded">-</button><span>${item.qty}</span><button onclick="updateQty(${idx}, 1)" class="w-6 h-6 bg-stone-800 rounded">+</button></div></div><button onclick="cart.splice(${idx}, 1); persistCartLocal(); updateCartUI();" class="text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button></div>`).join('');
+      const etaLabel = getCartDeliveryEtaString();
+
+      list.innerHTML = cart.map((item, idx) => {
+        const liveProd = allProducts.find(p => p.id === item.id) || item;
+        const maxLeft = getMaxStockForVariant(liveProd, item.selectedSize);
+        const origP = Number(liveProd.originalPrice || item.originalPrice || item.price);
+        const discPct = origP > item.price ? Math.round(((origP - item.price) / origP) * 100) : 0;
+        const ratingVal = liveProd.rating || 4.9;
+        const revCnt = liveProd.reviewsCount || 12;
+
+        return `
+          <div class="bg-stone-950 border border-stone-800 rounded-2xl overflow-hidden shadow-sm">
+            <div class="p-3 flex items-start gap-3">
+              <div class="flex flex-col items-center gap-2 flex-shrink-0">
+                <img src="${(item.images && item.images[0]) || ''}" class="w-16 h-16 object-cover rounded-xl border border-stone-800">
+                <div class="flex items-center border border-stone-700 rounded-lg overflow-hidden bg-stone-900 text-xs font-bold">
+                  <button type="button" onclick="updateQty(${idx}, -1)" class="w-6 h-6 hover:bg-stone-800 text-stone-300">-</button>
+                  <span class="px-2 text-stone-100">${item.qty}</span>
+                  <button type="button" onclick="updateQty(${idx}, 1)" class="w-6 h-6 hover:bg-stone-800 text-stone-300">+</button>
+                </div>
+              </div>
+              <div class="flex-1 min-w-0 space-y-1">
+                <h5 class="text-xs font-bold text-stone-100 line-clamp-1">${item.name}</h5>
+                <p class="text-[11px] text-stone-400">Size: <b class="text-amber-400">${item.selectedSize}</b>${item.selectedColor && item.selectedColor !== 'Standard' ? ` • ${item.selectedColor}` : ''}</p>
+                <div class="flex items-center gap-1.5 text-[10px]">
+                  <span class="bg-emerald-600 text-white font-extrabold px-1.5 py-0.5 rounded">${ratingVal} ★</span>
+                  <span class="text-stone-400">(${revCnt})</span>
+                </div>
+                <div class="flex items-baseline gap-1.5 pt-0.5">
+                  ${discPct > 0 ? `<span class="text-emerald-400 font-extrabold text-xs">↓${discPct}%</span>` : ''}
+                  ${origP > item.price ? `<span class="text-[11px] line-through text-stone-500">₹${origP}</span>` : ''}
+                  <span class="text-sm font-black text-amber-400">₹${item.price}</span>
+                </div>
+                ${maxLeft > 0 && maxLeft <= 3 ? `<p class="text-[11px] font-extrabold text-rose-500">Only ${maxLeft} left</p>` : (maxLeft <= 0 ? `<p class="text-[11px] font-extrabold text-rose-500">Out of stock</p>` : '')}
+                <p class="text-[10px] text-stone-400">${etaLabel}</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 border-t border-stone-800 divide-x divide-stone-800 text-[11px] font-bold text-stone-300 bg-stone-900/60">
+              <button type="button" onclick="saveCartItemForLater(${idx})" class="py-2 hover:bg-stone-800 hover:text-amber-300 transition flex items-center justify-center gap-1"><i class="fa-regular fa-bookmark"></i> Save for later</button>
+              <button type="button" onclick="cart.splice(${idx}, 1); persistCartLocal(); updateCartUI();" class="py-2 hover:bg-stone-800 hover:text-rose-400 transition flex items-center justify-center gap-1"><i class="fa-regular fa-trash-can"></i> Remove</button>
+              <button type="button" onclick="buySingleCartItemNow(${idx})" class="py-2 hover:bg-stone-800 hover:text-emerald-400 transition flex items-center justify-center gap-1"><i class="fa-solid fa-bolt text-amber-400"></i> Buy this now</button>
+            </div>
+          </div>`;
+      }).join('');
+
       document.getElementById('subTotalDisplay').innerText = `₹${subTotal}`; document.getElementById('discountDisplay').innerText = `-₹${discountAmt}`; document.getElementById('finalTotalDisplay').innerText = `₹${finalAmt}`;
     }
 
@@ -1912,8 +2096,16 @@
     async function fetchMyOrders() {
       const phone = document.getElementById('myOrdersPhoneInput').value.trim();
       if (!phone) return alert("Enter mobile number or Order ID!");
+      const clean10 = phone.replace(/[^0-9]/g, '');
+      if (clean10.length === 10) {
+        const existingProf = JSON.parse(localStorage.getItem('aura_customer_profile') || '{}');
+        localStorage.setItem('aura_customer_profile', JSON.stringify({ ...existingProf, phone: clean10 }));
+      }
       const res = await fetch(`/api/orders/track?q=${encodeURIComponent(phone)}`);
       const data = await res.json();
+      const hasNonCancelled = (data.orders || []).some(o => o.status !== 'Cancelled');
+      if (hasNonCancelled) localStorage.setItem('aura_first_order_completed', 'true');
+      else localStorage.removeItem('aura_first_order_completed');
       const walletBanner = document.getElementById('myWalletSummaryBanner');
       if (typeof data.walletCoins === 'number' && phone.replace(/[^0-9]/g, '').length === 10) {
         document.getElementById('myWalletCoinsCount').innerText = data.walletCoins;
