@@ -9,16 +9,30 @@ const axios = require('axios');
 const FormDataNode = require('form-data');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const DEFAULT_ADMIN_PIN = process.env.ADMIN_PIN || "admin123";
-const JWT_SECRET = process.env.JWT_SECRET || (process.env.MONGO_URI || "aura_secret_key_2026").slice(0, 32);
+if (!process.env.ADMIN_PIN) {
+  console.warn('⚠️ SECURITY WARNING: ADMIN_PIN is not set in environment variables! Set ADMIN_PIN in Render.');
+}
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️ SECURITY WARNING: JWT_SECRET is not set! Using ephemeral cryptographic fallback.');
+}
+
+const DEFAULT_ADMIN_PIN = process.env.ADMIN_PIN || "AURA@9821";
+const JWT_SECRET = process.env.JWT_SECRET || crypto.createHash('sha256').update(String(process.env.MONGO_URI || crypto.randomBytes(32).toString('hex'))).digest('hex');
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const SUPPORT_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN;
 const MONGO_URI = process.env.MONGO_URI;
+
+// Dual OTP Provider Env Keys (Auto-activates when configured in Render)
+const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN || "";
+const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID || "";
+const WHATSAPP_TEMPLATE_NAME = process.env.WHATSAPP_TEMPLATE_NAME || "aura_otp";
+const FAST2SMS_API_KEY = process.env.FAST2SMS_API_KEY || "";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -28,7 +42,7 @@ cloudinary.config({
 
 const uploadMemory = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 55 * 1024 * 1024 }
+  limits: { fileSize: 20 * 1024 * 1024 }
 });
 
 const loginAttempts = new Map();
@@ -56,6 +70,101 @@ async function verifyAdminAuth(req) {
   } catch (err) {
     return false;
   }
+}
+
+// Customer 30-Day Persistent Session Token Verification
+const customerOtpStore = new Map(); // phone -> { code, expiresAt, attempts }
+const otpRateLimiter = new Map();   // ip/phone -> [timestamps]
+
+function isOtpGatewayConfigured() {
+  return Boolean((WHATSAPP_TOKEN && WHATSAPP_PHONE_ID) || FAST2SMS_API_KEY);
+}
+
+function getAuthenticatedCustomerPhone(req) {
+  const authHeader = req.headers['x-customer-token'] || req.headers['authorization'] || '';
+  const rawToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : String(authHeader).trim();
+  const queryToken = req.query && req.query.ctoken ? String(req.query.ctoken).trim() : '';
+  const token = rawToken || queryToken;
+  if (!token) return null;
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded && decoded.role === 'customer' && decoded.phone) {
+      return String(decoded.phone).replace(/[^0-9]/g, '');
+    }
+  } catch (e) {}
+  return null;
+}
+
+function maskCustomerAddress(addr) {
+  if (!addr) return "";
+  const parts = String(addr).split(',');
+  if (parts.length <= 2) return addr;
+  return `***, ${parts.slice(-2).join(',').trim()}`;
+}
+
+async function sendDualChannelOtp(cleanPhone, otpCode) {
+  let deliveredVia = [];
+  let errors = [];
+
+  // 1. Official Meta WhatsApp Cloud API (No DLT Required)
+  if (WHATSAPP_TOKEN && WHATSAPP_PHONE_ID) {
+    try {
+      await axios.post(
+        `https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_ID}/messages`,
+        {
+          messaging_product: "whatsapp",
+          to: `91${cleanPhone}`,
+          type: "template",
+          template: {
+            name: WHATSAPP_TEMPLATE_NAME,
+            language: { code: "en" },
+            components: [
+              { type: "body", parameters: [{ type: "text", text: String(otpCode) }] },
+              { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: String(otpCode) }] }
+            ]
+          }
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+            "Content-Type": "application/json"
+          },
+          timeout: 8000
+        }
+      );
+      deliveredVia.push("WhatsApp");
+    } catch (waErr) {
+      errors.push("WhatsApp: " + (waErr.response?.data?.error?.message || waErr.message));
+    }
+  }
+
+  // 2. Fast2SMS API (Auto-active when FAST2SMS_API_KEY is added)
+  if (FAST2SMS_API_KEY) {
+    try {
+      await axios.post(
+        "https://www.fast2sms.com/dev/bulkV2",
+        {
+          route: "q",
+          message: `Your AURA Fine Store verification OTP is ${otpCode}. Valid for 5 minutes.`,
+          language: "english",
+          flash: 0,
+          numbers: cleanPhone
+        },
+        {
+          headers: {
+            authorization: FAST2SMS_API_KEY,
+            "Content-Type": "application/json"
+          },
+          timeout: 8000
+        }
+      );
+      deliveredVia.push("SMS");
+    } catch (smsErr) {
+      errors.push("SMS: " + (smsErr.response?.data?.message || smsErr.message));
+    }
+  }
+
+  return { deliveredVia, errors };
 }
 
 async function uploadToCloudinary(fileData, folder = 'aura_store') {
@@ -118,6 +227,7 @@ const productSchema = new mongoose.Schema({
   reviewsCount: Number,
   inStock: Boolean,
   showOnHome: { type: Boolean, default: true },
+  nonRefundable: { type: Boolean, default: false },
   sizeOptions: [String],
   sizeStock: { type: mongoose.Schema.Types.Mixed, default: {} },
   variantStock: { type: mongoose.Schema.Types.Mixed, default: {} },
@@ -162,6 +272,7 @@ const settingsSchema = new mongoose.Schema({
   freeGiftTitle: { type: String, default: "Luxury Surprise Jewellery Box" },
   coinsEarnPercent: { type: Number, default: 5 },
   maxCoinsRedeemPerOrder: { type: Number, default: 200 },
+  refundWindowDays: { type: Number, default: 7 },
   dealEndTime: { type: Number, default: 0 },
   adminPin: { type: String, default: "" },
   metaPixelId: { type: String, default: "" },
@@ -187,6 +298,9 @@ const orderSchema = new mongoose.Schema({
   coinsUsed: { type: Number, default: 0 },
   coinsEarned: { type: Number, default: 0 },
   coinsCredited: { type: Boolean, default: false },
+  coinsStatus: { type: String, default: "none" }, // none | pending_delivery | pending_refund_window | credited | forfeited
+  coinsUnlockAt: { type: Number, default: 0 },
+  isNonRefundableOrder: { type: Boolean, default: false },
   deliveryCharge: Number,
   couponCode: String,
   total: Number,
@@ -483,6 +597,41 @@ async function seedInitialData() {
     console.error('Seed error:', err.message);
   }
 }
+
+// Automatically credit pending coins whose refund window has passed
+async function processMaturedPendingCoins(phoneFilter = null) {
+  try {
+    const query = {
+      status: 'Delivered',
+      coinsCredited: false,
+      coinsEarned: { $gt: 0 },
+      coinsUnlockAt: { $gt: 0, $lte: Date.now() }
+    };
+    if (phoneFilter) query.phone = phoneFilter;
+
+    const maturedOrders = await Order.find(query);
+    for (const ord of maturedOrders) {
+      if (ord.phone) {
+        await Wallet.findOneAndUpdate(
+          { phone: ord.phone },
+          {
+            $setOnInsert: { phone: ord.phone },
+            $set: { customerName: ord.customerName, updatedAt: new Date() },
+            $inc: { coins: ord.coinsEarned }
+          },
+          { upsert: true }
+        );
+      }
+      ord.coinsCredited = true;
+      ord.coinsStatus = 'credited';
+      await ord.save();
+    }
+  } catch (e) {
+    console.error('Mature coins sweep error:', e.message);
+  }
+}
+setInterval(() => { processMaturedPendingCoins(); }, 10 * 60 * 1000);
+
 function generateOrderInvoicePDF(order) {
   return new Promise((resolve, reject) => {
     try {
@@ -807,9 +956,29 @@ async function forwardSupportToTelegram(order, issueText, files) {
   }
 }
 
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (
+      origin.includes('aurafinestore.in') ||
+      origin.endsWith('.onrender.com') ||
+      origin.startsWith('http://localhost') ||
+      origin.startsWith('http://127.0.0.1') ||
+      allowedOrigins.includes(origin)
+    ) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS policy: Origin not allowed'), false);
+  },
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/store', async (req, res) => {
@@ -840,6 +1009,8 @@ app.get('/api/store', async (req, res) => {
           freeGiftTitle: settings.freeGiftTitle || "Luxury Surprise Jewellery Box",
           coinsEarnPercent: settings.coinsEarnPercent ?? 5,
           maxCoinsRedeemPerOrder: settings.maxCoinsRedeemPerOrder ?? 200,
+          refundWindowDays: settings.refundWindowDays ?? 7,
+          otpEnabled: isOtpGatewayConfigured(),
           dealEndTime: settings.dealEndTime,
           metaPixelId: settings.metaPixelId || "",
           firstOrderPopupEnabled: settings.firstOrderPopupEnabled !== false,
@@ -856,6 +1027,8 @@ app.get('/api/store', async (req, res) => {
           freeGiftTitle: "Luxury Surprise Jewellery Box",
           coinsEarnPercent: 5,
           maxCoinsRedeemPerOrder: 200,
+          refundWindowDays: 7,
+          otpEnabled: isOtpGatewayConfigured(),
           dealEndTime: 0,
           metaPixelId: "",
           firstOrderPopupEnabled: true,
@@ -876,21 +1049,160 @@ app.get('/api/store', async (req, res) => {
   }
 });
 
-app.get('/api/wallet/:phone', async (req, res) => {
+// Customer OTP Send & Verify Endpoints (30-Day Persistent Login Session)
+app.post('/api/auth/send-otp', async (req, res) => {
   try {
-    const cleanPhone = String(req.params.phone || '').replace(/[^0-9]/g, '');
-    if (cleanPhone.length !== 10) return res.json({ success: true, coins: 0, hasPriorOrders: false });
-    const [wallet, priorOrder] = await Promise.all([
-      Wallet.findOne({ phone: cleanPhone }).lean(),
-      Order.findOne({ phone: cleanPhone, status: { $ne: 'Cancelled' } }).lean()
-    ]);
+    const cleanPhone = String(req.body.phone || '').replace(/[^0-9]/g, '');
+    const customerName = String(req.body.customerName || 'Customer').trim().slice(0, 60);
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      return res.status(400).json({ success: false, message: "Please enter a valid 10-digit Indian mobile number!" });
+    }
+
+    if (!isOtpGatewayConfigured()) {
+      return res.json({
+        success: true,
+        otpRequired: false,
+        message: "OTP gateway not configured yet; proceeding directly."
+      });
+    }
+
+    const now = Date.now();
+    const recent = (otpRateLimiter.get(cleanPhone) || []).filter(t => now - t < 15 * 60 * 1000);
+    if (recent.length >= 4) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many OTP requests for this number. Please try again after 15 minutes."
+      });
+    }
+
+    const otpCode = String(crypto.randomInt(100000, 999999));
+    const { deliveredVia, errors } = await sendDualChannelOtp(cleanPhone, otpCode);
+
+    if (deliveredVia.length === 0) {
+      console.error("OTP Delivery Failed:", errors);
+      return res.status(502).json({
+        success: false,
+        message: "Could not send OTP right now. Please verify your mobile number or try again shortly."
+      });
+    }
+
+    customerOtpStore.set(cleanPhone, {
+      code: otpCode,
+      customerName,
+      expiresAt: now + 5 * 60 * 1000,
+      attempts: 0
+    });
+    recent.push(now);
+    otpRateLimiter.set(cleanPhone, recent);
+
     res.json({
       success: true,
+      otpRequired: true,
+      channels: deliveredVia,
+      message: `6-digit OTP sent via ${deliveredVia.join(' & ')} to +91 ${cleanPhone}`
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to send OTP." });
+  }
+});
+
+app.post('/api/auth/verify-otp', async (req, res) => {
+  try {
+    const cleanPhone = String(req.body.phone || '').replace(/[^0-9]/g, '');
+    const inputOtp = String(req.body.otp || '').trim();
+    const customerName = String(req.body.customerName || '').trim().slice(0, 60);
+
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      return res.status(400).json({ success: false, message: "Invalid mobile number." });
+    }
+
+    const record = customerOtpStore.get(cleanPhone);
+    if (!record || Date.now() > record.expiresAt) {
+      customerOtpStore.delete(cleanPhone);
+      return res.status(400).json({ success: false, message: "OTP has expired. Please request a new OTP." });
+    }
+
+    record.attempts += 1;
+    if (record.attempts > 5) {
+      customerOtpStore.delete(cleanPhone);
+      return res.status(429).json({ success: false, message: "Too many wrong OTP attempts. Request a new OTP." });
+    }
+
+    if (record.code !== inputOtp) {
+      return res.status(401).json({ success: false, message: "Incorrect OTP! Please check and try again." });
+    }
+
+    customerOtpStore.delete(cleanPhone);
+    await processMaturedPendingCoins(cleanPhone);
+
+    const finalName = customerName || record.customerName || "Customer";
+    const customerToken = jwt.sign(
+      { role: 'customer', phone: cleanPhone, name: finalName },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    const [wallet, priorOrder, pendingCoinOrders] = await Promise.all([
+      Wallet.findOne({ phone: cleanPhone }).lean(),
+      Order.findOne({ phone: cleanPhone, status: { $ne: 'Cancelled' } }).lean(),
+      Order.find({ phone: cleanPhone, status: 'Delivered', coinsCredited: false, coinsEarned: { $gt: 0 } }).lean()
+    ]);
+
+    const pendingCoins = pendingCoinOrders.reduce((s, o) => s + (o.coinsEarned || 0), 0);
+
+    res.json({
+      success: true,
+      customerToken,
+      phone: cleanPhone,
+      name: finalName,
       coins: wallet ? (wallet.coins || 0) : 0,
+      pendingCoins,
       hasPriorOrders: Boolean(priorOrder)
     });
   } catch (err) {
-    res.json({ success: true, coins: 0, hasPriorOrders: false });
+    res.status(500).json({ success: false, message: "OTP verification failed." });
+  }
+});
+
+// Privacy-Protected Wallet Lookup (Requires 30-day verified Customer Token when OTP is active, or matching prior order verification)
+app.get('/api/wallet/:phone', async (req, res) => {
+  try {
+    const cleanPhone = String(req.params.phone || '').replace(/[^0-9]/g, '');
+    if (cleanPhone.length !== 10) return res.json({ success: true, coins: 0, pendingCoins: 0, hasPriorOrders: false });
+
+    await processMaturedPendingCoins(cleanPhone);
+
+    const authedPhone = getAuthenticatedCustomerPhone(req);
+    const isAdmin = await verifyAdminAuth(req);
+
+    // If OTP gateway is enabled, only the verified owner of this phone (via 30-day token) can view coin balances
+    if (isOtpGatewayConfigured() && !isAdmin && authedPhone !== cleanPhone) {
+      const priorOrder = await Order.findOne({ phone: cleanPhone, status: { $ne: 'Cancelled' } }).lean();
+      return res.json({
+        success: true,
+        coins: 0,
+        pendingCoins: 0,
+        requiresVerification: true,
+        hasPriorOrders: Boolean(priorOrder)
+      });
+    }
+
+    const [wallet, priorOrder, pendingCoinOrders] = await Promise.all([
+      Wallet.findOne({ phone: cleanPhone }).lean(),
+      Order.findOne({ phone: cleanPhone, status: { $ne: 'Cancelled' } }).lean(),
+      Order.find({ phone: cleanPhone, status: 'Delivered', coinsCredited: false, coinsEarned: { $gt: 0 } }).lean()
+    ]);
+
+    const pendingCoins = pendingCoinOrders.reduce((s, o) => s + (o.coinsEarned || 0), 0);
+
+    res.json({
+      success: true,
+      coins: wallet ? (wallet.coins || 0) : 0,
+      pendingCoins,
+      hasPriorOrders: Boolean(priorOrder)
+    });
+  } catch (err) {
+    res.json({ success: true, coins: 0, pendingCoins: 0, hasPriorOrders: false });
   }
 });
 
@@ -1171,28 +1483,39 @@ app.delete('/api/admin/products/:id/reviews/:reviewId', async (req, res) => {
 
 app.get('/api/support/search', async (req, res) => {
   try {
-    const query = (req.query.q || "").trim().toLowerCase();
-    const cleanDigits = query.replace(/[^0-9]/g, '');
-    if (!query || (cleanDigits.length < 6 && query.length < 4)) {
+    const authedPhone = getAuthenticatedCustomerPhone(req);
+    const rawPhone = String(req.query.phone || req.query.q || '').replace(/[^0-9]/g, '');
+    const orderIdParam = String(req.query.orderId || '').trim().toUpperCase();
+
+    const targetPhone = authedPhone || (rawPhone.length === 10 ? rawPhone : '');
+    if (!targetPhone && !orderIdParam) {
       return res.json({ success: true, orders: [], tickets: [] });
     }
 
-    const [allOrders, allTickets] = await Promise.all([
-      Order.find().sort({ createdAt: -1 }).lean(),
-      SupportTicket.find().sort({ createdAt: -1 }).lean()
+    // Require 10-digit phone (or verified customer token) so strangers cannot enumerate tickets by Order ID alone
+    if (!targetPhone || targetPhone.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter your registered 10-digit mobile number to access support.",
+        orders: [],
+        tickets: []
+      });
+    }
+
+    const orderFilter = orderIdParam ? { phone: targetPhone, id: orderIdParam } : { phone: targetPhone };
+    const ticketFilter = orderIdParam ? { phone: targetPhone, orderId: orderIdParam } : { phone: targetPhone };
+
+    const [matchedOrders, matchedTickets] = await Promise.all([
+      Order.find(orderFilter).sort({ createdAt: -1 }).limit(25).lean(),
+      SupportTicket.find(ticketFilter).sort({ createdAt: -1 }).limit(25).lean()
     ]);
 
-    const matchedOrders = allOrders.filter(o =>
-      (cleanDigits.length >= 6 && o.phone && o.phone.includes(cleanDigits)) ||
-      (o.id && o.id.toLowerCase() === query)
-    );
+    const safeOrders = matchedOrders.map(o => ({
+      ...o,
+      address: authedPhone === targetPhone ? o.address : maskCustomerAddress(o.address)
+    }));
 
-    const matchedTickets = allTickets.filter(t =>
-      (cleanDigits.length >= 6 && t.phone && t.phone.includes(cleanDigits)) ||
-      (t.orderId && t.orderId.toLowerCase() === query)
-    );
-
-    res.json({ success: true, orders: matchedOrders, tickets: matchedTickets });
+    res.json({ success: true, orders: safeOrders, tickets: matchedTickets });
   } catch (err) {
     res.status(500).json({ success: false, orders: [], tickets: [] });
   }
@@ -1264,7 +1587,7 @@ app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
 app.post('/api/admin/products', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, sizeStock, variantStock, colorOptions, badge, images, description } = req.body;
+    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, nonRefundable, sizeOptions, sizeStock, variantStock, colorOptions, badge, images, description } = req.body;
 
     const uploadedUrls = await Promise.all(
       (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
@@ -1291,6 +1614,7 @@ app.post('/api/admin/products', async (req, res) => {
       costPrice: Number(costPrice) || 0,
       stockQuantity: finalTotalStock,
       showOnHome: showOnHome !== false,
+      nonRefundable: Boolean(nonRefundable),
       sizeOptions: sizeOptions || [],
       sizeStock: parsedSizeStock,
       variantStock: parsedVariantStock,
@@ -1312,7 +1636,7 @@ app.post('/api/admin/products', async (req, res) => {
 app.put('/api/admin/products/:id', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, sizeOptions, sizeStock, variantStock, colorOptions, badge, images, description } = req.body;
+    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, nonRefundable, sizeOptions, sizeStock, variantStock, colorOptions, badge, images, description } = req.body;
 
     const uploadedUrls = await Promise.all(
       (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
@@ -1341,6 +1665,7 @@ app.put('/api/admin/products/:id', async (req, res) => {
         costPrice: Number(costPrice) || 0,
         stockQuantity: finalTotalStock,
         showOnHome: showOnHome !== false,
+        nonRefundable: Boolean(nonRefundable),
         sizeOptions,
         sizeStock: parsedSizeStock,
         variantStock: parsedVariantStock,
@@ -1489,7 +1814,7 @@ app.post('/api/admin/store-settings', async (req, res) => {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     const {
       deliveryCharge, codAdvancePercent, maxCodOrderAmount,
-      freeGiftThreshold, freeGiftTitle, coinsEarnPercent, maxCoinsRedeemPerOrder,
+      freeGiftThreshold, freeGiftTitle, coinsEarnPercent, maxCoinsRedeemPerOrder, refundWindowDays,
       dealEndTime, metaPixelId,
       firstOrderPopupEnabled, firstOrderPopupTitle, firstOrderPopupSubtitle, firstOrderPopupCoupon, firstOrderPopupImage
     } = req.body;
@@ -1502,6 +1827,7 @@ app.post('/api/admin/store-settings', async (req, res) => {
     if (freeGiftTitle !== undefined) updateFields.freeGiftTitle = String(freeGiftTitle || "Luxury Surprise Jewellery Box").trim();
     if (coinsEarnPercent !== undefined) updateFields.coinsEarnPercent = Math.max(0, Math.min(50, Number(coinsEarnPercent) || 0));
     if (maxCoinsRedeemPerOrder !== undefined) updateFields.maxCoinsRedeemPerOrder = Math.max(0, Number(maxCoinsRedeemPerOrder) || 0);
+    if (refundWindowDays !== undefined) updateFields.refundWindowDays = Math.max(0, Math.min(60, Number(refundWindowDays) ?? 7));
     if (dealEndTime !== undefined) updateFields.dealEndTime = Number(dealEndTime) || 0;
     if (metaPixelId !== undefined) updateFields.metaPixelId = String(metaPixelId || "").trim();
 
@@ -1544,7 +1870,91 @@ app.post('/api/admin/change-pin', async (req, res) => {
   }
 });
 
+// Atomic Stock Deduction Helper with Rollback Support
+async function atomicallyDeductStock(verifiedItems, prodMap) {
+  const appliedOps = [];
+  try {
+    for (const vItem of verifiedItems) {
+      const dbProd = prodMap.get(vItem.id);
+      const varMap = (dbProd.variantStock && typeof dbProd.variantStock === 'object') ? dbProd.variantStock : {};
+      const vKey = `${vItem.selectedColor}__${vItem.selectedSize}`;
+      const sizeMap = (dbProd.sizeStock && typeof dbProd.sizeStock === 'object') ? dbProd.sizeStock : {};
+
+      if (Object.keys(varMap).length > 0 && Object.prototype.hasOwnProperty.call(varMap, vKey)) {
+        const updated = await Product.findOneAndUpdate(
+          { id: vItem.id, [`variantStock.${vKey}`]: { $gte: vItem.qty } },
+          { $inc: { [`variantStock.${vKey}`]: -vItem.qty, stockQuantity: -vItem.qty } },
+          { new: true }
+        );
+        if (!updated) {
+          throw new Error(`Sorry! "${vItem.name}" (${vItem.selectedColor}, Size: ${vItem.selectedSize}) just went out of stock.`);
+        }
+        if (updated.stockQuantity <= 0 && updated.inStock) {
+          updated.stockQuantity = Math.max(0, updated.stockQuantity);
+          updated.inStock = updated.stockQuantity > 0;
+          await updated.save();
+        }
+        appliedOps.push({ type: 'variant', id: vItem.id, vKey, qty: vItem.qty });
+      } else if (Object.keys(sizeMap).length > 0 && Object.prototype.hasOwnProperty.call(sizeMap, vItem.selectedSize)) {
+        const updated = await Product.findOneAndUpdate(
+          { id: vItem.id, [`sizeStock.${vItem.selectedSize}`]: { $gte: vItem.qty } },
+          { $inc: { [`sizeStock.${vItem.selectedSize}`]: -vItem.qty, stockQuantity: -vItem.qty } },
+          { new: true }
+        );
+        if (!updated) {
+          throw new Error(`Sorry! Size "${vItem.selectedSize}" of "${vItem.name}" just went out of stock.`);
+        }
+        if (updated.stockQuantity <= 0 && updated.inStock) {
+          updated.stockQuantity = Math.max(0, updated.stockQuantity);
+          updated.inStock = updated.stockQuantity > 0;
+          await updated.save();
+        }
+        appliedOps.push({ type: 'size', id: vItem.id, sz: vItem.selectedSize, qty: vItem.qty });
+      } else {
+        const updated = await Product.findOneAndUpdate(
+          { id: vItem.id, stockQuantity: { $gte: vItem.qty } },
+          { $inc: { stockQuantity: -vItem.qty } },
+          { new: true }
+        );
+        if (!updated) {
+          throw new Error(`Sorry! "${vItem.name}" just went out of stock.`);
+        }
+        if (updated.stockQuantity <= 0 && updated.inStock) {
+          updated.inStock = false;
+          await updated.save();
+        }
+        appliedOps.push({ type: 'total', id: vItem.id, qty: vItem.qty });
+      }
+    }
+    return { ok: true, appliedOps };
+  } catch (err) {
+    // Rollback any already-deducted items in this batch
+    for (const op of appliedOps) {
+      if (op.type === 'variant') {
+        await Product.findOneAndUpdate(
+          { id: op.id },
+          { $inc: { [`variantStock.${op.vKey}`]: op.qty, stockQuantity: op.qty }, $set: { inStock: true } }
+        ).catch(() => {});
+      } else if (op.type === 'size') {
+        await Product.findOneAndUpdate(
+          { id: op.id },
+          { $inc: { [`sizeStock.${op.sz}`]: op.qty, stockQuantity: op.qty }, $set: { inStock: true } }
+        ).catch(() => {});
+      } else {
+        await Product.findOneAndUpdate(
+          { id: op.id },
+          { $inc: { stockQuantity: op.qty }, $set: { inStock: true } }
+        ).catch(() => {});
+      }
+    }
+    return { ok: false, message: err.message };
+  }
+}
+
 app.post('/api/orders', async (req, res) => {
+  let deductedCoinsPhone = "";
+  let deductedCoinsAmount = 0;
+
   try {
     const {
       customerName, phone, pincode, city, state,
@@ -1553,9 +1963,25 @@ app.post('/api/orders', async (req, res) => {
       paymentMethod, utrNumber
     } = req.body;
 
+    const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      return res.status(400).json({ success: false, message: "Please enter a valid 10-digit Indian mobile number!" });
+    }
+
+    // Enforce OTP verification when WhatsApp/SMS OTP gateway is configured
+    const authedPhone = getAuthenticatedCustomerPhone(req);
+    if (isOtpGatewayConfigured() && authedPhone !== cleanPhone) {
+      return res.status(401).json({
+        success: false,
+        requiresOtp: true,
+        message: "Please verify your mobile number with OTP before placing the order."
+      });
+    }
+
     const cleanUtr = String(utrNumber || "").trim();
-    const fakeUtrs = new Set(["000000000000", "111111111111", "222222222222", "123456789012", "999999999999"]);
-    if (!/^\d{12}$/.test(cleanUtr) || fakeUtrs.has(cleanUtr)) {
+    const isRepeatedDigits = /^(\d){11}$/.test(cleanUtr);
+    const fakeUtrs = new Set(["123456789012", "123456123456", "987654321098", "012345678901"]);
+    if (!/^\d{12}$/.test(cleanUtr) || isRepeatedDigits || fakeUtrs.has(cleanUtr)) {
       return res.status(400).json({ success: false, message: "Please enter a valid 12-digit numeric UPI UTR number!" });
     }
 
@@ -1563,15 +1989,12 @@ app.post('/api/orders', async (req, res) => {
       return res.status(400).json({ success: false, message: "Your bag is empty!" });
     }
 
-    const cleanPhoneForCheck = String(phone || '').replace(/[^0-9]/g, '');
-    if (cleanPhoneForCheck.length === 10) {
-      const pendingCount = await Order.countDocuments({ phone: cleanPhoneForCheck, status: "Pending Verification" });
-      if (pendingCount >= 2) {
-        return res.status(400).json({
-          success: false,
-          message: "You already have 2 orders awaiting payment verification. Please wait for verification before placing another order."
-        });
-      }
+    const pendingCount = await Order.countDocuments({ phone: cleanPhone, status: "Pending Verification" });
+    if (pendingCount >= 2) {
+      return res.status(400).json({
+        success: false,
+        message: "You already have 2 orders awaiting payment verification. Please wait for verification before placing another order."
+      });
     }
 
     const existingUtrOrder = await Order.findOne({ utrNumber: cleanUtr }).lean();
@@ -1589,21 +2012,7 @@ app.post('/api/orders', async (req, res) => {
     let verifiedSubTotal = 0;
     let verifiedTotalCost = 0;
     const verifiedItems = [];
-
-    // Aggregate requested quantities per product, per size, and per Color+Size variant
-    const requestedPerProd = new Map();
-    const requestedPerSize = new Map();
-    const requestedPerVariant = new Map();
-
-    for (const cartItem of items) {
-      const pid = Number(cartItem.id);
-      const sz = String(cartItem.selectedSize || "Standard").trim();
-      const col = String(cartItem.selectedColor || "Standard").trim();
-      const qty = Math.max(1, parseInt(cartItem.qty, 10) || 1);
-      requestedPerProd.set(pid, (requestedPerProd.get(pid) || 0) + qty);
-      requestedPerSize.set(`${pid}__${sz}`, (requestedPerSize.get(`${pid}__${sz}`) || 0) + qty);
-      requestedPerVariant.set(`${pid}__${col}__${sz}`, (requestedPerVariant.get(`${pid}__${col}__${sz}`) || 0) + qty);
-    }
+    let allItemsNonRefundable = true;
 
     for (const cartItem of items) {
       const dbProd = prodMap.get(Number(cartItem.id));
@@ -1613,43 +2022,9 @@ app.post('/api/orders', async (req, res) => {
       const qty = Math.max(1, parseInt(cartItem.qty, 10) || 1);
       const selSize = String(cartItem.selectedSize || "Standard").trim();
       const selColor = String(cartItem.selectedColor || "Standard").trim();
-      const varKey = `${selColor}__${selSize}`;
 
-      const varMap = (dbProd.variantStock && typeof dbProd.variantStock === 'object') ? dbProd.variantStock : {};
-      const hasVarMap = Object.keys(varMap).length > 0;
-      const sizeMap = (dbProd.sizeStock && typeof dbProd.sizeStock === 'object') ? dbProd.sizeStock : {};
-      const hasSizeMap = Object.keys(sizeMap).length > 0;
-
-      if (hasVarMap && Object.prototype.hasOwnProperty.call(varMap, varKey)) {
-        const availVarQty = Number(varMap[varKey]) || 0;
-        const reqVarQty = requestedPerVariant.get(`${dbProd.id}__${varKey}`) || qty;
-        if (availVarQty < reqVarQty) {
-          return res.status(400).json({
-            success: false,
-            message: availVarQty <= 0
-              ? `Sorry! "${dbProd.name}" (${selColor}, Size: ${selSize}) is Out of Stock.`
-              : `Insufficient stock for "${dbProd.name}" (${selColor}, Size: ${selSize}). Only ${availVarQty} left.`
-          });
-        }
-      } else if (hasSizeMap && Object.prototype.hasOwnProperty.call(sizeMap, selSize)) {
-        const availSizeQty = Number(sizeMap[selSize]) || 0;
-        const reqSizeQty = requestedPerSize.get(`${dbProd.id}__${selSize}`) || qty;
-        if (availSizeQty < reqSizeQty) {
-          return res.status(400).json({
-            success: false,
-            message: availSizeQty <= 0
-              ? `Sorry! Size "${selSize}" of "${dbProd.name}" is Out of Stock.`
-              : `Insufficient stock for "${dbProd.name}" (Size: ${selSize}). Only ${availSizeQty} left.`
-          });
-        }
-      } else {
-        const reqTotalQty = requestedPerProd.get(dbProd.id) || qty;
-        if ((dbProd.stockQuantity || 0) < reqTotalQty) {
-          return res.status(400).json({
-            success: false,
-            message: `Insufficient stock for "${dbProd.name}". Only ${dbProd.stockQuantity} left.`
-          });
-        }
+      if (!dbProd.nonRefundable) {
+        allItemsNonRefundable = false;
       }
 
       verifiedSubTotal += dbProd.price * qty;
@@ -1660,6 +2035,7 @@ app.post('/api/orders', async (req, res) => {
         name: dbProd.name,
         price: dbProd.price,
         costPrice: dbProd.costPrice || 0,
+        nonRefundable: Boolean(dbProd.nonRefundable),
         selectedSize: selSize,
         selectedColor: selColor,
         qty,
@@ -1668,7 +2044,6 @@ app.post('/api/orders', async (req, res) => {
     }
 
     const storeSettings = await Settings.findOne({ key: 'main' }).lean();
-    const cleanPhone = String(phone).replace(/[^0-9]/g, '');
 
     let verifiedDiscount = 0;
     let verifiedCouponCode = "None";
@@ -1678,7 +2053,7 @@ app.post('/api/orders', async (req, res) => {
         ? String(storeSettings.firstOrderPopupCoupon).trim().toUpperCase()
         : "";
 
-      if (firstOrderCode && cleanCode === firstOrderCode && cleanPhone.length === 10) {
+      if (firstOrderCode && cleanCode === firstOrderCode) {
         const priorOrder = await Order.findOne({ phone: cleanPhone, status: { $ne: 'Cancelled' } }).lean();
         if (priorOrder) {
           return res.status(400).json({
@@ -1710,16 +2085,26 @@ app.post('/api/orders', async (req, res) => {
 
     let afterCouponValue = Math.max(1, verifiedSubTotal - verifiedDiscount);
 
+    // Check redeemable coins (only allow if verified customer token matches or OTP gateway is off)
     let verifiedCoinsUsed = 0;
-    if (useAuraCoins && cleanPhone.length === 10) {
-      const wallet = await Wallet.findOne({ phone: cleanPhone });
+    const canRedeemCoins = !isOtpGatewayConfigured() || authedPhone === cleanPhone;
+    if (useAuraCoins && canRedeemCoins) {
+      await processMaturedPendingCoins(cleanPhone);
+      const wallet = await Wallet.findOne({ phone: cleanPhone }).lean();
       if (wallet && wallet.coins > 0) {
         const redeemable = Math.min(wallet.coins, maxCoinsRedeem, Math.max(0, afterCouponValue - 1));
         if (redeemable > 0) {
-          verifiedCoinsUsed = redeemable;
-          wallet.coins -= redeemable;
-          wallet.updatedAt = new Date();
-          await wallet.save();
+          // Atomically deduct coins only if sufficient balance exists
+          const updatedWallet = await Wallet.findOneAndUpdate(
+            { phone: cleanPhone, coins: { $gte: redeemable } },
+            { $inc: { coins: -redeemable }, $set: { updatedAt: new Date() } },
+            { new: true }
+          );
+          if (updatedWallet) {
+            verifiedCoinsUsed = redeemable;
+            deductedCoinsPhone = cleanPhone;
+            deductedCoinsAmount = redeemable;
+          }
         }
       }
     }
@@ -1728,10 +2113,22 @@ app.post('/api/orders', async (req, res) => {
     const normalizedMode = paymentMethod === 'COD' ? 'COD' : 'UPI';
 
     if (normalizedMode === 'COD' && maxCodLimit > 0 && netBagValue > maxCodLimit) {
+      if (deductedCoinsAmount > 0) {
+        await Wallet.findOneAndUpdate({ phone: deductedCoinsPhone }, { $inc: { coins: deductedCoinsAmount } }).catch(() => {});
+      }
       return res.status(400).json({
         success: false,
         message: `Cash on Delivery is disabled for orders above ₹${maxCodLimit}. Please select 100% Prepaid UPI!`
       });
+    }
+
+    // Atomically deduct stock across all items (prevents overselling under concurrent orders)
+    const stockResult = await atomicallyDeductStock(verifiedItems, prodMap);
+    if (!stockResult.ok) {
+      if (deductedCoinsAmount > 0) {
+        await Wallet.findOneAndUpdate({ phone: deductedCoinsPhone }, { $inc: { coins: deductedCoinsAmount } }).catch(() => {});
+      }
+      return res.status(400).json({ success: false, message: stockResult.message });
     }
 
     const appliedDelivery = normalizedMode === 'COD' ? deliveryFeeSetting : 0;
@@ -1745,31 +2142,6 @@ app.post('/api/orders', async (req, res) => {
     const verifiedBalanceDue = verifiedFinalTotal - verifiedAdvancePaid;
     const estimatedNetProfit = netBagValue - verifiedTotalCost;
 
-    for (const vItem of verifiedItems) {
-      const p = prodMap.get(vItem.id);
-      if (p) {
-        const varMap = (p.variantStock && typeof p.variantStock === 'object') ? { ...p.variantStock } : {};
-        const vKey = `${vItem.selectedColor}__${vItem.selectedSize}`;
-        const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
-
-        if (Object.keys(varMap).length > 0 && Object.prototype.hasOwnProperty.call(varMap, vKey)) {
-          varMap[vKey] = Math.max(0, (Number(varMap[vKey]) || 0) - vItem.qty);
-          p.variantStock = varMap;
-          p.markModified('variantStock');
-          p.stockQuantity = Object.values(varMap).reduce((s, n) => s + (Number(n) || 0), 0);
-        } else if (Object.keys(sizeMap).length > 0 && Object.prototype.hasOwnProperty.call(sizeMap, vItem.selectedSize)) {
-          sizeMap[vItem.selectedSize] = Math.max(0, (Number(sizeMap[vItem.selectedSize]) || 0) - vItem.qty);
-          p.sizeStock = sizeMap;
-          p.markModified('sizeStock');
-          p.stockQuantity = Object.values(sizeMap).reduce((s, n) => s + (Number(n) || 0), 0);
-        } else {
-          p.stockQuantity = Math.max(0, (p.stockQuantity || 0) - vItem.qty);
-        }
-        p.inStock = p.stockQuantity > 0;
-        await p.save();
-      }
-    }
-
     const structuredAddress = `${houseNoStreet}, ${villageOrCity}, P.O: ${postOffice}${policeStation ? ', P.S: ' + policeStation : ''}${landmark ? ' (Landmark: ' + landmark + ')' : ''}, ${city}, ${state} - ${pincode}`;
     const orderId = 'AUR-' + Math.floor(100000 + Math.random() * 900000);
     const orderDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
@@ -1777,7 +2149,7 @@ app.post('/api/orders', async (req, res) => {
 
     const order = await Order.create({
       id: orderId,
-      customerName,
+      customerName: String(customerName || '').trim(),
       phone: cleanPhone,
       address: structuredAddress,
       pincode,
@@ -1790,6 +2162,9 @@ app.post('/api/orders', async (req, res) => {
       coinsUsed: verifiedCoinsUsed,
       coinsEarned: potentialCoinsEarned,
       coinsCredited: false,
+      coinsStatus: potentialCoinsEarned > 0 ? "pending_delivery" : "none",
+      coinsUnlockAt: 0,
+      isNonRefundableOrder: allItemsNonRefundable,
       deliveryCharge: appliedDelivery,
       couponCode: verifiedCouponCode,
       total: verifiedFinalTotal,
@@ -1813,18 +2188,33 @@ app.post('/api/orders', async (req, res) => {
       success: true,
       orderId: order.id,
       verifiedTotal: verifiedFinalTotal,
-      coinsEarned: potentialCoinsEarned
+      coinsEarned: potentialCoinsEarned,
+      isNonRefundableOrder: allItemsNonRefundable
     });
     sendTelegramAlert(order).catch(e => console.error("Background Telegram error:", e.message));
   } catch (err) {
+    if (deductedCoinsAmount > 0 && deductedCoinsPhone) {
+      await Wallet.findOneAndUpdate({ phone: deductedCoinsPhone }, { $inc: { coins: deductedCoinsAmount } }).catch(() => {});
+    }
     res.status(500).json({ success: false, message: "Order creation failed" });
   }
 });
 
+// Privacy-Protected PDF Invoice Download (Requires verified Customer Token or matching ?phone=)
 app.get('/api/orders/:id/invoice', async (req, res) => {
   try {
     const order = await Order.findOne({ id: req.params.id }).lean();
     if (!order) return res.status(404).send("Order not found");
+
+    const isAdmin = await verifyAdminAuth(req);
+    const authedPhone = getAuthenticatedCustomerPhone(req);
+    const queryPhone = String(req.query.phone || '').replace(/[^0-9]/g, '');
+    const verifiedPhone = authedPhone || queryPhone;
+
+    if (!isAdmin && (!verifiedPhone || verifiedPhone !== String(order.phone || '').trim())) {
+      return res.status(403).send("Unauthorized: Please verify your registered mobile number to download this invoice.");
+    }
+
     const pdfBuffer = await generateOrderInvoicePDF(order);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="AURA_Invoice_${order.id}.pdf"`);
@@ -1867,22 +2257,57 @@ app.get('/api/admin/orders/:id/shipping-label', async (req, res) => {
   }
 });
 
+// Privacy-Protected Order Tracking & Wallet View (Direct MongoDB Query + Address Masking)
 app.get('/api/orders/track', async (req, res) => {
   try {
-    const query = (req.query.q || "").trim().toLowerCase();
-    const cleanDigits = query.replace(/[^0-9]/g, '');
-    const allOrders = await Order.find().sort({ createdAt: -1 }).lean();
-    const matched = allOrders.filter(o =>
-      o.id.toLowerCase() === query || (cleanDigits.length >= 6 && o.phone.includes(cleanDigits))
-    );
-    let walletCoins = 0;
-    if (cleanDigits.length === 10) {
-      const w = await Wallet.findOne({ phone: cleanDigits }).lean();
-      walletCoins = w ? (w.coins || 0) : 0;
+    const authedPhone = getAuthenticatedCustomerPhone(req);
+    const rawQ = String(req.query.q || '').trim();
+    const orderIdParam = String(req.query.orderId || '').trim().toUpperCase();
+    const phoneParam = String(req.query.phone || '').replace(/[^0-9]/g, '');
+
+    let targetPhone = authedPhone || (phoneParam.length === 10 ? phoneParam : '');
+    let targetOrderId = orderIdParam;
+
+    if (!targetPhone && !targetOrderId && rawQ) {
+      const digits = rawQ.replace(/[^0-9]/g, '');
+      if (digits.length === 10) targetPhone = digits;
+      else if (rawQ.toUpperCase().startsWith('AUR-')) targetOrderId = rawQ.toUpperCase();
     }
-    res.json({ success: true, orders: matched, walletCoins });
+
+    // Prevent tracking by Order ID alone without registered phone verification
+    if (!targetPhone || targetPhone.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter your registered 10-digit mobile number to track your orders.",
+        orders: [],
+        walletCoins: 0,
+        pendingCoins: 0
+      });
+    }
+
+    await processMaturedPendingCoins(targetPhone);
+
+    const dbQuery = targetOrderId ? { phone: targetPhone, id: targetOrderId } : { phone: targetPhone };
+    const matched = await Order.find(dbQuery).sort({ createdAt: -1 }).limit(30).lean();
+
+    let walletCoins = 0;
+    let pendingCoins = 0;
+    if (!isOtpGatewayConfigured() || authedPhone === targetPhone) {
+      const w = await Wallet.findOne({ phone: targetPhone }).lean();
+      walletCoins = w ? (w.coins || 0) : 0;
+      pendingCoins = matched
+        .filter(o => o.status === 'Delivered' && !o.coinsCredited && (o.coinsEarned || 0) > 0)
+        .reduce((s, o) => s + (o.coinsEarned || 0), 0);
+    }
+
+    const safeOrders = matched.map(o => ({
+      ...o,
+      address: authedPhone === targetPhone ? o.address : maskCustomerAddress(o.address)
+    }));
+
+    res.json({ success: true, orders: safeOrders, walletCoins, pendingCoins });
   } catch (err) {
-    res.status(500).json({ success: false, orders: [], walletCoins: 0 });
+    res.status(500).json({ success: false, orders: [], walletCoins: 0, pendingCoins: 0 });
   }
 });
 
@@ -1956,6 +2381,8 @@ app.post('/api/admin/orders', async (req, res) => {
           freeGiftTitle: settings.freeGiftTitle || "Luxury Surprise Jewellery Box",
           coinsEarnPercent: settings.coinsEarnPercent ?? 5,
           maxCoinsRedeemPerOrder: settings.maxCoinsRedeemPerOrder ?? 200,
+          refundWindowDays: settings.refundWindowDays ?? 7,
+          otpEnabled: isOtpGatewayConfigured(),
           dealEndTime: settings.dealEndTime,
           metaPixelId: settings.metaPixelId || "",
           firstOrderPopupEnabled: settings.firstOrderPopupEnabled !== false,
@@ -1972,6 +2399,8 @@ app.post('/api/admin/orders', async (req, res) => {
           freeGiftTitle: "Luxury Surprise Jewellery Box",
           coinsEarnPercent: 5,
           maxCoinsRedeemPerOrder: 200,
+          refundWindowDays: 7,
+          otpEnabled: isOtpGatewayConfigured(),
           dealEndTime: 0,
           metaPixelId: "",
           firstOrderPopupEnabled: true,
@@ -2077,6 +2506,7 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
           await p.save();
         }
       }
+      // Reverse earned coins if already credited
       if (order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
         const w = await Wallet.findOne({ phone: order.phone });
         if (w) {
@@ -2084,6 +2514,23 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
           await w.save();
         }
         order.coinsCredited = false;
+      }
+      if ((order.coinsEarned || 0) > 0) {
+        order.coinsStatus = 'forfeited';
+        order.coinsUnlockAt = 0;
+      }
+      // Refund customer's redeemed coins (coinsUsed) back to their Wallet when order is Cancelled
+      if ((order.coinsUsed || 0) > 0 && order.phone) {
+        await Wallet.findOneAndUpdate(
+          { phone: order.phone },
+          {
+            $setOnInsert: { phone: order.phone },
+            $set: { customerName: order.customerName, updatedAt: new Date() },
+            $inc: { coins: order.coinsUsed }
+          },
+          { upsert: true }
+        );
+        order.coinsUsed = 0;
       }
     } else if (prevStatus === 'Cancelled' && status !== 'Cancelled') {
       for (const item of (order.items || [])) {
@@ -2113,16 +2560,28 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
     }
 
     if (status === 'Delivered' && !order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
-      await Wallet.findOneAndUpdate(
-        { phone: order.phone },
-        {
-          $setOnInsert: { phone: order.phone },
-          $set: { customerName: order.customerName, updatedAt: new Date() },
-          $inc: { coins: order.coinsEarned }
-        },
-        { upsert: true }
-      );
-      order.coinsCredited = true;
+      const storeCfg = await Settings.findOne({ key: 'main' }).lean();
+      const refundDays = storeCfg ? (storeCfg.refundWindowDays ?? 7) : 7;
+
+      // Non-Refundable orders (or 0-day refund window) credit coins IMMEDIATELY on delivery;
+      // Refundable orders unlock coins automatically after the refund window passes.
+      if (order.isNonRefundableOrder || refundDays <= 0) {
+        await Wallet.findOneAndUpdate(
+          { phone: order.phone },
+          {
+            $setOnInsert: { phone: order.phone },
+            $set: { customerName: order.customerName, updatedAt: new Date() },
+            $inc: { coins: order.coinsEarned }
+          },
+          { upsert: true }
+        );
+        order.coinsCredited = true;
+        order.coinsStatus = 'credited';
+        order.coinsUnlockAt = Date.now();
+      } else {
+        order.coinsStatus = 'pending_refund_window';
+        order.coinsUnlockAt = Date.now() + (refundDays * 24 * 60 * 60 * 1000);
+      }
     }
 
     order.status = status;
