@@ -28,7 +28,7 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const SUPPORT_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN;
 const MONGO_URI = process.env.MONGO_URI;
 
-// Dual OTP Provider Env Keys (Auto-activates when configured in Render)
+// Customer WhatsApp OTP login has been removed; checkout is guest-only.
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
