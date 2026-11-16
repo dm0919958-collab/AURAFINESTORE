@@ -594,7 +594,11 @@ function generateOrderInvoicePDF(order) {
       doc.fillColor('#111827').fontSize(9.5).font('Helvetica-Bold').text('AURA Central Logistics Hub', 315, 150);
       doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text('Bolpur, Birbhum, WB - 731204', 315, 164);
       doc.fillColor('#374151').fontSize(8.5).text(`Courier Partner: ${order.courierPartner || 'Delhivery'}`, 315, 177);
-      doc.fillColor('#4b5563').fontSize(8).text(`AWB / Tracking: ${order.awbNumber ? order.awbNumber : 'Post-Packing Dispatch'}`, 315, 190);\n      doc.fillColor('#374151').fontSize(8).font('Helvetica-Bold').text(`Order Status: ${order.status || 'Pending Verification'}`, 315, 203);\n      if (isDelivered && order.deliveredAt) {\n        doc.fillColor('#047857').fontSize(8).font('Helvetica-Bold').text(`Delivered On: ${new Date(order.deliveredAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`, 315, 215, { width: 230 });\n      }
+      doc.fillColor('#4b5563').fontSize(8).text(`AWB / Tracking: ${order.awbNumber ? order.awbNumber : 'Post-Packing Dispatch'}`, 315, 190);
+      doc.fillColor('#374151').fontSize(8).font('Helvetica-Bold').text(`Order Status: ${order.status || 'Pending Verification'}`, 315, 203);
+      if (isDelivered && order.deliveredAt) {
+        doc.fillColor('#047857').fontSize(8).font('Helvetica-Bold').text(`Delivered On: ${new Date(order.deliveredAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`, 315, 215, { width: 230 });
+      }
 
       const tableTop = 238;
       doc.roundedRect(40, tableTop, 515, 24, 3).fill('#2b1105');
@@ -670,7 +674,7 @@ function generateOrderInvoicePDF(order) {
 
       doc.roundedRect(385, footerY, 170, 52, 6).strokeColor('#e5e7eb').stroke();
       doc.fillColor('#111827').fontSize(9).font('Helvetica-Bold').text('AURA FINE STORE', 385, footerY + 9, { width: 170, align: 'center' });
-      doc.fillColor('#6b7280').fontSize(7.5).font('Helvetica').text('Digitally Verified Bill', 385, footerY + 22, { width: 170, align: 'center' });
+      doc.fillColor('#6b7280').fontSize(7.5).font('Helvetica').text(isDelivered ? 'Final Delivery Invoice' : 'Order Receipt - Delivery Pending', 385, footerY + 22, { width: 170, align: 'center' });
       doc.fillColor('#b45309').fontSize(8).font('Helvetica-Bold').text('[ Authorized Signature ]', 385, footerY + 34, { width: 170, align: 'center' });
 
       doc.end();
