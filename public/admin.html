@@ -129,22 +129,6 @@ label { color: #f1e5ce; }
   </style>
 
 <style id="aura-admin-custom-dashboard">:root{--ag:#063b2b;--au:#c49a4a}html{scroll-behavior:smooth;scroll-padding-top:20px}#auraAdminSidebar{position:fixed;z-index:60;left:16px;top:16px;bottom:16px;width:218px;padding:16px 12px;background:linear-gradient(165deg,#062f24,#06432f 58%,#09271f);border:1px solid rgba(196,154,74,.65);border-radius:22px;box-shadow:0 20px 60px rgba(5,35,25,.24);display:flex;flex-direction:column;gap:10px;color:#fff}#auraAdminSidebar .aura-brand{font-family:Cinzel,serif;color:#e8c77e;text-align:center;font-size:21px;padding:5px 0 14px;border-bottom:1px solid rgba(220,190,125,.25)}#auraAdminSidebar small{display:block;font:600 10px "Plus Jakarta Sans",sans-serif;letter-spacing:2px;color:#d8c18f}#auraAdminSidebar nav{display:flex;flex-direction:column;gap:5px;overflow:auto}#auraAdminSidebar a{display:flex;align-items:center;gap:10px;color:#edf4ed;text-decoration:none;padding:10px 11px;border-radius:11px;font-size:12px;font-weight:700;border:1px solid transparent}#auraAdminSidebar a:hover{background:rgba(255,255,255,.1);border-color:rgba(220,190,125,.25);color:#f6d990}#auraAdminSidebar .aura-side-note{margin-top:auto;border:1px solid rgba(220,190,125,.45);border-radius:13px;padding:11px;text-align:center;color:#e8d4a6;font-size:10px}#dashboardContent{margin-left:246px!important;max-width:calc(100vw - 270px)!important}#auraAdminSectionHeading{background:linear-gradient(100deg,#073b2b,#0c563d);color:#f7e8c5;border:1px solid rgba(196,154,74,.55);border-radius:15px;padding:13px 17px;display:flex;justify-content:space-between;gap:10px}#auraAdminSectionHeading strong{font-family:Cinzel,serif}#auraAdminSectionHeading span{font-size:10px;color:#d8c79f}#auraAdminSecuritySection,#auraAdminInvoicesSection{background:#fffdf8;border:1px solid #dfd3bd;border-radius:22px;padding:20px;box-shadow:0 10px 30px rgba(30,55,42,.05);color:#20352b}#auraAdminSecuritySection h3,#auraAdminInvoicesSection h3{color:#78582e}#auraAdminSecuritySection .aura-security-tile{background:#f4f1e8;border:1px solid #e3d8c4;border-radius:14px;padding:13px}#auraAdminInvoicesSection table{width:100%;border-collapse:collapse;font-size:12px}#auraAdminInvoicesSection th{background:#073b2b;color:#f4e7c7;text-align:left;padding:11px}#auraAdminInvoicesSection td{padding:10px;border-bottom:1px solid #e8e1d5;color:#304439}#auraAdminInvoicesSection tr:nth-child(even){background:#f8f5ed}#auraAdminInvoicesSection button{background:#0a5139;color:white;padding:7px 11px;border-radius:9px;font-weight:700}@media(max-width:900px){#auraAdminSidebar{position:sticky;top:8px;left:auto;bottom:auto;width:auto;margin:8px 10px;padding:10px;border-radius:14px}#auraAdminSidebar .aura-brand,#auraAdminSidebar .aura-side-note{display:none}#auraAdminSidebar nav{flex-direction:row;overflow-x:auto;white-space:nowrap}#auraAdminSidebar a{flex:0 0 auto;padding:9px 11px}#dashboardContent{margin:0 auto!important;max-width:100%!important;padding:12px!important}}@media(max-width:560px){#auraAdminSectionHeading{flex-direction:column}#auraAdminInvoicesSection{padding:12px}#auraAdminInvoicesSection table{min-width:680px}}</style>
-
-<style id="aura-category-workspace-premium">
-  .aura-category-workspace{scroll-margin-top:24px;background:linear-gradient(145deg,#fffdf8,#f2eee4)!important;border:1px solid #c6a66a!important;border-radius:24px!important;box-shadow:0 22px 60px rgba(17,55,39,.13)!important;color:#20382c!important}
-  .aura-category-workspace h3{color:#795a2d!important;font-family:Cinzel,serif;letter-spacing:.2px}
-  .aura-category-workspace p,.aura-category-workspace label{color:#52665a!important}
-  .aura-category-workspace form{background:linear-gradient(145deg,#f8f5ed,#eee9dc)!important;border:1px solid #ded2bc!important;border-radius:17px!important;box-shadow:0 8px 22px rgba(34,54,40,.05)}
-  .aura-category-workspace input,.aura-category-workspace select{background:#fff!important;color:#20382c!important;border:1px solid #d8cbb5!important}
-  .aura-category-workspace button[type=submit]{background:linear-gradient(120deg,#c7a15b,#e0c17f)!important;color:#183326!important;box-shadow:0 5px 14px rgba(137,99,38,.18)}
-  .aura-category-workspace #adminCategoriesGrid>div{background:#fff!important;border:1px solid #e3d8c5!important;border-radius:17px!important;box-shadow:0 8px 22px rgba(34,54,40,.055)}
-  .aura-category-workspace #adminCategoriesGrid h4{color:#76572d!important}
-  .aura-category-workspace #adminCategoriesGrid span{color:#344d3e!important}
-  .aura-category-close{border:1px solid #d9c9ab!important;background:#f5efe2!important;color:#6d5129!important;padding:8px 12px!important;border-radius:11px!important;font-size:11px!important;font-weight:800!important}
-  .aura-category-open{animation:auraCategoryReveal .28s ease-out}
-  @keyframes auraCategoryReveal{from{opacity:.65;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-  @media(max-width:640px){.aura-category-workspace{padding:14px!important}.aura-category-workspace form{flex-wrap:wrap}.aura-category-workspace form>div{width:100%;min-width:0}}
-</style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
@@ -179,7 +163,7 @@ label { color: #f1e5ce; }
         <a href="#firstOrderPopupSection" class="bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
           <i class="fa-solid fa-gift"></i> 1st Order Popup
         </a>
-        <a href="#categoryManagerSection" onclick="openAdminCategoryManager(event)" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
+        <a href="#categoryManagerSection" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
           <i class="fa-solid fa-layer-group"></i> Categories (<span id="headerCatBadge">0</span>)
         </a>
         <a href="#stockWaitlistSection" class="bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
@@ -197,7 +181,7 @@ label { color: #f1e5ce; }
         <a href="/" target="_blank" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs border border-slate-700">View Store &rarr;</a>
         <button onclick="logout()" class="bg-rose-600/20 text-rose-400 hover:bg-rose-600/30 px-4 py-2 rounded-xl text-xs border border-rose-600/30 font-semibold">Logout</button>
       </div>
-    </header><div id="auraAdminSidebar"><div class="aura-brand">✿ AURA <small>FINE STORE • ADMIN</small></div><nav aria-label="Admin sections"><a href="#auraAdminOverview"><i class="fa-solid fa-gauge-high"></i> Overview</a><a href="#adminCatalogSection"><i class="fa-solid fa-box"></i> Products</a><a href="#auraAdminOrdersSection"><i class="fa-solid fa-truck-fast"></i> Orders</a><a href="#repeatCustomersSection"><i class="fa-solid fa-users"></i> Customers & Coins</a><a href="#salesAnalyticsSection"><i class="fa-solid fa-chart-line"></i> Sales Analytics</a><a href="#auraAdminSecuritySection"><i class="fa-solid fa-shield-halved"></i> Admin Security</a><a href="#supportDeskSection"><i class="fa-solid fa-headset"></i> Support Desk</a><a href="#auraAdminInvoicesSection" onclick="setTimeout(renderAdminInvoices,80)"><i class="fa-solid fa-file-invoice"></i> Invoices</a><a href="#storeSettingsSection"><i class="fa-solid fa-sliders"></i> Store Settings</a><a href="#categoryManagerSection" onclick="openAdminCategoryManager(event)" aria-controls="categoryManagerSection"><i class="fa-solid fa-layer-group"></i> Categories</a><a href="#reviewModerationSection"><i class="fa-solid fa-star"></i> Reviews</a><a href="#stockWaitlistSection"><i class="fa-solid fa-bell"></i> Waitlist</a><a href="#abandonedCartsSection"><i class="fa-solid fa-cart-arrow-down"></i> Abandoned Carts</a><a href="#firstOrderPopupSection"><i class="fa-solid fa-gift"></i> Welcome Popup</a><a href="#couponManagerSection"><i class="fa-solid fa-ticket"></i> Coupons</a><a href="#bannerManagerSection"><i class="fa-solid fa-panorama"></i> Banners</a></nav><div class="aura-side-note"><i class="fa-solid fa-crown"></i><br><b>AURA PREMIUM ADMIN</b><br>Manage with Excellence</div></div>
+    </header><div id="auraAdminSidebar"><div class="aura-brand">✿ AURA <small>FINE STORE • ADMIN</small></div><nav aria-label="Admin sections"><a href="#auraAdminOverview"><i class="fa-solid fa-gauge-high"></i> Overview</a><a href="#adminCatalogSection"><i class="fa-solid fa-box"></i> Products</a><a href="#auraAdminOrdersSection"><i class="fa-solid fa-truck-fast"></i> Orders</a><a href="#repeatCustomersSection"><i class="fa-solid fa-users"></i> Customers & Coins</a><a href="#salesAnalyticsSection"><i class="fa-solid fa-chart-line"></i> Sales Analytics</a><a href="#auraAdminSecuritySection"><i class="fa-solid fa-shield-halved"></i> Admin Security</a><a href="#supportDeskSection"><i class="fa-solid fa-headset"></i> Support Desk</a><a href="#auraAdminInvoicesSection" onclick="setTimeout(renderAdminInvoices,80)"><i class="fa-solid fa-file-invoice"></i> Invoices</a><a href="#storeSettingsSection"><i class="fa-solid fa-sliders"></i> Store Settings</a><a href="#categoryManagerSection"><i class="fa-solid fa-layer-group"></i> Categories</a><a href="#reviewModerationSection"><i class="fa-solid fa-star"></i> Reviews</a><a href="#stockWaitlistSection"><i class="fa-solid fa-bell"></i> Waitlist</a><a href="#abandonedCartsSection"><i class="fa-solid fa-cart-arrow-down"></i> Abandoned Carts</a><a href="#firstOrderPopupSection"><i class="fa-solid fa-gift"></i> Welcome Popup</a><a href="#couponManagerSection"><i class="fa-solid fa-ticket"></i> Coupons</a><a href="#bannerManagerSection"><i class="fa-solid fa-panorama"></i> Banners</a></nav><div class="aura-side-note"><i class="fa-solid fa-crown"></i><br><b>AURA PREMIUM ADMIN</b><br>Manage with Excellence</div></div>
 
     <!-- Low Stock Alert Banner -->
     <div id="lowStockAlertBox" class="hidden bg-rose-950/70 border border-rose-500/50 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -318,13 +302,12 @@ label { color: #f1e5ce; }
     </div>
 
     <!-- DYNAMIC CATEGORY & SUB-CATEGORY MANAGER -->
-    <div id="categoryManagerSection" class="aura-category-workspace hidden bg-slate-900 border-2 border-amber-500/35 p-5 rounded-3xl space-y-4 shadow-xl">
+    <div id="categoryManagerSection" class="bg-slate-900 border-2 border-amber-500/35 p-5 rounded-3xl space-y-4 shadow-xl">
       <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
         <div>
           <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-layer-group mr-1.5"></i> Dynamic Category & Sub-Category Manager</h3>
           <p class="text-[11px] text-slate-400">Add new categories/sub-categories here—they automatically appear on the Storefront & Product Upload Form. <span class="text-rose-400 font-bold">Warning: Deleting a category/sub-category deletes all products inside it!</span></p>
         </div>
-        <button type="button" onclick="closeAdminCategoryManager()" class="aura-category-close"><i class="fa-solid fa-xmark"></i> Close Category Manager</button>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
@@ -1052,26 +1035,6 @@ label { color: #f1e5ce; }
       const ids = Array.from(selectedOrderIdsSet);
       if (!ids.length) return alert("Please select at least 1 order using the checkboxes!");
       window.open(`/api/admin/orders/bulk-shipping-labels?ids=${encodeURIComponent(ids.join(','))}&token=${encodeURIComponent(adminToken)}`, '_blank');
-    }
-
-    function openAdminCategoryManager(event) {
-      if (event) event.preventDefault();
-      const section = document.getElementById('categoryManagerSection');
-      if (!section) return;
-      section.classList.remove('hidden');
-      section.classList.add('aura-category-open');
-      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      window.setTimeout(() => {
-        const input = document.getElementById('newMainCatInput');
-        if (input) input.focus({ preventScroll: true });
-      }, 450);
-    }
-
-    function closeAdminCategoryManager() {
-      const section = document.getElementById('categoryManagerSection');
-      if (!section) return;
-      section.classList.add('hidden');
-      section.classList.remove('aura-category-open');
     }
 
     function populateCategoryDropdowns(selectedMain = "", selectedSub = "") {
