@@ -854,8 +854,8 @@ async function sendTelegramAlert(order) {
 async function forwardReturnRequestToTelegram(order, request, files) {
  if(!SUPPORT_BOT_TOKEN||!TELEGRAM_CHAT_ID) throw new Error('Return Telegram bot is not configured.');
  const esc=v=>String(v||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
- const items=(order.items||[]).map((x,i)=>`${i+1}. ${esc(x.name)} x${Number(x.qty)||1}`).join('\\n');
- const message=`↩️ <b>AURA FINE STORE — NEW RETURN / REFUND REQUEST</b>\\n━━━━━━━━━━━━━━━━━━━━\\n🆔 <b>Request:</b> <code>${esc(request.requestId)}</code>\\n📦 <b>Order:</b> <code>#${esc(order.id)}</code>\\n👤 <b>Customer:</b> ${esc(order.customerName)}\\n📞 <b>Phone:</b> <code>${esc(order.phone)}</code>\\n🛍️ <b>Items:</b>\\n${items}\\n📌 <b>Reason:</b> ${esc(request.reason)}\\n📝 <b>Details:</b>\\n${esc(request.details)}\\n📎 <b>Evidence:</b> ${(files?.photos||[]).length} photo(s), ${(files?.video||[]).length} video(s)\\n⏰ <b>Submitted:</b> ${esc(request.createdAtStr)}\\n━━━━━━━━━━━━━━━━━━━━\\n<i>Review in AURA Admin Dashboard → Returns.</i>`;
+ const items=(order.items||[]).map((x,i)=>`${i+1}. ${esc(x.name)} x${Number(x.qty)||1}`).join('\n');
+ const message=`↩️ <b>AURA FINE STORE — NEW RETURN / REFUND REQUEST</b>\n━━━━━━━━━━━━━━━━━━━━\n🆔 <b>Request:</b> <code>${esc(request.requestId)}</code>\n📦 <b>Order:</b> <code>#${esc(order.id)}</code>\n👤 <b>Customer:</b> ${esc(order.customerName)}\n📞 <b>Phone:</b> <code>${esc(order.phone)}</code>\n🛍️ <b>Items:</b>\n${items}\n📌 <b>Reason:</b> ${esc(request.reason)}\n📝 <b>Details:</b>\n${esc(request.details)}\n📎 <b>Evidence:</b> ${(files?.photos||[]).length} photo(s), ${(files?.video||[]).length} video(s)\n⏰ <b>Submitted:</b> ${esc(request.createdAtStr)}\n━━━━━━━━━━━━━━━━━━━━\n<i>Review in AURA Admin Dashboard → Returns.</i>`;
  const send=async(url,form)=>{const r=await axios.post(url,form,{headers:form.getHeaders(),maxBodyLength:Infinity,maxContentLength:Infinity,timeout:120000});if(!r.data||!r.data.ok)throw new Error('Telegram upload was not confirmed.');};
  const textForm=new FormDataNode();textForm.append('chat_id',TELEGRAM_CHAT_ID);textForm.append('text',message);textForm.append('parse_mode','HTML');
  await send(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendMessage`,textForm);
@@ -1372,7 +1372,7 @@ app.post('/api/support/ticket', uploadMemory.fields([{ name: 'photos', maxCount:
 
 app.post('/api/support/return-request', uploadMemory.fields([{name:'photos',maxCount:6},{name:'video',maxCount:1}]), async(req,res)=>{
  try{
-  const orderId=String(req.body.orderId||'').trim(),phone=String(req.body.phone||'').replace(/\\D/g,''),reason=String(req.body.reason||'').trim(),details=String(req.body.details||'').trim();
+  const orderId=String(req.body.orderId||'').trim(),phone=String(req.body.phone||'').replace(/\D/g,''),reason=String(req.body.reason||'').trim(),details=String(req.body.details||'').trim();
   const reasons=['Damaged Product','Defective Product','Wrong Product Received','Missing Item','Size / Fit Issue','Other'];
   if(!orderId||phone.length!==10||!reasons.includes(reason)||details.length<5)return res.status(400).json({success:false,message:'Please complete all required return details.'});
   const order=await Order.findOne({id:orderId,phone}).lean();if(!order)return res.status(404).json({success:false,message:'Order not found for this mobile number.'});
