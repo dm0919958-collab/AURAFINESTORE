@@ -213,6 +213,11 @@
 
         <!-- Right Action Buttons -->
         <div class="flex items-center gap-1.5 sm:gap-2">
+          <div id="headerCustomerAccountPill" class="hidden items-center gap-1.5 text-[11px] font-bold text-amber-200 bg-stone-900 px-2.5 py-1.5 rounded-full border border-amber-500/40">
+            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+            <span id="headerCustomerNameLabel" class="max-w-[85px] truncate">Verified</span>
+            <button type="button" onclick="logoutCustomerSession()" title="Logout" class="text-rose-400 hover:text-rose-300 ml-1 underline text-[10px]">Logout</button>
+          </div>
           <button onclick="openSupportModal()" title="Help & Support" class="flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-950/75 hover:bg-emerald-900 px-2.5 sm:px-3 py-2 rounded-full border border-emerald-500/40 transition">
             <i class="fa-solid fa-headset text-emerald-400"></i><span class="hidden sm:inline">Help & Support</span>
           </button>
@@ -441,6 +446,7 @@
             <span id="qvDiscount" class="text-xs text-emerald-300 font-bold bg-emerald-950 px-2.5 py-0.5 rounded-full">0% OFF</span>
           </div>
 
+          <div id="qvRefundPolicyBadge" class="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-xl border"></div>
           <div id="qvLowStockBanner" class="hidden bg-rose-950/80 border border-rose-500/40 text-rose-300 px-3 py-1.5 rounded-xl text-xs font-extrabold animate-pulse"></div>
 
           <div class="space-y-1.5 pt-2 border-t border-stone-800">
@@ -666,7 +672,21 @@
           <section class="aura-form-section" aria-label="Customer contact details">
             <div class="aura-form-heading"><i class="fa-solid fa-user"></i> 01 · Contact details</div>
             <div class="aura-field full"><label class="block mb-1">Full Customer Name *</label><input type="text" id="ordName" required autocomplete="name" placeholder="Enter your full name"></div>
-            <div class="aura-field full"><label class="block mb-1">Mobile / WhatsApp Number *</label><input type="tel" id="ordPhone" maxlength="10" required inputmode="numeric" autocomplete="tel-national" placeholder="10-digit mobile number"></div>
+            <div class="aura-field full">
+              <label class="block mb-1">Mobile / WhatsApp Number *</label>
+              <div class="flex gap-2">
+                <input type="tel" id="ordPhone" oninput="handleCheckoutPhoneInput(this.value)" maxlength="10" required inputmode="numeric" autocomplete="tel-national" placeholder="10-digit mobile number" class="flex-1">
+                <button type="button" id="sendCheckoutOtpBtn" onclick="requestCheckoutOtp()" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs whitespace-nowrap shadow">Send OTP</button>
+              </div>
+              <p id="checkoutPhoneVerifiedBadge" class="hidden text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-2.5 py-1 rounded-lg mt-1.5"><i class="fa-solid fa-shield-check mr-1"></i> Mobile Number Verified (30-Day Login Active)</p>
+              <div id="checkoutOtpVerifyBox" class="hidden mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-300 space-y-2">
+                <p id="checkoutOtpSentHint" class="text-[11px] font-bold text-amber-900">Enter the 6-digit OTP sent to your WhatsApp / SMS:</p>
+                <div class="flex gap-2">
+                  <input type="text" id="checkoutOtpInput" maxlength="6" inputmode="numeric" placeholder="6-digit OTP" class="flex-1 font-mono font-bold tracking-widest text-center">
+                  <button type="button" id="verifyCheckoutOtpBtn" onclick="confirmCheckoutOtp()" class="bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold px-4 py-2 rounded-xl text-xs whitespace-nowrap">Verify OTP</button>
+                </div>
+              </div>
+            </div>
           </section>
 
           <section class="aura-form-section" aria-label="Postal location">
@@ -944,7 +964,147 @@
     let appliedDiscountRate = 0, appliedCouponCode = localStorage.getItem('aura_saved_coupon') || "", appliedCouponMinSpend = 0, appliedCouponExpiresAt = 0;
     let storeDeliveryCharge = 0, storeCodAdvancePct = 15, storeMaxCodAmount = 2000;
     let storeFreeGiftThreshold = 1499, storeFreeGiftTitle = "Luxury Surprise Jewellery Box";
-    let storeCoinsEarnPct = 5, storeMaxCoinsRedeem = 200, customerAvailableCoins = 0;
+    function escapeHTML(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    let storeCoinsEarnPct = 5, storeMaxCoinsRedeem = 200, storeRefundWindowDays = 7, storeOtpEnabled = false;
+    let customerAvailableCoins = 0, customerPendingCoins = 0;
+    let customerSession = JSON.parse(localStorage.getItem('aura_customer_session') || 'null');
+
+    function getCustomerAuthHeaders() {
+      const h = { 'Content-Type': 'application/json' };
+      if (customerSession && customerSession.token) {
+        h['x-customer-token'] = customerSession.token;
+      }
+      return h;
+    }
+
+    function isPhoneVerifiedInSession(phone) {
+      const clean = String(phone || '').replace(/[^0-9]/g, '');
+      if (!customerSession || !customerSession.token || customerSession.phone !== clean) return false;
+      if (customerSession.expiresAt && Date.now() >= customerSession.expiresAt) {
+        logoutCustomerSession(true);
+        return false;
+      }
+      return true;
+    }
+
+    function updateCustomerSessionUI() {
+      const pill = document.getElementById('headerCustomerAccountPill');
+      const nameLbl = document.getElementById('headerCustomerNameLabel');
+      if (customerSession && customerSession.phone && (!customerSession.expiresAt || Date.now() < customerSession.expiresAt)) {
+        if (pill) { pill.classList.remove('hidden'); pill.classList.add('flex'); }
+        if (nameLbl) nameLbl.innerText = `${customerSession.name || 'Customer'} (${customerSession.phone.slice(-4)})`;
+      } else {
+        if (pill) { pill.classList.add('hidden'); pill.classList.remove('flex'); }
+      }
+    }
+
+    function logoutCustomerSession(silent = false) {
+      customerSession = null;
+      localStorage.removeItem('aura_customer_session');
+      updateCustomerSessionUI();
+      if (!silent) alert("Logged out from your AURA customer session.");
+    }
+
+    function handleCheckoutPhoneInput(val) {
+      const clean = String(val || '').replace(/[^0-9]/g, '');
+      const sendBtn = document.getElementById('sendCheckoutOtpBtn');
+      const verifiedBadge = document.getElementById('checkoutPhoneVerifiedBadge');
+      const otpBox = document.getElementById('checkoutOtpVerifyBox');
+      if (!storeOtpEnabled) {
+        if (sendBtn) sendBtn.classList.add('hidden');
+        if (verifiedBadge) verifiedBadge.classList.add('hidden');
+        if (otpBox) otpBox.classList.add('hidden');
+        return;
+      }
+      if (isPhoneVerifiedInSession(clean)) {
+        if (sendBtn) sendBtn.classList.add('hidden');
+        if (otpBox) otpBox.classList.add('hidden');
+        if (verifiedBadge) verifiedBadge.classList.remove('hidden');
+      } else {
+        if (verifiedBadge) verifiedBadge.classList.add('hidden');
+        if (sendBtn) {
+          if (clean.length === 10) sendBtn.classList.remove('hidden');
+          else sendBtn.classList.add('hidden');
+        }
+      }
+    }
+
+    async function requestCheckoutOtp() {
+      const name = document.getElementById('ordName').value.trim();
+      const phone = document.getElementById('ordPhone').value.trim().replace(/[^0-9]/g, '');
+      if (phone.length !== 10) return alert("Please enter a valid 10-digit mobile number first!");
+      const btn = document.getElementById('sendCheckoutOtpBtn');
+      btn.disabled = true; btn.innerText = "Sending...";
+      try {
+        const res = await fetch('/api/auth/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, customerName: name })
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (!data.otpRequired) {
+            storeOtpEnabled = false;
+            handleCheckoutPhoneInput(phone);
+          } else {
+            document.getElementById('checkoutOtpVerifyBox').classList.remove('hidden');
+            document.getElementById('checkoutOtpSentHint').innerText = data.message || `Enter 6-digit OTP sent to +91 ${phone}`;
+            document.getElementById('checkoutOtpInput').focus();
+          }
+        } else {
+          alert(data.message || "Could not send OTP.");
+        }
+      } catch (e) {
+        alert("Network error while sending OTP.");
+      } finally {
+        btn.disabled = false; btn.innerText = "Resend OTP";
+      }
+    }
+
+    async function confirmCheckoutOtp() {
+      const name = document.getElementById('ordName').value.trim();
+      const phone = document.getElementById('ordPhone').value.trim().replace(/[^0-9]/g, '');
+      const otp = document.getElementById('checkoutOtpInput').value.trim();
+      if (otp.length !== 6) return alert("Please enter the 6-digit OTP!");
+      const btn = document.getElementById('verifyCheckoutOtpBtn');
+      btn.disabled = true; btn.innerText = "Verifying...";
+      try {
+        const res = await fetch('/api/auth/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, otp, customerName: name })
+        });
+        const data = await res.json();
+        if (data.success && data.customerToken) {
+          customerSession = {
+            token: data.customerToken,
+            phone: data.phone,
+            name: data.name || name,
+            expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000)
+          };
+          localStorage.setItem('aura_customer_session', JSON.stringify(customerSession));
+          customerAvailableCoins = data.coins || 0;
+          customerPendingCoins = data.pendingCoins || 0;
+          updateCustomerSessionUI();
+          handleCheckoutPhoneInput(phone);
+          alert("✅ Mobile Number Verified! You will stay logged in for 30 days.");
+        } else {
+          alert(data.message || "Invalid OTP!");
+        }
+      } catch (e) {
+        alert("Verification failed. Please try again.");
+      } finally {
+        btn.disabled = false; btn.innerText = "Verify OTP";
+      }
+    }
     let firstOrderPopupConfig = { enabled: true, title: "Exclusive First-Order Privilege", subtitle: "", coupon: "AURA20", image: "" };
     let firstOrderPopupScheduled = false;
     let dealEndTimeMs = 0, isPincodeValid = false;
@@ -1409,6 +1569,9 @@
           storeFreeGiftTitle = st.freeGiftTitle || "Luxury Surprise Jewellery Box";
           storeCoinsEarnPct = st.coinsEarnPercent ?? 5;
           storeMaxCoinsRedeem = st.maxCoinsRedeemPerOrder ?? 200;
+          storeRefundWindowDays = st.refundWindowDays ?? 7;
+          storeOtpEnabled = Boolean(st.otpEnabled);
+          updateCustomerSessionUI();
           dealEndTimeMs = st.dealEndTime || 0;
           firstOrderPopupConfig = {
             enabled: st.firstOrderPopupEnabled !== false,
@@ -1558,6 +1721,16 @@
       }
 
       const qtyLeft = Number(prod.stockQuantity) || 0, isOut = prod.inStock === false || qtyLeft <= 0;
+      const refundBadge = document.getElementById('qvRefundPolicyBadge');
+      if (refundBadge) {
+        if (prod.nonRefundable) {
+          refundBadge.className = "inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-xl border bg-amber-500/15 border-amber-500/40 text-amber-300";
+          refundBadge.innerHTML = `<i class="fa-solid fa-bolt text-amber-400"></i> Non-Refundable • Instant AURA Coins on Delivery`;
+        } else {
+          refundBadge.className = "inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-xl border bg-emerald-950/60 border-emerald-500/35 text-emerald-300";
+          refundBadge.innerHTML = `<i class="fa-solid fa-shield-halved text-emerald-400"></i> ${storeRefundWindowDays}-Day Replacement • Coins unlock after ${storeRefundWindowDays} days`;
+        }
+      }
       const lowBanner = document.getElementById('qvLowStockBanner');
       if (!isOut && qtyLeft < 5) { lowBanner.innerText = `🔥 দ্রুত করুন! স্টকে মাত্র ${qtyLeft}টি পিস বাকি আছে!`; lowBanner.classList.remove('hidden'); } else lowBanner.classList.add('hidden');
 
@@ -1617,8 +1790,8 @@
       const revs = prod.reviews || [];
       document.getElementById('qvReviewsList').innerHTML = revs.length ? revs.map(r => `
         <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl text-xs space-y-1.5">
-          <div class="flex justify-between font-bold"><span>${r.customerName} <span class="text-[10px] text-emerald-400 font-normal ml-1">✓ Verified</span></span><span class="text-amber-400">${'★'.repeat(r.rating || 5)}</span></div>
-          <p class="text-stone-300">${r.comment}</p>
+          <div class="flex justify-between font-bold"><span>${escapeHTML(r.customerName)} <span class="text-[10px] text-emerald-400 font-normal ml-1">✓ Verified</span></span><span class="text-amber-400">${'★'.repeat(r.rating || 5)}</span></div>
+          <p class="text-stone-300">${escapeHTML(r.comment)}</p>
           ${r.photoUrl ? `<a href="${r.photoUrl}" target="_blank" class="inline-block pt-1"><img src="${r.photoUrl}" class="w-16 h-16 object-cover rounded-xl border border-amber-500/30"></a>` : ''}
         </div>`).join('') : `<p class="text-xs text-stone-500 text-center py-2">No reviews yet.</p>`;
     }
@@ -1945,7 +2118,19 @@
       applyCoupon(); handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
     }
 
-    function openCheckoutModal() { loadSavedCustomerProfile(); toggleCart(); document.getElementById('checkoutModal').classList.remove('hidden'); backToStep1Address(); }
+    function openCheckoutModal() {
+      loadSavedCustomerProfile();
+      if (customerSession && customerSession.phone && (!customerSession.expiresAt || Date.now() < customerSession.expiresAt)) {
+        const phoneInp = document.getElementById('ordPhone');
+        const nameInp = document.getElementById('ordName');
+        if (phoneInp && !phoneInp.value) phoneInp.value = customerSession.phone;
+        if (nameInp && !nameInp.value && customerSession.name) nameInp.value = customerSession.name;
+      }
+      handleCheckoutPhoneInput(document.getElementById('ordPhone').value);
+      toggleCart();
+      document.getElementById('checkoutModal').classList.remove('hidden');
+      backToStep1Address();
+    }
     function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); document.body.classList.remove('aura-payment-open'); }
 
     function renderCheckoutItemsSummary() {
@@ -1972,6 +2157,12 @@
       if (phone.length !== 10 || isNaN(phone)) return alert("Enter valid 10-digit mobile number!");
       if (!isPincodeValid) return alert("Enter valid 6-digit Indian Pincode!");
 
+      if (storeOtpEnabled && !isPhoneVerifiedInSession(phone)) {
+        handleCheckoutPhoneInput(phone);
+        await requestCheckoutOtp();
+        return;
+      }
+
       saveCustomerProfileLocal();
 
       // Check Wallet Coins + Whether This Mobile Number Already Placed an Order
@@ -1979,7 +2170,7 @@
       const coinChk = document.getElementById('useAuraCoinsCheckbox');
       if (coinChk) coinChk.checked = false;
       try {
-        const wRes = await fetch(`/api/wallet/${phone}`);
+        const wRes = await fetch(`/api/wallet/${phone}`, { headers: getCustomerAuthHeaders() });
         const wData = await wRes.json();
         if (wData.success) {
           customerAvailableCoins = wData.coins || 0;
@@ -2098,7 +2289,7 @@
       const useAuraCoins = document.getElementById('useAuraCoinsCheckbox')?.checked || false;
 
       const res = await fetch('/api/orders', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: getCustomerAuthHeaders(),
         body: JSON.stringify({
           customerName: document.getElementById('ordName').value, phone: document.getElementById('ordPhone').value, pincode: document.getElementById('ordPincode').value,
           city: document.getElementById('ordCity').value, state: document.getElementById('ordState').value, houseNoStreet: document.getElementById('addrHouseStreet').value,
@@ -2113,7 +2304,11 @@
         // Permanently mark first order completed so welcome popup never shows again
         localStorage.setItem('aura_first_order_completed', 'true');
         trackMetaEvent('Purchase', { value: data.verifiedTotal || 0, currency: 'INR', order_id: data.orderId });
-        const coinsMsg = data.coinsEarned > 0 ? `\n🪙 You will receive +${data.coinsEarned} AURA Coins upon delivery!` : '';
+        const coinsMsg = data.coinsEarned > 0
+          ? (data.isNonRefundableOrder
+              ? `\n🪙 You will receive +${data.coinsEarned} AURA Coins immediately upon delivery!`
+              : `\n🪙 +${data.coinsEarned} AURA Coins will unlock ${storeRefundWindowDays} days after delivery!`)
+          : '';
         alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}\nVerified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
         cart = []; appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0;
         persistCartLocal(); updateCartUI(); closeCheckoutModal(); loadRecentSalesFeed();
@@ -2125,7 +2320,9 @@
       document.getElementById('myOrdersModal').classList.remove('hidden');
       const saved = JSON.parse(localStorage.getItem('aura_customer_profile') || 'null');
       const inp = document.getElementById('myOrdersPhoneInput');
-      if (saved && saved.phone && !inp.value) { inp.value = saved.phone; fetchMyOrders(); }
+      const prefillPhone = (customerSession && customerSession.phone) || (saved && saved.phone) || '';
+      if (prefillPhone && !inp.value) { inp.value = prefillPhone; fetchMyOrders(); }
+      else if (inp.value) { fetchMyOrders(); }
     }
     function closeMyOrdersModal() { document.getElementById('myOrdersModal').classList.add('hidden'); }
 
@@ -2147,13 +2344,17 @@
         const existingProf = JSON.parse(localStorage.getItem('aura_customer_profile') || '{}');
         localStorage.setItem('aura_customer_profile', JSON.stringify({ ...existingProf, phone: clean10 }));
       }
-      const res = await fetch(`/api/orders/track?q=${encodeURIComponent(phone)}`);
+      const res = await fetch(`/api/orders/track?q=${encodeURIComponent(phone)}`, { headers: getCustomerAuthHeaders() });
       const data = await res.json();
+      if (!data.success && data.message) {
+        document.getElementById('myOrdersListContainer').innerHTML = `<p class="text-center py-6 text-rose-400 font-bold">${escapeHTML(data.message)}</p>`;
+        return;
+      }
       const hasNonCancelled = (data.orders || []).some(o => o.status !== 'Cancelled');
       if (hasNonCancelled) localStorage.setItem('aura_first_order_completed', 'true');
       else localStorage.removeItem('aura_first_order_completed');
       const walletBanner = document.getElementById('myWalletSummaryBanner');
-      if (typeof data.walletCoins === 'number' && phone.replace(/[^0-9]/g, '').length === 10) {
+      if (typeof data.walletCoins === 'number' && clean10.length === 10) {
         document.getElementById('myWalletCoinsCount').innerText = data.walletCoins;
         document.getElementById('myWalletRupeesWorth').innerText = data.walletCoins;
         walletBanner.classList.remove('hidden');
@@ -2161,18 +2362,30 @@
 
       const box = document.getElementById('myOrdersListContainer');
       if (!data.orders || !data.orders.length) { box.innerHTML = `<p class="text-center py-6 text-rose-400 font-bold">No orders found!</p>`; return; }
+      const invAuthQuery = (customerSession && customerSession.token) ? `ctoken=${encodeURIComponent(customerSession.token)}` : `phone=${encodeURIComponent(clean10)}`;
       box.innerHTML = data.orders.map(o => {
         const courier = o.courierPartner || 'Delhivery', trackFn = courierTrackingUrls[courier] || courierTrackingUrls["Delhivery"];
+        let coinStatusText = '';
+        if (o.coinsEarned > 0) {
+          if (o.coinsCredited) coinStatusText = `Credited +${o.coinsEarned} AURA Coins ✓`;
+          else if (o.status === 'Cancelled' || o.coinsStatus === 'forfeited') coinStatusText = `${o.coinsEarned} Coins Cancelled`;
+          else if (o.status === 'Delivered' && o.coinsUnlockAt > Date.now()) {
+            const unlockDateStr = new Date(o.coinsUnlockAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+            coinStatusText = `+${o.coinsEarned} AURA Coins Pending (Unlocks on ${unlockDateStr} after return period)`;
+          } else {
+            coinStatusText = o.isNonRefundableOrder ? `Earn +${o.coinsEarned} AURA Coins immediately upon delivery` : `Earn +${o.coinsEarned} AURA Coins (${storeRefundWindowDays} days after delivery)`;
+          }
+        }
         return `
         <div class="border border-stone-800 bg-stone-950 p-4 rounded-2xl space-y-3">
-          <div class="flex justify-between items-center font-bold"><span class="text-amber-400 font-mono text-sm">#${o.id}</span><span class="px-2.5 py-0.5 rounded-full text-[10px] ${o.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${o.status}</span></div>
+          <div class="flex justify-between items-center font-bold"><span class="text-amber-400 font-mono text-sm">#${escapeHTML(o.id)}</span><span class="px-2.5 py-0.5 rounded-full text-[10px] ${o.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${escapeHTML(o.status)}</span></div>
           ${buildOrderTimelineHTML(o.status)}
-          <p class="text-stone-400 text-[11px]">${o.date} • Total: <b class="text-white">₹${o.total}</b> (${o.paymentMethod})</p>
-          ${o.freeGiftUnlocked ? `<p class="text-[11px] text-emerald-300 font-bold"><i class="fa-solid fa-award mr-1"></i>Free Bonus Gift: ${o.freeGiftUnlocked}</p>` : ''}
-          ${o.coinsEarned > 0 ? `<p class="text-[11px] text-amber-300"><i class="fa-solid fa-coins mr-1"></i>${o.coinsCredited ? `Credited +${o.coinsEarned} AURA Coins ✓` : `Earn +${o.coinsEarned} AURA Coins upon delivery`}</p>` : ''}
-          ${o.awbNumber ? `<p class="text-[11px] text-cyan-300 font-mono">Courier: ${courier} | AWB: <b>${o.awbNumber}</b></p>` : ''}
+          <p class="text-stone-400 text-[11px]">${escapeHTML(o.date)} • Total: <b class="text-white">₹${o.total}</b> (${escapeHTML(o.paymentMethod)})</p>
+          ${o.freeGiftUnlocked ? `<p class="text-[11px] text-emerald-300 font-bold"><i class="fa-solid fa-award mr-1"></i>Free Bonus Gift: ${escapeHTML(o.freeGiftUnlocked)}</p>` : ''}
+          ${coinStatusText ? `<p class="text-[11px] text-amber-300"><i class="fa-solid fa-coins mr-1"></i>${escapeHTML(coinStatusText)}</p>` : ''}
+          ${o.awbNumber ? `<p class="text-[11px] text-cyan-300 font-mono">Courier: ${escapeHTML(courier)} | AWB: <b>${escapeHTML(o.awbNumber)}</b></p>` : ''}
           <div class="flex flex-wrap gap-2 pt-1">
-            <a href="/api/orders/${o.id}/invoice" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px]"><i class="fa-solid fa-file-pdf"></i> Download Invoice</a>
+            <a href="/api/orders/${encodeURIComponent(o.id)}/invoice?${invAuthQuery}" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px]"><i class="fa-solid fa-file-pdf"></i> Download Invoice</a>
             ${o.awbNumber ? `<a href="${trackFn(o.awbNumber)}" target="_blank" class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-location-dot"></i> Track on ${courier}</a>` : ''}
             ${o.deliverySlipFile ? `<a href="${o.deliverySlipFile}" download="Slip_${o.id}" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-download"></i> Delivery Slip</a>` : ''}
           </div>
@@ -2197,7 +2410,7 @@
       const wrap = document.getElementById('customerPreviousTicketsWrap'), list = document.getElementById('customerPreviousTicketsList');
       if (tickets && tickets.length) {
         wrap.classList.remove('hidden');
-        list.innerHTML = tickets.map(t => `<div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-1 text-xs"><div class="flex justify-between text-[10px]"><span class="font-mono font-bold text-amber-400">#${t.orderId} (${t.ticketId})</span><span class="text-stone-500">${t.createdAtStr || ''}</span></div><p><b class="text-rose-400">Your Issue:</b> ${t.issueText}</p>${t.adminReply ? `<div class="bg-emerald-950/70 border border-emerald-500/30 p-2 rounded-lg text-emerald-300"><b>AURA Support Reply:</b> ${t.adminReply}</div>` : `<p class="text-[10px] text-amber-300 italic">Waiting for support reply...</p>`}</div>`).join('');
+        list.innerHTML = tickets.map(t => `<div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-1 text-xs"><div class="flex justify-between text-[10px]"><span class="font-mono font-bold text-amber-400">#${escapeHTML(t.orderId)} (${escapeHTML(t.ticketId)})</span><span class="text-stone-500">${escapeHTML(t.createdAtStr || '')}</span></div><p><b class="text-rose-400">Your Issue:</b> ${escapeHTML(t.issueText)}</p>${t.adminReply ? `<div class="bg-emerald-950/70 border border-emerald-500/30 p-2 rounded-lg text-emerald-300"><b>AURA Support Reply:</b> ${escapeHTML(t.adminReply)}</div>` : `<p class="text-[10px] text-amber-300 italic">Waiting for support reply...</p>`}</div>`).join('');
       } else wrap.classList.add('hidden');
     }
 
