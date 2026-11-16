@@ -192,6 +192,29 @@
     font-weight: 500 !important;
   }
   #catalogSection #countDisplay { color: #ffe3a0 !important; font-weight: 800 !important; }
+  #catalogSection > div:first-child > div:first-child{background:linear-gradient(115deg,#0b241b 0%,#174c3c 72%,#205a43 100%)!important;border:1px solid #b58b48!important;border-radius:20px!important;padding:18px 20px!important;box-shadow:0 12px 30px rgba(18,48,35,.16)!important}
+  #catalogSection > div:first-child > div:first-child > div:first-child > span{color:#f6d98f!important}
+  #catalogSection #currentCategoryHeading{color:#fff4d6!important;text-shadow:0 2px 5px rgba(0,0,0,.28)!important}
+  #catalogSection > div:first-child > div:first-child > div:first-child > p{color:#f4ead2!important}
+  #catalogSection #countDisplay{color:#ffe19a!important}
+  #myOrdersListContainer>div{background:#fffdf8!important;border:1px solid #d9c9a8!important;color:#263b30!important;box-shadow:0 8px 24px rgba(35,52,41,.08)}
+  #myOrdersListContainer>div>div:first-child>span:first-child{color:#94672d!important}
+  #myOrdersListContainer>div>div:first-child>span:last-child{background:#d8f4e6!important;color:#075f3b!important;border:1px solid #7bc9a4!important;font-weight:900!important;padding:5px 10px!important;font-size:11px!important}
+  #myOrdersListContainer>div>p{color:#52645a!important}
+  #myOrdersListContainer>div>p b{color:#173f31!important;font-size:14px!important}
+  #myOrdersListContainer .text-emerald-300{color:#087747!important}
+  #myOrdersListContainer .text-stone-500{color:#66766c!important}
+  #liveSalesToast{background:linear-gradient(135deg,#09271d 0%,#174c3c 100%)!important;border:1.5px solid #c6a15e!important;box-shadow:0 16px 42px rgba(0,0,0,.35)!important;color:#fff!important}
+  #liveSalesToast #liveSaleText{color:#fff!important;font-size:12px!important;line-height:1.5!important;font-weight:700!important}
+  #liveSalesToast .text-emerald-400{color:#8df0bd!important}
+  #liveSalesToast .text-amber-400,#liveSalesToast .text-amber-300,#liveSalesToast .text-amber-200{color:#ffe09a!important}
+  #liveSalesToast button{color:#fff!important}
+  #checkoutSpecialCoupons{background:#f3f7f2;border:1px solid #cbdccc;border-radius:13px;padding:10px;margin-top:9px}
+  #checkoutSpecialCoupons .special-coupon-chip{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:9px 10px;border:1px solid #d7c49a;border-radius:10px;background:#fffdf7;color:#234534;text-align:left;margin-top:7px}
+  #checkoutSpecialCoupons .special-coupon-chip strong{font-family:monospace;color:#805b25}
+  #checkoutSpecialCoupons .special-coupon-chip small{color:#52645a;font-weight:700}
+  .checkout-item-row{position:relative;padding-right:72px!important}
+  .checkout-item-remove{position:absolute;right:0;top:50%;transform:translateY(-50%);border:1px solid #e5b8b8;background:#fff1f1;color:#a52d36;border-radius:8px;padding:6px 8px;font-size:10px;font-weight:800}
 
 </style>
 </head>
@@ -774,6 +797,11 @@
               <button type="button" onclick="applyCouponFromStep2()" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-lg text-xs font-extrabold">Apply</button>
             </div>
             <p id="step2CouponStatus" class="text-[10px] font-semibold hidden"></p>
+            <div id="checkoutSpecialCoupons">
+              <p class="text-[11px] font-extrabold text-emerald-800"><i class="fa-solid fa-tags mr-1"></i> Special Coupons</p>
+              <p class="text-[10px] text-stone-600 mt-1">Choose from currently available offers</p>
+              <div id="checkoutSpecialCouponsList"></div>
+            </div>
           </div>
           <div>
             <label class="block font-semibold text-stone-300 mb-1">Select Payment Mode</label>
@@ -1275,7 +1303,7 @@
       if (!chosen) return;
       activeLiveSaleProductId = chosen.productId;
       document.getElementById('liveSaleImg').src = safeImageUrl(chosen.image);
-      document.getElementById('liveSaleText').innerHTML = `<span class="text-amber-300 font-bold">${escapeHTML(chosen.city)}</span> থেকে <span class="text-white font-bold">${escapeHTML(chosen.name)}</span> এইমাত্র <span class="text-amber-200">${escapeHTML(chosen.productName)}</span> অর্ডার করলেন`;
+      document.getElementById('liveSaleText').innerHTML = `<span class="text-amber-300 font-bold">${escapeHTML(chosen.name)}</span> from <span class="text-white font-bold">${escapeHTML(chosen.city)}</span> just ordered <span class="text-amber-200">${escapeHTML(chosen.productName)}</span>`;
       toast.classList.remove('translate-y-24', 'opacity-0'); toast.classList.add('translate-y-0', 'opacity-100');
       setTimeout(() => { toast.classList.add('translate-y-24', 'opacity-0'); toast.classList.remove('translate-y-0', 'opacity-100'); }, 5500);
     }
@@ -1523,12 +1551,41 @@
           }).join('')
         : `<span>Flat 20% OFF with AURA20</span>`;
 
+      renderCheckoutSpecialCoupons();
       document.getElementById('cartCouponsBadges').innerHTML = visible.map(c => {
         const tag = getCouponTimeTag(c.expiresAt);
         return tag === "EXPIRED"
           ? `<div class="bg-rose-950/60 border border-rose-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 opacity-70"><span class="font-mono font-bold text-rose-400 line-through">${escapeHTML(c.code)}</span><span class="text-rose-400 font-bold text-[10px]">EXPIRED</span></div>`
           : `<div onclick="quickApplyCoupon(${safeInlineArg(c.code)})" class="cursor-pointer bg-stone-950 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2"><span class="font-mono font-bold text-amber-300">${escapeHTML(c.code)}</span><span class="text-emerald-400 font-bold">(${Number(c.discountPercent)||0}% OFF)</span>${tag ? `<span class="text-[10px] text-amber-400 font-mono">⏳ ${tag}</span>` : ''}</div>`;
       }).join('');
+    }
+
+    function renderCheckoutSpecialCoupons() {
+      const list = document.getElementById('checkoutSpecialCouponsList');
+      if (!list) return;
+      const available = activeCoupons.filter(c => c && c.code && c.showOnStore && !(c.expiresAt > 0 && Date.now() >= c.expiresAt));
+      if (!available.length) {
+        list.innerHTML = '<p class="text-[10px] text-stone-500 mt-2">No active special coupons right now.</p>';
+        return;
+      }
+      list.innerHTML = available.map(c => {
+        const min = Number(c.minSpend) > 0 ? 'Min. order ₹' + Number(c.minSpend) : 'No minimum order';
+        const expiry = getCouponTimeTag(c.expiresAt);
+        return '<button type="button" class="special-coupon-chip" onclick="applyCheckoutSpecialCoupon(' + safeInlineArg(c.code) + ')"><span><strong>' + escapeHTML(c.code) + '</strong><br><small>' + (Number(c.discountPercent)||0) + '% OFF · ' + min + (expiry ? ' · ' + escapeHTML(expiry) : '') + '</small></span><span class="text-[10px] font-extrabold text-emerald-700">APPLY</span></button>';
+      }).join('');
+    }
+
+    function applyCheckoutSpecialCoupon(code) {
+      const input = document.getElementById('step2CouponInput');
+      if (input) input.value = code;
+      document.getElementById('couponInput').value = code;
+      applyCoupon();
+      handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
+      const status = document.getElementById('step2CouponStatus');
+      if (status) {
+        status.textContent = appliedCouponCode === code ? 'Coupon ' + code + ' applied successfully.' : (document.getElementById('couponStatusMsg').textContent || 'Coupon could not be applied.');
+        status.className = 'text-[10px] font-bold mt-1 ' + (appliedCouponCode === code ? 'text-emerald-700' : 'text-rose-600');
+      }
     }
 
     function quickApplyCoupon(code) { document.getElementById('couponInput').value = code; applyCoupon(); }
@@ -2122,8 +2179,28 @@
         const meta = document.createElement('span'); meta.textContent = `${item.selectedSize || 'Standard'}${item.selectedColor ? ' · ' + item.selectedColor : ''} · Qty ${item.qty || 1}`;
         details.append(name, meta);
         const price = document.createElement('b'); price.textContent = `₹${(Number(item.price) || 0) * (Number(item.qty) || 1)}`;
-        row.append(img, details, price); box.appendChild(row);
+        const remove = document.createElement('button');
+        remove.type = 'button'; remove.className = 'checkout-item-remove'; remove.textContent = 'Remove';
+        remove.setAttribute('aria-label', 'Remove ' + (item.name || 'product'));
+        remove.addEventListener('click', () => removeCheckoutItem(cart.indexOf(item)));
+        row.append(img, details, price, remove); box.appendChild(row);
       });
+    }
+
+    function removeCheckoutItem(index) {
+      if (index < 0 || index >= cart.length) return;
+      cart.splice(index, 1);
+      appliedDiscountRate = 0; appliedCouponCode = ''; appliedCouponMinSpend = 0; appliedCouponExpiresAt = 0;
+      const couponInput = document.getElementById('couponInput'); if (couponInput) couponInput.value = '';
+      const stepCoupon = document.getElementById('step2CouponInput'); if (stepCoupon) stepCoupon.value = '';
+      persistCartLocal(); updateCartUI();
+      if (!cart.length) {
+        closeCheckoutModal();
+        alert('Your bag is now empty. Add a product to continue.');
+        return;
+      }
+      renderCheckoutItemsSummary();
+      handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
     }
 
     async function goToStep2Payment() {
@@ -2340,7 +2417,7 @@
         const courier = o.courierPartner || 'Delhivery', trackFn = courierTrackingUrls[courier] || courierTrackingUrls["Delhivery"];
         return `
         <div class="border border-stone-800 bg-stone-950 p-4 rounded-2xl space-y-3">
-          <div class="flex justify-between items-center font-bold"><span class="text-amber-400 font-mono text-sm">#${escapeHTML(o.id)}</span><span class="px-2.5 py-0.5 rounded-full text-[10px] ${o.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${escapeHTML(o.status)}</span></div>
+          <div class="flex justify-between items-center font-bold"><span class="text-amber-400 font-mono text-sm">#${escapeHTML(o.id)}</span><span class="px-2.5 py-0.5 rounded-full text-[10px] ${o.status === 'Cancelled' ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}">${escapeHTML(o.status)}</span></div>
           ${buildOrderTimelineHTML(o.status)}
           <p class="text-stone-400 text-[11px]">${escapeHTML(o.date)} • Total: <b class="text-white">₹${Number(o.total)||0}</b> (${escapeHTML(o.paymentMethod)})</p>
           ${o.freeGiftUnlocked ? `<p class="text-[11px] text-emerald-300 font-bold"><i class="fa-solid fa-award mr-1"></i>Free Bonus Gift: ${escapeHTML(o.freeGiftUnlocked)}</p>` : ''}
