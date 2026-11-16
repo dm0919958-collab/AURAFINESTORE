@@ -1432,9 +1432,8 @@ app.post('/api/admin/returns/search',async(req,res)=>{
  try{
   if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
   const q=String(req.body.query||'').trim().slice(0,120);
-  const term=q.replace(/[^a-zA-Z0-9 @._-]/g,'');
-  if(!term)return res.status(400).json({success:false,message:'Enter a customer name, phone, order ID, or request ID.'});
-  const rx=new RegExp(term,'i');
+  if(!q)return res.status(400).json({success:false,message:'Enter a customer name, phone, order ID, or request ID.'});
+  const rx=new RegExp(q,'i');
   const requests=await ReturnRequest.find({$or:[{customerName:rx},{phone:rx},{orderId:rx},{requestId:rx}]}).sort({createdAt:-1}).limit(1000).lean();
   res.json({success:true,requests});
  }catch(err){res.status(500).json({success:false,requests:[],message:'Could not search return history.'});}
