@@ -821,7 +821,7 @@ async function sendTelegramAlert(order) {
     `📈 <b>Est. Net Profit:</b> <b>₹${order.netProfit || 0}</b>\n` +
     `🔑 <b>UTR:</b> <code>${order.utrNumber}</code>${coinsLine}${bonusLine}\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `<i>Official PDF Invoice is attached below.</i>`;
+    `<i>Order receipt PDF attached. Final delivery invoice will be sent when the order is marked Delivered.</i>`;
 
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
@@ -852,7 +852,7 @@ async function sendTelegramDeliveredInvoice(order) {
     const pdfBuffer = await generateOrderInvoicePDF(order);
     const formData = new FormDataNode();
     formData.append('chat_id', TELEGRAM_CHAT_ID);
-    formData.append('caption', `✅ AURA FINE STORE - FINAL DELIVERY INVOICE\\nOrder #${order.id} marked Delivered.\\nFinal Bill: ₹${order.total}`);
+    formData.append('caption', `✅ AURA FINE STORE - FINAL DELIVERY INVOICE\nOrder #${order.id} marked Delivered.\nFinal Bill: ₹${order.total}`);
     formData.append('document', pdfBuffer, {
       filename: `Final_Delivery_Invoice_${order.id}.pdf`,
       contentType: 'application/pdf'
