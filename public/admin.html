@@ -1009,7 +1009,7 @@ label { color: #f1e5ce; }
         document.getElementById('prodCategory').innerHTML = `<option value="General">General</option>`;
         return;
       }
-      const mainOptsHtml = cachedCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      const mainOptsHtml = cachedCategories.map(c => `<option value="${escapeHTML(c.name)}">${escapeHTML(c.name)}</option>`).join('');
       targetMainSel.innerHTML = mainOptsHtml;
       prodMainSel.innerHTML = mainOptsHtml;
       if (selectedMain && cachedCategories.some(c => c.name === selectedMain)) prodMainSel.value = selectedMain;
@@ -1141,7 +1141,7 @@ label { color: #f1e5ce; }
       if (!cachedOrders.length) return alert("No orders to export!");
       const headers = ["Order ID", "Date", "Customer Name", "Phone", "Address", "Pincode", "Items", "Free Gift", "Coins Used", "Total (INR)", "Net Profit (INR)", "Payment Mode", "UTR", "Status", "Courier", "AWB"];
       const rows = cachedOrders.map(o => {
-        const itemsStr = (o.items || []).map(i => `${i.name} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join(' | ');
+        const itemsStr = (o.items || []).map(i => `${escapeHTML(i.name)} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join(' | ');
         return [o.id, o.date, o.customerName, o.phone, o.address, o.pincode, itemsStr, o.freeGiftUnlocked || "", o.coinsUsed || 0, o.total, o.netProfit || 0, o.paymentMethod, o.utrNumber, o.status, o.courierPartner || "Delhivery", o.awbNumber || ""].map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(',');
       });
       const link = document.createElement("a");
@@ -1271,15 +1271,15 @@ label { color: #f1e5ce; }
       list.innerHTML = cachedStockNotifies.map(n => {
         const prod = cachedProducts.find(p => p.id === n.productId);
         const inStockNow = prod && (prod.stockQuantity || 0) > 0;
-        const waMsg = `✨ *AURA FINE STORE RESTOCK ALERT* ✨\nHello *${n.customerName}*,\n\nYour requested item *${n.productName}* is now *BACK IN STOCK*!\nOrder here: ${window.location.origin}/?product=${n.productId}`;
+        const waMsg = `✨ *AURA FINE STORE RESTOCK ALERT* ✨\nHello *${escapeHTML(n.customerName)}*,\n\nYour requested item *${escapeHTML(n.productName)}* is now *BACK IN STOCK*!\nOrder here: ${window.location.origin}/?product=${n.productId}`;
         return `
           <div class="bg-slate-800/80 border ${inStockNow ? 'border-emerald-500/40' : 'border-purple-500/30'} p-3.5 rounded-2xl text-xs space-y-2 flex flex-col justify-between">
             <div>
               <div class="flex justify-between items-start gap-2">
-                <div><p class="font-bold text-white">${n.customerName}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${n.phone}</p></div>
+                <div><p class="font-bold text-white">${escapeHTML(n.customerName)}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${n.phone}</p></div>
                 <button onclick="deleteStockNotify('${n._id}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
               </div>
-              <p class="text-amber-300 font-bold mt-1 line-clamp-1">${n.productName}</p>
+              <p class="text-amber-300 font-bold mt-1 line-clamp-1">${escapeHTML(n.productName)}</p>
               <p class="text-[10px] mt-0.5 ${inStockNow ? 'text-emerald-400 font-bold' : 'text-rose-400'}">${inStockNow ? `● Ready (${prod.stockQuantity} in stock)` : '● Sold Out'}</p>
             </div>
             <a href="https://wa.me/91${n.phone}?text=${encodeURIComponent(waMsg)}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-xl font-bold text-center block shadow"><i class="fa-brands fa-whatsapp mr-1"></i> Send Restock Alert</a>
@@ -1300,13 +1300,13 @@ label { color: #f1e5ce; }
       document.getElementById('abandonedCountText').innerText = cachedAbandonedCarts.length;
       if (!cachedAbandonedCarts.length) { list.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No incomplete carts right now.</p>`; return; }
       list.innerHTML = cachedAbandonedCarts.map(c => {
-        const itemsSummary = (c.items || []).map(i => `${i.name} x${i.qty || 1}`).join(', ');
-        const waMsg = `✨ *AURA FINE STORE* ✨\nHello *${c.customerName}*,\nWe noticed you left items in your bag (${itemsSummary}) worth *₹${c.totalAmount}*.\nComplete your order now and enjoy *FREE UPI Delivery*!`;
+        const itemsSummary = (c.items || []).map(i => `${escapeHTML(i.name)} x${i.qty || 1}`).join(', ');
+        const waMsg = `✨ *AURA FINE STORE* ✨\nHello *${escapeHTML(c.customerName)}*,\nWe noticed you left items in your bag (${itemsSummary}) worth *₹${c.totalAmount}*.\nComplete your order now and enjoy *FREE UPI Delivery*!`;
         return `
           <div class="bg-slate-800/80 border border-rose-500/30 p-3.5 rounded-2xl text-xs space-y-2 flex flex-col justify-between">
             <div>
               <div class="flex justify-between items-start">
-                <div><p class="font-bold text-white">${c.customerName}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${c.phone}</p></div>
+                <div><p class="font-bold text-white">${escapeHTML(c.customerName)}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${c.phone}</p></div>
                 <button onclick="deleteAbandonedCart('${c.phone}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
               </div>
               <p class="text-amber-300 font-semibold mt-1 line-clamp-2">${itemsSummary}</p>
@@ -1341,12 +1341,12 @@ label { color: #f1e5ce; }
       if (!customers.length) { list.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No confirmed customer history yet.</p>`; return; }
       list.innerHTML = customers.map(c => {
         const isRepeat = c.ordersCount > 1;
-        const vipMsg = `👑 *AURA FINE STORE VIP* 👑\nHello *${c.name}*,\nYou have *${c.coins} AURA Coins (₹${c.coins})* in your wallet!`;
+        const vipMsg = `👑 *AURA FINE STORE VIP* 👑\nHello *${escapeHTML(c.name)}*,\nYou have *${c.coins} AURA Coins (₹${c.coins})* in your wallet!`;
         return `
           <div class="bg-slate-800/80 border ${isRepeat ? 'border-amber-500/40' : 'border-slate-700'} p-3.5 rounded-2xl text-xs flex flex-col justify-between space-y-2">
             <div>
               <div class="flex justify-between items-center">
-                <p class="font-bold text-white">${c.name}</p>
+                <p class="font-bold text-white">${escapeHTML(c.name)}</p>
                 ${isRepeat ? `<span class="bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full">REPEAT (${c.ordersCount}x)</span>` : `<span class="bg-slate-700 text-slate-300 text-[9px] px-2 py-0.5 rounded-full">1 Order</span>`}
               </div>
               <p class="text-emerald-400 font-mono text-[11px] mt-0.5">+91 ${c.phone}</p>
@@ -1845,7 +1845,7 @@ label { color: #f1e5ce; }
       const fullPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
       const courier = o.courierPartner || 'Delhivery';
       const trackFn = courierTrackingUrls[courier] || courierTrackingUrls["Delhivery"];
-      const itemsSummary = (o.items || []).map(i => `• ${i.name} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join('\n');
+      const itemsSummary = (o.items || []).map(i => `• ${escapeHTML(i.name)} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join('\n');
       const trackingLine = o.awbNumber ? `\n🚚 *Courier:* ${courier}\n📦 *Tracking AWB:* ${o.awbNumber}\n🔗 *Track Here:* ${trackFn(o.awbNumber)}` : '';
       const message = `✨ *AURA FINE STORE* ✨\nHello *${o.customerName}*,\n\nYour order *#${o.id}* status is now: *${o.status}*\n\n🛍️ *Items:*\n${itemsSummary}\n\n💰 *Total Bill:* ₹${o.total} (${o.paymentMethod})${trackingLine}\n\nThank you for shopping with AURA Fine Store!`;
       window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -1872,8 +1872,8 @@ label { color: #f1e5ce; }
 
       tbody.innerHTML = filtered.map(o => {
         const isChecked = selectedOrderIdsSet.has(o.id);
-        const itemsText = (o.items || []).map(i => `<div class="mb-1 border-b border-slate-800 pb-1"><span class="font-bold text-slate-200">${i.name}</span> x${i.qty}<span class="block text-[10px] text-amber-400">Size: ${i.selectedSize || 'N/A'} | Color: ${i.selectedColor || 'N/A'}</span></div>`).join('');
-        const freeGiftHtml = o.freeGiftUnlocked ? `<div class="mt-1.5 bg-emerald-950/80 border border-emerald-500/40 p-2 rounded-lg text-[10px] text-emerald-300 font-bold"><i class="fa-solid fa-award text-emerald-400 mr-1"></i>FREE GIFT: ${o.freeGiftUnlocked}</div>` : '';
+        const itemsText = (o.items || []).map(i => `<div class="mb-1 border-b border-slate-800 pb-1"><span class="font-bold text-slate-200">${escapeHTML(i.name)}</span> x${i.qty}<span class="block text-[10px] text-amber-400">Size: ${i.selectedSize || 'N/A'} | Color: ${i.selectedColor || 'N/A'}</span></div>`).join('');
+        const freeGiftHtml = o.freeGiftUnlocked ? `<div class="mt-1.5 bg-emerald-950/80 border border-emerald-500/40 p-2 rounded-lg text-[10px] text-emerald-300 font-bold"><i class="fa-solid fa-award text-emerald-400 mr-1"></i>FREE GIFT: ${escapeHTML(o.freeGiftUnlocked)}</div>` : '';
         const curPartner = o.courierPartner || 'Delhivery';
 
         return `
@@ -1892,7 +1892,7 @@ label { color: #f1e5ce; }
               ${o.coinsUsed > 0 ? `<p class="text-[10px] text-amber-300 font-bold">Coins Used: -₹${o.coinsUsed}</p>` : ''}
               ${o.coinsEarned > 0 ? `<p class="text-[10px] ${o.coinsCredited ? 'text-emerald-400 font-bold' : 'text-amber-300'}">Reward: ${o.coinsEarned} Coins ${o.coinsCredited ? '✓ Credited' : (o.coinsStatus === 'pending_refund_window' ? '(Unlocks after Refund Window)' : '(On Delivery)')}</p>` : ''}
               <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300">${o.paymentMethod}</span>
-              <p class="text-[10px] font-mono text-slate-300 mt-1">UTR: ${o.utrNumber}</p>
+              <p class="text-[10px] font-mono text-slate-300 mt-1">UTR: ${escapeHTML(o.utrNumber)}</p>
             </td>
             <td class="p-3 space-y-1.5 min-w-[175px]">
               <select id="courier_${o.id}" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1.5 text-[11px] text-cyan-300 font-bold">
