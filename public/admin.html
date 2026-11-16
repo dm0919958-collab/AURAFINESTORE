@@ -1601,19 +1601,19 @@ label { color: #f1e5ce; }
         <div class="rounded-xl border border-emerald-500/25 bg-emerald-950/20 p-3"><p class="text-[10px] font-bold uppercase text-emerald-300">Request Type: ${escapeHTML(r.requestType||'Return')}</p><p class="mt-1 text-[10px] font-bold uppercase text-rose-300">Reason: ${escapeHTML(r.reason)}</p><p class="mt-1 whitespace-pre-line text-slate-100">${escapeHTML(r.details||'No description supplied')}</p><p class="mt-2 whitespace-pre-line text-[10px] text-slate-300">Products: ${escapeHTML(r.productDetails||r.productSummary||'—')}</p><p class="mt-1 text-[10px] text-slate-300">Order total: ₹${escapeHTML(r.orderTotal||'—')}</p><p class="mt-1 text-[10px] text-slate-400">Delivery address: ${escapeHTML(r.shippingAddress||'—')}</p><p class="mt-1 text-[10px] text-slate-400">Photos: ${Number(r.photoCount)||0} • Video: ${escapeHTML(r.videoName||'—')}</p></div>
         <div class="rounded-xl border ${r.telegramStatus==='Sent'?'border-emerald-600 bg-emerald-50':'border-rose-600 bg-rose-50'} p-3 text-sm font-bold leading-relaxed ${r.telegramStatus==='Sent'?'text-emerald-900':'text-rose-900'}"><i class="fa-brands fa-telegram mr-1"></i> Telegram delivery: ${r.telegramStatus==='Sent'?'Sent • Actual photo/video':`Failed • Error: ${escapeHTML(r.telegramError||'Telegram delivery failed')}`}</div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2"><div><label class="mb-1 block text-[10px] font-bold text-slate-300">Update Status</label><select id="return_status_${escapeHTML(r.requestId)}" class="w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-white">${statuses.map(s=>`<option value="${s}" ${r.status===s?'selected':''}>${s}</option>`).join('')}</select></div><div><label class="mb-1 block text-[10px] font-bold text-slate-300">Admin Note</label><input id="return_note_${escapeHTML(r.requestId)}" value="${escapeHTML(r.adminNote||'')}" maxlength="1000" placeholder="Reason / return instructions / refund reference" class="w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-white"></div></div>
-        <div class="flex flex-wrap items-center justify-between gap-2"><p class="text-[10px] text-slate-500">Set Pending or Approved, then save the update.</p><div class="flex gap-2"><button onclick="saveAdminReturnStatus(${safeInlineArg(r.requestId)})" class="rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-2 font-extrabold text-slate-950">Save Update</button><button onclick="deleteAdminReturnRequest(${safeInlineArg(r.requestId)})" class="rounded-lg border border-rose-600 bg-rose-50 px-4 py-2 font-extrabold text-rose-800">Delete This Request</button><button onclick="deleteCustomerReturnHistory(${safeInlineArg(r.phone)},${safeInlineArg(r.customerName)})" class="rounded-lg border border-rose-800 bg-rose-700 px-4 py-2 font-extrabold text-white">Delete Customer All History</button></div></div>
+        <div class="flex flex-wrap items-center justify-between gap-2"><p class="text-[10px] text-slate-500">Set Pending or Approved, then save the update.</p><div class="flex gap-2"><button onclick="saveAdminReturnStatus(${safeInlineArg(r.requestId)})" class="rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-2 font-extrabold text-slate-950">Save Update</button><button onclick="deleteAdminReturnRequest(${safeInlineArg(r.requestId)})" class="rounded-lg border border-rose-600 bg-rose-50 px-4 py-2 font-extrabold text-rose-800">Delete</button></div></div>
       </article>`).join('');
     }
-    async function deleteCustomerReturnHistory(phone,customerName){
-      const cleanPhone=String(phone||'').replace(/\D/g,'');
-      if(cleanPhone.length!==10)return alert('Valid customer phone number is missing.');
-      if(!confirm('Permanently delete ALL Return / Replacement history for '+customerName+' ('+cleanPhone+')? This removes all matching requests, including Failed records, from the database and customer support history. This cannot be undone.'))return;
-      try{const res=await fetch('/api/admin/returns/customer-history-delete',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({phone:cleanPhone})});if(handleUnauthorized(res))return;const data=await res.json();if(!res.ok||!data.success)return alert(data.message||'Could not delete customer history.');window._selectedReturnRequestIds.clear();alert(data.message||'Customer history permanently deleted.');await loadAdminReturnRequests(true);}
-      catch(e){alert('Could not delete customer history. Please try again.');}
-    }
     async function deleteAdminReturnRequest(requestId){
-      if(!confirm('Permanently delete only this Return / Replacement request from the database? This cannot be undone.'))return;
-      await submitReturnBulkDelete({requestIds:[requestId]},'Permanently delete only this request? This cannot be undone.');
+      if(!confirm('Delete this Return / Replacement request and its saved admin reply/history?'))return;
+      try{
+        const res=await fetch('/api/admin/returns/'+encodeURIComponent(requestId),{method:'DELETE',headers:getAuthHeaders()});
+        if(handleUnauthorized(res))return;
+        const data=await res.json();
+        if(!res.ok||!data.success)return alert(data.message||'Could not delete this request.');
+        window._lastReturnRequestsHash='';
+        await loadAdminReturnRequests(true);
+      }catch(e){alert('Could not delete this request. Please try again.');}
     }
     async function saveAdminReturnStatus(requestId){
       const status=document.getElementById('return_status_'+requestId).value,adminNote=document.getElementById('return_note_'+requestId).value.trim();
