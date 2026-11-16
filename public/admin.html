@@ -1286,13 +1286,13 @@ label { color: #f1e5ce; }
           <div class="bg-slate-800/80 border ${inStockNow ? 'border-emerald-500/40' : 'border-purple-500/30'} p-3.5 rounded-2xl text-xs space-y-2 flex flex-col justify-between">
             <div>
               <div class="flex justify-between items-start gap-2">
-                <div><p class="font-bold text-white">${escapeHTML(n.customerName)}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${n.phone}</p></div>
-                <button onclick="deleteStockNotify('${n._id}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                <div><p class="font-bold text-white">${escapeHTML(n.customerName)}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${escapeHTML(String(n.phone||'').replace(/[^0-9]/g,''))}</p></div>
+                <button onclick="deleteStockNotify(${safeInlineArg(n._id)})" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
               </div>
               <p class="text-amber-300 font-bold mt-1 line-clamp-1">${escapeHTML(n.productName)}</p>
               <p class="text-[10px] mt-0.5 ${inStockNow ? 'text-emerald-400 font-bold' : 'text-rose-400'}">${inStockNow ? `● Ready (${prod.stockQuantity} in stock)` : '● Sold Out'}</p>
             </div>
-            <a href="https://wa.me/91${n.phone}?text=${encodeURIComponent(waMsg)}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-xl font-bold text-center block shadow"><i class="fa-brands fa-whatsapp mr-1"></i> Send Restock Alert</a>
+            <a href="https://wa.me/91${encodeURIComponent(String(n.phone||'').replace(/[^0-9]/g,''))}?text=${encodeURIComponent(waMsg)}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-xl font-bold text-center block shadow"><i class="fa-brands fa-whatsapp mr-1"></i> Send Restock Alert</a>
           </div>`;
       }).join('');
     }
@@ -1316,13 +1316,13 @@ label { color: #f1e5ce; }
           <div class="bg-slate-800/80 border border-rose-500/30 p-3.5 rounded-2xl text-xs space-y-2 flex flex-col justify-between">
             <div>
               <div class="flex justify-between items-start">
-                <div><p class="font-bold text-white">${escapeHTML(c.customerName)}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${c.phone}</p></div>
-                <button onclick="deleteAbandonedCart('${c.phone}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                <div><p class="font-bold text-white">${escapeHTML(c.customerName)}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${escapeHTML(String(c.phone||'').replace(/[^0-9]/g,''))}</p></div>
+                <button onclick="deleteAbandonedCart(${safeInlineArg(c.phone)})" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
               </div>
               <p class="text-amber-300 font-semibold mt-1 line-clamp-2">${itemsSummary}</p>
               <p class="text-slate-400 text-[10px] mt-1">Bag Value: <b class="text-white">₹${c.totalAmount}</b></p>
             </div>
-            <a href="https://wa.me/91${c.phone}?text=${encodeURIComponent(waMsg)}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-xl font-bold text-center block shadow"><i class="fa-brands fa-whatsapp mr-1"></i> Recover via WhatsApp</a>
+            <a href="https://wa.me/91${encodeURIComponent(String(c.phone||'').replace(/[^0-9]/g,''))}?text=${encodeURIComponent(waMsg)}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-xl font-bold text-center block shadow"><i class="fa-brands fa-whatsapp mr-1"></i> Recover via WhatsApp</a>
           </div>`;
       }).join('');
     }
@@ -1359,13 +1359,13 @@ label { color: #f1e5ce; }
                 <p class="font-bold text-white">${escapeHTML(c.name)}</p>
                 ${isRepeat ? `<span class="bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full">REPEAT (${c.ordersCount}x)</span>` : `<span class="bg-slate-700 text-slate-300 text-[9px] px-2 py-0.5 rounded-full">1 Order</span>`}
               </div>
-              <p class="text-emerald-400 font-mono text-[11px] mt-0.5">+91 ${c.phone}</p>
+              <p class="text-emerald-400 font-mono text-[11px] mt-0.5">+91 ${escapeHTML(String(c.phone||'').replace(/[^0-9]/g,''))}</p>
               <div class="flex justify-between items-center mt-1">
-                <p class="text-slate-300">Spent: <b class="text-amber-400">₹${c.totalSpent}</b></p>
-                <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold"><i class="fa-solid fa-coins mr-1"></i>${c.coins} Coins</span>
+                <p class="text-slate-300">Spent: <b class="text-amber-400">₹${Number(c.totalSpent)||0}</b></p>
+                <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold"><i class="fa-solid fa-coins mr-1"></i>${Number(c.coins)||0} Coins</span>
               </div>
             </div>
-            <a href="https://wa.me/91${c.phone}?text=${encodeURIComponent(vipMsg)}" target="_blank" class="w-full bg-cyan-600/30 hover:bg-cyan-600 text-cyan-200 hover:text-white border border-cyan-500/40 py-1.5 rounded-xl font-bold text-center block transition"><i class="fa-brands fa-whatsapp mr-1"></i> Send Wallet Offer</a>
+            <a href="https://wa.me/91${encodeURIComponent(String(c.phone||'').replace(/[^0-9]/g,''))}?text=${encodeURIComponent(vipMsg)}" target="_blank" class="w-full bg-cyan-600/30 hover:bg-cyan-600 text-cyan-200 hover:text-white border border-cyan-500/40 py-1.5 rounded-xl font-bold text-center block transition"><i class="fa-brands fa-whatsapp mr-1"></i> Send Wallet Offer</a>
           </div>`;
       }).join('');
     }
@@ -1830,19 +1830,19 @@ label { color: #f1e5ce; }
               <img src="${safeHttpUrl((p.images && p.images[0]) || '')}" class="w-12 h-12 rounded-xl object-cover border border-slate-600 flex-shrink-0">
               <div class="min-w-0">
                 <p class="font-bold text-white truncate">${escapeHTML(p.name)} ${isLow ? '<span class="ml-1 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black">LOW</span>' : ''}</p>
-                <p class="text-[10px] text-slate-400">${escapeHTML(p.mainCategory)} &rarr; ${escapeHTML(p.category)} • Margin: <b class="${unitMargin >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${unitMargin}/pc</b>${(p.variantStock && Object.keys(p.variantStock).length) ? ' • Stock: ' + Object.entries(p.variantStock).map(([k,v]) => `<b class="${v<=0?'text-rose-400':'text-amber-300'}">${k.replace('__','-')}:${v}</b>`).join(', ') : ((p.sizeStock && Object.keys(p.sizeStock).length) ? ' • Sizes: ' + Object.entries(p.sizeStock).map(([k,v]) => `<b class="${v<=0?'text-rose-400':'text-amber-300'}">${k}:${v}</b>`).join(', ') : '')}</p>
+                <p class="text-[10px] text-slate-400">${escapeHTML(p.mainCategory)} &rarr; ${escapeHTML(p.category)} • Margin: <b class="${unitMargin >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${unitMargin}/pc</b>${(p.variantStock && Object.keys(p.variantStock).length) ? ' • Stock: ' + Object.entries(p.variantStock).map(([k,v]) => `<b class="${v<=0?'text-rose-400':'text-amber-300'}">${escapeHTML(k.replace('__','-'))}:${Number(v)||0}</b>`).join(', ') : ((p.sizeStock && Object.keys(p.sizeStock).length) ? ' • Sizes: ' + Object.entries(p.sizeStock).map(([k,v]) => `<b class="${v<=0?'text-rose-400':'text-amber-300'}">${escapeHTML(k)}:${Number(v)||0}</b>`).join(', ') : '')}</p>
                 <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
-                  <label class="text-[10px] text-amber-300">Sale ₹: <input type="number" id="q_price_${p.id}" value="${p.price}" class="w-16 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold"></label>
-                  <label class="text-[10px] text-emerald-300">Cost ₹: <input type="number" id="q_cost_${p.id}" value="${p.costPrice || 0}" class="w-16 bg-slate-950 border border-emerald-500/40 rounded px-1.5 py-0.5 text-emerald-300 font-bold"></label>
-                  <label class="text-[10px] text-cyan-300">Stock: <input type="number" id="q_stock_${p.id}" value="${p.stockQuantity}" class="w-14 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold"></label>
-                  <button onclick="saveQuickCatalogRow(${p.id})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-0.5 rounded font-extrabold text-[10px] shadow">Save</button>
+                  <label class="text-[10px] text-amber-300">Sale ₹: <input type="number" id="q_price_${Number(p.id)||0}" value="${Number(p.price)||0}" class="w-16 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold"></label>
+                  <label class="text-[10px] text-emerald-300">Cost ₹: <input type="number" id="q_cost_${Number(p.id)||0}" value="${Number(p.costPrice)||0}" class="w-16 bg-slate-950 border border-emerald-500/40 rounded px-1.5 py-0.5 text-emerald-300 font-bold"></label>
+                  <label class="text-[10px] text-cyan-300">Stock: <input type="number" id="q_stock_${Number(p.id)||0}" value="${Number(p.stockQuantity)||0}" class="w-14 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold"></label>
+                  <button onclick="saveQuickCatalogRow(${Number(p.id)||0})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-0.5 rounded font-extrabold text-[10px] shadow">Save</button>
                 </div>
               </div>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
-              <button onclick="toggleShowOnHome(${p.id}, ${isHome})" class="px-2.5 py-1.5 rounded-xl font-bold transition text-[11px] ${isHome ? 'bg-emerald-500 text-slate-950' : 'bg-slate-700 text-slate-300'}"><i class="fa-solid ${isHome ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i> ${isHome ? 'Home: YES' : 'Home: NO'}</button>
-              <button onclick="editProduct(${p.id})" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-2.5 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-pen"></i> Full Edit</button>
-              <button onclick="deleteProduct(${p.id})" class="bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 px-2.5 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button>
+              <button onclick="toggleShowOnHome(${Number(p.id)||0}, ${isHome})" class="px-2.5 py-1.5 rounded-xl font-bold transition text-[11px] ${isHome ? 'bg-emerald-500 text-slate-950' : 'bg-slate-700 text-slate-300'}"><i class="fa-solid ${isHome ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i> ${isHome ? 'Home: YES' : 'Home: NO'}</button>
+              <button onclick="editProduct(${Number(p.id)||0})" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-2.5 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-pen"></i> Full Edit</button>
+              <button onclick="deleteProduct(${Number(p.id)||0})" class="bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 px-2.5 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>`;
       }).join('');
@@ -1856,8 +1856,8 @@ label { color: #f1e5ce; }
       const courier = o.courierPartner || 'Delhivery';
       const trackFn = courierTrackingUrls[courier] || courierTrackingUrls["Delhivery"];
       const itemsSummary = (o.items || []).map(i => `• ${escapeHTML(i.name)} (${i.selectedSize || 'Std'}) x${i.qty || 1}`).join('\n');
-      const trackingLine = o.awbNumber ? `\n🚚 *Courier:* ${courier}\n📦 *Tracking AWB:* ${o.awbNumber}\n🔗 *Track Here:* ${trackFn(o.awbNumber)}` : '';
-      const message = `✨ *AURA FINE STORE* ✨\nHello *${o.customerName}*,\n\nYour order *#${o.id}* status is now: *${o.status}*\n\n🛍️ *Items:*\n${itemsSummary}\n\n💰 *Total Bill:* ₹${o.total} (${o.paymentMethod})${trackingLine}\n\nThank you for shopping with AURA Fine Store!`;
+      const trackingLine = o.awbNumber ? `\n🚚 *Courier:* ${escapeHTML(courier)}\n📦 *Tracking AWB:* ${escapeHTML(o.awbNumber)}\n🔗 *Track Here:* ${trackFn(o.awbNumber)}` : '';
+      const message = `✨ *AURA FINE STORE* ✨\nHello *${escapeHTML(o.customerName)}*,\n\nYour order *#${escapeHTML(o.id)}* status is now: *${escapeHTML(o.status)}*\n\n🛍️ *Items:*\n${itemsSummary}\n\n💰 *Total Bill:* ₹${Number(o.total)||0} (${escapeHTML(o.paymentMethod)})${trackingLine}\n\nThank you for shopping with AURA Fine Store!`;
       window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, '_blank');
     }
 
@@ -1890,17 +1890,17 @@ label { color: #f1e5ce; }
           <tr class="hover:bg-slate-900/60 align-top ${isChecked ? 'bg-amber-500/5' : ''}">
             <td class="p-3"><input type="checkbox" data-order-id="${escapeHTML(o.id)}" ${isChecked ? 'checked' : ''} onchange="toggleOrderCheckbox(${safeInlineArg(o.id)}, this.checked)" class="order-row-checkbox w-4 h-4 accent-amber-500 cursor-pointer"></td>
             <td class="p-3">
-              <span class="font-mono font-bold text-amber-400">#${o.id}</span>
+              <span class="font-mono font-bold text-amber-400">#${escapeHTML(o.id)}</span>
               <span class="block text-[10px] text-slate-400 mt-0.5">${escapeHTML(o.date)}</span>
               <button onclick="openThermalShippingLabel(${safeInlineArg(o.id)})" class="mt-2 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-lg text-[10px] font-extrabold shadow flex items-center gap-1"><i class="fa-solid fa-print"></i> Label (4x6)</button>
             </td>
             <td class="p-3 max-w-[210px]"><p class="font-bold text-white">${escapeHTML(o.customerName)}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${escapeHTML(o.phone)}</p><p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${escapeHTML(o.address)}</p></td>
             <td class="p-3 min-w-[180px]">${itemsText}${freeGiftHtml}${o.isNonRefundableOrder ? '<span class="inline-block mt-1 bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[9px] font-bold px-2 py-0.5 rounded">Non-Refundable</span>' : ''}</td>
             <td class="p-3">
-              <p class="font-bold text-emerald-400 text-sm">₹${o.total}</p>
-              <p class="text-[10px] text-emerald-300 font-bold">Profit: ₹${o.netProfit || 0}</p>
-              ${o.coinsUsed > 0 ? `<p class="text-[10px] text-amber-300 font-bold">Coins Used: -₹${o.coinsUsed}</p>` : ''}
-              ${o.coinsEarned > 0 ? `<p class="text-[10px] ${o.coinsCredited ? 'text-emerald-400 font-bold' : 'text-amber-300'}">Reward: ${o.coinsEarned} Coins ${o.coinsCredited ? '✓ Credited' : (o.coinsStatus === 'pending_refund_window' ? '(Unlocks after Refund Window)' : '(On Delivery)')}</p>` : ''}
+              <p class="font-bold text-emerald-400 text-sm">₹${Number(o.total)||0}</p>
+              <p class="text-[10px] text-emerald-300 font-bold">Profit: ₹${Number(o.netProfit)||0}</p>
+              ${o.coinsUsed > 0 ? `<p class="text-[10px] text-amber-300 font-bold">Coins Used: -₹${Number(o.coinsUsed)||0}</p>` : ''}
+              ${o.coinsEarned > 0 ? `<p class="text-[10px] ${o.coinsCredited ? 'text-emerald-400 font-bold' : 'text-amber-300'}">Reward: ${Number(o.coinsEarned)||0} Coins ${o.coinsCredited ? '✓ Credited' : (o.coinsStatus === 'pending_refund_window' ? '(Unlocks after Refund Window)' : '(On Delivery)')}</p>` : ''}
               <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300">${escapeHTML(o.paymentMethod)}</span>
               <p class="text-[10px] font-mono text-slate-300 mt-1">UTR: ${escapeHTML(o.utrNumber)}</p>
             </td>
