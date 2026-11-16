@@ -846,27 +846,6 @@ async function sendTelegramAlert(order) {
   }
 }
 
-async function sendTelegramDeliveredInvoice(order) {
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !order) return;
-  try {
-    const pdfBuffer = await generateOrderInvoicePDF(order);
-    const formData = new FormDataNode();
-    formData.append('chat_id', TELEGRAM_CHAT_ID);
-    formData.append('caption', `✅ AURA FINE STORE - FINAL DELIVERY INVOICE\nOrder #${order.id} marked Delivered.\nFinal Bill: ₹${order.total}`);
-    formData.append('document', pdfBuffer, {
-      filename: `Final_Delivery_Invoice_${order.id}.pdf`,
-      contentType: 'application/pdf'
-    });
-    const resp = await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, formData, {
-      headers: formData.getHeaders(),
-      timeout: 15000
-    });
-    if (!resp.data || !resp.data.ok) throw new Error('Telegram did not confirm final invoice delivery');
-  } catch (err) {
-    console.error('Telegram final delivery invoice error:', err.response ? err.response.data : err.message);
-  }
-}
-
 async function forwardSupportToTelegram(order, issueText, files) {
   if (!SUPPORT_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
   try {
@@ -2409,9 +2388,6 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
     }
     await order.save();
     res.json({ success: true, status: order.status, deliveredAt: order.deliveredAt });
-    if (status === 'Delivered' && prevStatus !== 'Delivered') {
-      sendTelegramDeliveredInvoice(order).catch(err => console.error('Final delivery invoice task error:', err.message));
-    }
   } catch (err) {
     res.status(500).json({ success: false });
   }
