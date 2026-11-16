@@ -2333,6 +2333,7 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
       for (const item of (order.items || [])) {
         const p = await Product.findOne({ id: item.id });
         if (p) {
+          const beforeQty = Number(p.stockQuantity) || 0;
           const varMap = (p.variantStock && typeof p.variantStock === 'object') ? { ...p.variantStock } : {};
           const vKey = `${item.selectedColor || 'Standard'}__${item.selectedSize || 'Standard'}`;
           const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
@@ -2352,6 +2353,7 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
           }
           p.inStock = p.stockQuantity > 0;
           await p.save();
+          await StockHistory.create({ productId: p.id, productName: p.name, change: Number(p.stockQuantity || 0) - beforeQty, beforeQty, afterQty: Number(p.stockQuantity || 0), reason: 'Order cancellation restock', orderId: order.id, variant: vKey, actor: 'system' }).catch(e => console.error('Stock history write failed:', e.message));
         }
       }
       // Reverse earned coins if already credited
