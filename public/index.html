@@ -942,6 +942,16 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
     }
+
+    // Context-safe helpers for dynamic HTML attributes and URL values.
+    function safeInlineArg(value) { return escapeHTML(JSON.stringify(String(value ?? '')).replace(/</g, '\\u003c')); }
+    function safeHttpUrl(value) {
+      try { const raw=String(value ?? '').trim(); if(!raw)return ''; const parsed=new URL(raw,window.location.origin);
+        if(parsed.protocol!=='https:' && parsed.origin!==window.location.origin)return '';
+        if(parsed.protocol!=='https:' && parsed.protocol!==window.location.protocol)return '';
+        return escapeHTML(parsed.href);
+      } catch(e) { return ''; }
+    }
     
     const STORE_UPI_ID = "6289145092@ptsbi";
 
@@ -1524,7 +1534,7 @@
         return `
           <div class="rounded-3xl border border-amber-500/20 overflow-hidden shadow-lg lux-card flex flex-col justify-between group">
             <div onclick="openQuickView(${p.id})" class="relative overflow-hidden aspect-square bg-stone-950 cursor-pointer">
-              <img src="${mainImage}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isOut ? 'opacity-40 grayscale' : ''}">
+              <img src="${safeHttpUrl(mainImage)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isOut ? 'opacity-40 grayscale' : ''}">
               <span class="absolute top-3.5 left-3.5 ${isOut ? 'bg-rose-600 text-white' : 'bg-stone-950/90 text-amber-300 border border-amber-500/30'} text-[10px] font-extrabold uppercase px-3 py-1 rounded-full">${isOut ? 'Sold Out' : p.badge}</span>
               <button onclick="toggleWishlist(${p.id}, event)" title="Save to Wishlist" class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-stone-950/85 hover:bg-stone-900 border border-rose-500/30 flex items-center justify-center transition shadow"><i class="${isWished ? 'fa-solid text-rose-500' : 'fa-regular text-stone-300'} fa-heart text-sm"></i></button>
               ${isLowUrgency ? `<span class="absolute bottom-3.5 left-3.5 bg-rose-600/95 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow animate-pulse">🔥 মাত্র ${qtyLeft}টি পিস বাকি আছে!</span>` : ''}
@@ -1580,7 +1590,7 @@
 
       const images = (prod.images && prod.images.length) ? prod.images : [""];
       document.getElementById('qvMainImage').src = images[0];
-      document.getElementById('qvThumbnailsContainer').innerHTML = images.map((u, i) => `<img id="thumb_img_${i}" src="${u}" onclick="setMainImage('${u}', ${i})" class="w-14 h-14 object-cover rounded-xl border-2 ${i === 0 ? 'border-amber-400' : 'border-transparent'} cursor-pointer">`).join('');
+      document.getElementById('qvThumbnailsContainer').innerHTML = images.map((u, i) => `<img id="thumb_img_${i}" src="${safeHttpUrl(u)}" onclick="setMainImage(${safeInlineArg(u)}, ${i})" class="w-14 h-14 object-cover rounded-xl border-2 ${i === 0 ? 'border-amber-400' : 'border-transparent'} cursor-pointer">`).join('');
       document.getElementById('qvBadge').innerText = isOut ? "Sold Out" : (prod.badge || prod.category);
       document.getElementById('qvTitle').innerText = prod.name;
       document.getElementById('qvPrice').innerText = `₹${prod.price}`;
@@ -1591,7 +1601,7 @@
       const colors = (prod.colorOptions && prod.colorOptions.length) ? prod.colorOptions : ["Standard"];
       currentSelectedColor = colors[0];
       document.getElementById('qvSelectedColorDisplay').innerText = currentSelectedColor;
-      document.getElementById('qvColorContainer').innerHTML = colors.map((c, i) => `<button type="button" onclick="selectVariantColor('${c}', ${i}, this)" class="color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300'}">${c}</button>`).join('');
+      document.getElementById('qvColorContainer').innerHTML = colors.map((c, i) => `<button type="button" onclick="selectVariantColor(${safeInlineArg(c)}, ${i}, this)" class="color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300'}">${escapeHTML(c)}</button>`).join('');
 
       renderQuickViewSizePills(prod, currentSelectedColor);
 
@@ -1617,7 +1627,7 @@
       relSection.classList.remove('hidden');
       relGrid.innerHTML = related.map(r => `
         <div onclick="openQuickView(${r.id})" class="cursor-pointer bg-stone-950 border border-stone-800 hover:border-amber-500/40 rounded-2xl p-2.5 flex items-center gap-2.5 transition">
-          <img src="${(r.images && r.images[0]) || ''}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0">
+          <img src="${safeHttpUrl((r.images && r.images[0]) || '')}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0">
           <div class="min-w-0"><p class="text-[11px] font-bold text-stone-100 truncate">${escapeHTML(r.name)}</p><p class="text-xs font-black text-amber-400 mt-0.5">₹${r.price}</p></div>
         </div>`).join('');
     }
@@ -1629,7 +1639,7 @@
         <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl text-xs space-y-1.5">
           <div class="flex justify-between font-bold"><span>${escapeHTML(r.customerName)} <span class="text-[10px] text-emerald-400 font-normal ml-1">✓ Verified</span></span><span class="text-amber-400">${'★'.repeat(r.rating || 5)}</span></div>
           <p class="text-stone-300">${escapeHTML(r.comment)}</p>
-          ${r.photoUrl ? `<a href="${r.photoUrl}" target="_blank" class="inline-block pt-1"><img src="${r.photoUrl}" class="w-16 h-16 object-cover rounded-xl border border-amber-500/30"></a>` : ''}
+          ${r.photoUrl ? `<a href="${safeHttpUrl(r.photoUrl)}" target="_blank" rel="noopener noreferrer" class="inline-block pt-1"><img src="${safeHttpUrl(r.photoUrl)}" class="w-16 h-16 object-cover rounded-xl border border-amber-500/30"></a>` : ''}
         </div>`).join('') : `<p class="text-xs text-stone-500 text-center py-2">No reviews yet.</p>`;
     }
 
@@ -2175,16 +2185,16 @@
         const courier = o.courierPartner || 'Delhivery', trackFn = courierTrackingUrls[courier] || courierTrackingUrls["Delhivery"];
         return `
         <div class="border border-stone-800 bg-stone-950 p-4 rounded-2xl space-y-3">
-          <div class="flex justify-between items-center font-bold"><span class="text-amber-400 font-mono text-sm">#${o.id}</span><span class="px-2.5 py-0.5 rounded-full text-[10px] ${o.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${o.status}</span></div>
+          <div class="flex justify-between items-center font-bold"><span class="text-amber-400 font-mono text-sm">#${o.id}</span><span class="px-2.5 py-0.5 rounded-full text-[10px] ${o.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${escapeHTML(o.status)}</span></div>
           ${buildOrderTimelineHTML(o.status)}
-          <p class="text-stone-400 text-[11px]">${o.date} • Total: <b class="text-white">₹${o.total}</b> (${o.paymentMethod})</p>
-          ${o.freeGiftUnlocked ? `<p class="text-[11px] text-emerald-300 font-bold"><i class="fa-solid fa-award mr-1"></i>Free Bonus Gift: ${o.freeGiftUnlocked}</p>` : ''}
+          <p class="text-stone-400 text-[11px]">${escapeHTML(o.date)} • Total: <b class="text-white">₹${Number(o.total)||0}</b> (${escapeHTML(o.paymentMethod)})</p>
+          ${o.freeGiftUnlocked ? `<p class="text-[11px] text-emerald-300 font-bold"><i class="fa-solid fa-award mr-1"></i>Free Bonus Gift: ${escapeHTML(o.freeGiftUnlocked)}</p>` : ''}
           ${o.coinsEarned > 0 ? `<p class="text-[11px] text-amber-300"><i class="fa-solid fa-coins mr-1"></i>${o.coinsCredited ? `Credited +${o.coinsEarned} AURA Coins ✓` : `Earn +${o.coinsEarned} AURA Coins upon delivery`}</p>` : ''}
-          ${o.awbNumber ? `<p class="text-[11px] text-cyan-300 font-mono">Courier: ${courier} | AWB: <b>${o.awbNumber}</b></p>` : ''}
+          ${o.awbNumber ? `<p class="text-[11px] text-cyan-300 font-mono">Courier: ${escapeHTML(courier)} | AWB: <b>${escapeHTML(o.awbNumber)}</b></p>` : ''}
           <div class="flex flex-wrap gap-2 pt-1">
             <a href="/api/orders/${o.id}/invoice" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px]"><i class="fa-solid fa-file-pdf"></i> Download Invoice</a>
-            ${o.awbNumber ? `<a href="${trackFn(o.awbNumber)}" target="_blank" class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-location-dot"></i> Track on ${courier}</a>` : ''}
-            ${o.deliverySlipFile ? `<a href="${o.deliverySlipFile}" download="Slip_${o.id}" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-download"></i> Delivery Slip</a>` : ''}
+            ${o.awbNumber ? `<a href="${safeHttpUrl(trackFn(o.awbNumber))}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-location-dot"></i> Track on ${courier}</a>` : ''}
+            ${o.deliverySlipFile ? `<a href="${safeHttpUrl(o.deliverySlipFile)}" download="Slip_${o.id}" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-download"></i> Delivery Slip</a>` : ''}
           </div>
         </div>`;
       }).join('');
@@ -2207,7 +2217,7 @@
       const wrap = document.getElementById('customerPreviousTicketsWrap'), list = document.getElementById('customerPreviousTicketsList');
       if (tickets && tickets.length) {
         wrap.classList.remove('hidden');
-        list.innerHTML = tickets.map(t => `<div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-1 text-xs"><div class="flex justify-between text-[10px]"><span class="font-mono font-bold text-amber-400">#${t.orderId} (${t.ticketId})</span><span class="text-stone-500">${t.createdAtStr || ''}</span></div><p><b class="text-rose-400">Your Issue:</b> ${escapeHTML(t.issueText)}</p>${t.adminReply ? `<div class="bg-emerald-950/70 border border-emerald-500/30 p-2 rounded-lg text-emerald-300"><b>AURA Support Reply:</b> ${escapeHTML(t.adminReply)}</div>` : `<p class="text-[10px] text-amber-300 italic">Waiting for support reply...</p>`}</div>`).join('');
+        list.innerHTML = tickets.map(t => `<div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-1 text-xs"><div class="flex justify-between text-[10px]"><span class="font-mono font-bold text-amber-400">#${escapeHTML(t.orderId)} (${escapeHTML(t.ticketId)})</span><span class="text-stone-500">${escapeHTML(t.createdAtStr || '')}</span></div><p><b class="text-rose-400">Your Issue:</b> ${escapeHTML(t.issueText)}</p>${t.adminReply ? `<div class="bg-emerald-950/70 border border-emerald-500/30 p-2 rounded-lg text-emerald-300"><b>AURA Support Reply:</b> ${escapeHTML(t.adminReply)}</div>` : `<p class="text-[10px] text-amber-300 italic">Waiting for support reply...</p>`}</div>`).join('');
       } else wrap.classList.add('hidden');
     }
 
@@ -2223,7 +2233,7 @@
       supportMatchedOrders = data.orders || []; renderCustomerTickets(data.tickets || []);
       const listDiv = document.getElementById('supportOrdersList'); selectedSupportOrder = null; updateSupportNextBtn();
       if (!supportMatchedOrders.length) { listDiv.innerHTML = `<p class="text-center py-4 text-rose-400 font-bold">No orders found!</p>`; return; }
-      listDiv.innerHTML = supportMatchedOrders.map((o, i) => `<div onclick="selectOrderForSupport(${i}, this)" class="support-order-card cursor-pointer bg-stone-950 border-2 border-stone-800 p-3 rounded-2xl"><div class="flex justify-between font-bold"><span class="font-mono text-amber-400">#${o.id}</span><span>${o.status}</span></div><p class="text-xs font-bold">${o.customerName}</p><p class="text-[11px] text-stone-400">${(o.items || []).map(x => x.name).join(', ')}</p></div>`).join('');
+      listDiv.innerHTML = supportMatchedOrders.map((o, i) => `<div onclick="selectOrderForSupport(${i}, this)" class="support-order-card cursor-pointer bg-stone-950 border-2 border-stone-800 p-3 rounded-2xl"><div class="flex justify-between font-bold"><span class="font-mono text-amber-400">#${escapeHTML(o.id)}</span><span>${escapeHTML(o.status)}</span></div><p class="text-xs font-bold">${escapeHTML(o.customerName)}</p><p class="text-[11px] text-stone-400">${(o.items || []).map(x => escapeHTML(x.name)).join(', ')}</p></div>`).join('');
     }
 
     function selectOrderForSupport(i, el) {
