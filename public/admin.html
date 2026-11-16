@@ -127,6 +127,8 @@ label { color: #f1e5ce; }
     .banner-editor-form input:focus, .banner-editor-form select:focus { outline: 2px solid #fbbf24; outline-offset: 1px; }
     .banner-editor-form input[type="file"] { color: #f1f5f9 !important; }
   </style>
+
+<style id="aura-admin-custom-dashboard">:root{--ag:#063b2b;--au:#c49a4a}html{scroll-behavior:smooth;scroll-padding-top:20px}#auraAdminSidebar{position:fixed;z-index:60;left:16px;top:16px;bottom:16px;width:218px;padding:16px 12px;background:linear-gradient(165deg,#062f24,#06432f 58%,#09271f);border:1px solid rgba(196,154,74,.65);border-radius:22px;box-shadow:0 20px 60px rgba(5,35,25,.24);display:flex;flex-direction:column;gap:10px;color:#fff}#auraAdminSidebar .aura-brand{font-family:Cinzel,serif;color:#e8c77e;text-align:center;font-size:21px;padding:5px 0 14px;border-bottom:1px solid rgba(220,190,125,.25)}#auraAdminSidebar small{display:block;font:600 10px "Plus Jakarta Sans",sans-serif;letter-spacing:2px;color:#d8c18f}#auraAdminSidebar nav{display:flex;flex-direction:column;gap:5px;overflow:auto}#auraAdminSidebar a{display:flex;align-items:center;gap:10px;color:#edf4ed;text-decoration:none;padding:10px 11px;border-radius:11px;font-size:12px;font-weight:700;border:1px solid transparent}#auraAdminSidebar a:hover{background:rgba(255,255,255,.1);border-color:rgba(220,190,125,.25);color:#f6d990}#auraAdminSidebar .aura-side-note{margin-top:auto;border:1px solid rgba(220,190,125,.45);border-radius:13px;padding:11px;text-align:center;color:#e8d4a6;font-size:10px}#dashboardContent{margin-left:246px!important;max-width:calc(100vw - 270px)!important}#auraAdminSectionHeading{background:linear-gradient(100deg,#073b2b,#0c563d);color:#f7e8c5;border:1px solid rgba(196,154,74,.55);border-radius:15px;padding:13px 17px;display:flex;justify-content:space-between;gap:10px}#auraAdminSectionHeading strong{font-family:Cinzel,serif}#auraAdminSectionHeading span{font-size:10px;color:#d8c79f}#auraAdminSecuritySection,#auraAdminInvoicesSection{background:#fffdf8;border:1px solid #dfd3bd;border-radius:22px;padding:20px;box-shadow:0 10px 30px rgba(30,55,42,.05);color:#20352b}#auraAdminSecuritySection h3,#auraAdminInvoicesSection h3{color:#78582e}#auraAdminSecuritySection .aura-security-tile{background:#f4f1e8;border:1px solid #e3d8c4;border-radius:14px;padding:13px}#auraAdminInvoicesSection table{width:100%;border-collapse:collapse;font-size:12px}#auraAdminInvoicesSection th{background:#073b2b;color:#f4e7c7;text-align:left;padding:11px}#auraAdminInvoicesSection td{padding:10px;border-bottom:1px solid #e8e1d5;color:#304439}#auraAdminInvoicesSection tr:nth-child(even){background:#f8f5ed}#auraAdminInvoicesSection button{background:#0a5139;color:white;padding:7px 11px;border-radius:9px;font-weight:700}@media(max-width:900px){#auraAdminSidebar{position:sticky;top:8px;left:auto;bottom:auto;width:auto;margin:8px 10px;padding:10px;border-radius:14px}#auraAdminSidebar .aura-brand,#auraAdminSidebar .aura-side-note{display:none}#auraAdminSidebar nav{flex-direction:row;overflow-x:auto;white-space:nowrap}#auraAdminSidebar a{flex:0 0 auto;padding:9px 11px}#dashboardContent{margin:0 auto!important;max-width:100%!important;padding:12px!important}}@media(max-width:560px){#auraAdminSectionHeading{flex-direction:column}#auraAdminInvoicesSection{padding:12px}#auraAdminInvoicesSection table{min-width:680px}}</style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
@@ -179,7 +181,7 @@ label { color: #f1e5ce; }
         <a href="/" target="_blank" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs border border-slate-700">View Store &rarr;</a>
         <button onclick="logout()" class="bg-rose-600/20 text-rose-400 hover:bg-rose-600/30 px-4 py-2 rounded-xl text-xs border border-rose-600/30 font-semibold">Logout</button>
       </div>
-    </header>
+    </header><div id="auraAdminSidebar"><div class="aura-brand">✿ AURA <small>FINE STORE • ADMIN</small></div><nav aria-label="Admin sections"><a href="#auraAdminOverview"><i class="fa-solid fa-gauge-high"></i> Overview</a><a href="#adminCatalogSection"><i class="fa-solid fa-box"></i> Products</a><a href="#auraAdminOrdersSection"><i class="fa-solid fa-truck-fast"></i> Orders</a><a href="#repeatCustomersSection"><i class="fa-solid fa-users"></i> Customers & Coins</a><a href="#salesAnalyticsSection"><i class="fa-solid fa-chart-line"></i> Sales Analytics</a><a href="#auraAdminSecuritySection"><i class="fa-solid fa-shield-halved"></i> Admin Security</a><a href="#supportDeskSection"><i class="fa-solid fa-headset"></i> Support Desk</a><a href="#auraAdminInvoicesSection" onclick="setTimeout(renderAdminInvoices,80)"><i class="fa-solid fa-file-invoice"></i> Invoices</a><a href="#storeSettingsSection"><i class="fa-solid fa-sliders"></i> Store Settings</a><a href="#categoryManagerSection"><i class="fa-solid fa-layer-group"></i> Categories</a><a href="#reviewModerationSection"><i class="fa-solid fa-star"></i> Reviews</a><a href="#stockWaitlistSection"><i class="fa-solid fa-bell"></i> Waitlist</a><a href="#abandonedCartsSection"><i class="fa-solid fa-cart-arrow-down"></i> Abandoned Carts</a><a href="#firstOrderPopupSection"><i class="fa-solid fa-gift"></i> Welcome Popup</a><a href="#couponManagerSection"><i class="fa-solid fa-ticket"></i> Coupons</a><a href="#bannerManagerSection"><i class="fa-solid fa-panorama"></i> Banners</a></nav><div class="aura-side-note"><i class="fa-solid fa-crown"></i><br><b>AURA PREMIUM ADMIN</b><br>Manage with Excellence</div></div>
 
     <!-- Low Stock Alert Banner -->
     <div id="lowStockAlertBox" class="hidden bg-rose-950/70 border border-rose-500/50 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -193,6 +195,7 @@ label { color: #f1e5ce; }
       <a href="#adminCatalogSection" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-1.5 rounded-xl font-bold">Restock Now &darr;</a>
     </div>
 
+    <div id="auraAdminOverview"></div><div id="auraAdminSectionHeading"><strong>Dashboard Overview</strong><span>Manage • Grow • Succeed</span></div>
     <!-- Analytics Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
       <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl">
@@ -229,8 +232,10 @@ label { color: #f1e5ce; }
       </div>
     </div>
 
+
+<section id="auraAdminSecuritySection" class="space-y-4"><div class="flex flex-wrap items-center justify-between gap-3"><div><h3 class="text-lg font-bold"><i class="fa-solid fa-shield-halved mr-2"></i>Admin Security Center</h3><p class="text-xs text-slate-500">Session and login controls currently available in this store admin.</p></div><span id="auraAdminSessionBadge" class="text-xs font-bold px-3 py-2 rounded-full bg-emerald-100 text-emerald-800">Checking session…</span></div><div class="grid grid-cols-1 md:grid-cols-3 gap-3"><div class="aura-security-tile"><b class="text-sm">JWT Admin Session</b><p class="text-xs mt-1 text-slate-600">The panel stores its login token in this browser session.</p><p class="text-xs font-bold mt-2" id="auraAdminJwtState">Checking…</p></div><div class="aura-security-tile"><b class="text-sm">Login Protection</b><p class="text-xs mt-1 text-slate-600">The server includes a five-attempt temporary lockout on failed PIN attempts.</p><p class="text-xs font-bold mt-2">Server-side login guard</p></div><div class="aura-security-tile"><b class="text-sm">Change Admin PIN</b><p class="text-xs mt-1 text-slate-600">Use the existing protected PIN update control; no duplicate PIN setting is created.</p><button type="button" onclick="document.getElementById('newAdminPinInput').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('newAdminPinInput').focus()" class="mt-3 bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs font-bold">Go to PIN Settings</button></div></div><p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">Security review note: backend code has fallback admin credentials/secrets when Render environment variables are missing. Set strong values in Render before production use.</p></section>
     <!-- VISUAL SALES & PROFIT CHART (7 DAYS / 30 DAYS) -->
-    <div class="bg-slate-900 border border-amber-500/30 p-5 rounded-3xl space-y-4 shadow-xl">
+    <div id="salesAnalyticsSection" class="bg-slate-900 border border-amber-500/30 p-5 rounded-3xl space-y-4 shadow-xl">
       <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-800 pb-3">
         <div>
           <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-chart-line mr-1.5"></i> Visual Revenue & Net Profit Analytics</h3>
@@ -364,7 +369,7 @@ label { color: #f1e5ce; }
     </div>
 
     <!-- Store Controls, AURA Coins & Limits (Compact 3-Column Grid — Zero Wasted Space) -->
-    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
+    <div id="storeSettingsSection" class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
         <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-sliders mr-1.5"></i> Store Controls, AURA Coins & Limits</h3>
         <span class="text-[11px] text-slate-400">Manage wallet rewards, free gifts, COD rules, timer & security PIN</span>
@@ -479,7 +484,7 @@ label { color: #f1e5ce; }
     </div>
 
     <!-- Discount Coupon Manager WITH AUTO-EXPIRY TIMER (Full-Width Compact Section — No Blank Gap) -->
-    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
+    <div id="couponManagerSection" class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div>
         <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-ticket mr-1.5"></i> Discount Coupons & Auto-Expire Timer Manager</h3>
         <p class="text-[11px] text-slate-400">Create your First-Order coupon code here (e.g. <b class="text-amber-300">AURA20</b> or <b class="text-amber-300">FIRST25</b>) and link it in the Welcome Popup section above!</p>
@@ -514,7 +519,7 @@ label { color: #f1e5ce; }
       <div id="adminCouponsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 max-h-60 overflow-y-auto pr-1"></div>
     </div>
     <!-- Hero Deal Banners -->
-    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
+    <div id="bannerManagerSection" class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-2">
         <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-panorama mr-1.5"></i> Store Front Hero Deal Banners</h3>
       </div>
@@ -727,7 +732,7 @@ label { color: #f1e5ce; }
     </div>
 
     <!-- Customer Orders & Logistics Table WITH BULK CHECKBOXES & BULK 4x6 LABEL PRINT -->
-    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
+    <div id="auraAdminOrdersSection" class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
         <div>
           <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-truck-fast mr-1"></i> Customer Orders & Logistics</h3>
@@ -774,9 +779,20 @@ label { color: #f1e5ce; }
       </div>
     </div>
 
+<section id="auraAdminInvoicesSection" class="space-y-4"><div class="flex flex-wrap justify-between items-center gap-3"><div><h3 class="text-lg font-bold"><i class="fa-solid fa-file-invoice mr-2"></i>Invoices & Billing</h3><p class="text-xs text-slate-500">Download PDF invoices for existing orders using the protected admin invoice endpoint.</p></div><button type="button" onclick="renderAdminInvoices()" class="text-xs bg-emerald-800 text-white px-3 py-2 rounded-lg font-bold">Refresh Invoices</button></div><input id="auraInvoiceSearch" type="search" oninput="renderAdminInvoices()" placeholder="Search order ID, customer or phone…" class="w-full md:max-w-md border rounded-xl p-3 text-sm"><div class="overflow-x-auto"><table><thead><tr><th>Order ID</th><th>Date</th><th>Customer</th><th>Amount</th><th>Payment</th><th>Status</th><th>Invoice</th></tr></thead><tbody id="auraInvoicesTableBody"><tr><td colspan="7">Load orders to view invoices.</td></tr></tbody></table></div></section>
+
   </div>
 
   <script>
+    function renderAdminInvoices() {
+      const body=document.getElementById("auraInvoicesTableBody"); if(!body)return;
+      const q=String(document.getElementById("auraInvoiceSearch")?.value||"").trim().toLowerCase();
+      const rows=(cachedOrders||[]).filter(o=>!q||[o.id,o.customerName,o.phone].some(v=>String(v||"").toLowerCase().includes(q)));
+      if(!rows.length){body.innerHTML='<tr><td colspan="7">No matching orders found.</td></tr>';return;}
+      body.innerHTML=rows.map(o=>`<tr><td><b>${escapeHTML(o.id||"")}</b></td><td>${escapeHTML(o.date||"")}</td><td>${escapeHTML(o.customerName||"")}<br><small>${escapeHTML(o.phone||"")}</small></td><td>₹${Number(o.total||0).toLocaleString("en-IN")}</td><td>${escapeHTML(o.paymentMethod||"—")}</td><td>${escapeHTML(o.status||"—")}</td><td><button type="button" onclick="downloadAdminInvoice(${safeInlineArg(o.id)})">Download PDF</button></td></tr>`).join("");
+    }
+    async function downloadAdminInvoice(orderId){try{const res=await fetch(`/api/orders/${encodeURIComponent(orderId)}/invoice`,{headers:{"Authorization":`Bearer ${adminToken}`}});if(handleUnauthorized(res))return;if(!res.ok)throw new Error(await res.text()||"Invoice download failed");const blob=await res.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`AURA_Invoice_${String(orderId).replace(/[^a-zA-Z0-9_-]/g,"")}.pdf`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}catch(err){alert(err.message||"Could not download invoice.");}}
+    function updateAuraAdminSecurityStatus(){const active=Boolean(adminToken);const badge=document.getElementById("auraAdminSessionBadge");const state=document.getElementById("auraAdminJwtState");if(badge){badge.textContent=active?"Admin session present":"No active session";badge.className=active?"text-xs font-bold px-3 py-2 rounded-full bg-emerald-100 text-emerald-800":"text-xs font-bold px-3 py-2 rounded-full bg-rose-100 text-rose-800";}if(state)state.textContent=active?"JWT token found in session":"Login required";}
     function escapeHTML(str) {
       return String(str ?? '')
         .replace(/&/g, '&amp;')
@@ -1248,7 +1264,7 @@ label { color: #f1e5ce; }
     if (adminToken) {
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('dashboardContent').classList.remove('hidden');
-      loadAdminDashboard(true); loadAdminSupportTickets(true); startAdminLiveSync();
+      loadAdminDashboard(true); loadAdminSupportTickets(true); startAdminLiveSync(); updateAuraAdminSecurityStatus();
     }
 
     async function attemptLogin() {
@@ -1260,7 +1276,7 @@ label { color: #f1e5ce; }
         if (data.success && data.token) {
           adminToken = data.token; sessionStorage.setItem('aura_admin_jwt', data.token); errEl.classList.add('hidden');
           document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('dashboardContent').classList.remove('hidden');
-          loadAdminDashboard(true); loadAdminSupportTickets(true); startAdminLiveSync();
+          loadAdminDashboard(true); loadAdminSupportTickets(true); startAdminLiveSync(); updateAuraAdminSecurityStatus();
         } else { errEl.innerText = data.message || "Incorrect PIN!"; errEl.classList.remove('hidden'); }
       } catch (e) {}
     }
