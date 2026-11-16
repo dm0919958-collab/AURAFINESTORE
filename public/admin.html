@@ -160,6 +160,17 @@ label { color: #f1e5ce; }
 #adminReturnsSection .text-slate-400,#adminReturnsSection .text-slate-500{color:#596b60!important}
 #adminReturnsSection .text-slate-300{color:#40564a!important}
 #adminReturnsSection .text-slate-100,#adminReturnsSection .text-white{color:#20352b!important}
+#adminReturnsSection h3,#adminReturnsSection h3 i{color:#173f2e!important}
+#adminReturnsSection input::placeholder{color:#64746a!important;opacity:1}
+#adminReturnsSection #adminReturnSearchInput{color:#142d22!important;background:#fff!important}
+#adminReturnsSection article .text-amber-300{color:#805b20!important}
+#adminReturnsSection article .text-white{color:#20352b!important}
+#adminReturnsSection article .text-emerald-300{color:#176447!important}
+#adminReturnsSection article .text-rose-300{color:#a33342!important}
+#adminReturnsSection article .text-slate-300{color:#40564a!important}
+#adminReturnsSection article .text-slate-400{color:#596b60!important}
+#adminReturnsSection article select,#adminReturnsSection article input{color:#20352b!important;background:#fff!important}
+#adminReturnsSection article label{color:#20352b!important}
 #adminReturnsSection article{background:#fffdf8!important;border:1px solid #c9b98f!important;color:#20352b!important;box-shadow:0 8px 22px rgba(32,53,43,.08)}
 #adminReturnsSection article .border-b{border-color:#ded8ca!important}
 #adminReturnsSection article .bg-emerald-950\/20{background:#edf5ee!important}
@@ -779,8 +790,9 @@ label { color: #f1e5ce; }
 
     <section id="adminReturnsSection" class="bg-slate-900 border-2 border-amber-500/30 p-5 rounded-3xl space-y-4 shadow-xl">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3"><div><h3 class="text-lg font-bold text-amber-300"><i class="fa-solid fa-rotate-left mr-2"></i>Returns & Replacements</h3><p class="text-xs text-slate-400">Review requests. Photos and videos are delivered to Telegram, not stored in website file storage.</p></div><button onclick="loadAdminReturnRequests(true)" class="rounded-xl bg-amber-500 px-4 py-2 text-xs font-extrabold text-slate-950"><i class="fa-solid fa-rotate mr-1"></i> Refresh</button></div>
-      <div class="flex flex-wrap items-center gap-2"><input id="adminReturnSearchInput" type="search" oninput="renderAdminReturnRequests()" placeholder="Search customer name, phone, order ID..." class="min-w-[240px] flex-1 rounded-xl border border-amber-700/40 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-500"><span class="text-xs font-semibold text-slate-600">Search by customer name</span></div>
-      <div id="adminReturnStats" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+      <div class="flex flex-wrap items-center gap-2"><input id="adminReturnSearchInput" type="search" oninput="renderAdminReturnRequests()" placeholder="Search customer name, phone, order ID..." class="min-w-[240px] flex-1 rounded-xl border border-amber-700/40 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-500"><span class="text-xs font-semibold text-slate-700">Search by customer name / phone / order</span></div>
+      <div class="flex flex-wrap items-center gap-2 rounded-xl border border-rose-300 bg-rose-50 p-3"><label class="flex items-center gap-2 text-sm font-bold text-slate-900"><input id="selectAllReturnRequests" type="checkbox" onchange="toggleSelectAllReturnRequests(this.checked)" class="h-4 w-4 accent-rose-600"> Select all search results</label><span id="selectedReturnCount" class="text-sm font-bold text-slate-700">0 selected</span><button onclick="deleteSelectedReturnRequests()" class="rounded-lg bg-rose-700 px-3 py-2 text-xs font-extrabold text-white">Delete Selected Permanently</button><button onclick="deleteAllReturnRequests()" class="rounded-lg border border-rose-800 bg-white px-3 py-2 text-xs font-extrabold text-rose-800">Delete All Permanently</button></div>
+      <div id="adminReturnStats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"></div>
       <div id="adminReturnRequestsList" class="grid grid-cols-1 xl:grid-cols-2 gap-4 max-h-[680px] overflow-y-auto pr-1"><p class="col-span-full py-8 text-center text-xs text-slate-500">Loading return requests…</p></div>
     </section>
 
@@ -1558,16 +1570,29 @@ label { color: #f1e5ce; }
     async function loadAdminReturnRequests(force=false){
       try{const res=await fetch('/api/admin/returns/list?t='+Date.now(),{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({})});if(handleUnauthorized(res))return;const data=await res.json();if(!data.success)return;const hash=JSON.stringify(data.requests||[]);if(force||hash!==window._lastReturnRequestsHash){window._lastReturnRequestsHash=hash;cachedReturnRequests=data.requests||[];document.getElementById('adminReturnsBadge').innerText=cachedReturnRequests.filter(r=>r.status==='Pending').length;renderAdminReturnRequests();}}catch(e){}
     }
+    window._selectedReturnRequestIds=window._selectedReturnRequestIds||new Set();
+    function toggleSelectAllReturnRequests(checked){
+      const q=(document.getElementById('adminReturnSearchInput')?.value||'').trim().toLowerCase();
+      cachedReturnRequests.filter(r=>[r.customerName,r.phone,r.orderId,r.requestId].some(v=>String(v||'').toLowerCase().includes(q))).forEach(r=>checked?window._selectedReturnRequestIds.add(r.requestId):window._selectedReturnRequestIds.delete(r.requestId));renderAdminReturnRequests();
+    }
+    async function submitReturnBulkDelete(payload,confirmText){
+      if(!confirm(confirmText))return;
+      const res=await fetch('/api/admin/returns/bulk-delete',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify(payload)});if(handleUnauthorized(res))return;const data=await res.json();if(!res.ok||!data.success)return alert(data.message||'Permanent delete failed.');window._selectedReturnRequestIds.clear();alert(data.message||'Permanently deleted.');await loadAdminReturnRequests(true);
+    }
+    function deleteSelectedReturnRequests(){const ids=[...window._selectedReturnRequestIds];if(!ids.length)return alert('Please select at least one request.');submitReturnBulkDelete({requestIds:ids},`Permanently delete ${ids.length} selected request(s) from the database? This cannot be undone.`);}
+    function deleteAllReturnRequests(){if(!cachedReturnRequests.length)return alert('There are no requests to delete.');submitReturnBulkDelete({deleteAll:true},'Permanently delete ALL Return / Replacement records from the database, including records not currently shown? This cannot be undone.');}
     function renderAdminReturnRequests(){
       const list=document.getElementById('adminReturnRequestsList'),statuses=['Pending','Approved','Return Approved','Replacement Approved','Rejected','Return In Transit','Received','Replacement Processing','Completed','Cancelled'];
       const query=(document.getElementById('adminReturnSearchInput')?.value||'').trim().toLowerCase();
       const filtered=cachedReturnRequests.filter(r=>[r.customerName,r.phone,r.orderId,r.requestId].some(v=>String(v||'').toLowerCase().includes(query)));
-      const stats=[['Total',cachedReturnRequests.length],['Pending',cachedReturnRequests.filter(r=>r.status==='Pending').length],['Approved',cachedReturnRequests.filter(r=>['Approved','Return Approved','Replacement Approved'].includes(r.status)).length],['Rejected',cachedReturnRequests.filter(r=>r.status==='Rejected').length]];
-      document.getElementById('adminReturnStats').innerHTML=stats.map(([n,v])=>`<div class="rounded-xl border border-slate-700 bg-slate-800 p-3"><p class="text-[10px] uppercase text-slate-400">${n}</p><p class="text-xl font-extrabold text-amber-300">${v}</p></div>`).join('');
+      const stats=[['Total',cachedReturnRequests.length],...statuses.map(s=>[s,cachedReturnRequests.filter(r=>r.status===s).length])];
+      document.getElementById('adminReturnStats').innerHTML=stats.map(([n,v])=>`<div class="rounded-xl border border-amber-200 bg-white p-3"><p class="text-xs font-bold uppercase text-slate-700">${n}</p><p class="text-2xl font-extrabold text-emerald-800">${v}</p></div>`).join('');
+      const selectedCount=window._selectedReturnRequestIds.size;const selectedEl=document.getElementById('selectedReturnCount');if(selectedEl)selectedEl.textContent=selectedCount+' selected';
+      const selectAll=document.getElementById('selectAllReturnRequests');if(selectAll)selectAll.checked=filtered.length>0&&filtered.every(r=>window._selectedReturnRequestIds.has(r.requestId));
       if(!cachedReturnRequests.length){list.innerHTML='<p class="col-span-full py-8 text-center text-xs text-slate-500">No return requests yet.</p>';return;}
       if(!filtered.length){list.innerHTML='<p class="col-span-full py-8 text-center text-sm font-semibold text-slate-600">No matching customer or request found.</p>';return;}
       list.innerHTML=filtered.map(r=>`<article class="rounded-2xl border border-amber-500/25 bg-slate-800/90 p-4 space-y-3 text-xs shadow">
-        <div class="flex items-start justify-between gap-3 border-b border-slate-700 pb-2"><div><p class="font-mono font-extrabold text-amber-300">${escapeHTML(r.requestId)} • Order #${escapeHTML(r.orderId)}</p><p class="mt-1 font-bold text-white">${escapeHTML(r.customerName)} • ${escapeHTML(r.phone)}</p><p class="mt-1 text-[10px] text-slate-400">${escapeHTML(r.createdAtStr||'')}</p></div><span class="rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-bold text-amber-200">${escapeHTML(r.status)}</span></div>
+        <div class="flex items-start justify-between gap-3 border-b border-slate-700 pb-2"><label class="flex items-start gap-2 text-slate-900"><input type="checkbox" class="mt-1 h-4 w-4 accent-rose-600" ${window._selectedReturnRequestIds.has(r.requestId)?'checked':''} onchange="this.checked?window._selectedReturnRequestIds.add(${safeInlineArg(r.requestId)}):window._selectedReturnRequestIds.delete(${safeInlineArg(r.requestId)});renderAdminReturnRequests()"><span><p class="font-mono font-extrabold text-amber-300">${escapeHTML(r.requestId)} • Order #${escapeHTML(r.orderId)}</p><p class="mt-1 font-bold text-white">${escapeHTML(r.customerName)} • ${escapeHTML(r.phone)}</p><p class="mt-1 text-[10px] text-slate-400">${escapeHTML(r.createdAtStr||'')}</p></span></label><span class="rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-bold text-amber-900">${escapeHTML(r.status)}</span></div>
         <div class="rounded-xl border border-emerald-500/25 bg-emerald-950/20 p-3"><p class="text-[10px] font-bold uppercase text-emerald-300">Request Type: ${escapeHTML(r.requestType||'Return')}</p><p class="mt-1 text-[10px] font-bold uppercase text-rose-300">Reason: ${escapeHTML(r.reason)}</p><p class="mt-1 whitespace-pre-line text-slate-100">${escapeHTML(r.details||'No description supplied')}</p><p class="mt-2 whitespace-pre-line text-[10px] text-slate-300">Products: ${escapeHTML(r.productDetails||r.productSummary||'—')}</p><p class="mt-1 text-[10px] text-slate-300">Order total: ₹${escapeHTML(r.orderTotal||'—')}</p><p class="mt-1 text-[10px] text-slate-400">Delivery address: ${escapeHTML(r.shippingAddress||'—')}</p><p class="mt-1 text-[10px] text-slate-400">Photos: ${Number(r.photoCount)||0} • Video: ${escapeHTML(r.videoName||'—')}</p></div>
         <div class="rounded-xl border ${r.telegramStatus==='Sent'?'border-emerald-600 bg-emerald-50':'border-rose-600 bg-rose-50'} p-3 text-sm font-bold leading-relaxed ${r.telegramStatus==='Sent'?'text-emerald-900':'text-rose-900'}"><i class="fa-brands fa-telegram mr-1"></i> Telegram delivery: ${r.telegramStatus==='Sent'?'Sent • Actual photo/video':`Failed • Error: ${escapeHTML(r.telegramError||'Telegram delivery failed')}`}</div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2"><div><label class="mb-1 block text-[10px] font-bold text-slate-300">Update Status</label><select id="return_status_${escapeHTML(r.requestId)}" class="w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-white">${statuses.map(s=>`<option value="${s}" ${r.status===s?'selected':''}>${s}</option>`).join('')}</select></div><div><label class="mb-1 block text-[10px] font-bold text-slate-300">Admin Note</label><input id="return_note_${escapeHTML(r.requestId)}" value="${escapeHTML(r.adminNote||'')}" maxlength="1000" placeholder="Reason / return instructions / refund reference" class="w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-white"></div></div>
