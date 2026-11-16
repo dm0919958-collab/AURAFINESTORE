@@ -1424,8 +1424,38 @@ app.post('/api/support/return-request/:requestId/cancel',async(req,res)=>{
 });
 
 app.post('/api/admin/returns/list',async(req,res)=>{
- try{if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});const requests=await ReturnRequest.find({}).sort({createdAt:-1}).limit(1000).lean();res.json({success:true,requests});}
- catch(err){res.status(500).json({success:false,requests:[]});}
+ try{
+  if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
+  const requests=await ReturnRequest.find({}).sort({createdAt:-1}).limit(1000).lean();
+  const orderIds=[...new Set(requests.map(r=>String(r.orderId||'').trim()).filter(Boolean))];
+  const orders=orderIds.length?await Order.find({id:{$in:orderIds}}).select({id:1,items:1,total:1,address:1}).lean():[];
+  const orderMap=new Map(orders.map(o=>[String(o.id),o]));
+  const enrichedRequests=requests.map(r=>{
+   const order=orderMap.get(String(r.orderId||''));
+   const items=Array.isArray(order?.items)?order.items:[];
+   const itemLines=items.map((item,index)=>{
+    const name=item.name||item.productName||item.title||item.product?.name||'Product';
+    const qty=Number(item.qty||item.quantity||1)||1;
+    const size=item.selectedSize||item.size||item.variantSize||'—';
+    const colour=item.selectedColor||item.color||item.variantColor||'—';
+    const price=item.price!==undefined&&item.price!==null?String(item.price):'';
+    return `${index+1}. ${name} | Qty: ${qty} | Size: ${size} | Colour: ${colour}${price?' | Price: ₹'+price:''}`;
+   });
+   const productDetails=r.productDetails||itemLines.join('\\n');
+   const productSummary=r.productSummary||(items.map(item=>item.name||item.productName||item.title||item.product?.name||'Product').join(', '));
+   return {
+    ...r,
+    productDetails:productDetails||r.productSummary||'',
+    productSummary:productSummary||r.productDetails||'',
+    orderTotal:r.orderTotal||(order?.total!==undefined?String(order.total):''),
+    shippingAddress:r.shippingAddress||order?.address||''
+   };
+  });
+  res.json({success:true,requests:enrichedRequests});
+ }catch(err){
+  console.error('Admin return request list failed:',err.message);
+  res.status(500).json({success:false,requests:[]});
+ }
 });
 
 app.patch('/api/admin/returns/:requestId',async(req,res)=>{
