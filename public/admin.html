@@ -374,14 +374,18 @@ label { color: #f1e5ce; }
         <div class="bg-amber-950/35 p-3.5 rounded-2xl border border-amber-500/35 space-y-2 flex flex-col justify-between">
           <div class="space-y-2">
             <label class="block font-bold text-amber-300"><i class="fa-solid fa-coins mr-1"></i> AURA Coins Loyalty Wallet (1 Coin = ₹1):</label>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-3 gap-2">
               <div>
-                <span class="text-[10px] text-slate-400 block mb-0.5">Earn % on Delivery (0=Off)</span>
+                <span class="text-[10px] text-slate-400 block mb-0.5">Earn % (0=Off)</span>
                 <input type="number" id="coinsEarnPctInput" min="0" max="50" value="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-bold">
               </div>
               <div>
-                <span class="text-[10px] text-slate-400 block mb-0.5">Max Redeem / Order (₹)</span>
+                <span class="text-[10px] text-slate-400 block mb-0.5">Max Redeem (₹)</span>
                 <input type="number" id="maxCoinsRedeemInput" min="0" value="200" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-bold">
+              </div>
+              <div>
+                <span class="text-[10px] text-emerald-300 block mb-0.5" title="Days after delivery before refundable product coins unlock">Unlock Days</span>
+                <input type="number" id="refundWindowDaysInput" min="0" max="60" value="7" class="w-full bg-slate-950 border border-emerald-500/40 rounded-xl p-2 text-emerald-300 font-bold">
               </div>
             </div>
           </div>
@@ -618,10 +622,14 @@ label { color: #f1e5ce; }
                 <label class="text-slate-400 font-bold block mb-1">Highlight Badge</label>
                 <input type="text" id="prodBadge" placeholder="Bestseller / Trending" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white">
               </div>
-              <div>
-                <label class="flex items-center gap-2.5 cursor-pointer bg-slate-800 border border-slate-700 p-2.5 rounded-xl">
+              <div class="grid grid-cols-1 gap-2">
+                <label class="flex items-center gap-2.5 cursor-pointer bg-slate-800 border border-slate-700 p-2 rounded-xl">
                   <input type="checkbox" id="prodShowOnHome" checked class="w-4 h-4 accent-amber-500">
                   <span class="font-bold text-amber-300 text-xs">Show on Home Page</span>
+                </label>
+                <label class="flex items-center gap-2.5 cursor-pointer bg-slate-800 border border-rose-500/40 p-2 rounded-xl" title="If checked, AURA Coins unlock immediately upon delivery instead of waiting for the refund window">
+                  <input type="checkbox" id="prodNonRefundable" class="w-4 h-4 accent-rose-500">
+                  <span class="font-bold text-rose-300 text-xs">Non-Refundable (Instant Coins on Delivery)</span>
                 </label>
               </div>
             </div>
@@ -769,6 +777,15 @@ label { color: #f1e5ce; }
   </div>
 
   <script>
+    function escapeHTML(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     let adminToken = sessionStorage.getItem('aura_admin_jwt') || "";
     let cachedCategories = [];
     let cachedProducts = [];
@@ -1149,9 +1166,10 @@ label { color: #f1e5ce; }
     async function saveAuraCoinsSettings() {
       const coinsEarnPercent = Number(document.getElementById('coinsEarnPctInput').value) || 0;
       const maxCoinsRedeemPerOrder = Number(document.getElementById('maxCoinsRedeemInput').value) || 0;
-      const res = await fetch('/api/admin/store-settings', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ coinsEarnPercent, maxCoinsRedeemPerOrder }) });
+      const refundWindowDays = Math.max(0, Number(document.getElementById('refundWindowDaysInput').value) ?? 7);
+      const res = await fetch('/api/admin/store-settings', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ coinsEarnPercent, maxCoinsRedeemPerOrder, refundWindowDays }) });
       if (handleUnauthorized(res)) return;
-      if ((await res.json()).success) alert(`✅ AURA Coins Rules Saved!`);
+      if ((await res.json()).success) alert(`✅ AURA Coins & ${refundWindowDays}-Day Unlock Rules Saved!`);
     }
 
     async function saveFreeGiftSettings() {
@@ -1396,6 +1414,7 @@ label { color: #f1e5ce; }
             document.getElementById('freeGiftTitleInput').value = st.freeGiftTitle || "Luxury Surprise Jewellery Box";
             document.getElementById('coinsEarnPctInput').value = st.coinsEarnPercent ?? 5;
             document.getElementById('maxCoinsRedeemInput').value = st.maxCoinsRedeemPerOrder ?? 200;
+            document.getElementById('refundWindowDaysInput').value = st.refundWindowDays ?? 7;
             document.getElementById('metaPixelIdInput').value = st.metaPixelId || "";
             adminDealEndMs = st.dealEndTime || 0; updateAdminTimerBadge();
 
@@ -1424,11 +1443,11 @@ label { color: #f1e5ce; }
         <div class="bg-slate-800/80 border border-slate-700 p-3 rounded-2xl space-y-1.5 text-xs flex flex-col justify-between">
           <div>
             <div class="flex justify-between items-start gap-2">
-              <span class="font-bold text-amber-300 line-clamp-1">${r.productName}</span>
-              <button onclick="deleteCustomerReview(${r.productId}, '${r._id}')" class="text-rose-400 hover:text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-trash"></i> Delete</button>
+              <span class="font-bold text-amber-300 line-clamp-1">${escapeHTML(r.productName)}</span>
+              <button onclick="deleteCustomerReview(${r.productId}, '${escapeHTML(r._id)}')" class="text-rose-400 hover:text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-trash"></i> Delete</button>
             </div>
-            <p class="text-amber-400 text-[11px] mt-0.5">${'★'.repeat(r.rating || 5)} <span class="text-slate-400">by ${r.customerName}</span></p>
-            <p class="text-slate-200 mt-1">${r.comment}</p>
+            <p class="text-amber-400 text-[11px] mt-0.5">${'★'.repeat(r.rating || 5)} <span class="text-slate-400">by ${escapeHTML(r.customerName)}</span></p>
+            <p class="text-slate-200 mt-1">${escapeHTML(r.comment)}</p>
             ${r.photoUrl ? `<a href="${r.photoUrl}" target="_blank"><img src="${r.photoUrl}" class="w-16 h-16 object-cover rounded-lg border border-slate-600 mt-2"></a>` : ''}
           </div>
           <p class="text-[10px] text-slate-500 pt-1">${r.date || ''}</p>
@@ -1465,16 +1484,16 @@ label { color: #f1e5ce; }
       container.innerHTML = filtered.map(t => `
         <div class="bg-slate-800/80 border ${t.adminReply ? 'border-emerald-500/30' : 'border-amber-500/40'} p-4 rounded-2xl space-y-2.5 text-xs shadow">
           <div class="flex justify-between items-start border-b border-slate-700 pb-2">
-            <div><span class="font-mono font-bold text-amber-400 text-sm">Order #${t.orderId}</span> <span class="text-[10px] text-slate-400">(${t.ticketId})</span><p class="font-bold text-white mt-0.5"><i class="fa-solid fa-phone text-emerald-400 mr-1"></i>${t.phone} • ${t.customerName}</p></div>
+            <div><span class="font-mono font-bold text-amber-400 text-sm">Order #${escapeHTML(t.orderId)}</span> <span class="text-[10px] text-slate-400">(${escapeHTML(t.ticketId)})</span><p class="font-bold text-white mt-0.5"><i class="fa-solid fa-phone text-emerald-400 mr-1"></i>${escapeHTML(t.phone)} • ${escapeHTML(t.customerName)}</p></div>
             <div class="flex items-center gap-1.5">
               <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.adminReply ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">${t.adminReply ? 'Replied ✓' : 'Needs Reply'}</span>
-              <button onclick="deleteAdminSupportTicket('${t.ticketId}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white px-2 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-trash"></i></button>
+              <button onclick="deleteAdminSupportTicket('${escapeHTML(t.ticketId)}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white px-2 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
-          <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700"><p class="text-[10px] text-rose-400 font-bold uppercase">Issue:</p><p class="text-slate-200 mt-1">${t.issueText}</p></div>
-          ${t.adminReply ? `<div class="bg-emerald-950/60 border border-emerald-500/30 p-2.5 rounded-xl"><p class="text-[10px] text-emerald-400 font-bold">Reply:</p><p class="text-emerald-200 mt-0.5">${t.adminReply}</p></div>` : ''}
+          <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700"><p class="text-[10px] text-rose-400 font-bold uppercase">Issue:</p><p class="text-slate-200 mt-1">${escapeHTML(t.issueText)}</p></div>
+          ${t.adminReply ? `<div class="bg-emerald-950/60 border border-emerald-500/30 p-2.5 rounded-xl"><p class="text-[10px] text-emerald-400 font-bold">Reply:</p><p class="text-emerald-200 mt-0.5">${escapeHTML(t.adminReply)}</p></div>` : ''}
           <div class="flex gap-2 pt-1">
-            <input type="text" id="reply_input_${t.ticketId}" value="${t.adminReply || ''}" placeholder="Write reply..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+            <input type="text" id="reply_input_${escapeHTML(t.ticketId)}" value="${escapeHTML(t.adminReply || '')}" placeholder="Write reply..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
             <button onclick="sendAdminSupportReply('${t.ticketId}')" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl whitespace-nowrap">Send Reply</button>
           </div>
         </div>`).join('');
@@ -1653,7 +1672,7 @@ label { color: #f1e5ce; }
       const payload = {
         name: document.getElementById('prodName').value, mainCategory: document.getElementById('prodMainCategory').value, category: document.getElementById('prodCategory').value,
         price: document.getElementById('prodPrice').value, originalPrice: document.getElementById('prodOrigPrice').value, costPrice: document.getElementById('prodCostPrice').value,
-        stockQuantity: computedStock, showOnHome: document.getElementById('prodShowOnHome').checked,
+        stockQuantity: computedStock, showOnHome: document.getElementById('prodShowOnHome').checked, nonRefundable: document.getElementById('prodNonRefundable').checked,
         sizeOptions: parsedSizes,
         variantStock: variantStockObj,
         colorOptions: parsedColors,
@@ -1743,7 +1762,7 @@ label { color: #f1e5ce; }
       }
       rebuildVariantStockMatrixUI(vMap);
 
-      document.getElementById('prodBadge').value = p.badge || ""; document.getElementById('prodShowOnHome').checked = p.showOnHome !== false;
+      document.getElementById('prodBadge').value = p.badge || ""; document.getElementById('prodShowOnHome').checked = p.showOnHome !== false; document.getElementById('prodNonRefundable').checked = Boolean(p.nonRefundable);
       document.getElementById('prodDesc').value = p.description || "";
       currentFormImages = [...(p.images || [])]; renderFormImagesPreview();
       window.scrollTo({ top: 300, behavior: 'smooth' });
@@ -1753,7 +1772,7 @@ label { color: #f1e5ce; }
       document.getElementById('productForm').reset(); document.getElementById('editProdId').value = "";
       document.getElementById('productFormHeading').innerHTML = `<i class="fa-solid fa-plus-circle mr-1"></i> Add New Product`;
       document.getElementById('cancelEditBtn').classList.add('hidden'); document.getElementById('saveProdBtn').innerText = "Publish to Store";
-      document.getElementById('prodShowOnHome').checked = true;
+      document.getElementById('prodShowOnHome').checked = true; document.getElementById('prodNonRefundable').checked = false;
       document.getElementById('variantStockMatrixBox').classList.add('hidden');
       document.getElementById('variantStockMatrixBody').innerHTML = '';
       populateCategoryDropdowns(); currentFormImages = []; renderFormImagesPreview();
@@ -1865,13 +1884,13 @@ label { color: #f1e5ce; }
               <span class="block text-[10px] text-slate-400 mt-0.5">${o.date}</span>
               <button onclick="openThermalShippingLabel('${o.id}')" class="mt-2 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-lg text-[10px] font-extrabold shadow flex items-center gap-1"><i class="fa-solid fa-print"></i> Label (4x6)</button>
             </td>
-            <td class="p-3 max-w-[210px]"><p class="font-bold text-white">${o.customerName}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${o.phone}</p><p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${o.address}</p></td>
-            <td class="p-3 min-w-[180px]">${itemsText}${freeGiftHtml}</td>
+            <td class="p-3 max-w-[210px]"><p class="font-bold text-white">${escapeHTML(o.customerName)}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${escapeHTML(o.phone)}</p><p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${escapeHTML(o.address)}</p></td>
+            <td class="p-3 min-w-[180px]">${itemsText}${freeGiftHtml}${o.isNonRefundableOrder ? '<span class="inline-block mt-1 bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[9px] font-bold px-2 py-0.5 rounded">Non-Refundable</span>' : ''}</td>
             <td class="p-3">
               <p class="font-bold text-emerald-400 text-sm">₹${o.total}</p>
               <p class="text-[10px] text-emerald-300 font-bold">Profit: ₹${o.netProfit || 0}</p>
               ${o.coinsUsed > 0 ? `<p class="text-[10px] text-amber-300 font-bold">Coins Used: -₹${o.coinsUsed}</p>` : ''}
-              ${o.coinsEarned > 0 ? `<p class="text-[10px] ${o.coinsCredited ? 'text-emerald-400' : 'text-slate-400'}">Reward: ${o.coinsEarned} Coins ${o.coinsCredited ? '✓' : '(On Delivery)'}</p>` : ''}
+              ${o.coinsEarned > 0 ? `<p class="text-[10px] ${o.coinsCredited ? 'text-emerald-400 font-bold' : 'text-amber-300'}">Reward: ${o.coinsEarned} Coins ${o.coinsCredited ? '✓ Credited' : (o.coinsStatus === 'pending_refund_window' ? '(Unlocks after Refund Window)' : '(On Delivery)')}</p>` : ''}
               <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300">${o.paymentMethod}</span>
               <p class="text-[10px] font-mono text-slate-300 mt-1">UTR: ${o.utrNumber}</p>
             </td>
