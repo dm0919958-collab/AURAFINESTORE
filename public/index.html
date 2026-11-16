@@ -2429,7 +2429,7 @@
     function renderReturnVideoPreview(){document.getElementById('returnVideoPreview').innerHTML=returnVideoFile?`<span class="text-emerald-300"><i class="fa-solid fa-circle-check mr-1"></i>${escapeHTML(returnVideoFile.name)} (${(returnVideoFile.size/1048576).toFixed(1)} MB)</span> <button type="button" onclick="returnVideoFile=null;renderReturnVideoPreview()" class="text-rose-400 ml-2">Remove</button>`:'<span class="text-stone-500">No video selected</span>';}
     async function submitReturnRequest(e){
       e.preventDefault();if(!selectedReturnOrder)return;
-      const phone=document.getElementById('supportPhoneInput').value.replace(/\\D/g,''),btn=document.getElementById('returnSubmitBtn'),progress=document.getElementById('returnSubmitProgress');
+      const phone=document.getElementById('supportPhoneInput').value.replace(/\D/g,''),btn=document.getElementById('returnSubmitBtn'),progress=document.getElementById('returnSubmitProgress');
       btn.disabled=true;btn.innerText='Sending…';progress.classList.remove('hidden');
       try{
         const form=new FormData();form.append('orderId',selectedReturnOrder.id);form.append('phone',phone);form.append('reason',document.getElementById('returnReason').value);form.append('details',document.getElementById('returnDetails').value.trim());
