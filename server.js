@@ -973,7 +973,7 @@ app.get('/api/store', async (req, res) => {
   }
 });
 
-// Privacy-Protected Wallet Lookup (Requires 30-day verified Customer Token when OTP is active, or matching prior order verification)
+// Customer Wallet Lookup (No customer login or OTP required)
 app.get('/api/wallet/:phone', async (req, res) => {
   try {
     const cleanPhone = String(req.params.phone || '').replace(/[^0-9]/g, '');
