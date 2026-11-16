@@ -1343,11 +1343,11 @@
         ? `<p class="text-center py-10 text-stone-500 text-xs">Your wishlist is empty.</p>`
         : savedProducts.map(p => `
           <div class="flex items-center justify-between gap-3 bg-stone-950 border border-stone-800 p-3 rounded-2xl">
-            <div onclick="closeWishlistModal(); openQuickView(${p.id});" class="flex items-center gap-3 cursor-pointer flex-1">
+            <div onclick="closeWishlistModal(); openQuickView(${Number(p.id)||0});" class="flex items-center gap-3 cursor-pointer flex-1">
               <img src="${safeHttpUrl((p.images && p.images[0]) || '')}" class="w-14 h-14 rounded-xl object-cover border border-stone-700">
               <div><h5 class="font-bold text-xs text-stone-100 line-clamp-1">${escapeHTML(p.name)}</h5><p class="text-[11px] text-amber-400 font-extrabold mt-0.5">₹${p.price}</p></div>
             </div>
-            <div class="flex items-center gap-2"><button onclick="closeWishlistModal(); openQuickView(${p.id});" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-xl text-[11px] font-extrabold">Buy</button><button onclick="toggleWishlist(${Number(p.id)||0}); openWishlistModal();" class="text-rose-400 p-1.5 text-xs"><i class="fa-solid fa-trash"></i></button></div>
+            <div class="flex items-center gap-2"><button onclick="closeWishlistModal(); openQuickView(${Number(p.id)||0});" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-xl text-[11px] font-extrabold">Buy</button><button onclick="toggleWishlist(${Number(p.id)||0}); openWishlistModal();" class="text-rose-400 p-1.5 text-xs"><i class="fa-solid fa-trash"></i></button></div>
           </div>`).join('');
       document.getElementById('wishlistModal').classList.remove('hidden');
     }
@@ -1533,15 +1533,15 @@
         const mainImage = (p.images && p.images[0]) || "", isWished = wishlistIds.includes(p.id);
         return `
           <div class="rounded-3xl border border-amber-500/20 overflow-hidden shadow-lg lux-card flex flex-col justify-between group">
-            <div onclick="openQuickView(${p.id})" class="relative overflow-hidden aspect-square bg-stone-950 cursor-pointer">
+            <div onclick="openQuickView(${Number(p.id)||0})" class="relative overflow-hidden aspect-square bg-stone-950 cursor-pointer">
               <img src="${safeHttpUrl(mainImage)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isOut ? 'opacity-40 grayscale' : ''}">
               <span class="absolute top-3.5 left-3.5 ${isOut ? 'bg-rose-600 text-white' : 'bg-stone-950/90 text-amber-300 border border-amber-500/30'} text-[10px] font-extrabold uppercase px-3 py-1 rounded-full">${isOut ? 'Sold Out' : p.badge}</span>
-              <button onclick="toggleWishlist(${p.id}, event)" title="Save to Wishlist" class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-stone-950/85 hover:bg-stone-900 border border-rose-500/30 flex items-center justify-center transition shadow"><i class="${isWished ? 'fa-solid text-rose-500' : 'fa-regular text-stone-300'} fa-heart text-sm"></i></button>
+              <button onclick="toggleWishlist(${Number(p.id)||0}, event)" title="Save to Wishlist" class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-stone-950/85 hover:bg-stone-900 border border-rose-500/30 flex items-center justify-center transition shadow"><i class="${isWished ? 'fa-solid text-rose-500' : 'fa-regular text-stone-300'} fa-heart text-sm"></i></button>
               ${isLowUrgency ? `<span class="absolute bottom-3.5 left-3.5 bg-rose-600/95 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow animate-pulse">🔥 মাত্র ${qtyLeft}টি পিস বাকি আছে!</span>` : ''}
               <span class="absolute bottom-3.5 right-3.5 bg-black/75 text-white text-[10px] font-bold px-2.5 py-1 rounded-full"><i class="fa-regular fa-images text-amber-400"></i> ${(p.images || []).length} Photos</span>
             </div>
             <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
-              <div onclick="openQuickView(${p.id})" class="cursor-pointer">
+              <div onclick="openQuickView(${Number(p.id)||0})" class="cursor-pointer">
                 <div class="flex justify-between text-amber-400 text-xs"><span>★ <b>${p.rating}</b> (${p.reviewsCount})</span><span class="underline text-[10px]">Write Review</span></div>
                 <h3 class="font-cinzel font-bold text-stone-100 text-base mt-1.5 line-clamp-1">${escapeHTML(p.name)}</h3>
                 <p class="text-stone-400 text-xs mt-1 line-clamp-2">${escapeHTML(p.description)}</p>
@@ -1551,8 +1551,8 @@
                   <div><span class="text-2xl font-black text-amber-400">₹${p.price}</span><span class="text-xs line-through text-stone-500 ml-1.5">₹${p.originalPrice}</span></div>
                   <span class="text-[10px] text-emerald-300 font-extrabold bg-emerald-950 px-2.5 py-0.5 rounded-full">${discountPct}% OFF</span>
                 </div>
-                ${isOut ? `<button onclick="openQuickView(${p.id})" class="w-full bg-purple-600/30 hover:bg-purple-600 text-purple-200 hover:text-white border border-purple-500/40 py-2.5 rounded-xl text-xs font-extrabold transition"><i class="fa-solid fa-bell mr-1"></i> Sold Out • Notify Me</button>`
-                : `<div class="grid grid-cols-2 gap-2"><button onclick="openQuickView(${p.id})" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700 py-2.5 rounded-xl text-xs font-bold">Add</button><button onclick="openQuickView(${p.id})" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-2.5 rounded-xl text-xs font-extrabold">⚡ View & Buy • ₹${Number(p.price)||0}</button></div>`}
+                ${isOut ? `<button onclick="openQuickView(${Number(p.id)||0})" class="w-full bg-purple-600/30 hover:bg-purple-600 text-purple-200 hover:text-white border border-purple-500/40 py-2.5 rounded-xl text-xs font-extrabold transition"><i class="fa-solid fa-bell mr-1"></i> Sold Out • Notify Me</button>`
+                : `<div class="grid grid-cols-2 gap-2"><button onclick="openQuickView(${Number(p.id)||0})" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700 py-2.5 rounded-xl text-xs font-bold">Add</button><button onclick="openQuickView(${Number(p.id)||0})" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-2.5 rounded-xl text-xs font-extrabold">⚡ View & Buy • ₹${Number(p.price)||0}</button></div>`}
               </div>
             </div>
           </div>`;
