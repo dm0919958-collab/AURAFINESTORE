@@ -1138,7 +1138,7 @@
             <button onclick="${subs.length ? `toggleMobileSub(${safeInlineArg(subDivId)})` : `filterBySection(${safeInlineArg(cat.name)}, 'All'); toggleMobileDrawer(false);`}" class="w-full flex justify-between items-center p-3 text-stone-200 hover:text-amber-400 uppercase">
               <span>${escapeHTML(cat.name)}</span>${subs.length ? `<i class="fa-solid fa-chevron-down text-[10px]"></i>` : `<i class="fa-solid fa-arrow-right text-[10px]"></i>`}
             </button>
-            ${subs.length ? `<div id="${subDivId}" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">${subs.map(s => `<a href="#catalogSection" onclick="filterBySection(${safeInlineArg(cat.name)}, ${safeInlineArg(s)}); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• ${s}</a>`).join('')}<a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All ${escapeHTML(cat.name)} &rarr;</a></div>` : ''}
+            ${subs.length ? `<div id="${subDivId}" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">${subs.map(s => `<a href="#catalogSection" onclick="filterBySection(${safeInlineArg(cat.name)}, ${safeInlineArg(s)}); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• ${escapeHTML(s)}</a>`).join('')}<a href="#catalogSection" onclick="filterBySection(${safeInlineArg(cat.name)}, 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All ${escapeHTML(cat.name)} &rarr;</a></div>` : ''}
           </div>`;
       });
       mobileList.innerHTML = mobileHtml;
