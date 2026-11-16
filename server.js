@@ -77,7 +77,7 @@ const customerOtpStore = new Map(); // phone -> { code, expiresAt, attempts }
 const otpRateLimiter = new Map();   // ip/phone -> [timestamps]
 
 function isOtpGatewayConfigured() {
-  return Boolean((WHATSAPP_TOKEN && WHATSAPP_PHONE_ID) || FAST2SMS_API_KEY);
+  return Boolean(WHATSAPP_TOKEN && WHATSAPP_PHONE_ID && WHATSAPP_TEMPLATE_NAME);
 }
 
 function getAuthenticatedCustomerPhone(req) {
@@ -103,68 +103,29 @@ function maskCustomerAddress(addr) {
 }
 
 async function sendDualChannelOtp(cleanPhone, otpCode) {
-  let deliveredVia = [];
-  let errors = [];
-
-  // 1. Official Meta WhatsApp Cloud API (No DLT Required)
-  if (WHATSAPP_TOKEN && WHATSAPP_PHONE_ID) {
-    try {
-      await axios.post(
-        `https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_ID}/messages`,
-        {
-          messaging_product: "whatsapp",
-          to: `91${cleanPhone}`,
-          type: "template",
-          template: {
-            name: WHATSAPP_TEMPLATE_NAME,
-            language: { code: "en" },
-            components: [
-              { type: "body", parameters: [{ type: "text", text: String(otpCode) }] },
-              { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: String(otpCode) }] }
-            ]
-          }
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-            "Content-Type": "application/json"
-          },
-          timeout: 8000
+  if (!isOtpGatewayConfigured()) return { deliveredVia: [], errors: ["WhatsApp OTP is not configured."] };
+  try {
+    await axios.post(
+      `https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_ID}/messages`,
+      {
+        messaging_product: "whatsapp",
+        to: `91${cleanPhone}`,
+        type: "template",
+        template: {
+          name: WHATSAPP_TEMPLATE_NAME,
+          language: { code: "en" },
+          components: [
+            { type: "body", parameters: [{ type: "text", text: String(otpCode) }] },
+            { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: String(otpCode) }] }
+          ]
         }
-      );
-      deliveredVia.push("WhatsApp");
-    } catch (waErr) {
-      errors.push("WhatsApp: " + (waErr.response?.data?.error?.message || waErr.message));
-    }
+      },
+      { headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}`, "Content-Type": "application/json" }, timeout: 8000 }
+    );
+    return { deliveredVia: ["WhatsApp"], errors: [] };
+  } catch (waErr) {
+    return { deliveredVia: [], errors: ["WhatsApp: " + (waErr.response?.data?.error?.message || waErr.message)] };
   }
-
-  // 2. Fast2SMS API (Auto-active when FAST2SMS_API_KEY is added)
-  if (FAST2SMS_API_KEY) {
-    try {
-      await axios.post(
-        "https://www.fast2sms.com/dev/bulkV2",
-        {
-          route: "q",
-          message: `Your AURA Fine Store verification OTP is ${otpCode}. Valid for 5 minutes.`,
-          language: "english",
-          flash: 0,
-          numbers: cleanPhone
-        },
-        {
-          headers: {
-            authorization: FAST2SMS_API_KEY,
-            "Content-Type": "application/json"
-          },
-          timeout: 8000
-        }
-      );
-      deliveredVia.push("SMS");
-    } catch (smsErr) {
-      errors.push("SMS: " + (smsErr.response?.data?.message || smsErr.message));
-    }
-  }
-
-  return { deliveredVia, errors };
 }
 
 async function uploadToCloudinary(fileData, folder = 'aura_store') {
@@ -1053,56 +1014,29 @@ app.get('/api/store', async (req, res) => {
 app.post('/api/auth/send-otp', async (req, res) => {
   try {
     const cleanPhone = String(req.body.phone || '').replace(/[^0-9]/g, '');
-    const customerName = String(req.body.customerName || 'Customer').trim().slice(0, 60);
     if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
-      return res.status(400).json({ success: false, message: "Please enter a valid 10-digit Indian mobile number!" });
+      return res.status(400).json({ success: false, message: "Please enter a valid 10-digit Indian mobile number." });
     }
-
     if (!isOtpGatewayConfigured()) {
-      return res.json({
-        success: true,
-        otpRequired: false,
-        message: "OTP gateway not configured yet; proceeding directly."
-      });
+      return res.status(503).json({ success: false, message: "WhatsApp verification is not available yet. Please try again later." });
     }
-
     const now = Date.now();
     const recent = (otpRateLimiter.get(cleanPhone) || []).filter(t => now - t < 15 * 60 * 1000);
     if (recent.length >= 4) {
-      return res.status(429).json({
-        success: false,
-        message: "Too many OTP requests for this number. Please try again after 15 minutes."
-      });
+      return res.status(429).json({ success: false, message: "Too many OTP requests. Please try again after 15 minutes." });
     }
-
     const otpCode = String(crypto.randomInt(100000, 999999));
     const { deliveredVia, errors } = await sendDualChannelOtp(cleanPhone, otpCode);
-
     if (deliveredVia.length === 0) {
-      console.error("OTP Delivery Failed:", errors);
-      return res.status(502).json({
-        success: false,
-        message: "Could not send OTP right now. Please verify your mobile number or try again shortly."
-      });
+      console.error("WhatsApp OTP delivery failed:", errors);
+      return res.status(502).json({ success: false, message: "We could not send your WhatsApp OTP. Please try again shortly." });
     }
-
-    customerOtpStore.set(cleanPhone, {
-      code: otpCode,
-      customerName,
-      expiresAt: now + 5 * 60 * 1000,
-      attempts: 0
-    });
+    customerOtpStore.set(cleanPhone, { code: otpCode, expiresAt: now + 5 * 60 * 1000, attempts: 0 });
     recent.push(now);
     otpRateLimiter.set(cleanPhone, recent);
-
-    res.json({
-      success: true,
-      otpRequired: true,
-      channels: deliveredVia,
-      message: `6-digit OTP sent via ${deliveredVia.join(' & ')} to +91 ${cleanPhone}`
-    });
+    res.json({ success: true, otpRequired: true, channels: ["WhatsApp"], message: "A 6-digit OTP has been sent to your WhatsApp number." });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to send OTP." });
+    res.status(500).json({ success: false, message: "Failed to send WhatsApp OTP." });
   }
 });
 
@@ -1110,57 +1044,34 @@ app.post('/api/auth/verify-otp', async (req, res) => {
   try {
     const cleanPhone = String(req.body.phone || '').replace(/[^0-9]/g, '');
     const inputOtp = String(req.body.otp || '').trim();
-    const customerName = String(req.body.customerName || '').trim().slice(0, 60);
-
     if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
-      return res.status(400).json({ success: false, message: "Invalid mobile number." });
+      return res.status(400).json({ success: false, message: "Please enter a valid mobile number." });
     }
-
     const record = customerOtpStore.get(cleanPhone);
     if (!record || Date.now() > record.expiresAt) {
       customerOtpStore.delete(cleanPhone);
-      return res.status(400).json({ success: false, message: "OTP has expired. Please request a new OTP." });
+      return res.status(400).json({ success: false, message: "Your OTP has expired. Please request a new one." });
     }
-
     record.attempts += 1;
     if (record.attempts > 5) {
       customerOtpStore.delete(cleanPhone);
-      return res.status(429).json({ success: false, message: "Too many wrong OTP attempts. Request a new OTP." });
+      return res.status(429).json({ success: false, message: "Too many incorrect attempts. Please request a new OTP." });
     }
-
     if (record.code !== inputOtp) {
-      return res.status(401).json({ success: false, message: "Incorrect OTP! Please check and try again." });
+      return res.status(401).json({ success: false, message: "Incorrect OTP. Please check and try again." });
     }
-
     customerOtpStore.delete(cleanPhone);
     await processMaturedPendingCoins(cleanPhone);
-
-    const finalName = customerName || record.customerName || "Customer";
-    const customerToken = jwt.sign(
-      { role: 'customer', phone: cleanPhone, name: finalName },
-      JWT_SECRET,
-      { expiresIn: '30d' }
-    );
-
+    const customerToken = jwt.sign({ role: 'customer', phone: cleanPhone, name: "Customer" }, JWT_SECRET, { expiresIn: '30d' });
     const [wallet, priorOrder, pendingCoinOrders] = await Promise.all([
       Wallet.findOne({ phone: cleanPhone }).lean(),
       Order.findOne({ phone: cleanPhone, status: { $ne: 'Cancelled' } }).lean(),
       Order.find({ phone: cleanPhone, status: 'Delivered', coinsCredited: false, coinsEarned: { $gt: 0 } }).lean()
     ]);
-
     const pendingCoins = pendingCoinOrders.reduce((s, o) => s + (o.coinsEarned || 0), 0);
-
-    res.json({
-      success: true,
-      customerToken,
-      phone: cleanPhone,
-      name: finalName,
-      coins: wallet ? (wallet.coins || 0) : 0,
-      pendingCoins,
-      hasPriorOrders: Boolean(priorOrder)
-    });
+    res.json({ success: true, customerToken, phone: cleanPhone, name: "Customer", coins: wallet ? (wallet.coins || 0) : 0, pendingCoins, hasPriorOrders: Boolean(priorOrder) });
   } catch (err) {
-    res.status(500).json({ success: false, message: "OTP verification failed." });
+    res.status(500).json({ success: false, message: "WhatsApp OTP verification failed." });
   }
 });
 
@@ -1968,14 +1879,21 @@ app.post('/api/orders', async (req, res) => {
       return res.status(400).json({ success: false, message: "Please enter a valid 10-digit Indian mobile number!" });
     }
 
-    // Enforce OTP verification when WhatsApp/SMS OTP gateway is configured
-    const authedPhone = getAuthenticatedCustomerPhone(req);
-    if (isOtpGatewayConfigured() && authedPhone !== cleanPhone) {
-      return res.status(401).json({
-        success: false,
-        requiresOtp: true,
-        message: "Please verify your mobile number with OTP before placing the order."
-      });
+    // Temporary guest checkout is explicitly enabled by the customer UI while WhatsApp approval is pending.
+    // Remove this bypass after WhatsApp OTP is approved and configured.
+    const skipOtpForThisOrder = req.body.skipOtp === true;
+    if (!skipOtpForThisOrder) {
+      if (!isOtpGatewayConfigured()) {
+        return res.status(503).json({ success: false, message: "WhatsApp verification is not available yet. Please try again later." });
+      }
+      const authedPhone = getAuthenticatedCustomerPhone(req);
+      if (authedPhone !== cleanPhone) {
+        return res.status(401).json({
+          success: false,
+          requiresOtp: true,
+          message: "Please verify your mobile number with OTP before placing the order."
+        });
+      }
     }
 
     const cleanUtr = String(utrNumber || "").trim();
