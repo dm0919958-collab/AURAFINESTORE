@@ -1492,6 +1492,7 @@ app.put('/api/admin/products/:id', async (req, res) => {
           : (Number(stockQuantity) || 0));
 
     const prodId = Number(req.params.id);
+    const previousProduct = await Product.findOne({ id: prodId }).lean();
     const updated = await Product.findOneAndUpdate(
       { id: prodId },
       {
@@ -1517,6 +1518,10 @@ app.put('/api/admin/products/:id', async (req, res) => {
     );
 
     if (!updated) return res.status(404).json({ success: false, message: "Product not found" });
+    if (previousProduct && Number(previousProduct.stockQuantity || 0) !== Number(updated.stockQuantity || 0)) {
+      await StockHistory.create({ productId: prodId, productName: updated.name, change: Number(updated.stockQuantity || 0) - Number(previousProduct.stockQuantity || 0), beforeQty: Number(previousProduct.stockQuantity || 0), afterQty: Number(updated.stockQuantity || 0), reason: 'Admin product edit', actor: 'admin' }).catch(() => {});
+      await recordAdminActivity('Product updated', 'Product', prodId, 'Stock changed during product edit');
+    }
     res.json({ success: true, product: updated });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -1537,8 +1542,13 @@ app.patch('/api/admin/products/:id/quick-update', async (req, res) => {
       updateFields.inStock = updateFields.stockQuantity > 0;
     }
 
+    const previousProduct = await Product.findOne({ id: prodId }).lean();
     const updated = await Product.findOneAndUpdate({ id: prodId }, updateFields, { new: true });
     if (!updated) return res.status(404).json({ success: false, message: "Product not found" });
+    if (previousProduct && updateFields.stockQuantity !== undefined && Number(previousProduct.stockQuantity || 0) !== Number(updated.stockQuantity || 0)) {
+      await StockHistory.create({ productId: prodId, productName: updated.name, change: Number(updated.stockQuantity || 0) - Number(previousProduct.stockQuantity || 0), beforeQty: Number(previousProduct.stockQuantity || 0), afterQty: Number(updated.stockQuantity || 0), reason: 'Admin quick stock update', actor: 'admin' }).catch(() => {});
+      await recordAdminActivity('Stock updated', 'Product', prodId, 'Quick stock update');
+    }
     res.json({ success: true, product: updated });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -2575,7 +2585,7 @@ app.post('/api/returns', async (req, res) => {
     if(!order)return res.status(404).json({success:false,message:'Order not found for the supplied phone number.'});
     if(order.status!=='Delivered')return res.status(400).json({success:false,message:'Return requests can be submitted only after delivery.'});
     if(order.isNonRefundableOrder)return res.status(400).json({success:false,message:'This order is marked non-refundable.'});
-    const windowDays=7, deliveredAt=order.deliveredAt?new Date(order.deliveredAt):new Date(order.createdAt);
+    const returnSettings=await Settings.findOne({key:'main'}).lean(); const windowDays=Math.max(1,Number(returnSettings?.refundWindowDays)||7), deliveredAt=order.deliveredAt?new Date(order.deliveredAt):new Date(order.createdAt);
     if(Date.now()-deliveredAt.getTime()>windowDays*86400000)return res.status(400).json({success:false,message:'The return request window has expired.'});
     const existing=await ReturnRequest.findOne({orderId,status:{$nin:['Rejected','Closed']}});
     if(existing)return res.status(409).json({success:false,message:'A return request already exists for this order.',requestId:existing.requestId});
@@ -2626,7 +2636,7 @@ app.patch('/api/admin/shipping/bulk', async (req,res)=>{
     const ids=Array.isArray(req.body.orderIds)?req.body.orderIds.map(String).slice(0,100):[];
     if(!ids.length)return res.status(400).json({success:false,message:'Select at least one order.'});
     const update={}; if(req.body.courierPartner)update.courierPartner=String(req.body.courierPartner).slice(0,40);
-    if(req.body.status&&['Verified & Packing','Verified & Shipped','Delivered'].includes(req.body.status))update.status=req.body.status;
+    if(req.body.status&&['Verified & Packing','Verified & Shipped'].includes(req.body.status))update.status=req.body.status;
     const result=await Order.updateMany({id:{$in:ids}},{$set:update});
     await recordAdminActivity('Bulk shipping update','Orders',ids.join(','),JSON.stringify(update));
     res.json({success:true,modified:result.modifiedCount||0});
