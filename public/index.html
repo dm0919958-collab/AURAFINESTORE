@@ -952,6 +952,13 @@
         return escapeHTML(parsed.href);
       } catch(e) { return ''; }
     }
+    function safeImageUrl(value) {
+      try { const raw=String(value ?? '').trim(); if(!raw)return ''; const parsed=new URL(raw,window.location.origin);
+        if(parsed.protocol!=='https:' && parsed.origin!==window.location.origin)return '';
+        if(parsed.protocol!=='https:' && parsed.protocol!==window.location.protocol)return '';
+        return parsed.href;
+      } catch(e) { return ''; }
+    }
     
     const STORE_UPI_ID = "6289145092@ptsbi";
 
@@ -1024,7 +1031,7 @@
         document.getElementById('firstWelcomePopupSubtitle').innerText = firstOrderPopupConfig.subtitle || "Unlock instant savings on your very first luxury order at AURA Fine Store!";
         document.getElementById('firstWelcomePopupCode').innerText = code;
         if (firstOrderPopupConfig.image) {
-          document.getElementById('firstWelcomePopupImg').src = firstOrderPopupConfig.image;
+          document.getElementById('firstWelcomePopupImg').src = safeImageUrl(firstOrderPopupConfig.image);
         }
         const pctBadge = document.getElementById('firstWelcomePopupPctBadge');
         if (couponObj && couponObj.discountPercent) {
@@ -1221,7 +1228,7 @@
       }
       if (!chosen) return;
       activeLiveSaleProductId = chosen.productId;
-      document.getElementById('liveSaleImg').src = chosen.image;
+      document.getElementById('liveSaleImg').src = safeImageUrl(chosen.image);
       document.getElementById('liveSaleText').innerHTML = `<span class="text-amber-300 font-bold">${escapeHTML(chosen.city)}</span> থেকে <span class="text-white font-bold">${escapeHTML(chosen.name)}</span> এইমাত্র <span class="text-amber-200">${escapeHTML(chosen.productName)}</span> অর্ডার করলেন`;
       toast.classList.remove('translate-y-24', 'opacity-0'); toast.classList.add('translate-y-0', 'opacity-100');
       setTimeout(() => { toast.classList.add('translate-y-24', 'opacity-0'); toast.classList.remove('translate-y-0', 'opacity-100'); }, 5500);
@@ -1371,7 +1378,7 @@
       if (!dealBanners.length) return;
       const b = dealBanners[currentDealIndex], img = document.getElementById('carouselImg');
       img.style.opacity = '0.3';
-      setTimeout(() => { img.src = b.image; document.getElementById('carouselTag').innerText = b.tag || 'SPECIAL'; document.getElementById('carouselTitle').innerText = b.title; img.style.opacity = '1'; }, 200);
+      setTimeout(() => { img.src = safeImageUrl(b.image); document.getElementById('carouselTag').innerText = b.tag || 'SPECIAL'; document.getElementById('carouselTitle').innerText = b.title; img.style.opacity = '1'; }, 200);
       document.querySelectorAll('#carouselDots button').forEach((d, idx) => { d.className = `h-2 rounded-full transition-all ${idx === currentDealIndex ? 'bg-amber-400 w-6' : 'bg-white/40 w-2'}`; });
     }
 
@@ -1535,7 +1542,7 @@
           <div class="rounded-3xl border border-amber-500/20 overflow-hidden shadow-lg lux-card flex flex-col justify-between group">
             <div onclick="openQuickView(${Number(p.id)||0})" class="relative overflow-hidden aspect-square bg-stone-950 cursor-pointer">
               <img src="${safeHttpUrl(mainImage)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isOut ? 'opacity-40 grayscale' : ''}">
-              <span class="absolute top-3.5 left-3.5 ${isOut ? 'bg-rose-600 text-white' : 'bg-stone-950/90 text-amber-300 border border-amber-500/30'} text-[10px] font-extrabold uppercase px-3 py-1 rounded-full">${isOut ? 'Sold Out' : p.badge}</span>
+              <span class="absolute top-3.5 left-3.5 ${isOut ? 'bg-rose-600 text-white' : 'bg-stone-950/90 text-amber-300 border border-amber-500/30'} text-[10px] font-extrabold uppercase px-3 py-1 rounded-full">${isOut ? 'Sold Out' : escapeHTML(p.badge || '')}</span>
               <button onclick="toggleWishlist(${Number(p.id)||0}, event)" title="Save to Wishlist" class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-stone-950/85 hover:bg-stone-900 border border-rose-500/30 flex items-center justify-center transition shadow"><i class="${isWished ? 'fa-solid text-rose-500' : 'fa-regular text-stone-300'} fa-heart text-sm"></i></button>
               ${isLowUrgency ? `<span class="absolute bottom-3.5 left-3.5 bg-rose-600/95 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow animate-pulse">🔥 মাত্র ${qtyLeft}টি পিস বাকি আছে!</span>` : ''}
               <span class="absolute bottom-3.5 right-3.5 bg-black/75 text-white text-[10px] font-bold px-2.5 py-1 rounded-full"><i class="fa-regular fa-images text-amber-400"></i> ${(p.images || []).length} Photos</span>
@@ -1589,7 +1596,7 @@
       } else { inStockBox.classList.remove('hidden'); notifyForm.classList.add('hidden'); }
 
       const images = (prod.images && prod.images.length) ? prod.images : [""];
-      document.getElementById('qvMainImage').src = images[0];
+      document.getElementById('qvMainImage').src = safeImageUrl(images[0]);
       document.getElementById('qvThumbnailsContainer').innerHTML = images.map((u, i) => `<img id="thumb_img_${i}" src="${safeHttpUrl(u)}" onclick="setMainImage(${safeInlineArg(u)}, ${i})" class="w-14 h-14 object-cover rounded-xl border-2 ${i === 0 ? 'border-amber-400' : 'border-transparent'} cursor-pointer">`).join('');
       document.getElementById('qvBadge').innerText = isOut ? "Sold Out" : (prod.badge || prod.category);
       document.getElementById('qvTitle').innerText = prod.name;
@@ -1658,7 +1665,7 @@
     }
 
     function setMainImage(u, idx = -1) {
-      document.getElementById('qvMainImage').src = u;
+      document.getElementById('qvMainImage').src = safeImageUrl(u);
       document.querySelectorAll('#qvThumbnailsContainer img').forEach(im => im.classList.replace('border-amber-400', 'border-transparent'));
       if (idx >= 0 && document.getElementById(`thumb_img_${idx}`)) document.getElementById(`thumb_img_${idx}`).classList.replace('border-transparent', 'border-amber-400');
     }
@@ -1975,7 +1982,7 @@
       const heading = document.createElement('div'); heading.className = 'checkout-items-heading'; heading.textContent = `Your Items (${cart.reduce((n, item) => n + (Number(item.qty) || 1), 0)})`; box.appendChild(heading);
       cart.forEach(item => {
         const row = document.createElement('div'); row.className = 'checkout-item-row';
-        const img = document.createElement('img'); img.src = (item.images && item.images[0]) || ''; img.alt = item.name || 'Product';
+        const img = document.createElement('img'); img.src = safeImageUrl((item.images && item.images[0]) || ''); img.alt = item.name || 'Product';
         const details = document.createElement('div'); details.className = 'checkout-item-details';
         const name = document.createElement('strong'); name.textContent = item.name || 'Product';
         const meta = document.createElement('span'); meta.textContent = `${item.selectedSize || 'Standard'}${item.selectedColor ? ' · ' + item.selectedColor : ''} · Qty ${item.qty || 1}`;
