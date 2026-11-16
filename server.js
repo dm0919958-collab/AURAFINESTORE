@@ -291,6 +291,11 @@ const Order = mongoose.model('Order', orderSchema);
 const Wallet = mongoose.model('Wallet', walletSchema);
 const AbandonedCart = mongoose.model('AbandonedCart', abandonedCartSchema);
 const SupportTicket = mongoose.model('SupportTicket', supportTicketSchema);
+
+const returnRequestSchema = new mongoose.Schema({
+ requestId:{type:String,unique:true},orderId:{type:String,index:true},customerName:String,phone:{type:String,index:true},productSummary:String,reason:String,details:String,status:{type:String,default:'Pending',index:true},adminNote:{type:String,default:''},createdAtStr:String,deliveredAt:Date,reviewedAt:{type:Date,default:null}
+},{timestamps:true});
+const ReturnRequest = mongoose.model('ReturnRequest', returnRequestSchema);
 const StockNotify = mongoose.model('StockNotify', stockNotifySchema);
 
 const defaultCategories = [
@@ -846,6 +851,18 @@ async function sendTelegramAlert(order) {
   }
 }
 
+async function forwardReturnRequestToTelegram(order, request, files) {
+ if(!SUPPORT_BOT_TOKEN||!TELEGRAM_CHAT_ID) throw new Error('Return Telegram bot is not configured.');
+ const esc=v=>String(v||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const items=(order.items||[]).map((x,i)=>`${i+1}. ${esc(x.name)} x${Number(x.qty)||1}`).join('\\n');
+ const message=`↩️ <b>AURA FINE STORE — NEW RETURN / REFUND REQUEST</b>\\n━━━━━━━━━━━━━━━━━━━━\\n🆔 <b>Request:</b> <code>${esc(request.requestId)}</code>\\n📦 <b>Order:</b> <code>#${esc(order.id)}</code>\\n👤 <b>Customer:</b> ${esc(order.customerName)}\\n📞 <b>Phone:</b> <code>${esc(order.phone)}</code>\\n🛍️ <b>Items:</b>\\n${items}\\n📌 <b>Reason:</b> ${esc(request.reason)}\\n📝 <b>Details:</b>\\n${esc(request.details)}\\n📎 <b>Evidence:</b> ${(files?.photos||[]).length} photo(s), ${(files?.video||[]).length} video(s)\\n⏰ <b>Submitted:</b> ${esc(request.createdAtStr)}\\n━━━━━━━━━━━━━━━━━━━━\\n<i>Review in AURA Admin Dashboard → Returns.</i>`;
+ const send=async(url,form)=>{const r=await axios.post(url,form,{headers:form.getHeaders(),maxBodyLength:Infinity,maxContentLength:Infinity,timeout:120000});if(!r.data||!r.data.ok)throw new Error('Telegram upload was not confirmed.');};
+ const textForm=new FormDataNode();textForm.append('chat_id',TELEGRAM_CHAT_ID);textForm.append('text',message);textForm.append('parse_mode','HTML');
+ await send(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendMessage`,textForm);
+ for(let i=0;i<(files?.photos||[]).length;i++){const f=files.photos[i],form=new FormDataNode();form.append('chat_id',TELEGRAM_CHAT_ID);form.append('caption',`Return ${request.requestId} • Order #${order.id} • Photo ${i+1}`);form.append('photo',f.buffer,{filename:f.originalname||`return_${i+1}.jpg`,contentType:f.mimetype||'image/jpeg'});await send(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`,form);}
+ const video=files?.video?.[0];if(video){const form=new FormDataNode();form.append('chat_id',TELEGRAM_CHAT_ID);form.append('caption',`Return ${request.requestId} • Order #${order.id} • Video evidence`);form.append('document',video.buffer,{filename:video.originalname||'return-proof-video.mp4',contentType:video.mimetype||'video/mp4'});await send(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendDocument`,form);}
+}
+
 async function forwardSupportToTelegram(order, issueText, files) {
   if (!SUPPORT_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
   try {
@@ -1308,9 +1325,11 @@ app.get('/api/support/search', async (req, res) => {
     const orderFilter = orderIdParam ? { phone: targetPhone, id: orderIdParam } : { phone: targetPhone };
     const ticketFilter = orderIdParam ? { phone: targetPhone, orderId: orderIdParam } : { phone: targetPhone };
 
-    const [matchedOrders, matchedTickets] = await Promise.all([
+    const returnFilter = orderIdParam ? { phone: targetPhone, orderId: orderIdParam } : { phone: targetPhone };
+    const [matchedOrders, matchedTickets, matchedReturns] = await Promise.all([
       Order.find(orderFilter).sort({ createdAt: -1 }).limit(25).lean(),
-      SupportTicket.find(ticketFilter).sort({ createdAt: -1 }).limit(25).lean()
+      SupportTicket.find(ticketFilter).sort({ createdAt: -1 }).limit(25).lean(),
+      ReturnRequest.find(returnFilter).sort({ createdAt: -1 }).limit(25).lean()
     ]);
 
     const safeOrders = matchedOrders.map(o => ({
@@ -1318,7 +1337,7 @@ app.get('/api/support/search', async (req, res) => {
       address: authedPhone === targetPhone ? o.address : maskCustomerAddress(o.address)
     }));
 
-    res.json({ success: true, orders: safeOrders, tickets: matchedTickets });
+    res.json({ success: true, orders: safeOrders, tickets: matchedTickets, returnRequests: matchedReturns });
   } catch (err) {
     res.status(500).json({ success: false, orders: [], tickets: [] });
   }
@@ -1349,6 +1368,41 @@ app.post('/api/support/ticket', uploadMemory.fields([{ name: 'photos', maxCount:
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to submit support issue." });
   }
+});
+
+app.post('/api/support/return-request', uploadMemory.fields([{name:'photos',maxCount:6},{name:'video',maxCount:1}]), async(req,res)=>{
+ try{
+  const orderId=String(req.body.orderId||'').trim(),phone=String(req.body.phone||'').replace(/\\D/g,''),reason=String(req.body.reason||'').trim(),details=String(req.body.details||'').trim();
+  const reasons=['Damaged Product','Defective Product','Wrong Product Received','Missing Item','Size / Fit Issue','Other'];
+  if(!orderId||phone.length!==10||!reasons.includes(reason)||details.length<5)return res.status(400).json({success:false,message:'Please complete all required return details.'});
+  const order=await Order.findOne({id:orderId,phone}).lean();if(!order)return res.status(404).json({success:false,message:'Order not found for this mobile number.'});
+  if(order.status!=='Delivered'||!order.deliveredAt)return res.status(400).json({success:false,message:'Return requests are available only after delivery.'});
+  if(order.isNonRefundableOrder)return res.status(400).json({success:false,message:'This order is marked non-returnable under the product policy.'});
+  const deliveredMs=new Date(order.deliveredAt).getTime(),windowMs=7*24*60*60*1000;
+  if(!Number.isFinite(deliveredMs)||deliveredMs>Date.now()||Date.now()-deliveredMs>windowMs)return res.status(400).json({success:false,message:'The 7-day return window for this order has ended.'});
+  const existing=await ReturnRequest.findOne({orderId:order.id,phone,status:{$in:['Pending','Approved','Return In Transit','Received','Refund Processing','Refunded']}}).lean();
+  if(existing)return res.status(409).json({success:false,message:'A return request is already active for this order.'});
+  const photos=(req.files&&req.files.photos)||[],video=(req.files&&req.files.video)||[];
+  if(photos.some(f=>!String(f.mimetype||'').startsWith('image/'))||video.some(f=>!String(f.mimetype||'').startsWith('video/')))return res.status(400).json({success:false,message:'Please upload valid image and video files only.'});
+  const request={requestId:'RET-'+crypto.randomBytes(4).toString('hex').toUpperCase(),orderId:order.id,customerName:order.customerName,phone:order.phone,productSummary:(order.items||[]).map(x=>x.name).join(', ').slice(0,500),reason,details:details.slice(0,2000),status:'Pending',adminNote:'',createdAtStr:new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}),deliveredAt:order.deliveredAt};
+  await forwardReturnRequestToTelegram(order,request,{photos,video});
+  await ReturnRequest.create(request);
+  res.json({success:true,requestId:request.requestId,message:'Return request sent successfully.'});
+ }catch(err){console.error('Return request submission failed:',err.response?.data||err.message);res.status(502).json({success:false,message:'Could not send the request and evidence to Telegram. Please try again.'});}
+});
+
+app.post('/api/admin/returns/list',async(req,res)=>{
+ try{if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});const requests=await ReturnRequest.find().sort({createdAt:-1}).limit(300).lean();res.json({success:true,requests});}
+ catch(err){res.status(500).json({success:false,requests:[]});}
+});
+app.patch('/api/admin/returns/:requestId',async(req,res)=>{
+ try{
+  if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
+  const allowed=['Pending','Approved','Rejected','Return In Transit','Received','Refund Processing','Refunded'],status=String(req.body.status||'').trim(),adminNote=String(req.body.adminNote||'').trim().slice(0,1000);
+  if(!allowed.includes(status))return res.status(400).json({success:false,message:'Invalid return status.'});
+  const updated=await ReturnRequest.findOneAndUpdate({requestId:req.params.requestId},{$set:{status,adminNote,reviewedAt:new Date()}},{new:true,runValidators:true}).lean();
+  if(!updated)return res.status(404).json({success:false,message:'Return request not found.'});res.json({success:true,request:updated});
+ }catch(err){res.status(500).json({success:false,message:'Could not update return request.'});}
 });
 
 app.post('/api/admin/support/tickets', async (req, res) => {
