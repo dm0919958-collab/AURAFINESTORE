@@ -2327,7 +2327,7 @@
     }
 
     function openSupportModal() {
-      document.getElementById('supportModal').classList.remove('hidden'); backToSupportStep1();
+      document.getElementById('supportModal').classList.remove('hidden'); closeReturnForm(); backToSupportStep1();
       const saved = JSON.parse(localStorage.getItem('aura_customer_profile') || 'null'), inp = document.getElementById('supportPhoneInput');
       if (saved && saved.phone && !inp.value) { inp.value = saved.phone; searchOrdersForSupport(); }
       if (supportLiveInterval) clearInterval(supportLiveInterval);
