@@ -1115,16 +1115,16 @@
         if (subs.length > 0) {
           desktopHtml += `
             <div class="relative group">
-              <button onclick="filterBySection('${cat.name}', 'All')" class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition uppercase whitespace-nowrap">
-                <span>${cat.name}</span><i class="fa-solid fa-chevron-down text-[9px]"></i>
+              <button onclick="filterBySection(${safeInlineArg(cat.name)}, 'All')" class="flex items-center gap-1.5 hover:text-amber-400 py-3 transition uppercase whitespace-nowrap">
+                <span>${escapeHTML(cat.name)}</span><i class="fa-solid fa-chevron-down text-[9px]"></i>
               </button>
               <div class="absolute left-0 top-full hidden group-hover:block w-52 bg-stone-900 border border-amber-500/25 rounded-2xl shadow-2xl p-2 space-y-1 z-50 text-stone-200 normal-case">
-                ${subs.map(s => `<a href="#catalogSection" onclick="filterBySection('${cat.name}', '${s}')" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">• ${s}</a>`).join('')}
+                ${subs.map(s => `<a href="#catalogSection" onclick="filterBySection(${safeInlineArg(cat.name)}, ${safeInlineArg(s)})" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">• ${s}</a>`).join('')}
                 <a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore All ${cat.name} &rarr;</a>
               </div>
             </div>`;
         } else {
-          desktopHtml += `<button onclick="filterBySection('${cat.name}', 'All')" class="hover:text-amber-400 py-3 transition uppercase whitespace-nowrap">${cat.name}</button>`;
+          desktopHtml += `<button onclick="filterBySection('${cat.name}', 'All')" class="hover:text-amber-400 py-3 transition uppercase whitespace-nowrap">${escapeHTML(cat.name)}</button>`;
         }
       });
       desktopNav.innerHTML = desktopHtml;
@@ -1138,7 +1138,7 @@
             <button onclick="${subs.length ? `toggleMobileSub('${subDivId}')` : `filterBySection('${cat.name}', 'All'); toggleMobileDrawer(false);`}" class="w-full flex justify-between items-center p-3 text-stone-200 hover:text-amber-400 uppercase">
               <span>${cat.name}</span>${subs.length ? `<i class="fa-solid fa-chevron-down text-[10px]"></i>` : `<i class="fa-solid fa-arrow-right text-[10px]"></i>`}
             </button>
-            ${subs.length ? `<div id="${subDivId}" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">${subs.map(s => `<a href="#catalogSection" onclick="filterBySection('${cat.name}', '${s}'); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• ${s}</a>`).join('')}<a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All ${cat.name} &rarr;</a></div>` : ''}
+            ${subs.length ? `<div id="${subDivId}" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">${subs.map(s => `<a href="#catalogSection" onclick="filterBySection(${safeInlineArg(cat.name)}, ${safeInlineArg(s)}); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• ${s}</a>`).join('')}<a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All ${cat.name} &rarr;</a></div>` : ''}
           </div>`;
       });
       mobileList.innerHTML = mobileHtml;
@@ -1148,7 +1148,7 @@
         ...dynamicCategories.map(cat => `<button onclick="filterBySection('${cat.name}', 'All', this)" class="cat-btn ${activeMainSection === cat.name ? 'active bg-amber-500 text-stone-950 font-extrabold border-amber-400' : 'bg-stone-900 hover:bg-stone-800 border-stone-700 font-bold text-stone-300'} px-5 py-2 rounded-full text-xs border whitespace-nowrap">${cat.name}</button>`)
       ].join('');
 
-      footerCats.innerHTML = dynamicCategories.map(cat => `<li><a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All')" class="hover:text-amber-300 transition">${cat.name} Collection</a></li>`).join('');
+      footerCats.innerHTML = dynamicCategories.map(cat => `<li><a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All')" class="hover:text-amber-300 transition">${escapeHTML(cat.name)} Collection</a></li>`).join('');
     }
 
     function persistCartLocal() {
@@ -1278,7 +1278,7 @@
       sec.classList.remove('hidden');
       grid.innerHTML = items.map(p => `
         <div onclick="openQuickView(${p.id})" class="cursor-pointer bg-stone-900/90 border border-stone-800 hover:border-amber-500/40 rounded-2xl p-3 flex items-center gap-3 transition">
-          <img src="${(p.images && p.images[0]) || ''}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0 border border-stone-700">
+          <img src="${safeHttpUrl((p.images && p.images[0]) || '')}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0 border border-stone-700">
           <div class="min-w-0"><h5 class="text-xs font-bold text-stone-100 truncate">${escapeHTML(p.name)}</h5><p class="text-xs font-black text-amber-400 mt-0.5">₹${p.price} <span class="line-through text-stone-500 font-normal text-[10px]">₹${p.originalPrice}</span></p></div>
         </div>`).join('');
     }
@@ -1344,7 +1344,7 @@
         : savedProducts.map(p => `
           <div class="flex items-center justify-between gap-3 bg-stone-950 border border-stone-800 p-3 rounded-2xl">
             <div onclick="closeWishlistModal(); openQuickView(${p.id});" class="flex items-center gap-3 cursor-pointer flex-1">
-              <img src="${(p.images && p.images[0]) || ''}" class="w-14 h-14 rounded-xl object-cover border border-stone-700">
+              <img src="${safeHttpUrl((p.images && p.images[0]) || '')}" class="w-14 h-14 rounded-xl object-cover border border-stone-700">
               <div><h5 class="font-bold text-xs text-stone-100 line-clamp-1">${escapeHTML(p.name)}</h5><p class="text-[11px] text-amber-400 font-extrabold mt-0.5">₹${p.price}</p></div>
             </div>
             <div class="flex items-center gap-2"><button onclick="closeWishlistModal(); openQuickView(${p.id});" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-xl text-[11px] font-extrabold">Buy</button><button onclick="toggleWishlist(${p.id}); openWishlistModal();" class="text-rose-400 p-1.5 text-xs"><i class="fa-solid fa-trash"></i></button></div>
@@ -1466,14 +1466,14 @@
             const tag = getCouponTimeTag(c.expiresAt);
             return tag === "EXPIRED"
               ? `<span class="bg-rose-950/80 px-2.5 py-0.5 rounded-full border border-rose-500/40 text-[10px] text-rose-400 line-through">${c.code} (Expired)</span>`
-              : `<span class="cursor-pointer bg-stone-900 px-2.5 py-0.5 rounded-full border border-amber-500/30 text-[11px] whitespace-nowrap" onclick="quickApplyCoupon('${c.code}')">${c.code} (${c.discountPercent}% OFF${tag ? ` • ⏳ ${tag}` : ''})</span>`;
+              : `<span class="cursor-pointer bg-stone-900 px-2.5 py-0.5 rounded-full border border-amber-500/30 text-[11px] whitespace-nowrap" onclick="quickApplyCoupon(${safeInlineArg(c.code)})">${c.code} (${c.discountPercent}% OFF${tag ? ` • ⏳ ${tag}` : ''})</span>`;
           }).join('')
         : `<span>Flat 20% OFF with AURA20</span>`;
 
       document.getElementById('cartCouponsBadges').innerHTML = visible.map(c => {
         const tag = getCouponTimeTag(c.expiresAt);
         return tag === "EXPIRED"
-          ? `<div class="bg-rose-950/60 border border-rose-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 opacity-70"><span class="font-mono font-bold text-rose-400 line-through">${c.code}</span><span class="text-rose-400 font-bold text-[10px]">EXPIRED</span></div>`
+          ? `<div class="bg-rose-950/60 border border-rose-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 opacity-70"><span class="font-mono font-bold text-rose-400 line-through">${escapeHTML(c.code)}</span><span class="text-rose-400 font-bold text-[10px]">EXPIRED</span></div>`
           : `<div onclick="quickApplyCoupon('${c.code}')" class="cursor-pointer bg-stone-950 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2"><span class="font-mono font-bold text-amber-300">${c.code}</span><span class="text-emerald-400 font-bold">(${c.discountPercent}% OFF)</span>${tag ? `<span class="text-[10px] text-amber-400 font-mono">⏳ ${tag}</span>` : ''}</div>`;
       }).join('');
     }
@@ -1493,14 +1493,14 @@
       const subs = (catObj && catObj.subCategories) ? catObj.subCategories : [];
       if (!subs.length) { subBar.classList.add('hidden'); return; }
       subBar.classList.remove('hidden');
-      subBar.innerHTML = [`<button onclick="filterBySection('${mainSec}', 'All')" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap ${activeSub === 'All' ? 'bg-amber-500/25 text-amber-300 border border-amber-400' : 'bg-stone-950 text-stone-400 border border-stone-800'}">All ${mainSec}</button>`,
-        ...subs.map(sub => `<button onclick="filterBySection('${mainSec}', '${sub}')" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap ${activeSub === sub ? 'bg-amber-500/25 text-amber-300 border border-amber-400' : 'bg-stone-950 text-stone-400 border border-stone-800'}">${sub}</button>`)
+      subBar.innerHTML = [`<button onclick="filterBySection(${safeInlineArg(mainSec)}, 'All')" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap ${activeSub === 'All' ? 'bg-amber-500/25 text-amber-300 border border-amber-400' : 'bg-stone-950 text-stone-400 border border-stone-800'}">All ${escapeHTML(mainSec)}</button>`,
+        ...subs.map(sub => `<button onclick="filterBySection(${safeInlineArg(mainSec)}, ${safeInlineArg(sub)})" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap ${activeSub === sub ? 'bg-amber-500/25 text-amber-300 border border-amber-400' : 'bg-stone-950 text-stone-400 border border-stone-800'}">${escapeHTML(sub)}</button>`)
       ].join('');
     }
 
     function filterBySection(mainSec, subCat = 'All') {
       activeMainSection = mainSec; activeSubCategory = subCat;
-      document.getElementById('currentCategoryHeading').innerHTML = mainSec + (subCat !== 'All' ? ` &rarr; ${subCat}` : '');
+      document.getElementById('currentCategoryHeading').textContent = mainSec + (subCat !== 'All' ? ' → ' + subCat : '');
       renderDynamicNavigation(); renderSubCategoryBar(mainSec, subCat); renderStore();
     }
 
