@@ -129,6 +129,29 @@ label { color: #f1e5ce; }
   </style>
 
 <style id="aura-admin-custom-dashboard">:root{--ag:#063b2b;--au:#c49a4a}html{scroll-behavior:smooth;scroll-padding-top:20px}#auraAdminSidebar{position:fixed;z-index:60;left:16px;top:16px;bottom:16px;width:218px;padding:16px 12px;background:linear-gradient(165deg,#062f24,#06432f 58%,#09271f);border:1px solid rgba(196,154,74,.65);border-radius:22px;box-shadow:0 20px 60px rgba(5,35,25,.24);display:flex;flex-direction:column;gap:10px;color:#fff}#auraAdminSidebar .aura-brand{font-family:Cinzel,serif;color:#e8c77e;text-align:center;font-size:21px;padding:5px 0 14px;border-bottom:1px solid rgba(220,190,125,.25)}#auraAdminSidebar small{display:block;font:600 10px "Plus Jakarta Sans",sans-serif;letter-spacing:2px;color:#d8c18f}#auraAdminSidebar nav{display:flex;flex-direction:column;gap:5px;overflow:auto}#auraAdminSidebar a{display:flex;align-items:center;gap:10px;color:#edf4ed;text-decoration:none;padding:10px 11px;border-radius:11px;font-size:12px;font-weight:700;border:1px solid transparent}#auraAdminSidebar a:hover{background:rgba(255,255,255,.1);border-color:rgba(220,190,125,.25);color:#f6d990}#auraAdminSidebar .aura-side-note{margin-top:auto;border:1px solid rgba(220,190,125,.45);border-radius:13px;padding:11px;text-align:center;color:#e8d4a6;font-size:10px}#dashboardContent{margin-left:246px!important;max-width:calc(100vw - 270px)!important}#auraAdminSectionHeading{background:linear-gradient(100deg,#073b2b,#0c563d);color:#f7e8c5;border:1px solid rgba(196,154,74,.55);border-radius:15px;padding:13px 17px;display:flex;justify-content:space-between;gap:10px}#auraAdminSectionHeading strong{font-family:Cinzel,serif}#auraAdminSectionHeading span{font-size:10px;color:#d8c79f}#auraAdminSecuritySection,#auraAdminInvoicesSection{background:#fffdf8;border:1px solid #dfd3bd;border-radius:22px;padding:20px;box-shadow:0 10px 30px rgba(30,55,42,.05);color:#20352b}#auraAdminSecuritySection h3,#auraAdminInvoicesSection h3{color:#78582e}#auraAdminSecuritySection .aura-security-tile{background:#f4f1e8;border:1px solid #e3d8c4;border-radius:14px;padding:13px}#auraAdminInvoicesSection table{width:100%;border-collapse:collapse;font-size:12px}#auraAdminInvoicesSection th{background:#073b2b;color:#f4e7c7;text-align:left;padding:11px}#auraAdminInvoicesSection td{padding:10px;border-bottom:1px solid #e8e1d5;color:#304439}#auraAdminInvoicesSection tr:nth-child(even){background:#f8f5ed}#auraAdminInvoicesSection button{background:#0a5139;color:white;padding:7px 11px;border-radius:9px;font-weight:700}@media(max-width:900px){#auraAdminSidebar{position:sticky;top:8px;left:auto;bottom:auto;width:auto;margin:8px 10px;padding:10px;border-radius:14px}#auraAdminSidebar .aura-brand,#auraAdminSidebar .aura-side-note{display:none}#auraAdminSidebar nav{flex-direction:row;overflow-x:auto;white-space:nowrap}#auraAdminSidebar a{flex:0 0 auto;padding:9px 11px}#dashboardContent{margin:0 auto!important;max-width:100%!important;padding:12px!important}}@media(max-width:560px){#auraAdminSectionHeading{flex-direction:column}#auraAdminInvoicesSection{padding:12px}#auraAdminInvoicesSection table{min-width:680px}}</style>
+
+<style id="aura-admin-section-workspace">
+/* Focused admin workspace: one selected panel, with its own scroll area */
+#auraAdminSidebar .aura-all-view-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border:1px solid rgba(220,190,125,.45);border-radius:12px;background:linear-gradient(100deg,#b58b48,#d7b66f);color:#173729;font-size:12px;font-weight:900;text-align:left;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.14)}
+#auraAdminSidebar .aura-all-view-btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+#auraAdminSidebar a[aria-current="page"]{background:rgba(215,182,111,.18);border-color:rgba(215,182,111,.7);color:#f6d990}
+#dashboardContent{height:calc(100vh - 32px);max-height:calc(100vh - 32px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scroll-behavior:smooth;scrollbar-gutter:stable;padding-bottom:28px!important}
+#dashboardContent>header{position:sticky;top:0;z-index:40;background:rgba(247,246,241,.96);backdrop-filter:blur(12px);padding-top:10px}
+#dashboardContent>.aura-admin-view-hidden{display:none!important}
+#dashboardContent>.aura-admin-view-active{width:100%;min-width:0;max-width:100%;margin-top:10px}
+#dashboardContent section,#dashboardContent [id$="Section"],#dashboardContent #salesAnalyticsSection{min-width:0}
+#dashboardContent .aura-admin-view-active>section,#dashboardContent .aura-admin-view-active>div{max-width:100%}
+#dashboardContent table{max-width:100%}
+@media(max-width:900px){
+ body:has(#dashboardContent:not(.hidden)){overflow:auto}
+ #dashboardContent{height:auto;max-height:none;overflow:visible;overscroll-behavior:auto}
+ #dashboardContent>header{position:relative;top:auto}
+ #auraAdminSidebar{position:sticky;top:6px;z-index:70}
+}
+@media(min-width:901px){
+ body:has(#dashboardContent:not(.hidden)){overflow:hidden}
+}
+</style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
@@ -181,7 +204,7 @@ label { color: #f1e5ce; }
         <a href="/" target="_blank" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs border border-slate-700">View Store &rarr;</a>
         <button onclick="logout()" class="bg-rose-600/20 text-rose-400 hover:bg-rose-600/30 px-4 py-2 rounded-xl text-xs border border-rose-600/30 font-semibold">Logout</button>
       </div>
-    </header><div id="auraAdminSidebar"><div class="aura-brand">✿ AURA <small>FINE STORE • ADMIN</small></div><nav aria-label="Admin sections"><a href="#auraAdminOverview"><i class="fa-solid fa-gauge-high"></i> Overview</a><a href="#adminCatalogSection"><i class="fa-solid fa-box"></i> Products</a><a href="#auraAdminOrdersSection"><i class="fa-solid fa-truck-fast"></i> Orders</a><a href="#repeatCustomersSection"><i class="fa-solid fa-users"></i> Customers & Coins</a><a href="#salesAnalyticsSection"><i class="fa-solid fa-chart-line"></i> Sales Analytics</a><a href="#auraAdminSecuritySection"><i class="fa-solid fa-shield-halved"></i> Admin Security</a><a href="#supportDeskSection"><i class="fa-solid fa-headset"></i> Support Desk</a><a href="#auraAdminInvoicesSection" onclick="setTimeout(renderAdminInvoices,80)"><i class="fa-solid fa-file-invoice"></i> Invoices</a><a href="#storeSettingsSection"><i class="fa-solid fa-sliders"></i> Store Settings</a><a href="#categoryManagerSection"><i class="fa-solid fa-layer-group"></i> Categories</a><a href="#reviewModerationSection"><i class="fa-solid fa-star"></i> Reviews</a><a href="#stockWaitlistSection"><i class="fa-solid fa-bell"></i> Waitlist</a><a href="#abandonedCartsSection"><i class="fa-solid fa-cart-arrow-down"></i> Abandoned Carts</a><a href="#firstOrderPopupSection"><i class="fa-solid fa-gift"></i> Welcome Popup</a><a href="#couponManagerSection"><i class="fa-solid fa-ticket"></i> Coupons</a><a href="#bannerManagerSection"><i class="fa-solid fa-panorama"></i> Banners</a></nav><div class="aura-side-note"><i class="fa-solid fa-crown"></i><br><b>AURA PREMIUM ADMIN</b><br>Manage with Excellence</div></div>
+    </header><div id="auraAdminSidebar"><div class="aura-brand">✿ AURA <small>FINE STORE • ADMIN</small></div><nav aria-label="Admin sections"><button type="button" class="aura-all-view-btn" data-admin-view="ALL"><i class="fa-solid fa-layer-group"></i> All Sections</button><a href="#auraAdminOverview"><i class="fa-solid fa-gauge-high"></i> Overview</a><a href="#adminCatalogSection"><i class="fa-solid fa-box"></i> Products</a><a href="#auraAdminOrdersSection"><i class="fa-solid fa-truck-fast"></i> Orders</a><a href="#repeatCustomersSection"><i class="fa-solid fa-users"></i> Customers & Coins</a><a href="#salesAnalyticsSection"><i class="fa-solid fa-chart-line"></i> Sales Analytics</a><a href="#auraAdminSecuritySection"><i class="fa-solid fa-shield-halved"></i> Admin Security</a><a href="#supportDeskSection"><i class="fa-solid fa-headset"></i> Support Desk</a><a href="#auraAdminInvoicesSection" onclick="setTimeout(renderAdminInvoices,80)"><i class="fa-solid fa-file-invoice"></i> Invoices</a><a href="#storeSettingsSection"><i class="fa-solid fa-sliders"></i> Store Settings</a><a href="#categoryManagerSection"><i class="fa-solid fa-layer-group"></i> Categories</a><a href="#reviewModerationSection"><i class="fa-solid fa-star"></i> Reviews</a><a href="#stockWaitlistSection"><i class="fa-solid fa-bell"></i> Waitlist</a><a href="#abandonedCartsSection"><i class="fa-solid fa-cart-arrow-down"></i> Abandoned Carts</a><a href="#firstOrderPopupSection"><i class="fa-solid fa-gift"></i> Welcome Popup</a><a href="#couponManagerSection"><i class="fa-solid fa-ticket"></i> Coupons</a><a href="#bannerManagerSection"><i class="fa-solid fa-panorama"></i> Banners</a></nav><div class="aura-side-note"><i class="fa-solid fa-crown"></i><br><b>AURA PREMIUM ADMIN</b><br>Manage with Excellence</div></div>
 
     <!-- Low Stock Alert Banner -->
     <div id="lowStockAlertBox" class="hidden bg-rose-950/70 border border-rose-500/50 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -2002,6 +2025,71 @@ label { color: #f1e5ce; }
       if (handleUnauthorized(res)) return;
       if ((await res.json()).success) { selectedOrderIdsSet.delete(orderId); alert(`Order #${orderId} deleted!`); loadAdminDashboard(true); }
     }
+
+
+    // Admin section navigation: keep the shell visible and focus the chosen panel.
+    (function initAuraAdminSectionWorkspace(){
+      const dashboard=document.getElementById('dashboardContent');
+      const sidebar=document.getElementById('auraAdminSidebar');
+      if(!dashboard||!sidebar) return;
+      const viewIds=[
+        'auraAdminOverview','adminCatalogSection','auraAdminOrdersSection',
+        'repeatCustomersSection','salesAnalyticsSection','auraAdminSecuritySection',
+        'supportDeskSection','auraAdminInvoicesSection','storeSettingsSection',
+        'categoryManagerSection','reviewModerationSection','stockWaitlistSection',
+        'abandonedCartsSection','firstOrderPopupSection','couponManagerSection',
+        'bannerManagerSection'
+      ];
+      const shellIds=new Set(['auraAdminSidebar']);
+      const header=dashboard.querySelector(':scope > header');
+      const overviewStats=document.getElementById('statTodayOrders')?.parentElement?.parentElement;
+      function directChild(node){
+        let el=node;
+        while(el&&el.parentElement!==dashboard) el=el.parentElement;
+        return el&&el.parentElement===dashboard?el:null;
+      }
+      const overviewRoots=new Set([
+        directChild(document.getElementById('auraAdminSectionHeading')),
+        directChild(overviewStats)
+      ].filter(Boolean));
+      function activateAdminView(id){
+        const all=id==='ALL';
+        const target=document.getElementById(id);
+        const targetRoot=all?null:directChild(target);
+        if(!all&&!targetRoot) return;
+        [...dashboard.children].forEach(child=>{
+          const keepShell=child===header||shellIds.has(child.id);
+          const keepOverview= id==='auraAdminOverview'&&overviewRoots.has(child);
+          const keepTarget=child===targetRoot;
+          const show=all||keepShell||keepOverview||keepTarget;
+          child.classList.toggle('aura-admin-view-hidden',!show);
+          child.classList.toggle('aura-admin-view-active',!all&&show&&!keepShell);
+        });
+        sidebar.querySelectorAll('a[href^="#"]').forEach(a=>{
+          const active=a.getAttribute('href')==='#'+id;
+          if(active) a.setAttribute('aria-current','page');
+          else a.removeAttribute('aria-current');
+        });
+        const scroller=dashboard;
+        scroller.scrollTo({top:0,behavior:'smooth'});
+      }
+      sidebar.querySelector('[data-admin-view="ALL"]')?.addEventListener('click',()=>activateAdminView('ALL'));
+      dashboard.addEventListener('click',event=>{
+        const link=event.target.closest('a[href^="#"]');
+        if(!link||!dashboard.contains(link)) return;
+        const id=decodeURIComponent(link.getAttribute('href').slice(1));
+        if(viewIds.includes(id)){
+          event.preventDefault();
+          activateAdminView(id);
+          if(id==='auraAdminInvoicesSection'&&typeof renderAdminInvoices==='function') setTimeout(renderAdminInvoices,80);
+        }
+      });
+      sidebar.querySelectorAll('a[href^="#"]').forEach(a=>{
+        const id=a.getAttribute('href').slice(1);
+        if(viewIds.includes(id)) a.addEventListener('click',()=>activateAdminView(id));
+      });
+      // Start in the full dashboard; the All Sections control always restores it.
+    })();
   </script>
 </body>
 </html>
