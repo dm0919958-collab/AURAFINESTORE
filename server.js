@@ -1424,8 +1424,33 @@ app.post('/api/support/return-request/:requestId/cancel',async(req,res)=>{
 });
 
 app.post('/api/admin/returns/list',async(req,res)=>{
+ try{if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});const requests=await ReturnRequest.find({}).sort({createdAt:-1}).limit(1000).lean();res.json({success:true,requests});}
+ catch(err){res.status(500).json({success:false,requests:[]});}
+});
+
+app.post('/api/admin/returns/search',async(req,res)=>{
+ try{
+  if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
+  const q=String(req.body.query||'').trim().slice(0,120);
+  if(!q)return res.status(400).json({success:false,message:'Enter a customer name, phone, order ID, or request ID.'});
+  const safe=q.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\app.post('/api/admin/returns/list',async(req,res)=>{
  try{if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});const requests=await ReturnRequest.find({status:{$ne:'Failed'}}).sort({createdAt:-1}).limit(300).lean();res.json({success:true,requests});}
  catch(err){res.status(500).json({success:false,requests:[]});}
+});');
+  const rx=new RegExp(safe,'i');
+  const requests=await ReturnRequest.find({$or:[{customerName:rx},{phone:rx},{orderId:rx},{requestId:rx}]}).sort({createdAt:-1}).limit(1000).lean();
+  res.json({success:true,requests});
+ }catch(err){res.status(500).json({success:false,requests:[],message:'Could not search return history.'});}
+});
+
+app.post('/api/admin/returns/customer-history-delete',async(req,res)=>{
+ try{
+  if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
+  const phone=String(req.body.phone||'').replace(/\\D/g,'');
+  if(phone.length!==10)return res.status(400).json({success:false,message:'A valid 10-digit customer phone is required.'});
+  const result=await ReturnRequest.deleteMany({phone});
+  res.json({success:true,deletedCount:result.deletedCount||0,message:`Permanently deleted ${result.deletedCount||0} Return / Replacement history record(s) for this customer.`});
+ }catch(err){res.status(500).json({success:false,message:'Could not delete this customer history.'});}
 });
 app.patch('/api/admin/returns/:requestId',async(req,res)=>{
  try{
@@ -1440,9 +1465,9 @@ app.patch('/api/admin/returns/:requestId',async(req,res)=>{
 app.delete('/api/admin/returns/:requestId',async(req,res)=>{
  try{
   if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
-  const updated=await ReturnRequest.findOneAndUpdate({requestId:req.params.requestId,status:{$ne:'Failed'}},{$set:{status:'Failed',adminNote:'Request closed by admin. Customer may submit a new request.',reviewedAt:new Date()}},{new:true}).lean();
-  if(!updated)return res.status(404).json({success:false,message:'Request not found or already deleted.'});
-  res.json({success:true,request:updated,message:'Request removed from Admin list. Customer can submit again.'});
+  const result=await ReturnRequest.deleteOne({requestId:req.params.requestId});
+  if(!result.deletedCount)return res.status(404).json({success:false,message:'Request not found or already deleted.'});
+  res.json({success:true,deletedCount:result.deletedCount,message:'Return / Replacement request permanently deleted.'});
  }catch(err){res.status(500).json({success:false,message:'Could not delete return request.'});}
 });
 
