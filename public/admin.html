@@ -1587,10 +1587,10 @@ label { color: #f1e5ce; }
     }
     function deleteSelectedReturnRequests(){const q=(document.getElementById('adminReturnSearchInput')?.value||'').trim().toLowerCase();const visible=cachedReturnRequests.filter(r=>[r.customerName,r.phone,r.orderId,r.requestId].some(v=>String(v||'').toLowerCase().includes(q)));const ids=visible.filter(r=>window._selectedReturnRequestIds.has(r.requestId)).map(r=>r.requestId);if(!ids.length)return alert('বর্তমান Search ফলাফল থেকে অন্তত একটি Request নির্বাচন করুন।');submitReturnBulkDelete({requestIds:ids},`Permanently delete only these ${ids.length} selected request(s)? This cannot be undone.`);}
     function renderAdminReturnRequests(){
-      const list=document.getElementById('adminReturnRequestsList'),statuses=['Pending','Approved','Return Approved','Replacement Approved','Rejected','Return In Transit','Received','Replacement Processing','Completed','Cancelled','Failed'];
+      const list=document.getElementById('adminReturnRequestsList'),statuses=['Pending','Approved','Return Approved','Replacement Approved','Rejected','Return In Transit','Received','Replacement Processing','Completed','Cancelled'];
       const query=(document.getElementById('adminReturnSearchInput')?.value||'').trim().toLowerCase();
       const filtered=cachedReturnRequests.filter(r=>[r.customerName,r.phone,r.orderId,r.requestId].some(v=>String(v||'').toLowerCase().includes(query)));
-      const stats=[['Total',cachedReturnRequests.length],...statuses.map(s=>[s,cachedReturnRequests.filter(r=>r.status===s).length])];
+      const stats=[['Total',cachedReturnRequests.length],...statuses.map(s=>[s,cachedReturnRequests.filter(r=>r.status===s).length]),['Failed',cachedReturnRequests.filter(r=>r.status==='Failed').length]];
       document.getElementById('adminReturnStats').innerHTML=stats.map(([n,v])=>`<div class="rounded-xl border border-amber-200 bg-white p-3"><p class="text-xs font-bold uppercase text-slate-700">${n}</p><p class="text-2xl font-extrabold text-emerald-800">${v}</p></div>`).join('');
       const selectedCount=window._selectedReturnRequestIds.size;const selectedEl=document.getElementById('selectedReturnCount');if(selectedEl)selectedEl.textContent=selectedCount+' selected';
       const selectAll=document.getElementById('selectAllReturnRequests');if(selectAll)selectAll.checked=filtered.length>0&&filtered.every(r=>window._selectedReturnRequestIds.has(r.requestId));
