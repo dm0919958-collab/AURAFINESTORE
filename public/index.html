@@ -1029,7 +1029,7 @@
       try {
         const savedProfile = JSON.parse(localStorage.getItem('aura_customer_profile') || 'null');
         if (savedProfile && savedProfile.phone && savedProfile.phone.length === 10) {
-          const wRes = await fetch(`/api/wallet/${savedProfile.phone}?t=${Date.now()}`);
+          const wRes = await fetch(`/api/wallet/${savedProfile.phone}?t=${Date.now()}`, { headers: { 'x-customer-token': localStorage.getItem('aura_customer_token') || '' } });
           const wData = await wRes.json();
           if (wData.success) {
             hasActiveOrder = Boolean(wData.hasPriorOrders);
@@ -2104,7 +2104,7 @@
       const coinChk = document.getElementById('useAuraCoinsCheckbox');
       if (coinChk) coinChk.checked = false;
       try {
-        const wRes = await fetch(`/api/wallet/${phone}`);
+        const wRes = await fetch(`/api/wallet/${phone}`, { headers: { 'x-customer-token': localStorage.getItem('aura_customer_token') || '' } });
         const wData = await wRes.json();
         if (wData.success) {
           customerAvailableCoins = wData.coins || 0;
