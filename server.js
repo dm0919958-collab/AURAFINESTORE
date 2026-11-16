@@ -860,7 +860,7 @@ async function forwardReturnRequestToTelegram(order, request, files) {
  const textForm=new FormDataNode();textForm.append('chat_id',TELEGRAM_CHAT_ID);textForm.append('text',message);textForm.append('parse_mode','HTML');
  await send(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendMessage`,textForm);
  for(let i=0;i<(files?.photos||[]).length;i++){const f=files.photos[i],form=new FormDataNode();form.append('chat_id',TELEGRAM_CHAT_ID);form.append('caption',`Return ${request.requestId} • Order #${order.id} • Photo ${i+1}`);form.append('photo',f.buffer,{filename:f.originalname||`return_${i+1}.jpg`,contentType:f.mimetype||'image/jpeg'});await send(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`,form);}
- const video=files?.video?.[0];if(video){const form=new FormDataNode();form.append('chat_id',TELEGRAM_CHAT_ID);form.append('caption',`Return ${request.requestId} • Order #${order.id} • Video evidence`);form.append('document',video.buffer,{filename:video.originalname||'return-proof-video.mp4',contentType:video.mimetype||'video/mp4'});await send(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendDocument`,form);}
+ const video=files?.video?.[0];if(video){const form=new FormDataNode();form.append('chat_id',TELEGRAM_CHAT_ID);form.append('caption',`Return ${request.requestId} • Order #${order.id} • Video evidence`);form.append('video',video.buffer,{filename:video.originalname||'return-proof-video.mp4',contentType:video.mimetype||'video/mp4'});await send(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendVideo`,form);}
 }
 
 async function forwardSupportToTelegram(order, issueText, files) {
@@ -1383,6 +1383,7 @@ app.post('/api/support/return-request', uploadMemory.fields([{name:'photos',maxC
   const existing=await ReturnRequest.findOne({orderId:order.id,phone,status:{$in:['Pending','Approved','Return In Transit','Received','Refund Processing','Refunded']}}).lean();
   if(existing)return res.status(409).json({success:false,message:'A return request is already active for this order.'});
   const photos=(req.files&&req.files.photos)||[],video=(req.files&&req.files.video)||[];
+  if(photos.some(f=>f.size>10*1024*1024)||video.some(f=>f.size>20*1024*1024))return res.status(413).json({success:false,message:'Each photo must be 10 MB or smaller and the video must be 20 MB or smaller.'});
   if(photos.some(f=>!String(f.mimetype||'').startsWith('image/'))||video.some(f=>!String(f.mimetype||'').startsWith('video/')))return res.status(400).json({success:false,message:'Please upload valid image and video files only.'});
   const request={requestId:'RET-'+crypto.randomBytes(4).toString('hex').toUpperCase(),orderId:order.id,customerName:order.customerName,phone:order.phone,productSummary:(order.items||[]).map(x=>x.name).join(', ').slice(0,500),reason,details:details.slice(0,2000),status:'Pending',adminNote:'',createdAtStr:new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}),deliveredAt:order.deliveredAt};
   await forwardReturnRequestToTelegram(order,request,{photos,video});
