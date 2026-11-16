@@ -907,6 +907,17 @@
           <button type="submit" id="supportSubmitBtn" class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 text-stone-950 py-3 rounded-xl font-extrabold text-xs">Submit Issue</button>
         </div>
       </form>
+      <form id="returnRequestForm" onsubmit="submitReturnRequest(event)" class="hidden space-y-3.5">
+        <div class="flex items-center justify-between border-b border-stone-800 pb-2"><div><h5 class="font-cinzel text-lg font-bold text-amber-300"><i class="fa-solid fa-rotate-left mr-2"></i>Return / Refund Request</h5><p class="text-[10px] text-stone-400">Available within 7 days after delivery</p></div><span class="rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 text-[10px] font-bold">7-DAY WINDOW</span></div>
+        <div class="bg-stone-950 border border-emerald-500/30 p-3 rounded-xl"><p class="text-[10px] uppercase font-bold text-emerald-400">Selected Delivered Order</p><p id="returnSelectedOrderId" class="font-mono font-bold text-amber-300 text-sm"></p><p id="returnSelectedOrderItems" class="text-[11px] text-stone-300 mt-1"></p><p id="returnWindowCountdown" class="text-[10px] text-emerald-300 mt-1"></p></div>
+        <div><label for="returnReason" class="block text-stone-300 font-bold mb-1">Reason for Return *</label><select id="returnReason" required class="w-full bg-stone-950 border border-stone-700 text-white p-3 rounded-xl"><option value="">Choose a reason</option><option>Damaged Product</option><option>Defective Product</option><option>Wrong Product Received</option><option>Missing Item</option><option>Size / Fit Issue</option><option>Other</option></select></div>
+        <div><label for="returnDetails" class="block text-stone-300 font-bold mb-1">Describe the issue *</label><textarea id="returnDetails" rows="3" minlength="5" maxlength="2000" required placeholder="Please explain what happened..." class="w-full bg-stone-950 border border-stone-700 text-white p-3 rounded-xl"></textarea></div>
+        <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-2"><div class="flex items-center justify-between gap-2"><div><p class="font-bold text-amber-300"><i class="fa-solid fa-images mr-1"></i> Product / Parcel Photos</p><p class="text-[10px] text-stone-400">Up to 6 photos • 10 MB each</p></div><label class="cursor-pointer rounded-lg bg-amber-500 text-stone-950 px-3 py-2 font-extrabold text-[10px]">Add Photos<input id="returnPhotoInput" type="file" accept="image/*" multiple onchange="handleReturnPhotos(this)" class="hidden"></label></div><div id="returnPhotoPreview" class="flex flex-wrap gap-2"></div></div>
+        <div class="bg-stone-950 border border-stone-800 p-3 rounded-xl space-y-2"><div class="flex items-center justify-between gap-2"><div><p class="font-bold text-rose-300"><i class="fa-solid fa-video mr-1"></i> Video Evidence</p><p class="text-[10px] text-stone-400">1 video • up to 20 MB</p></div><label class="cursor-pointer rounded-lg bg-rose-600 text-white px-3 py-2 font-extrabold text-[10px]">Choose Video<input id="returnVideoInput" type="file" accept="video/*" onchange="handleReturnVideo(this)" class="hidden"></label></div><div id="returnVideoPreview" class="text-[11px] text-stone-300"></div></div>
+        <div class="rounded-xl border border-amber-500/20 bg-amber-950/20 p-3 text-[10px] text-amber-200"><i class="fa-brands fa-telegram mr-1"></i> Photos and video are sent to AURA Fine Store's Telegram for review, not stored in website file storage.</div>
+        <div id="returnSubmitProgress" class="hidden rounded-xl bg-stone-950 border border-emerald-500/30 p-3 text-emerald-300 text-[11px]">Sending request and evidence securely…</div>
+        <div class="flex gap-2 pt-1"><button type="button" onclick="closeReturnForm()" class="w-1/3 bg-stone-800 text-stone-300 py-3 rounded-xl font-bold">Back</button><button id="returnSubmitBtn" type="submit" class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 text-stone-950 py-3 rounded-xl font-extrabold">Submit Return Request</button></div>
+      </form>
     </div>
   </div>
 
@@ -1027,6 +1038,7 @@
     let currentOpenedProduct = null, currentSelectedSize = "", currentSelectedColor = "";
     let currentReviewPhotoBase64 = "";
     let supportMatchedOrders = [], selectedSupportOrder = null, supportPhotoFiles = [], supportVideoFile = null, supportLiveInterval = null;
+    let supportReturnRequests = [], selectedReturnOrder = null, returnPhotoFiles = [], returnVideoFile = null;
     let initializedMetaPixelId = "";
     let hasCheckedDeepLink = false;
 
@@ -2327,6 +2339,13 @@
 
     function closeSupportModal() { document.getElementById('supportModal').classList.add('hidden'); if (supportLiveInterval) clearInterval(supportLiveInterval); }
 
+    function renderCustomerReturnRequests(requests) {
+      const oldWrap=document.getElementById('customerPreviousTicketsWrap');let wrap=document.getElementById('customerReturnRequestsWrap');
+      if(!wrap){wrap=document.createElement('div');wrap.id='customerReturnRequestsWrap';wrap.className='space-y-2';oldWrap.parentElement.insertBefore(wrap,oldWrap.nextSibling);}
+      if(!requests||!requests.length){wrap.innerHTML='';return;}
+      wrap.innerHTML='<p class="text-[11px] font-bold text-emerald-300 uppercase">Your Return / Refund Requests</p>'+requests.map(r=>`<div class="rounded-xl border border-emerald-500/20 bg-stone-950 p-3 text-[11px]"><div class="flex justify-between gap-2"><b class="text-amber-300">${escapeHTML(r.requestId)} • #${escapeHTML(r.orderId)}</b><span class="rounded-full px-2 py-0.5 bg-emerald-950 text-emerald-300 font-bold">${escapeHTML(r.status)}</span></div><p class="text-stone-300 mt-1">${escapeHTML(r.reason)}</p>${r.adminNote?`<p class="text-emerald-200 mt-1">Admin note: ${escapeHTML(r.adminNote)}</p>`:''}<p class="text-stone-500 mt-1">${escapeHTML(r.createdAtStr||'')}</p></div>`).join('');
+    }
+
     function renderCustomerTickets(tickets) {
       const wrap = document.getElementById('customerPreviousTicketsWrap'), list = document.getElementById('customerPreviousTicketsList');
       if (tickets && tickets.length) {
@@ -2336,7 +2355,7 @@
     }
 
     async function refreshSupportTicketsSilently(p) {
-      try { const res = await fetch(`/api/support/search?q=${encodeURIComponent(p)}&t=${Date.now()}`); const d = await res.json(); if (d.success) renderCustomerTickets(d.tickets || []); } catch (e) {}
+      try { const res = await fetch(`/api/support/search?q=${encodeURIComponent(p)}&t=${Date.now()}`); const d = await res.json(); if (d.success) { renderCustomerTickets(d.tickets || []); renderCustomerReturnRequests(d.returnRequests || []); } } catch (e) {}
     }
 
     async function searchOrdersForSupport() {
@@ -2344,10 +2363,17 @@
       if (p.length < 6) return alert("Enter 10-digit mobile number!");
       const res = await fetch(`/api/support/search?q=${encodeURIComponent(p)}&t=${Date.now()}`);
       const data = await res.json();
-      supportMatchedOrders = data.orders || []; renderCustomerTickets(data.tickets || []);
+      supportMatchedOrders = data.orders || []; supportReturnRequests = data.returnRequests || []; renderCustomerTickets(data.tickets || []); renderCustomerReturnRequests(supportReturnRequests);
       const listDiv = document.getElementById('supportOrdersList'); selectedSupportOrder = null; updateSupportNextBtn();
       if (!supportMatchedOrders.length) { listDiv.innerHTML = `<p class="text-center py-4 text-rose-400 font-bold">No orders found!</p>`; return; }
-      listDiv.innerHTML = supportMatchedOrders.map((o, i) => `<div onclick="selectOrderForSupport(${i}, this)" class="support-order-card cursor-pointer bg-stone-950 border-2 border-stone-800 p-3 rounded-2xl"><div class="flex justify-between font-bold"><span class="font-mono text-amber-400">#${escapeHTML(o.id)}</span><span>${escapeHTML(o.status)}</span></div><p class="text-xs font-bold">${escapeHTML(o.customerName)}</p><p class="text-[11px] text-stone-400">${(o.items || []).map(x => escapeHTML(x.name)).join(', ')}</p></div>`).join('');
+      listDiv.innerHTML = supportMatchedOrders.map((o,i)=>{
+        const deliveredMs=o.deliveredAt?new Date(o.deliveredAt).getTime():0;
+        const open=o.status==='Delivered'&&deliveredMs>0&&Date.now()>=deliveredMs&&Date.now()-deliveredMs<=7*86400000&&!o.isNonRefundableOrder;
+        const active=supportReturnRequests.find(r=>r.orderId===o.id&&r.status!=='Rejected');
+        const prior=supportReturnRequests.find(r=>r.orderId===o.id);
+        const action=active?`<span class="mt-2 inline-block text-[10px] font-bold text-emerald-300">Return: ${escapeHTML(active.status)}</span>`:open?`<button type="button" onclick="event.stopPropagation(); openReturnForm(${i})" class="mt-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-2 text-[10px] font-extrabold text-stone-950"><i class="fa-solid fa-rotate-left mr-1"></i> Return / Refund (7 Days)</button>`:o.status==='Delivered'?`<span class="mt-2 inline-block text-[10px] text-stone-500">${prior?'Previous request: '+escapeHTML(prior.status):'Return window closed'}</span>`:'';
+        return `<div onclick="selectOrderForSupport(${i}, this)" class="support-order-card cursor-pointer bg-stone-950 border-2 border-stone-800 p-3 rounded-2xl"><div class="flex justify-between font-bold"><span class="font-mono text-amber-400">#${escapeHTML(o.id)}</span><span>${escapeHTML(o.status)}</span></div><p class="text-xs font-bold">${escapeHTML(o.customerName)}</p><p class="text-[11px] text-stone-400">${(o.items||[]).map(x=>escapeHTML(x.name)).join(', ')}</p>${action}</div>`;
+      }).join('');
     }
 
     function selectOrderForSupport(i, el) {
@@ -2387,6 +2413,33 @@
     }
 
     function clearSupportVideo() { supportVideoFile = null; document.getElementById('supportSelectedVideoPreview').classList.add('hidden'); }
+
+
+    function openReturnForm(i){
+      const o=supportMatchedOrders[i];if(!o)return;selectedReturnOrder=o;
+      document.getElementById('supportStep1').classList.add('hidden');document.getElementById('supportStep2Form').classList.add('hidden');document.getElementById('returnRequestForm').classList.remove('hidden');
+      document.getElementById('returnSelectedOrderId').innerText='#'+o.id;document.getElementById('returnSelectedOrderItems').innerText=(o.items||[]).map(x=>x.name).join(', ');
+      document.getElementById('returnWindowCountdown').innerText='Submit before '+new Date(new Date(o.deliveredAt).getTime()+7*86400000).toLocaleString('en-IN');
+      document.getElementById('returnReason').value='';document.getElementById('returnDetails').value='';returnPhotoFiles=[];returnVideoFile=null;renderReturnPhotoPreview();renderReturnVideoPreview();
+    }
+    function closeReturnForm(){document.getElementById('returnRequestForm').classList.add('hidden');document.getElementById('supportStep1').classList.remove('hidden');selectedReturnOrder=null;}
+    function renderReturnPhotoPreview(){document.getElementById('returnPhotoPreview').innerHTML=returnPhotoFiles.map((f,i)=>`<div class="rounded-lg border border-stone-700 bg-stone-900 px-2 py-1.5 text-[10px] text-stone-200">${escapeHTML(f.name)} <button type="button" onclick="returnPhotoFiles.splice(${i},1);renderReturnPhotoPreview()" class="ml-1 text-rose-400 font-bold">×</button></div>`).join('');}
+    function handleReturnPhotos(input){for(const f of Array.from(input.files||[])){if(!f.type.startsWith('image/')){alert('Images only.');continue;}if(f.size>10*1048576){alert(f.name+' exceeds 10 MB.');continue;}if(returnPhotoFiles.length>=6){alert('Maximum 6 photos allowed.');break;}returnPhotoFiles.push(f);}input.value='';renderReturnPhotoPreview();}
+    function handleReturnVideo(input){const f=input.files&&input.files[0];input.value='';if(!f)return;if(!f.type.startsWith('video/'))return alert('Video files only.');if(f.size>20*1048576)return alert('Video must be 20 MB or smaller.');returnVideoFile=f;renderReturnVideoPreview();}
+    function renderReturnVideoPreview(){document.getElementById('returnVideoPreview').innerHTML=returnVideoFile?`<span class="text-emerald-300"><i class="fa-solid fa-circle-check mr-1"></i>${escapeHTML(returnVideoFile.name)} (${(returnVideoFile.size/1048576).toFixed(1)} MB)</span> <button type="button" onclick="returnVideoFile=null;renderReturnVideoPreview()" class="text-rose-400 ml-2">Remove</button>`:'<span class="text-stone-500">No video selected</span>';}
+    async function submitReturnRequest(e){
+      e.preventDefault();if(!selectedReturnOrder)return;
+      const phone=document.getElementById('supportPhoneInput').value.replace(/\\D/g,''),btn=document.getElementById('returnSubmitBtn'),progress=document.getElementById('returnSubmitProgress');
+      btn.disabled=true;btn.innerText='Sending…';progress.classList.remove('hidden');
+      try{
+        const form=new FormData();form.append('orderId',selectedReturnOrder.id);form.append('phone',phone);form.append('reason',document.getElementById('returnReason').value);form.append('details',document.getElementById('returnDetails').value.trim());
+        returnPhotoFiles.forEach(f=>form.append('photos',f));if(returnVideoFile)form.append('video',returnVideoFile);
+        const res=await fetch('/api/support/return-request',{method:'POST',body:form}),data=await res.json();
+        if(!res.ok||!data.success)throw new Error(data.message||'Could not submit return request.');
+        alert('Return request submitted!\\nRequest ID: '+data.requestId);closeReturnForm();await searchOrdersForSupport();
+      }catch(err){alert(err.message||'Could not submit return request.');}
+      finally{btn.disabled=false;btn.innerText='Submit Return Request';progress.classList.add('hidden');}
+    }
 
     function uploadFormDataWithProgress(url, formData, onProgress) {
       return new Promise((resolve, reject) => {
