@@ -282,34 +282,6 @@ const stockNotifySchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-
-const stockHistorySchema = new mongoose.Schema({
-  productId: Number, productName: String, change: Number, beforeQty: Number, afterQty: Number,
-  reason: String, variant: String, orderId: String, actor: String, createdAt: { type: Date, default: Date.now }
-});
-stockHistorySchema.index({ productId: 1, createdAt: -1 });
-const adminActivitySchema = new mongoose.Schema({
-  action: String, targetType: String, targetId: String, details: String, actor: { type: String, default: 'admin' },
-  createdAt: { type: Date, default: Date.now }
-});
-adminActivitySchema.index({ createdAt: -1 });
-const crmProfileSchema = new mongoose.Schema({
-  phone: { type: String, unique: true }, customerName: String, notes: { type: String, default: '' },
-  tags: { type: [String], default: [] }, segment: { type: String, default: 'Regular' }, updatedAt: { type: Date, default: Date.now }
-});
-const campaignSchema = new mongoose.Schema({
-  name: { type: String, required: true }, code: { type: String, default: '' }, channel: { type: String, default: 'Store' },
-  description: String, status: { type: String, default: 'Draft' }, startsAt: Date, endsAt: Date,
-  budget: { type: Number, default: 0 }, createdAt: { type: Date, default: Date.now }, updatedAt: { type: Date, default: Date.now }
-});
-const returnRequestSchema = new mongoose.Schema({
-  requestId: { type: String, unique: true }, orderId: String, phone: String, customerName: String,
-  reason: String, details: String, items: Array, status: { type: String, default: 'Requested' },
-  resolution: { type: String, default: 'Pending Review' }, refundAmount: { type: Number, default: 0 },
-  refundReference: String, adminNote: String, createdAt: { type: Date, default: Date.now }, updatedAt: { type: Date, default: Date.now }
-});
-returnRequestSchema.index({ orderId: 1, createdAt: -1 });
-
 const Category = mongoose.model('Category', categorySchema);
 const Product = mongoose.model('Product', productSchema);
 const Banner = mongoose.model('Banner', bannerSchema);
@@ -320,13 +292,6 @@ const Wallet = mongoose.model('Wallet', walletSchema);
 const AbandonedCart = mongoose.model('AbandonedCart', abandonedCartSchema);
 const SupportTicket = mongoose.model('SupportTicket', supportTicketSchema);
 const StockNotify = mongoose.model('StockNotify', stockNotifySchema);
-
-const StockHistory = mongoose.model('StockHistory', stockHistorySchema);
-const AdminActivity = mongoose.model('AdminActivity', adminActivitySchema);
-const CRMProfile = mongoose.model('CRMProfile', crmProfileSchema);
-const Campaign = mongoose.model('Campaign', campaignSchema);
-const ReturnRequest = mongoose.model('ReturnRequest', returnRequestSchema);
-
 
 const defaultCategories = [
   { name: "Men", subCategories: ["Shirts", "T-Shirts", "Watches", "Trousers", "Perfumes"] },
@@ -1492,7 +1457,6 @@ app.put('/api/admin/products/:id', async (req, res) => {
           : (Number(stockQuantity) || 0));
 
     const prodId = Number(req.params.id);
-    const previousProduct = await Product.findOne({ id: prodId }).lean();
     const updated = await Product.findOneAndUpdate(
       { id: prodId },
       {
@@ -1518,10 +1482,6 @@ app.put('/api/admin/products/:id', async (req, res) => {
     );
 
     if (!updated) return res.status(404).json({ success: false, message: "Product not found" });
-    if (previousProduct && Number(previousProduct.stockQuantity || 0) !== Number(updated.stockQuantity || 0)) {
-      await StockHistory.create({ productId: prodId, productName: updated.name, change: Number(updated.stockQuantity || 0) - Number(previousProduct.stockQuantity || 0), beforeQty: Number(previousProduct.stockQuantity || 0), afterQty: Number(updated.stockQuantity || 0), reason: 'Admin product edit', actor: 'admin' }).catch(() => {});
-      await recordAdminActivity('Product updated', 'Product', prodId, 'Stock changed during product edit');
-    }
     res.json({ success: true, product: updated });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -1542,13 +1502,8 @@ app.patch('/api/admin/products/:id/quick-update', async (req, res) => {
       updateFields.inStock = updateFields.stockQuantity > 0;
     }
 
-    const previousProduct = await Product.findOne({ id: prodId }).lean();
     const updated = await Product.findOneAndUpdate({ id: prodId }, updateFields, { new: true });
     if (!updated) return res.status(404).json({ success: false, message: "Product not found" });
-    if (previousProduct && updateFields.stockQuantity !== undefined && Number(previousProduct.stockQuantity || 0) !== Number(updated.stockQuantity || 0)) {
-      await StockHistory.create({ productId: prodId, productName: updated.name, change: Number(updated.stockQuantity || 0) - Number(previousProduct.stockQuantity || 0), beforeQty: Number(previousProduct.stockQuantity || 0), afterQty: Number(updated.stockQuantity || 0), reason: 'Admin quick stock update', actor: 'admin' }).catch(() => {});
-      await recordAdminActivity('Stock updated', 'Product', prodId, 'Quick stock update');
-    }
     res.json({ success: true, product: updated });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -1773,13 +1728,6 @@ async function atomicallyDeductStock(verifiedItems, prodMap) {
         }
         appliedOps.push({ type: 'total', id: vItem.id, qty: vItem.qty });
       }
-    }
-    for (const op of appliedOps) {
-      const p = prodMap.get(op.id);
-      const qty = Number(op.qty) || 0;
-      const beforeQty = Number(p && p.stockQuantity) || 0;
-      await StockHistory.create({ productId: op.id, productName: p ? p.name : '', change: -qty, beforeQty, afterQty: Math.max(0, beforeQty - qty), reason: 'Order stock deduction', variant: op.vKey || op.sz || '', actor: 'system' }).catch(e => console.error('Stock history write failed:', e.message));
-      if (p) p.stockQuantity = Math.max(0, beforeQty - qty);
     }
     return { ok: true, appliedOps };
   } catch (err) {
@@ -2333,7 +2281,6 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
       for (const item of (order.items || [])) {
         const p = await Product.findOne({ id: item.id });
         if (p) {
-          const beforeQty = Number(p.stockQuantity) || 0;
           const varMap = (p.variantStock && typeof p.variantStock === 'object') ? { ...p.variantStock } : {};
           const vKey = `${item.selectedColor || 'Standard'}__${item.selectedSize || 'Standard'}`;
           const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
@@ -2353,7 +2300,6 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
           }
           p.inStock = p.stockQuantity > 0;
           await p.save();
-          await StockHistory.create({ productId: p.id, productName: p.name, change: Number(p.stockQuantity || 0) - beforeQty, beforeQty, afterQty: Number(p.stockQuantity || 0), reason: 'Order cancellation restock', orderId: order.id, variant: vKey, actor: 'system' }).catch(e => console.error('Stock history write failed:', e.message));
         }
       }
       // Reverse earned coins if already credited
@@ -2441,7 +2387,6 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
       order.deliveredAt = null;
     }
     await order.save();
-    await recordAdminActivity('Order status changed', 'Order', order.id, prevStatus + ' → ' + status);
     res.json({ success: true, status: order.status, deliveredAt: order.deliveredAt });
   } catch (err) {
     res.status(500).json({ success: false });
@@ -2458,7 +2403,6 @@ app.post('/api/admin/orders/:id/dispatch-tracking', async (req, res) => {
       { new: true }
     );
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
-    await recordAdminActivity('Shipping details updated', 'Order', order.id, String(courierPartner || 'Delhivery') + ' / AWB ' + String(awbNumber || ''));
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false });
@@ -2481,179 +2425,6 @@ app.post('/api/admin/orders/:id/upload-slip', uploadMemory.single('slipFile'), a
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
-});
-
-
-async function recordAdminActivity(action, targetType = '', targetId = '', details = '') {
-  try { await AdminActivity.create({ action, targetType, targetId: String(targetId || ''), details: String(details || '').slice(0, 1000) }); }
-  catch (e) { console.error('Admin activity log error:', e.message); }
-}
-
-// Inventory Stock History
-app.get('/api/admin/stock-history', async (req, res) => {
-  try {
-    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: 'Unauthorized' });
-    const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 150));
-    const query = {};
-    if (req.query.productId) query.productId = Number(req.query.productId);
-    const rows = await StockHistory.find(query).sort({ createdAt: -1 }).limit(limit).lean();
-    res.json({ success: true, history: rows });
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
-});
-app.post('/api/admin/stock-adjustments', async (req, res) => {
-  try {
-    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: 'Unauthorized' });
-    const productId = Number(req.body.productId), change = Math.trunc(Number(req.body.change));
-    const reason = String(req.body.reason || 'Manual stock adjustment').trim().slice(0, 200);
-    if (!Number.isFinite(productId) || !Number.isFinite(change) || change === 0) return res.status(400).json({ success: false, message: 'Valid product and non-zero stock change required.' });
-    const product = await Product.findOne({ id: productId });
-    if (!product) return res.status(404).json({ success: false, message: 'Product not found.' });
-    if (Object.keys(product.variantStock || {}).length || Object.keys(product.sizeStock || {}).length) {
-      return res.status(400).json({ success: false, message: 'This product uses size/variant stock. Update its variants in Product Full Edit so stock remains consistent.' });
-    }
-    const beforeQty = Number(product.stockQuantity) || 0, afterQty = beforeQty + change;
-    if (afterQty < 0) return res.status(400).json({ success: false, message: 'Stock cannot be negative.' });
-    product.stockQuantity = afterQty; product.inStock = afterQty > 0; await product.save();
-    await StockHistory.create({ productId, productName: product.name, change, beforeQty, afterQty, reason, actor: 'admin' });
-    await recordAdminActivity('Stock adjusted', 'Product', productId, reason + ': ' + beforeQty + ' → ' + afterQty);
-    res.json({ success: true, product: { id: product.id, stockQuantity: product.stockQuantity } });
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
-});
-
-// Customer CRM notes, tags and segments
-app.get('/api/admin/crm', async (req, res) => {
-  try {
-    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: 'Unauthorized' });
-    const [orders, wallets, profiles] = await Promise.all([
-      Order.find().sort({ createdAt: -1 }).lean(), Wallet.find().lean(), CRMProfile.find().lean()
-    ]);
-    const profileMap = new Map(profiles.map(p => [p.phone, p]));
-    const walletMap = new Map(wallets.map(w => [w.phone, w]));
-    const map = new Map();
-    for (const o of orders) {
-      if (!o.phone || o.status === 'Cancelled') continue;
-      const key = String(o.phone);
-      if (!map.has(key)) map.set(key, { phone: key, name: o.customerName || '', orders: 0, spent: 0, lastOrder: o.createdAt, lastCity: o.city || '', coins: walletMap.get(key)?.coins || 0 });
-      const c = map.get(key); c.orders++; c.spent += Number(o.total) || 0;
-      if (new Date(o.createdAt) > new Date(c.lastOrder)) { c.lastOrder = o.createdAt; c.name = o.customerName || c.name; c.lastCity = o.city || c.lastCity; }
-    }
-    const customers = [...map.values()].map(c => ({ ...c, ...(profileMap.get(c.phone) ? { notes: profileMap.get(c.phone).notes, tags: profileMap.get(c.phone).tags, segment: profileMap.get(c.phone).segment } : {}) })).sort((a,b)=>b.spent-a.spent);
-    res.json({ success: true, customers });
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
-});
-app.put('/api/admin/crm/:phone', async (req, res) => {
-  try {
-    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: 'Unauthorized' });
-    const phone = String(req.params.phone).replace(/[^0-9]/g, '');
-    const notes = String(req.body.notes || '').slice(0, 2000);
-    const tags = Array.isArray(req.body.tags) ? req.body.tags.map(x=>String(x).trim().slice(0,40)).filter(Boolean).slice(0,20) : [];
-    const segment = ['New','Regular','VIP','At Risk'].includes(req.body.segment) ? req.body.segment : 'Regular';
-    const profile = await CRMProfile.findOneAndUpdate({ phone }, { phone, notes, tags, segment, customerName: String(req.body.customerName || '').slice(0,100), updatedAt: new Date() }, { upsert: true, new: true, setDefaultsOnInsert: true });
-    await recordAdminActivity('Customer CRM updated', 'Customer', phone, 'Segment: ' + segment);
-    res.json({ success: true, profile });
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
-});
-
-// Marketing campaign manager (separate from existing live coupons)
-app.get('/api/admin/campaigns', async (req, res) => {
-  try { if (!(await verifyAdminAuth(req))) return res.status(403).json({success:false,message:'Unauthorized'}); res.json({success:true,campaigns:await Campaign.find().sort({createdAt:-1}).lean()}); }
-  catch(err){res.status(500).json({success:false,message:err.message});}
-});
-app.post('/api/admin/campaigns', async (req, res) => {
-  try {
-    if (!(await verifyAdminAuth(req))) return res.status(403).json({success:false,message:'Unauthorized'});
-    const name=String(req.body.name||'').trim().slice(0,100); if(!name) return res.status(400).json({success:false,message:'Campaign name is required.'});
-    const campaign=await Campaign.create({name,code:String(req.body.code||'').trim().toUpperCase().slice(0,40),channel:String(req.body.channel||'Store').slice(0,40),description:String(req.body.description||'').slice(0,1000),status:['Draft','Scheduled','Active','Paused','Completed'].includes(req.body.status)?req.body.status:'Draft',startsAt:req.body.startsAt?new Date(req.body.startsAt):null,endsAt:req.body.endsAt?new Date(req.body.endsAt):null,budget:Math.max(0,Number(req.body.budget)||0)});
-    await recordAdminActivity('Campaign created','Campaign',campaign._id,campaign.name); res.json({success:true,campaign});
-  } catch(err){res.status(500).json({success:false,message:err.message});}
-});
-app.patch('/api/admin/campaigns/:id', async (req, res) => {
-  try {
-    if (!(await verifyAdminAuth(req))) return res.status(403).json({success:false,message:'Unauthorized'});
-    const allowed=['name','code','channel','description','status','startsAt','endsAt','budget'], update={updatedAt:new Date()};
-    for(const k of allowed) if(req.body[k]!==undefined) update[k]=k==='budget'?Math.max(0,Number(req.body[k])||0):req.body[k];
-    if(update.status&&!['Draft','Scheduled','Active','Paused','Completed'].includes(update.status)) return res.status(400).json({success:false,message:'Invalid campaign status.'});
-    const campaign=await Campaign.findByIdAndUpdate(req.params.id,{$set:update},{new:true}); if(!campaign)return res.status(404).json({success:false,message:'Campaign not found.'});
-    await recordAdminActivity('Campaign updated','Campaign',campaign._id,campaign.name); res.json({success:true,campaign});
-  } catch(err){res.status(500).json({success:false,message:err.message});}
-});
-app.delete('/api/admin/campaigns/:id', async (req, res) => {
-  try { if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'}); const c=await Campaign.findByIdAndDelete(req.params.id); if(!c)return res.status(404).json({success:false,message:'Campaign not found.'}); await recordAdminActivity('Campaign deleted','Campaign',c._id,c.name); res.json({success:true});}
-  catch(err){res.status(500).json({success:false,message:err.message});}
-});
-
-// Return and refund requests: actual payment refunds remain manual and must be confirmed by the payment provider.
-app.post('/api/returns', async (req, res) => {
-  try {
-    const orderId=String(req.body.orderId||'').trim().toUpperCase(), phone=String(req.body.phone||'').replace(/[^0-9]/g,'');
-    const reason=String(req.body.reason||'').trim().slice(0,100), details=String(req.body.details||'').trim().slice(0,1500);
-    if(!orderId||!/^[0-9]{10}$/.test(phone)||!reason) return res.status(400).json({success:false,message:'Order ID, valid 10-digit phone and reason are required.'});
-    const order=await Order.findOne({id:orderId,phone}).lean();
-    if(!order)return res.status(404).json({success:false,message:'Order not found for the supplied phone number.'});
-    if(order.status!=='Delivered')return res.status(400).json({success:false,message:'Return requests can be submitted only after delivery.'});
-    if(order.isNonRefundableOrder)return res.status(400).json({success:false,message:'This order is marked non-refundable.'});
-    const returnSettings=await Settings.findOne({key:'main'}).lean(); const windowDays=Math.max(1,Number(returnSettings?.refundWindowDays)||7), deliveredAt=order.deliveredAt?new Date(order.deliveredAt):new Date(order.createdAt);
-    if(Date.now()-deliveredAt.getTime()>windowDays*86400000)return res.status(400).json({success:false,message:'The return request window has expired.'});
-    const existing=await ReturnRequest.findOne({orderId,status:{$nin:['Rejected','Closed']}});
-    if(existing)return res.status(409).json({success:false,message:'A return request already exists for this order.',requestId:existing.requestId});
-    const request=await ReturnRequest.create({requestId:'RET-'+Date.now().toString().slice(-8),orderId,phone,customerName:order.customerName,reason,details,items:order.items||[]});
-    res.json({success:true,requestId:request.requestId,status:request.status});
-  } catch(err){res.status(500).json({success:false,message:err.message});}
-});
-app.get('/api/admin/returns', async (req,res)=>{
-  try{if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});res.json({success:true,requests:await ReturnRequest.find().sort({createdAt:-1}).lean()});}
-  catch(err){res.status(500).json({success:false,message:err.message});}
-});
-app.patch('/api/admin/returns/:id', async (req,res)=>{
-  try{
-    if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
-    const allowed=['Requested','Under Review','Approved','Rejected','Pickup Scheduled','Received','Refund Processing','Refunded','Closed'];
-    const status=String(req.body.status||'');if(!allowed.includes(status))return res.status(400).json({success:false,message:'Invalid return status.'});
-    const update={status,updatedAt:new Date(),adminNote:String(req.body.adminNote||'').slice(0,1500)};
-    if(req.body.refundAmount!==undefined)update.refundAmount=Math.max(0,Number(req.body.refundAmount)||0);
-    if(req.body.refundReference!==undefined)update.refundReference=String(req.body.refundReference).slice(0,100);
-    if(status==='Refunded'&&!update.refundReference&&!req.body.refundReference)return res.status(400).json({success:false,message:'Enter refund reference before marking refunded.'});
-    const request=await ReturnRequest.findOneAndUpdate({requestId:req.params.id},{$set:update},{new:true});
-    if(!request)return res.status(404).json({success:false,message:'Return request not found.'});
-    await recordAdminActivity('Return request updated','Return',request.requestId,'Status: '+status);
-    res.json({success:true,request});
-  }catch(err){res.status(500).json({success:false,message:err.message});}
-});
-
-// Sales analytics with date range, payment mix, status and top products
-app.get('/api/admin/advanced-analytics', async (req,res)=>{
-  try{
-    if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
-    const days=Math.min(365,Math.max(1,Number(req.query.days)||30)), since=new Date(Date.now()-days*86400000);
-    const orders=await Order.find({createdAt:{$gte:since}}).lean();
-    const valid=orders.filter(o=>o.status!=='Cancelled'), totalSales=valid.reduce((a,o)=>a+(Number(o.total)||0),0), totalProfit=valid.reduce((a,o)=>a+(Number(o.netProfit)||0),0);
-    const paymentMix={UPI:0,COD:0}; const statusCounts={};
-    const productMap=new Map();
-    for(const o of valid){paymentMix[o.paymentMethod==='COD'?'COD':'UPI']+=(Number(o.total)||0);statusCounts[o.status||'Unknown']=(statusCounts[o.status||'Unknown']||0)+1;
-      for(const item of (o.items||[])){const k=String(item.id||item.name);const v=productMap.get(k)||{name:item.name||'Product',qty:0,revenue:0};v.qty+=Number(item.qty)||0;v.revenue+=(Number(item.price)||0)*(Number(item.qty)||0);productMap.set(k,v);}
-    }
-    res.json({success:true,days,orders:valid.length,totalOrders:orders.length,totalSales,totalProfit,averageOrderValue:valid.length?Math.round(totalSales/valid.length):0,paymentMix,statusCounts,topProducts:[...productMap.values()].sort((a,b)=>b.revenue-a.revenue).slice(0,8)});
-  }catch(err){res.status(500).json({success:false,message:err.message});}
-});
-
-// Shipping manager bulk status/courier update; existing per-order dispatch and label routes remain unchanged.
-app.patch('/api/admin/shipping/bulk', async (req,res)=>{
-  try{
-    if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
-    const ids=Array.isArray(req.body.orderIds)?req.body.orderIds.map(String).slice(0,100):[];
-    if(!ids.length)return res.status(400).json({success:false,message:'Select at least one order.'});
-    const update={}; if(req.body.courierPartner)update.courierPartner=String(req.body.courierPartner).slice(0,40);
-    if(req.body.status&&['Verified & Packing','Verified & Shipped'].includes(req.body.status))update.status=req.body.status;
-    const result=await Order.updateMany({id:{$in:ids}},{$set:update});
-    await recordAdminActivity('Bulk shipping update','Orders',ids.join(','),JSON.stringify(update));
-    res.json({success:true,modified:result.modifiedCount||0});
-  }catch(err){res.status(500).json({success:false,message:err.message});}
-});
-
-// Admin activity log
-app.get('/api/admin/activity-log', async (req,res)=>{
-  try{if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});const rows=await AdminActivity.find().sort({createdAt:-1}).limit(300).lean();res.json({success:true,activities:rows});}
-  catch(err){res.status(500).json({success:false,message:err.message});}
 });
 
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
