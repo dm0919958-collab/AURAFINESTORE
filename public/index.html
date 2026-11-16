@@ -699,31 +699,6 @@
     </div>
   </div>
 
-  <!-- 2-Step Checkout Modal -->
-  <div id="customerLoginModal" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="w-full max-w-sm rounded-2xl border border-amber-500/30 bg-white p-6 text-stone-800 shadow-2xl">
-        <div class="mb-4 flex items-center justify-between">
-          <h3 class="text-lg font-extrabold text-emerald-900">Customer Sign In</h3>
-          <button type="button" onclick="closeCustomerLoginModal()" aria-label="Close" class="text-2xl text-stone-500">&times;</button>
-        </div>
-        <p class="mb-4 text-xs text-stone-600">Verify your mobile number to continue to checkout.</p>
-        <div id="customerLoginPhoneStep">
-          <label for="customerLoginPhone" class="mb-1 block text-xs font-bold">Mobile Number</label>
-          <input id="customerLoginPhone" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="Enter 10-digit mobile number" class="w-full rounded-xl border p-3 text-sm">
-          <button id="customerLoginSendBtn" type="button" onclick="sendCustomerLoginOtp()" class="mt-3 w-full rounded-xl bg-emerald-800 p-3 text-sm font-bold text-white">Send WhatsApp OTP</button>
-          <button type="button" onclick="continueWithoutOtp()" class="mt-2 w-full rounded-xl border border-amber-600 p-3 text-sm font-bold text-amber-800">Continue Without OTP (Temporary)</button>
-          <p class="mt-1 text-center text-[10px] text-stone-500">Temporary option while WhatsApp approval is pending.</p>
-        </div>
-        <div id="customerLoginOtpStep" class="hidden">
-          <label for="customerLoginOtp" class="mb-1 block text-xs font-bold">6-Digit OTP</label>
-          <input id="customerLoginOtp" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="Enter OTP" class="w-full rounded-xl border p-3 text-sm">
-          <button id="customerLoginVerifyBtn" type="button" onclick="verifyCustomerLoginOtp()" class="mt-3 w-full rounded-xl bg-emerald-800 p-3 text-sm font-bold text-white">Verify & Continue</button>
-          <button type="button" onclick="document.getElementById('customerLoginOtpStep').classList.add('hidden');document.getElementById('customerLoginPhoneStep').classList.remove('hidden')" class="mt-2 w-full p-2 text-xs font-semibold text-emerald-800">Change mobile number</button>
-        </div>
-        <p id="customerLoginMessage" role="status" aria-live="polite" class="mt-3 text-xs text-stone-600">Sign in securely with your WhatsApp number.</p>
-      </div>
-    </div>
-
     <div id="checkoutModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto border border-amber-500/25">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
@@ -1081,7 +1056,7 @@
       try {
         const savedProfile = JSON.parse(localStorage.getItem('aura_customer_profile') || 'null');
         if (savedProfile && savedProfile.phone && savedProfile.phone.length === 10) {
-          const wRes = await fetch(`/api/wallet/${savedProfile.phone}?t=${Date.now()}`, { headers: { 'x-customer-token': localStorage.getItem('aura_customer_token') || '' } });
+          const wRes = await fetch(`/api/wallet/${savedProfile.phone}?t=${Date.now()}`, {  });
           const wData = await wRes.json();
           if (wData.success) {
             hasActiveOrder = Boolean(wData.hasPriorOrders);
@@ -2077,92 +2052,11 @@
 
     function openCheckoutModal() {
       loadSavedCustomerProfile();
-      const savedPhone = String(localStorage.getItem('aura_verified_phone') || '');
-      const token = localStorage.getItem('aura_customer_token') || '';
-      const profilePhone = String(document.getElementById('ordPhone')?.value || '').replace(/[^0-9]/g, '');
-      if (token && savedPhone && (!profilePhone || savedPhone === profilePhone)) {
-        showCheckoutModalAfterCustomerLogin(savedPhone);
-        return;
-      }
-      pendingCustomerCheckout = true;
-      openCustomerLoginModal(profilePhone || savedPhone);
-    }
-
-    let pendingCustomerCheckout = false;
-    let temporaryOtpSkip = false;
-    function continueWithoutOtp() {
-      temporaryOtpSkip = true;
-      const phone = document.getElementById('customerLoginPhone').value.replace(/[^0-9]/g, '');
-      if (/^[6-9]\d{9}$/.test(phone)) {
-        const phoneField = document.getElementById('ordPhone');
-        if (phoneField) { phoneField.value = phone; phoneField.readOnly = false; }
-      }
-      document.getElementById('customerLoginModal').classList.add('hidden');
-      if (pendingCustomerCheckout) showCheckoutModalAfterCustomerLogin(phone || document.getElementById('ordPhone').value);
-    }
-    function openCustomerLoginModal(prefillPhone = '') {
-      const modal = document.getElementById('customerLoginModal');
-      if (!modal) return;
-      document.getElementById('customerLoginPhone').value = prefillPhone;
-      document.getElementById('customerLoginOtp').value = '';
-      document.getElementById('customerLoginPhoneStep').classList.remove('hidden');
-      document.getElementById('customerLoginOtpStep').classList.add('hidden');
-      document.getElementById('customerLoginMessage').textContent = 'Sign in securely with your WhatsApp number.';
-      modal.classList.remove('hidden');
-    }
-    function closeCustomerLoginModal() {
-      document.getElementById('customerLoginModal').classList.add('hidden');
-      pendingCustomerCheckout = false;
-    }
-    async function sendCustomerLoginOtp() {
-      const phone = document.getElementById('customerLoginPhone').value.replace(/[^0-9]/g, '');
-      const btn = document.getElementById('customerLoginSendBtn');
-      const msg = document.getElementById('customerLoginMessage');
-      if (!/^[6-9]\d{9}$/.test(phone)) { msg.textContent = 'Please enter a valid 10-digit Indian mobile number.'; return; }
-      btn.disabled = true; btn.textContent = 'Sending OTP...';
-      try {
-        const res = await fetch('/api/auth/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }) });
-        const data = await res.json();
-        if (!res.ok || !data.success || !data.otpRequired) throw new Error(data.message || 'WhatsApp OTP could not be sent.');
-        document.getElementById('customerLoginPhoneStep').classList.add('hidden');
-        document.getElementById('customerLoginOtpStep').classList.remove('hidden');
-        msg.textContent = 'A 6-digit OTP has been sent to your WhatsApp.';
-      } catch (err) {
-        msg.textContent = err.message || 'Unable to send OTP. Please try again.';
-      } finally {
-        btn.disabled = false; btn.textContent = 'Send WhatsApp OTP';
-      }
-    }
-    async function verifyCustomerLoginOtp() {
-      const phone = document.getElementById('customerLoginPhone').value.replace(/[^0-9]/g, '');
-      const otp = document.getElementById('customerLoginOtp').value.trim();
-      const btn = document.getElementById('customerLoginVerifyBtn');
-      const msg = document.getElementById('customerLoginMessage');
-      if (!/^\d{6}$/.test(otp)) { msg.textContent = 'Please enter the 6-digit OTP.'; return; }
-      btn.disabled = true; btn.textContent = 'Verifying...';
-      try {
-        const res = await fetch('/api/auth/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, otp }) });
-        const data = await res.json();
-        if (!res.ok || !data.success || !data.customerToken) throw new Error(data.message || 'OTP verification failed.');
-        temporaryOtpSkip = false;
-        localStorage.setItem('aura_customer_token', data.customerToken);
-        localStorage.setItem('aura_verified_phone', data.phone);
-        document.getElementById('customerLoginModal').classList.add('hidden');
-        if (pendingCustomerCheckout) showCheckoutModalAfterCustomerLogin(data.phone);
-      } catch (err) {
-        msg.textContent = err.message || 'OTP verification failed.';
-      } finally {
-        btn.disabled = false; btn.textContent = 'Verify & Continue';
-      }
-    }
-    function showCheckoutModalAfterCustomerLogin(phone) {
-      loadSavedCustomerProfile();
       const phoneField = document.getElementById('ordPhone');
-      if (phoneField) { phoneField.value = phone; phoneField.readOnly = true; }
+      if (phoneField) phoneField.readOnly = false;
       toggleCart();
       document.getElementById('checkoutModal').classList.remove('hidden');
       backToStep1Address();
-      pendingCustomerCheckout = false;
     }
     function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); document.body.classList.remove('aura-payment-open'); }
 
@@ -2217,7 +2111,7 @@
       const coinChk = document.getElementById('useAuraCoinsCheckbox');
       if (coinChk) coinChk.checked = false;
       try {
-        const wRes = await fetch(`/api/wallet/${phone}`, { headers: { 'x-customer-token': localStorage.getItem('aura_customer_token') || '' } });
+        const wRes = await fetch(`/api/wallet/${phone}`, {  });
         const wData = await wRes.json();
         if (wData.success) {
           customerAvailableCoins = wData.coins || 0;
@@ -2336,14 +2230,13 @@
       const useAuraCoins = document.getElementById('useAuraCoinsCheckbox')?.checked || false;
 
       const res = await fetch('/api/orders', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-customer-token': localStorage.getItem('aura_customer_token') || '' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customerName: document.getElementById('ordName').value, phone: document.getElementById('ordPhone').value, pincode: document.getElementById('ordPincode').value,
           city: document.getElementById('ordCity').value, state: document.getElementById('ordState').value, houseNoStreet: document.getElementById('addrHouseStreet').value,
           villageOrCity: document.getElementById('addrVillage').value, postOffice: document.getElementById('addrPostOffice').value, policeStation: document.getElementById('addrPoliceStation').value,
           landmark: document.getElementById('addrLandmark').value,
           items: cart.map(i => ({ id: i.id, name: i.name, selectedSize: i.selectedSize, selectedColor: i.selectedColor, qty: i.qty })),
-          skipOtp: temporaryOtpSkip,
           couponCode: appliedCouponCode, useAuraCoins, paymentMethod: mode, utrNumber: utr
         })
       });
@@ -2354,20 +2247,9 @@
         trackMetaEvent('Purchase', { value: data.verifiedTotal || 0, currency: 'INR', order_id: data.orderId });
         const coinsMsg = data.coinsEarned > 0 ? `\n🪙 You will receive +${data.coinsEarned} AURA Coins upon delivery!` : '';
         alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}\nVerified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
-        temporaryOtpSkip = false;
         cart = []; appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0;
         persistCartLocal(); updateCartUI(); closeCheckoutModal(); loadRecentSalesFeed();
       } else {
-        if (res.status === 401 && data.requiresOtp) {
-          localStorage.removeItem('aura_customer_token');
-          localStorage.removeItem('aura_verified_phone');
-          btn.disabled = false; btn.innerText = 'Place Order';
-          document.getElementById('checkoutModal').classList.add('hidden');
-          pendingCustomerCheckout = true;
-          openCustomerLoginModal(document.getElementById('ordPhone').value);
-          alert('Your sign-in session has expired. Please verify your WhatsApp number again.');
-          return;
-        }
         alert(data.message || "Failed to place order.");
       }
       btn.disabled = false;
