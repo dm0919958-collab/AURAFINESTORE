@@ -786,6 +786,16 @@ label { color: #f1e5ce; }
         .replace(/'/g, '&#39;');
     }
 
+    // Context-safe helpers for dynamic HTML attributes and URL values.
+    function safeInlineArg(value) { return escapeHTML(JSON.stringify(String(value ?? '')).replace(/</g, '\\u003c')); }
+    function safeHttpUrl(value) {
+      try { const raw=String(value ?? '').trim(); if(!raw)return ''; const parsed=new URL(raw,window.location.origin);
+        if(parsed.protocol!=='https:' && parsed.origin!==window.location.origin)return '';
+        if(parsed.protocol!=='https:' && parsed.protocol!==window.location.protocol)return '';
+        return escapeHTML(parsed.href);
+      } catch(e) { return ''; }
+    }
+
     let adminToken = sessionStorage.getItem('aura_admin_jwt') || "";
     let cachedCategories = [];
     let cachedProducts = [];
@@ -1444,13 +1454,13 @@ label { color: #f1e5ce; }
           <div>
             <div class="flex justify-between items-start gap-2">
               <span class="font-bold text-amber-300 line-clamp-1">${escapeHTML(r.productName)}</span>
-              <button onclick="deleteCustomerReview(${r.productId}, '${escapeHTML(r._id)}')" class="text-rose-400 hover:text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-trash"></i> Delete</button>
+              <button onclick="deleteCustomerReview(${Number(r.productId)||0}, ${safeInlineArg(r._id)})" class="text-rose-400 hover:text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-trash"></i> Delete</button>
             </div>
             <p class="text-amber-400 text-[11px] mt-0.5">${'★'.repeat(r.rating || 5)} <span class="text-slate-400">by ${escapeHTML(r.customerName)}</span></p>
             <p class="text-slate-200 mt-1">${escapeHTML(r.comment)}</p>
-            ${r.photoUrl ? `<a href="${r.photoUrl}" target="_blank"><img src="${r.photoUrl}" class="w-16 h-16 object-cover rounded-lg border border-slate-600 mt-2"></a>` : ''}
+            ${r.photoUrl ? `<a href="${safeHttpUrl(r.photoUrl)}" target="_blank" rel="noopener noreferrer"><img src="${safeHttpUrl(r.photoUrl)}" class="w-16 h-16 object-cover rounded-lg border border-slate-600 mt-2"></a>` : ''}
           </div>
-          <p class="text-[10px] text-slate-500 pt-1">${r.date || ''}</p>
+          <p class="text-[10px] text-slate-500 pt-1">${escapeHTML(r.date || '')}</p>
         </div>`).join('');
     }
 
@@ -1487,14 +1497,14 @@ label { color: #f1e5ce; }
             <div><span class="font-mono font-bold text-amber-400 text-sm">Order #${escapeHTML(t.orderId)}</span> <span class="text-[10px] text-slate-400">(${escapeHTML(t.ticketId)})</span><p class="font-bold text-white mt-0.5"><i class="fa-solid fa-phone text-emerald-400 mr-1"></i>${escapeHTML(t.phone)} • ${escapeHTML(t.customerName)}</p></div>
             <div class="flex items-center gap-1.5">
               <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.adminReply ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">${t.adminReply ? 'Replied ✓' : 'Needs Reply'}</span>
-              <button onclick="deleteAdminSupportTicket('${escapeHTML(t.ticketId)}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white px-2 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-trash"></i></button>
+              <button onclick="deleteAdminSupportTicket(${safeInlineArg(t.ticketId)})" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white px-2 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
           <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700"><p class="text-[10px] text-rose-400 font-bold uppercase">Issue:</p><p class="text-slate-200 mt-1">${escapeHTML(t.issueText)}</p></div>
           ${t.adminReply ? `<div class="bg-emerald-950/60 border border-emerald-500/30 p-2.5 rounded-xl"><p class="text-[10px] text-emerald-400 font-bold">Reply:</p><p class="text-emerald-200 mt-0.5">${escapeHTML(t.adminReply)}</p></div>` : ''}
           <div class="flex gap-2 pt-1">
             <input type="text" id="reply_input_${escapeHTML(t.ticketId)}" value="${escapeHTML(t.adminReply || '')}" placeholder="Write reply..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-            <button onclick="sendAdminSupportReply('${t.ticketId}')" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl whitespace-nowrap">Send Reply</button>
+            <button onclick="sendAdminSupportReply(${safeInlineArg(t.ticketId)})" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl whitespace-nowrap">Send Reply</button>
           </div>
         </div>`).join('');
     }
@@ -1640,8 +1650,8 @@ label { color: #f1e5ce; }
     function renderAdminBanners() {
       document.getElementById('adminBannersGrid').innerHTML = cachedBanners.map(b => `
         <div class="bg-slate-800 border border-slate-600 rounded-2xl overflow-hidden relative">
-          <img src="${b.image}" class="w-full h-24 object-cover">
-          <div class="p-2 text-xs"><p class="font-bold text-white truncate">${b.title}</p><p class="text-[10px] text-amber-400">${b.tag}</p></div>
+          <img src="${safeHttpUrl(b.image)}" class="w-full h-24 object-cover">
+          <div class="p-2 text-xs"><p class="font-bold text-white truncate">${escapeHTML(b.title)}</p><p class="text-[10px] text-amber-400">${escapeHTML(b.tag)}</p></div>
           <button onclick="deleteBanner(${b.id})" class="absolute top-2 right-2 bg-rose-600 text-white w-6 h-6 rounded-full text-xs shadow"><i class="fa-solid fa-trash"></i></button>
         </div>`).join('');
     }
@@ -1817,10 +1827,10 @@ label { color: #f1e5ce; }
         return `
           <div class="bg-slate-800/70 border ${isLow ? 'border-rose-500/60' : 'border-slate-700'} p-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div class="flex items-center gap-3 min-w-0">
-              <img src="${(p.images && p.images[0]) || ''}" class="w-12 h-12 rounded-xl object-cover border border-slate-600 flex-shrink-0">
+              <img src="${safeHttpUrl((p.images && p.images[0]) || '')}" class="w-12 h-12 rounded-xl object-cover border border-slate-600 flex-shrink-0">
               <div class="min-w-0">
-                <p class="font-bold text-white truncate">${p.name} ${isLow ? '<span class="ml-1 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black">LOW</span>' : ''}</p>
-                <p class="text-[10px] text-slate-400">${p.mainCategory} &rarr; ${p.category} • Margin: <b class="${unitMargin >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${unitMargin}/pc</b>${(p.variantStock && Object.keys(p.variantStock).length) ? ' • Stock: ' + Object.entries(p.variantStock).map(([k,v]) => `<b class="${v<=0?'text-rose-400':'text-amber-300'}">${k.replace('__','-')}:${v}</b>`).join(', ') : ((p.sizeStock && Object.keys(p.sizeStock).length) ? ' • Sizes: ' + Object.entries(p.sizeStock).map(([k,v]) => `<b class="${v<=0?'text-rose-400':'text-amber-300'}">${k}:${v}</b>`).join(', ') : '')}</p>
+                <p class="font-bold text-white truncate">${escapeHTML(p.name)} ${isLow ? '<span class="ml-1 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black">LOW</span>' : ''}</p>
+                <p class="text-[10px] text-slate-400">${escapeHTML(p.mainCategory)} &rarr; ${escapeHTML(p.category)} • Margin: <b class="${unitMargin >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${unitMargin}/pc</b>${(p.variantStock && Object.keys(p.variantStock).length) ? ' • Stock: ' + Object.entries(p.variantStock).map(([k,v]) => `<b class="${v<=0?'text-rose-400':'text-amber-300'}">${k.replace('__','-')}:${v}</b>`).join(', ') : ((p.sizeStock && Object.keys(p.sizeStock).length) ? ' • Sizes: ' + Object.entries(p.sizeStock).map(([k,v]) => `<b class="${v<=0?'text-rose-400':'text-amber-300'}">${k}:${v}</b>`).join(', ') : '')}</p>
                 <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
                   <label class="text-[10px] text-amber-300">Sale ₹: <input type="number" id="q_price_${p.id}" value="${p.price}" class="w-16 bg-slate-950 border border-slate-600 rounded px-1.5 py-0.5 text-white font-bold"></label>
                   <label class="text-[10px] text-emerald-300">Cost ₹: <input type="number" id="q_cost_${p.id}" value="${p.costPrice || 0}" class="w-16 bg-slate-950 border border-emerald-500/40 rounded px-1.5 py-0.5 text-emerald-300 font-bold"></label>
@@ -1872,17 +1882,17 @@ label { color: #f1e5ce; }
 
       tbody.innerHTML = filtered.map(o => {
         const isChecked = selectedOrderIdsSet.has(o.id);
-        const itemsText = (o.items || []).map(i => `<div class="mb-1 border-b border-slate-800 pb-1"><span class="font-bold text-slate-200">${escapeHTML(i.name)}</span> x${i.qty}<span class="block text-[10px] text-amber-400">Size: ${i.selectedSize || 'N/A'} | Color: ${i.selectedColor || 'N/A'}</span></div>`).join('');
+        const itemsText = (o.items || []).map(i => `<div class="mb-1 border-b border-slate-800 pb-1"><span class="font-bold text-slate-200">${escapeHTML(i.name)}</span> x${Number(i.qty)||0}<span class="block text-[10px] text-amber-400">Size: ${escapeHTML(i.selectedSize || 'N/A')} | Color: ${escapeHTML(i.selectedColor || 'N/A')}</span></div>`).join('');
         const freeGiftHtml = o.freeGiftUnlocked ? `<div class="mt-1.5 bg-emerald-950/80 border border-emerald-500/40 p-2 rounded-lg text-[10px] text-emerald-300 font-bold"><i class="fa-solid fa-award text-emerald-400 mr-1"></i>FREE GIFT: ${escapeHTML(o.freeGiftUnlocked)}</div>` : '';
         const curPartner = o.courierPartner || 'Delhivery';
 
         return `
           <tr class="hover:bg-slate-900/60 align-top ${isChecked ? 'bg-amber-500/5' : ''}">
-            <td class="p-3"><input type="checkbox" data-order-id="${o.id}" ${isChecked ? 'checked' : ''} onchange="toggleOrderCheckbox('${o.id}', this.checked)" class="order-row-checkbox w-4 h-4 accent-amber-500 cursor-pointer"></td>
+            <td class="p-3"><input type="checkbox" data-order-id="${escapeHTML(o.id)}" ${isChecked ? 'checked' : ''} onchange="toggleOrderCheckbox(${safeInlineArg(o.id)}, this.checked)" class="order-row-checkbox w-4 h-4 accent-amber-500 cursor-pointer"></td>
             <td class="p-3">
               <span class="font-mono font-bold text-amber-400">#${o.id}</span>
-              <span class="block text-[10px] text-slate-400 mt-0.5">${o.date}</span>
-              <button onclick="openThermalShippingLabel('${o.id}')" class="mt-2 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-lg text-[10px] font-extrabold shadow flex items-center gap-1"><i class="fa-solid fa-print"></i> Label (4x6)</button>
+              <span class="block text-[10px] text-slate-400 mt-0.5">${escapeHTML(o.date)}</span>
+              <button onclick="openThermalShippingLabel(${safeInlineArg(o.id)})" class="mt-2 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-lg text-[10px] font-extrabold shadow flex items-center gap-1"><i class="fa-solid fa-print"></i> Label (4x6)</button>
             </td>
             <td class="p-3 max-w-[210px]"><p class="font-bold text-white">${escapeHTML(o.customerName)}</p><p class="text-emerald-400 font-mono text-[11px]">+91 ${escapeHTML(o.phone)}</p><p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${escapeHTML(o.address)}</p></td>
             <td class="p-3 min-w-[180px]">${itemsText}${freeGiftHtml}${o.isNonRefundableOrder ? '<span class="inline-block mt-1 bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[9px] font-bold px-2 py-0.5 rounded">Non-Refundable</span>' : ''}</td>
@@ -1891,33 +1901,33 @@ label { color: #f1e5ce; }
               <p class="text-[10px] text-emerald-300 font-bold">Profit: ₹${o.netProfit || 0}</p>
               ${o.coinsUsed > 0 ? `<p class="text-[10px] text-amber-300 font-bold">Coins Used: -₹${o.coinsUsed}</p>` : ''}
               ${o.coinsEarned > 0 ? `<p class="text-[10px] ${o.coinsCredited ? 'text-emerald-400 font-bold' : 'text-amber-300'}">Reward: ${o.coinsEarned} Coins ${o.coinsCredited ? '✓ Credited' : (o.coinsStatus === 'pending_refund_window' ? '(Unlocks after Refund Window)' : '(On Delivery)')}</p>` : ''}
-              <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300">${o.paymentMethod}</span>
+              <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300">${escapeHTML(o.paymentMethod)}</span>
               <p class="text-[10px] font-mono text-slate-300 mt-1">UTR: ${escapeHTML(o.utrNumber)}</p>
             </td>
             <td class="p-3 space-y-1.5 min-w-[175px]">
-              <select id="courier_${o.id}" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1.5 text-[11px] text-cyan-300 font-bold">
+              <select id="courier_${escapeHTML(o.id)}" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1.5 text-[11px] text-cyan-300 font-bold">
                 <option value="Delhivery" ${curPartner === 'Delhivery' ? 'selected' : ''}>Delhivery</option>
                 <option value="DTDC" ${curPartner === 'DTDC' ? 'selected' : ''}>DTDC</option>
                 <option value="IndiaPost" ${curPartner === 'IndiaPost' ? 'selected' : ''}>IndiaPost</option>
                 <option value="Shiprocket" ${curPartner === 'Shiprocket' ? 'selected' : ''}>Shiprocket</option>
               </select>
-              <input type="text" id="awb_${o.id}" value="${o.awbNumber || ''}" placeholder="AWB Tracking No." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1.5 text-[11px] text-white">
-              <button onclick="saveOrderTracking('${o.id}')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-1 rounded-lg text-[10px] font-bold">Save AWB & Ship</button>
+              <input type="text" id="awb_${escapeHTML(o.id)}" value="${escapeHTML(o.awbNumber || '')}" placeholder="AWB Tracking No." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1.5 text-[11px] text-white">
+              <button onclick="saveOrderTracking(${safeInlineArg(o.id)})" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-1 rounded-lg text-[10px] font-bold">Save AWB & Ship</button>
               <label class="block w-full text-center bg-slate-800 hover:bg-slate-700 border border-slate-600 py-1 rounded-lg text-[10px] cursor-pointer text-amber-300 font-semibold">
                 <i class="fa-solid fa-upload mr-1"></i> ${o.deliverySlipFile ? 'Slip Uploaded ✓' : 'Upload Slip'}
-                <input type="file" accept="image/*,application/pdf" onchange="uploadDeliverySlip('${o.id}', this)" class="hidden">
+                <input type="file" accept="image/*,application/pdf" onchange="uploadDeliverySlip(${safeInlineArg(o.id)}, this)" class="hidden">
               </label>
             </td>
             <td class="p-3 space-y-2 min-w-[165px]">
-              <select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1.5 text-[11px] text-white font-semibold">
+              <select onchange="updateOrderStatus(${safeInlineArg(o.id)}, this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1.5 text-[11px] text-white font-semibold">
                 <option value="Pending Verification" ${o.status === 'Pending Verification' ? 'selected' : ''}>Pending Verification</option>
                 <option value="Verified & Packing" ${o.status === 'Verified & Packing' ? 'selected' : ''}>Verified & Packing</option>
                 <option value="Verified & Shipped" ${o.status === 'Verified & Shipped' ? 'selected' : ''}>Verified & Shipped</option>
                 <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
                 <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
               </select>
-              <button onclick="sendWhatsAppOrderUpdate('${o.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5 shadow"><i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp Update</button>
-              <button onclick="deleteCustomerOrder('${o.id}')" class="w-full bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1"><i class="fa-solid fa-trash-can"></i> Delete Order</button>
+              <button onclick="sendWhatsAppOrderUpdate(${safeInlineArg(o.id)})" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5 shadow"><i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp Update</button>
+              <button onclick="deleteCustomerOrder(${safeInlineArg(o.id)})" class="w-full bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1"><i class="fa-solid fa-trash-can"></i> Delete Order</button>
             </td>
           </tr>`;
       }).join('');
