@@ -235,6 +235,7 @@ const orderSchema = new mongoose.Schema({
   balanceDue: Number,
   utrNumber: String,
   status: String,
+  deliveredAt: { type: Date, default: null },
   courierPartner: String,
   awbNumber: String,
   deliverySlipFile: String,
@@ -572,14 +573,18 @@ function generateOrderInvoicePDF(order) {
       doc.fillColor('#6b7280').fontSize(8).text('Bolpur, Birbhum, West Bengal - 731204 | Support: +91 6289145092', 40, 90);
 
       doc.roundedRect(365, 48, 190, 52, 6).strokeColor('#e5e7eb').lineWidth(1).stroke();
-      doc.fillColor('#b45309').fontSize(10).font('Helvetica-Bold').text('TAX INVOICE / BILL', 375, 56);
+      const isDelivered = order.status === 'Delivered';
+      doc.fillColor(isDelivered ? '#047857' : '#b45309').fontSize(9.5).font('Helvetica-Bold').text(
+        isDelivered ? 'FINAL DELIVERY INVOICE' : 'ORDER RECEIPT / BILL',
+        375, 56, { width: 170 }
+      );
       doc.fillColor('#111827').fontSize(9).font('Helvetica-Bold').text(`Order ID: #${order.id}`, 375, 70);
-      doc.fillColor('#4b5563').fontSize(8).font('Helvetica').text(`Date: ${order.date}`, 375, 83);
+      doc.fillColor('#4b5563').fontSize(8).font('Helvetica').text(`Order Date: ${order.date}`, 375, 83);
 
       doc.moveTo(40, 114).lineTo(555, 114).strokeColor('#e5e7eb').lineWidth(1).stroke();
 
       doc.roundedRect(40, 126, 250, 96, 6).strokeColor('#e5e7eb').stroke();
-      doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text('BILLED & DELIVERED TO:', 50, 136);
+      doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text('BILLED TO:', 50, 136);
       doc.fillColor('#111827').fontSize(10).font('Helvetica-Bold').text(order.customerName || 'Valued Customer', 50, 150);
       doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text(`Phone: +91 ${order.phone}`, 50, 164);
       doc.fillColor('#4b5563').fontSize(8).text(order.address, 50, 177, { width: 230, lineGap: 1.5 });
@@ -589,7 +594,7 @@ function generateOrderInvoicePDF(order) {
       doc.fillColor('#111827').fontSize(9.5).font('Helvetica-Bold').text('AURA Central Logistics Hub', 315, 150);
       doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text('Bolpur, Birbhum, WB - 731204', 315, 164);
       doc.fillColor('#374151').fontSize(8.5).text(`Courier Partner: ${order.courierPartner || 'Delhivery'}`, 315, 177);
-      doc.fillColor('#4b5563').fontSize(8).text(`AWB / Tracking: ${order.awbNumber ? order.awbNumber : 'Post-Packing Dispatch'}`, 315, 190);
+      doc.fillColor('#4b5563').fontSize(8).text(`AWB / Tracking: ${order.awbNumber ? order.awbNumber : 'Post-Packing Dispatch'}`, 315, 190);\n      doc.fillColor('#374151').fontSize(8).font('Helvetica-Bold').text(`Order Status: ${order.status || 'Pending Verification'}`, 315, 203);\n      if (isDelivered && order.deliveredAt) {\n        doc.fillColor('#047857').fontSize(8).font('Helvetica-Bold').text(`Delivered On: ${new Date(order.deliveredAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`, 315, 215, { width: 230 });\n      }
 
       const tableTop = 238;
       doc.roundedRect(40, tableTop, 515, 24, 3).fill('#2b1105');
@@ -834,6 +839,27 @@ async function sendTelegramAlert(order) {
       console.error(`Telegram attempt ${attempt} error:`, err.response ? err.response.data : err.message);
     }
     await new Promise(r => setTimeout(r, 1500));
+  }
+}
+
+async function sendTelegramDeliveredInvoice(order) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !order) return;
+  try {
+    const pdfBuffer = await generateOrderInvoicePDF(order);
+    const formData = new FormDataNode();
+    formData.append('chat_id', TELEGRAM_CHAT_ID);
+    formData.append('caption', `✅ AURA FINE STORE - FINAL DELIVERY INVOICE\\nOrder #${order.id} marked Delivered.\\nFinal Bill: ₹${order.total}`);
+    formData.append('document', pdfBuffer, {
+      filename: `Final_Delivery_Invoice_${order.id}.pdf`,
+      contentType: 'application/pdf'
+    });
+    const resp = await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, formData, {
+      headers: formData.getHeaders(),
+      timeout: 15000
+    });
+    if (!resp.data || !resp.data.ok) throw new Error('Telegram did not confirm final invoice delivery');
+  } catch (err) {
+    console.error('Telegram final delivery invoice error:', err.response ? err.response.data : err.message);
   }
 }
 
@@ -2264,6 +2290,9 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
     const order = await Order.findOne({ id: req.params.id });
     if (!order) return res.status(404).json({ success: false });
 
+    const allowedStatuses = ['Pending Verification', 'Verified & Packing', 'Verified & Shipped', 'Delivered', 'Cancelled'];
+    if (!allowedStatuses.includes(status)) return res.status(400).json({ success: false, message: 'Invalid order status' });
+
     const prevStatus = order.status;
     if (prevStatus !== 'Cancelled' && status === 'Cancelled') {
       for (const item of (order.items || [])) {
@@ -2369,8 +2398,16 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
     }
 
     order.status = status;
+    if (status === 'Delivered') {
+      if (prevStatus !== 'Delivered' || !order.deliveredAt) order.deliveredAt = new Date();
+    } else {
+      order.deliveredAt = null;
+    }
     await order.save();
-    res.json({ success: true, status: order.status });
+    res.json({ success: true, status: order.status, deliveredAt: order.deliveredAt });
+    if (status === 'Delivered' && prevStatus !== 'Delivered') {
+      sendTelegramDeliveredInvoice(order).catch(err => console.error('Final delivery invoice task error:', err.message));
+    }
   } catch (err) {
     res.status(500).json({ success: false });
   }
