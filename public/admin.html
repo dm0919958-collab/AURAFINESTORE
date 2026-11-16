@@ -795,6 +795,13 @@ label { color: #f1e5ce; }
         return escapeHTML(parsed.href);
       } catch(e) { return ''; }
     }
+    function safeImageUrl(value) {
+      try { const raw=String(value ?? '').trim(); if(!raw)return ''; const parsed=new URL(raw,window.location.origin);
+        if(parsed.protocol!=='https:' && parsed.origin!==window.location.origin)return '';
+        if(parsed.protocol!=='https:' && parsed.protocol!==window.location.protocol)return '';
+        return parsed.href;
+      } catch(e) { return ''; }
+    }
 
     let adminToken = sessionStorage.getItem('aura_admin_jwt') || "";
     let cachedCategories = [];
@@ -874,7 +881,7 @@ label { color: #f1e5ce; }
           document.getElementById('firstPopupPreviewTitle').innerText = data.storeSettings.firstOrderPopupTitle;
           document.getElementById('firstPopupPreviewCode').innerText = data.storeSettings.firstOrderPopupCoupon;
           if (data.storeSettings.firstOrderPopupImage) {
-            document.getElementById('firstPopupPreviewImg').src = data.storeSettings.firstOrderPopupImage;
+            document.getElementById('firstPopupPreviewImg').src = safeImageUrl(data.storeSettings.firstOrderPopupImage);
           }
           alert("✅ First-Order Welcome Popup Settings Saved! Make sure the coupon code is active in Coupon Manager.");
         }
@@ -1434,7 +1441,7 @@ label { color: #f1e5ce; }
             document.getElementById('firstPopupCouponInput').value = st.firstOrderPopupCoupon || "AURA20";
             document.getElementById('firstPopupPreviewTitle').innerText = st.firstOrderPopupTitle || "Exclusive First-Order Privilege";
             document.getElementById('firstPopupPreviewCode').innerText = st.firstOrderPopupCoupon || "AURA20";
-            if (st.firstOrderPopupImage) document.getElementById('firstPopupPreviewImg').src = st.firstOrderPopupImage;
+            if (st.firstOrderPopupImage) document.getElementById('firstPopupPreviewImg').src = safeImageUrl(st.firstOrderPopupImage);
           }
 
           populateCategoryDropdowns(); renderAdminCategories(); renderStockWaitlist(); renderAbandonedCarts(); renderRepeatCustomers();
@@ -1738,7 +1745,7 @@ label { color: #f1e5ce; }
               <td class="p-2 font-bold text-cyan-300">${escapeHTML(col)}</td>
               <td class="p-2 font-bold text-amber-300">${escapeHTML(sz)}</td>
               <td class="p-1.5 text-center">
-                <input type="number" min="0" data-vkey="${escapeHTML(vKey)}" value="${val}" oninput="updateMatrixTotalStock()" class="variant-stock-qty-input w-20 text-center bg-slate-950 border border-slate-600 rounded-lg p-1 text-white font-bold">
+                <input type="number" min="0" data-vkey="${escapeHTML(vKey)}" value="${Math.max(0, Number(val) || 0)}" oninput="updateMatrixTotalStock()" class="variant-stock-qty-input w-20 text-center bg-slate-950 border border-slate-600 rounded-lg p-1 text-white font-bold">
               </td>
             </tr>`;
         });
