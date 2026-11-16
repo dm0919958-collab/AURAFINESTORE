@@ -1446,6 +1446,17 @@ app.delete('/api/admin/returns/:requestId',async(req,res)=>{
  }catch(err){res.status(500).json({success:false,message:'Could not delete return request.'});}
 });
 
+app.post('/api/admin/returns/bulk-delete',async(req,res)=>{
+ try{
+  if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
+  const ids=Array.isArray(req.body.requestIds)?[...new Set(req.body.requestIds.map(v=>String(v).trim()).filter(Boolean))]:[];
+  if(req.body.deleteAll===true){const result=await ReturnRequest.deleteMany({});return res.json({success:true,deletedCount:result.deletedCount||0,message:`Permanently deleted ${result.deletedCount||0} return/replacement records.`});}
+  if(!ids.length||ids.length>300)return res.status(400).json({success:false,message:'Select between 1 and 300 requests.'});
+  const result=await ReturnRequest.deleteMany({requestId:{$in:ids}});
+  res.json({success:true,deletedCount:result.deletedCount||0,message:`Permanently deleted ${result.deletedCount||0} selected request(s).`});
+ }catch(err){res.status(500).json({success:false,message:'Could not permanently delete selected requests.'});}
+});
+
 app.post('/api/admin/support/tickets', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
