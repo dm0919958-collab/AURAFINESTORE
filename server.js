@@ -2439,6 +2439,7 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
       order.deliveredAt = null;
     }
     await order.save();
+    await recordAdminActivity('Order status changed', 'Order', order.id, prevStatus + ' → ' + status);
     res.json({ success: true, status: order.status, deliveredAt: order.deliveredAt });
   } catch (err) {
     res.status(500).json({ success: false });
@@ -2455,6 +2456,7 @@ app.post('/api/admin/orders/:id/dispatch-tracking', async (req, res) => {
       { new: true }
     );
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    await recordAdminActivity('Shipping details updated', 'Order', order.id, String(courierPartner || 'Delhivery') + ' / AWB ' + String(awbNumber || ''));
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false });
@@ -2504,6 +2506,9 @@ app.post('/api/admin/stock-adjustments', async (req, res) => {
     if (!Number.isFinite(productId) || !Number.isFinite(change) || change === 0) return res.status(400).json({ success: false, message: 'Valid product and non-zero stock change required.' });
     const product = await Product.findOne({ id: productId });
     if (!product) return res.status(404).json({ success: false, message: 'Product not found.' });
+    if (Object.keys(product.variantStock || {}).length || Object.keys(product.sizeStock || {}).length) {
+      return res.status(400).json({ success: false, message: 'This product uses size/variant stock. Update its variants in Product Full Edit so stock remains consistent.' });
+    }
     const beforeQty = Number(product.stockQuantity) || 0, afterQty = beforeQty + change;
     if (afterQty < 0) return res.status(400).json({ success: false, message: 'Stock cannot be negative.' });
     product.stockQuantity = afterQty; product.inStock = afterQty > 0; await product.save();
@@ -2580,7 +2585,7 @@ app.post('/api/returns', async (req, res) => {
   try {
     const orderId=String(req.body.orderId||'').trim().toUpperCase(), phone=String(req.body.phone||'').replace(/[^0-9]/g,'');
     const reason=String(req.body.reason||'').trim().slice(0,100), details=String(req.body.details||'').trim().slice(0,1500);
-    if(!orderId||!/^\\d{10}$/.test(phone)||!reason) return res.status(400).json({success:false,message:'Order ID, valid 10-digit phone and reason are required.'});
+    if(!orderId||!/^[0-9]{10}$/.test(phone)||!reason) return res.status(400).json({success:false,message:'Order ID, valid 10-digit phone and reason are required.'});
     const order=await Order.findOne({id:orderId,phone}).lean();
     if(!order)return res.status(404).json({success:false,message:'Order not found for the supplied phone number.'});
     if(order.status!=='Delivered')return res.status(400).json({success:false,message:'Return requests can be submitted only after delivery.'});
