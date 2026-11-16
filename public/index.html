@@ -1089,7 +1089,7 @@
 
           localStorage.setItem('aura_last_checked_pincode', pin);
           resBox.className = "text-[11px] font-bold text-emerald-400 pt-0.5 block leading-relaxed";
-          resBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Delivery to <span class="text-amber-300">${district} (${pin})</span> within <span class="text-white underline">${etaDays}</span> | <span class="${codAllowed ? 'text-emerald-300' : 'text-amber-300'}">${codText}</span>`;
+          resBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Delivery to <span class="text-amber-300">${escapeHTML(district)} (${escapeHTML(pin)})</span> within <span class="text-white underline">${escapeHTML(etaDays)}</span> | <span class="${codAllowed ? 'text-emerald-300' : 'text-amber-300'}">${escapeHTML(codText)}</span>`;
         } else {
           resBox.className = "text-[11px] font-bold text-rose-400 pt-0.5 block";
           resBox.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Pincode ${pin} not serviceable. Try another Indian Pincode.`;
@@ -1119,12 +1119,12 @@
                 <span>${escapeHTML(cat.name)}</span><i class="fa-solid fa-chevron-down text-[9px]"></i>
               </button>
               <div class="absolute left-0 top-full hidden group-hover:block w-52 bg-stone-900 border border-amber-500/25 rounded-2xl shadow-2xl p-2 space-y-1 z-50 text-stone-200 normal-case">
-                ${subs.map(s => `<a href="#catalogSection" onclick="filterBySection(${safeInlineArg(cat.name)}, ${safeInlineArg(s)})" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">• ${s}</a>`).join('')}
-                <a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore All ${cat.name} &rarr;</a>
+                ${subs.map(s => `<a href="#catalogSection" onclick="filterBySection(${safeInlineArg(cat.name)}, ${safeInlineArg(s)})" class="block px-3 py-2 rounded-xl hover:bg-stone-800 hover:text-amber-400">• ${escapeHTML(s)}</a>`).join('')}
+                <a href="#catalogSection" onclick="filterBySection(${safeInlineArg(cat.name)}, 'All')" class="block px-3 py-2 text-[11px] text-amber-400 font-bold border-t border-stone-800 mt-1">Explore All ${escapeHTML(cat.name)} &rarr;</a>
               </div>
             </div>`;
         } else {
-          desktopHtml += `<button onclick="filterBySection('${cat.name}', 'All')" class="hover:text-amber-400 py-3 transition uppercase whitespace-nowrap">${escapeHTML(cat.name)}</button>`;
+          desktopHtml += `<button onclick="filterBySection(${safeInlineArg(cat.name)}, 'All')" class="hover:text-amber-400 py-3 transition uppercase whitespace-nowrap">${escapeHTML(cat.name)}</button>`;
         }
       });
       desktopNav.innerHTML = desktopHtml;
@@ -1136,19 +1136,19 @@
         mobileHtml += `
           <div class="bg-stone-900/80 border border-stone-800 rounded-xl overflow-hidden">
             <button onclick="${subs.length ? `toggleMobileSub('${subDivId}')` : `filterBySection('${cat.name}', 'All'); toggleMobileDrawer(false);`}" class="w-full flex justify-between items-center p-3 text-stone-200 hover:text-amber-400 uppercase">
-              <span>${cat.name}</span>${subs.length ? `<i class="fa-solid fa-chevron-down text-[10px]"></i>` : `<i class="fa-solid fa-arrow-right text-[10px]"></i>`}
+              <span>${escapeHTML(cat.name)}</span>${subs.length ? `<i class="fa-solid fa-chevron-down text-[10px]"></i>` : `<i class="fa-solid fa-arrow-right text-[10px]"></i>`}
             </button>
-            ${subs.length ? `<div id="${subDivId}" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">${subs.map(s => `<a href="#catalogSection" onclick="filterBySection(${safeInlineArg(cat.name)}, ${safeInlineArg(s)}); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• ${s}</a>`).join('')}<a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All ${cat.name} &rarr;</a></div>` : ''}
+            ${subs.length ? `<div id="${subDivId}" class="hidden px-3 pb-3 space-y-1.5 text-stone-400 font-semibold border-t border-stone-800 pt-2">${subs.map(s => `<a href="#catalogSection" onclick="filterBySection(${safeInlineArg(cat.name)}, ${safeInlineArg(s)}); toggleMobileDrawer(false);" class="block py-1 hover:text-amber-300">• ${s}</a>`).join('')}<a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All'); toggleMobileDrawer(false);" class="block py-1 text-amber-400 font-bold">All ${escapeHTML(cat.name)} &rarr;</a></div>` : ''}
           </div>`;
       });
       mobileList.innerHTML = mobileHtml;
 
       catTabs.innerHTML = [
         `<button onclick="showHomeCatalog(this)" class="cat-btn ${activeMainSection === 'Home' ? 'active bg-amber-500 text-stone-950 font-extrabold border-amber-400' : 'bg-stone-900 hover:bg-stone-800 border-stone-700 font-bold text-stone-300'} px-5 py-2 rounded-full text-xs border whitespace-nowrap"><i class="fa-solid fa-house mr-1"></i> Home</button>`,
-        ...dynamicCategories.map(cat => `<button onclick="filterBySection('${cat.name}', 'All', this)" class="cat-btn ${activeMainSection === cat.name ? 'active bg-amber-500 text-stone-950 font-extrabold border-amber-400' : 'bg-stone-900 hover:bg-stone-800 border-stone-700 font-bold text-stone-300'} px-5 py-2 rounded-full text-xs border whitespace-nowrap">${cat.name}</button>`)
+        ...dynamicCategories.map(cat => `<button onclick="filterBySection(${safeInlineArg(cat.name)}, 'All', this)" class="cat-btn ${activeMainSection === cat.name ? 'active bg-amber-500 text-stone-950 font-extrabold border-amber-400' : 'bg-stone-900 hover:bg-stone-800 border-stone-700 font-bold text-stone-300'} px-5 py-2 rounded-full text-xs border whitespace-nowrap">${escapeHTML(cat.name)}</button>`)
       ].join('');
 
-      footerCats.innerHTML = dynamicCategories.map(cat => `<li><a href="#catalogSection" onclick="filterBySection('${cat.name}', 'All')" class="hover:text-amber-300 transition">${escapeHTML(cat.name)} Collection</a></li>`).join('');
+      footerCats.innerHTML = dynamicCategories.map(cat => `<li><a href="#catalogSection" onclick="filterBySection(${safeInlineArg(cat.name)}, 'All')" class="hover:text-amber-300 transition">${escapeHTML(cat.name)} Collection</a></li>`).join('');
     }
 
     function persistCartLocal() {
@@ -1474,7 +1474,7 @@
         const tag = getCouponTimeTag(c.expiresAt);
         return tag === "EXPIRED"
           ? `<div class="bg-rose-950/60 border border-rose-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 opacity-70"><span class="font-mono font-bold text-rose-400 line-through">${escapeHTML(c.code)}</span><span class="text-rose-400 font-bold text-[10px]">EXPIRED</span></div>`
-          : `<div onclick="quickApplyCoupon('${c.code}')" class="cursor-pointer bg-stone-950 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2"><span class="font-mono font-bold text-amber-300">${c.code}</span><span class="text-emerald-400 font-bold">(${c.discountPercent}% OFF)</span>${tag ? `<span class="text-[10px] text-amber-400 font-mono">⏳ ${tag}</span>` : ''}</div>`;
+          : `<div onclick="quickApplyCoupon(${safeInlineArg(c.code)})" class="cursor-pointer bg-stone-950 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2"><span class="font-mono font-bold text-amber-300">${escapeHTML(c.code)}</span><span class="text-emerald-400 font-bold">(${Number(c.discountPercent)||0}% OFF)</span>${tag ? `<span class="text-[10px] text-amber-400 font-mono">⏳ ${tag}</span>` : ''}</div>`;
       }).join('');
     }
 
@@ -1694,7 +1694,7 @@
         const tagHtml = info.tracked
           ? (szOut ? `<span class="text-[9px] text-rose-400 ml-1">(Out)</span>` : (info.qty <= 3 ? `<span class="text-[9px] text-rose-500 font-black ml-1">(${info.qty} left)</span>` : ''))
           : '';
-        return `<button type="button" ${szOut ? 'disabled' : ''} onclick="selectVariantSize('${s}', this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${szOut ? 'opacity-45 line-through cursor-not-allowed bg-stone-950 border-stone-800 text-stone-500' : (isSel ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300')}">${s}${tagHtml}</button>`;
+        return `<button type="button" ${szOut ? 'disabled' : ''} onclick="selectVariantSize(${safeInlineArg(s)}, this)" class="size-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${szOut ? 'opacity-45 line-through cursor-not-allowed bg-stone-950 border-stone-800 text-stone-500' : (isSel ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300')}">${escapeHTML(s)}${tagHtml}</button>`;
       }).join('');
     }
 
@@ -1909,7 +1909,7 @@
           <div class="bg-stone-950 border border-stone-800 rounded-2xl overflow-hidden shadow-sm">
             <div class="p-3 flex items-start gap-3">
               <div class="flex flex-col items-center gap-2 flex-shrink-0">
-                <img src="${(item.images && item.images[0]) || ''}" class="w-16 h-16 object-cover rounded-xl border border-stone-800">
+                <img src="${safeHttpUrl((item.images && item.images[0]) || '')}" class="w-16 h-16 object-cover rounded-xl border border-stone-800">
                 <div class="flex items-center border border-stone-700 rounded-lg overflow-hidden bg-stone-900 text-xs font-bold">
                   <button type="button" onclick="updateQty(${idx}, -1)" class="w-6 h-6 hover:bg-stone-800 text-stone-300">-</button>
                   <span class="px-2 text-stone-100">${item.qty}</span>
@@ -1917,8 +1917,8 @@
                 </div>
               </div>
               <div class="flex-1 min-w-0 space-y-1">
-                <h5 class="text-xs font-bold text-stone-100 line-clamp-1">${item.name}</h5>
-                <p class="text-[11px] text-stone-400">Size: <b class="text-amber-400">${item.selectedSize}</b>${item.selectedColor && item.selectedColor !== 'Standard' ? ` • ${item.selectedColor}` : ''}</p>
+                <h5 class="text-xs font-bold text-stone-100 line-clamp-1">${escapeHTML(item.name)}</h5>
+                <p class="text-[11px] text-stone-400">Size: <b class="text-amber-400">${escapeHTML(item.selectedSize || 'Standard')}</b>${item.selectedColor && item.selectedColor !== 'Standard' ? ` • ${escapeHTML(item.selectedColor)}` : ''}</p>
                 <div class="flex items-center gap-1.5 text-[10px]">
                   <span class="bg-emerald-600 text-white font-extrabold px-1.5 py-0.5 rounded">${ratingVal} ★</span>
                   <span class="text-stone-400">(${revCnt})</span>
@@ -2185,16 +2185,16 @@
         const courier = o.courierPartner || 'Delhivery', trackFn = courierTrackingUrls[courier] || courierTrackingUrls["Delhivery"];
         return `
         <div class="border border-stone-800 bg-stone-950 p-4 rounded-2xl space-y-3">
-          <div class="flex justify-between items-center font-bold"><span class="text-amber-400 font-mono text-sm">#${o.id}</span><span class="px-2.5 py-0.5 rounded-full text-[10px] ${o.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${escapeHTML(o.status)}</span></div>
+          <div class="flex justify-between items-center font-bold"><span class="text-amber-400 font-mono text-sm">#${escapeHTML(o.id)}</span><span class="px-2.5 py-0.5 rounded-full text-[10px] ${o.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${escapeHTML(o.status)}</span></div>
           ${buildOrderTimelineHTML(o.status)}
           <p class="text-stone-400 text-[11px]">${escapeHTML(o.date)} • Total: <b class="text-white">₹${Number(o.total)||0}</b> (${escapeHTML(o.paymentMethod)})</p>
           ${o.freeGiftUnlocked ? `<p class="text-[11px] text-emerald-300 font-bold"><i class="fa-solid fa-award mr-1"></i>Free Bonus Gift: ${escapeHTML(o.freeGiftUnlocked)}</p>` : ''}
           ${o.coinsEarned > 0 ? `<p class="text-[11px] text-amber-300"><i class="fa-solid fa-coins mr-1"></i>${o.coinsCredited ? `Credited +${o.coinsEarned} AURA Coins ✓` : `Earn +${o.coinsEarned} AURA Coins upon delivery`}</p>` : ''}
           ${o.awbNumber ? `<p class="text-[11px] text-cyan-300 font-mono">Courier: ${escapeHTML(courier)} | AWB: <b>${escapeHTML(o.awbNumber)}</b></p>` : ''}
           <div class="flex flex-wrap gap-2 pt-1">
-            <a href="/api/orders/${o.id}/invoice" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px]"><i class="fa-solid fa-file-pdf"></i> Download Invoice</a>
+            <a href="/api/orders/${encodeURIComponent(String(o.id))}/invoice" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px]"><i class="fa-solid fa-file-pdf"></i> Download Invoice</a>
             ${o.awbNumber ? `<a href="${safeHttpUrl(trackFn(o.awbNumber))}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-location-dot"></i> Track on ${courier}</a>` : ''}
-            ${o.deliverySlipFile ? `<a href="${safeHttpUrl(o.deliverySlipFile)}" download="Slip_${o.id}" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-download"></i> Delivery Slip</a>` : ''}
+            ${o.deliverySlipFile ? `<a href="${safeHttpUrl(o.deliverySlipFile)}" download="Slip_${escapeHTML(o.id)}" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-download"></i> Delivery Slip</a>` : ''}
           </div>
         </div>`;
       }).join('');
