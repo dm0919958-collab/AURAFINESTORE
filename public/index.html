@@ -666,6 +666,8 @@
           <label for="customerLoginPhone" class="mb-1 block text-xs font-bold">Mobile Number</label>
           <input id="customerLoginPhone" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="Enter 10-digit mobile number" class="w-full rounded-xl border p-3 text-sm">
           <button id="customerLoginSendBtn" type="button" onclick="sendCustomerLoginOtp()" class="mt-3 w-full rounded-xl bg-emerald-800 p-3 text-sm font-bold text-white">Send WhatsApp OTP</button>
+          <button type="button" onclick="continueWithoutOtp()" class="mt-2 w-full rounded-xl border border-amber-600 p-3 text-sm font-bold text-amber-800">Continue Without OTP (Temporary)</button>
+          <p class="mt-1 text-center text-[10px] text-stone-500">Temporary option while WhatsApp approval is pending.</p>
         </div>
         <div id="customerLoginOtpStep" class="hidden">
           <label for="customerLoginOtp" class="mb-1 block text-xs font-bold">6-Digit OTP</label>
@@ -2008,6 +2010,17 @@
     }
 
     let pendingCustomerCheckout = false;
+    let temporaryOtpSkip = false;
+    function continueWithoutOtp() {
+      temporaryOtpSkip = true;
+      const phone = document.getElementById('customerLoginPhone').value.replace(/[^0-9]/g, '');
+      if (/^[6-9]\d{9}$/.test(phone)) {
+        const phoneField = document.getElementById('ordPhone');
+        if (phoneField) { phoneField.value = phone; phoneField.readOnly = false; }
+      }
+      document.getElementById('customerLoginModal').classList.add('hidden');
+      if (pendingCustomerCheckout) showCheckoutModalAfterCustomerLogin(phone || document.getElementById('ordPhone').value);
+    }
     function openCustomerLoginModal(prefillPhone = '') {
       const modal = document.getElementById('customerLoginModal');
       if (!modal) return;
@@ -2052,6 +2065,7 @@
         const res = await fetch('/api/auth/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, otp }) });
         const data = await res.json();
         if (!res.ok || !data.success || !data.customerToken) throw new Error(data.message || 'OTP verification failed.');
+        temporaryOtpSkip = false;
         localStorage.setItem('aura_customer_token', data.customerToken);
         localStorage.setItem('aura_verified_phone', data.phone);
         document.getElementById('customerLoginModal').classList.add('hidden');
@@ -2230,6 +2244,7 @@
           villageOrCity: document.getElementById('addrVillage').value, postOffice: document.getElementById('addrPostOffice').value, policeStation: document.getElementById('addrPoliceStation').value,
           landmark: document.getElementById('addrLandmark').value,
           items: cart.map(i => ({ id: i.id, name: i.name, selectedSize: i.selectedSize, selectedColor: i.selectedColor, qty: i.qty })),
+          skipOtp: temporaryOtpSkip,
           couponCode: appliedCouponCode, useAuraCoins, paymentMethod: mode, utrNumber: utr
         })
       });
@@ -2240,6 +2255,7 @@
         trackMetaEvent('Purchase', { value: data.verifiedTotal || 0, currency: 'INR', order_id: data.orderId });
         const coinsMsg = data.coinsEarned > 0 ? `\n🪙 You will receive +${data.coinsEarned} AURA Coins upon delivery!` : '';
         alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}\nVerified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
+        temporaryOtpSkip = false;
         cart = []; appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0;
         persistCartLocal(); updateCartUI(); closeCheckoutModal(); loadRecentSalesFeed();
       } else {
