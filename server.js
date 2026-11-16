@@ -1428,27 +1428,6 @@ app.post('/api/admin/returns/list',async(req,res)=>{
  catch(err){res.status(500).json({success:false,requests:[]});}
 });
 
-app.post('/api/admin/returns/search',async(req,res)=>{
- try{
-  if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
-  const q=String(req.body.query||'').trim().slice(0,120);
-  if(!q)return res.status(400).json({success:false,message:'Enter a customer name, phone, order ID, or request ID.'});
-  const rx=new RegExp(q,'i');
-  const requests=await ReturnRequest.find({$or:[{customerName:rx},{phone:rx},{orderId:rx},{requestId:rx}]}).sort({createdAt:-1}).limit(1000).lean();
-  res.json({success:true,requests});
- }catch(err){res.status(500).json({success:false,requests:[],message:'Could not search return history.'});}
-});
-
-app.post('/api/admin/returns/customer-history-delete',async(req,res)=>{
- try{
-  if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
-  const phone=String(req.body.phone||'').replace(/[^0-9]/g,'');
-  if(phone.length!==10)return res.status(400).json({success:false,message:'A valid 10-digit customer phone is required.'});
-  const result=await ReturnRequest.deleteMany({phone});
-  res.json({success:true,deletedCount:result.deletedCount||0,message:`Permanently deleted ${result.deletedCount||0} Return / Replacement history record(s) for this customer.`});
- }catch(err){res.status(500).json({success:false,message:'Could not delete this customer history.'});}
-});
-
 app.patch('/api/admin/returns/:requestId',async(req,res)=>{
  try{
   if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
@@ -1466,17 +1445,6 @@ app.delete('/api/admin/returns/:requestId',async(req,res)=>{
   if(!result.deletedCount)return res.status(404).json({success:false,message:'Request not found or already deleted.'});
   res.json({success:true,deletedCount:result.deletedCount,message:'Return / Replacement request permanently deleted.'});
  }catch(err){res.status(500).json({success:false,message:'Could not delete return request.'});}
-});
-
-app.post('/api/admin/returns/bulk-delete',async(req,res)=>{
- try{
-  if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
-  const ids=Array.isArray(req.body.requestIds)?[...new Set(req.body.requestIds.map(v=>String(v).trim()).filter(Boolean))]:[];
-  if(req.body.deleteAll===true){const result=await ReturnRequest.deleteMany({});return res.json({success:true,deletedCount:result.deletedCount||0,message:`Permanently deleted ${result.deletedCount||0} return/replacement records.`});}
-  if(!ids.length||ids.length>300)return res.status(400).json({success:false,message:'Select between 1 and 300 requests.'});
-  const result=await ReturnRequest.deleteMany({requestId:{$in:ids}});
-  res.json({success:true,deletedCount:result.deletedCount||0,message:`Permanently deleted ${result.deletedCount||0} selected request(s).`});
- }catch(err){res.status(500).json({success:false,message:'Could not permanently delete selected requests.'});}
 });
 
 app.post('/api/admin/support/tickets', async (req, res) => {
