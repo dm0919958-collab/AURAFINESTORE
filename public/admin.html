@@ -1418,6 +1418,7 @@ label { color: #f1e5ce; }
           if (window._lastOrdersHash !== newHash) {
             window._lastOrdersHash = newHash;
             cachedOrders = ordData.orders || []; cachedAbandonedCarts = ordData.abandonedCarts || []; cachedStockNotifies = ordData.stockNotifies || []; cachedWallets = ordData.wallets || [];
+            renderAdminInvoices();
             updateAnalyticsUI(ordData.analytics); renderSalesProfitChart(); renderLowStockAlerts(ordData.lowStockProducts || []);
             renderStockWaitlist(); renderAbandonedCarts(); renderRepeatCustomers(); renderAdminOrders();
           }
@@ -1436,6 +1437,7 @@ label { color: #f1e5ce; }
 
         if (ordData.success) {
           cachedOrders = ordData.orders || []; cachedAbandonedCarts = ordData.abandonedCarts || []; cachedStockNotifies = ordData.stockNotifies || []; cachedWallets = ordData.wallets || [];
+          renderAdminInvoices();
           cachedCategories = ordData.categories || storeData.categories || []; cachedProducts = ordData.products || storeData.products || [];
           window._lastOrdersHash = JSON.stringify({ o: cachedOrders, a: cachedAbandonedCarts, w: cachedStockNotifies, wl: cachedWallets });
           cachedCoupons = ordData.coupons || [];
@@ -1961,9 +1963,21 @@ label { color: #f1e5ce; }
     }
 
     async function updateOrderStatus(orderId, status) {
-      const res = await fetch(`/api/admin/orders/${orderId}/status`, { method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify({ status }) });
-      if (handleUnauthorized(res)) return;
-      loadAdminDashboard(true);
+      try {
+        const res = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/status`, {
+          method: 'PATCH',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ status })
+        });
+        if (handleUnauthorized(res)) return;
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Order status could not be updated.');
+        await loadAdminDashboard(true);
+        renderAdminInvoices();
+      } catch (err) {
+        alert(err.message || 'Could not update order status.');
+        await loadAdminDashboard(true);
+      }
     }
 
     async function saveOrderTracking(orderId) {
