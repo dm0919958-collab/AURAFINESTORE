@@ -869,7 +869,16 @@ async function forwardReturnRequestToTelegram(order, request, files) {
   if(!resp.data?.ok)throw new Error(resp.data?.description||`Telegram ${method} failed.`);
  };
  for(let n=0;n<(files?.photos||[]).length;n++)await sendMedia('sendPhoto',files.photos[n],`Request ${request.requestId} • Order #${order.id} • Photo ${n+1}`,'photo');
- const video=files?.video?.[0];if(video)await sendMedia('sendVideo',video,`Request ${request.requestId} • Order #${order.id} • Video evidence`,'video');
+ const video=files?.video?.[0];
+ if(video){
+  const caption=`Request ${request.requestId} • Order #${order.id} • Video evidence`;
+  try{
+   await sendMedia('sendVideo',video,caption,'video');
+  }catch(videoErr){
+   console.warn('Telegram sendVideo failed; retrying as document:',videoErr.response?.data?.description||videoErr.message);
+   await sendMedia('sendDocument',video,caption,'document');
+  }
+ }
 }
 
 async function forwardSupportToTelegram(order, issueText, files) {
