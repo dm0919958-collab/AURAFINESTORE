@@ -293,7 +293,11 @@ const AbandonedCart = mongoose.model('AbandonedCart', abandonedCartSchema);
 const SupportTicket = mongoose.model('SupportTicket', supportTicketSchema);
 
 const returnRequestSchema = new mongoose.Schema({
- requestId:{type:String,unique:true},orderId:{type:String,index:true},customerName:String,phone:{type:String,index:true},productSummary:String,reason:String,details:String,status:{type:String,default:'Pending',index:true},adminNote:{type:String,default:''},createdAtStr:String,deliveredAt:Date,reviewedAt:{type:Date,default:null}
+ requestId:{type:String,unique:true},orderId:{type:String,index:true},customerName:String,phone:{type:String,index:true},
+ requestType:{type:String,enum:['Return','Replacement'],default:'Return'},productSummary:String,productDetails:String,orderTotal:String,shippingAddress:String,
+ reason:String,details:String,status:{type:String,default:'Pending',index:true},adminNote:{type:String,default:''},
+ telegramStatus:{type:String,default:'Pending'},telegramError:{type:String,default:''},photoCount:{type:Number,default:0},videoName:{type:String,default:''},
+ createdAtStr:String,deliveredAt:Date,reviewedAt:{type:Date,default:null},cancelledAt:{type:Date,default:null}
 },{timestamps:true});
 const ReturnRequest = mongoose.model('ReturnRequest', returnRequestSchema);
 const StockNotify = mongoose.model('StockNotify', stockNotifySchema);
@@ -852,15 +856,20 @@ async function sendTelegramAlert(order) {
 }
 
 async function forwardReturnRequestToTelegram(order, request, files) {
- if(!SUPPORT_BOT_TOKEN||!TELEGRAM_CHAT_ID) throw new Error('Return Telegram bot is not configured.');
- const esc=v=>String(v||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
- const items=(order.items||[]).map((x,i)=>`${i+1}. ${esc(x.name)} x${Number(x.qty)||1}`).join('\n');
- const message=`↩️ <b>AURA FINE STORE — NEW RETURN / REFUND REQUEST</b>\n━━━━━━━━━━━━━━━━━━━━\n🆔 <b>Request:</b> <code>${esc(request.requestId)}</code>\n📦 <b>Order:</b> <code>#${esc(order.id)}</code>\n👤 <b>Customer:</b> ${esc(order.customerName)}\n📞 <b>Phone:</b> <code>${esc(order.phone)}</code>\n🛍️ <b>Items:</b>\n${items}\n📌 <b>Reason:</b> ${esc(request.reason)}\n📝 <b>Details:</b>\n${esc(request.details)}\n📎 <b>Evidence:</b> ${(files?.photos||[]).length} photo(s), ${(files?.video||[]).length} video(s)\n⏰ <b>Submitted:</b> ${esc(request.createdAtStr)}\n━━━━━━━━━━━━━━━━━━━━\n<i>Review in AURA Admin Dashboard → Returns.</i>`;
- const send=async(url,form)=>{const r=await axios.post(url,form,{headers:form.getHeaders(),maxBodyLength:Infinity,maxContentLength:Infinity,timeout:120000});if(!r.data||!r.data.ok)throw new Error('Telegram upload was not confirmed.');};
- const textForm=new FormDataNode();textForm.append('chat_id',TELEGRAM_CHAT_ID);textForm.append('text',message);textForm.append('parse_mode','HTML');
- await send(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendMessage`,textForm);
- for(let i=0;i<(files?.photos||[]).length;i++){const f=files.photos[i],form=new FormDataNode();form.append('chat_id',TELEGRAM_CHAT_ID);form.append('caption',`Return ${request.requestId} • Order #${order.id} • Photo ${i+1}`);form.append('photo',f.buffer,{filename:f.originalname||`return_${i+1}.jpg`,contentType:f.mimetype||'image/jpeg'});await send(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendPhoto`,form);}
- const video=files?.video?.[0];if(video){const form=new FormDataNode();form.append('chat_id',TELEGRAM_CHAT_ID);form.append('caption',`Return ${request.requestId} • Order #${order.id} • Video evidence`);form.append('video',video.buffer,{filename:video.originalname||'return-proof-video.mp4',contentType:video.mimetype||'video/mp4'});await send(`https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}/sendVideo`,form);}
+ const token=SUPPORT_BOT_TOKEN||TELEGRAM_BOT_TOKEN;
+ if(!token||!TELEGRAM_CHAT_ID)throw new Error('Telegram credentials missing: configure SUPPORT_BOT_TOKEN or TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in Render.');
+ const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const items=(order.items||[]).map((x,n)=>`${n+1}. ${esc(x.name)} | Qty: ${Number(x.qty)||1} | Size: ${esc(x.selectedSize||'—')} | Colour: ${esc(x.selectedColor||'—')}`).join('\n');
+ const message=`↩️ <b>AURA FINE STORE — NEW ${esc(request.requestType).toUpperCase()} REQUEST</b>\n━━━━━━━━━━━━━━━━━━━━\n🆔 <b>Request:</b> <code>${esc(request.requestId)}</code>\n📦 <b>Order:</b> <code>#${esc(order.id)}</code>\n👤 <b>Customer:</b> ${esc(order.customerName)}\n📞 <b>Phone:</b> <code>${esc(order.phone)}</code>\n📍 <b>Address:</b> ${esc(order.address||'Not available')}\n💰 <b>Order Total:</b> ₹${esc(order.total||'—')}\n🛍️ <b>Products:</b>\n${items}\n🔁 <b>Request Type:</b> ${esc(request.requestType)}\n📌 <b>Reason:</b> ${esc(request.reason)}\n📝 <b>Customer Details:</b>\n${esc(request.details)}\n📎 <b>Evidence:</b> ${request.photoCount} mandatory photo(s), video: ${esc(request.videoName||'—')}\n⏰ <b>Submitted:</b> ${esc(request.createdAtStr)}\n━━━━━━━━━━━━━━━━━━━━\n<i>Open AURA Admin Dashboard → Returns to review.</i>`;
+ const msgResp=await axios.post(`https://api.telegram.org/bot${token}/sendMessage`,{chat_id:TELEGRAM_CHAT_ID,text:message,parse_mode:'HTML'},{timeout:30000});
+ if(!msgResp.data?.ok)throw new Error(msgResp.data?.description||'Telegram sendMessage failed.');
+ const sendMedia=async(method,file,caption,field)=>{
+  const form=new FormDataNode();form.append('chat_id',TELEGRAM_CHAT_ID);form.append('caption',caption);form.append(field,file.buffer,{filename:file.originalname||'return-evidence',contentType:file.mimetype});
+  const resp=await axios.post(`https://api.telegram.org/bot${token}/${method}`,form,{headers:form.getHeaders(),maxBodyLength:Infinity,maxContentLength:Infinity,timeout:120000});
+  if(!resp.data?.ok)throw new Error(resp.data?.description||`Telegram ${method} failed.`);
+ };
+ for(let n=0;n<(files?.photos||[]).length;n++)await sendMedia('sendPhoto',files.photos[n],`Request ${request.requestId} • Order #${order.id} • Photo ${n+1}`,'photo');
+ const video=files?.video?.[0];if(video)await sendMedia('sendVideo',video,`Request ${request.requestId} • Order #${order.id} • Video evidence`,'video');
 }
 
 async function forwardSupportToTelegram(order, issueText, files) {
@@ -1372,24 +1381,37 @@ app.post('/api/support/ticket', uploadMemory.fields([{ name: 'photos', maxCount:
 
 app.post('/api/support/return-request', uploadMemory.fields([{name:'photos',maxCount:6},{name:'video',maxCount:1}]), async(req,res)=>{
  try{
-  const orderId=String(req.body.orderId||'').trim(),phone=String(req.body.phone||'').replace(/\D/g,''),reason=String(req.body.reason||'').trim(),details=String(req.body.details||'').trim();
+  const orderId=String(req.body.orderId||'').trim(),phone=String(req.body.phone||'').replace(/\D/g,''),requestType=String(req.body.requestType||'').trim(),reason=String(req.body.reason||'').trim(),details=String(req.body.details||'').trim();
   const reasons=['Damaged Product','Defective Product','Wrong Product Received','Missing Item','Size / Fit Issue','Other'];
-  if(!orderId||phone.length!==10||!reasons.includes(reason)||details.length<5)return res.status(400).json({success:false,message:'Please complete all required return details.'});
+  if(!orderId||phone.length!==10||!['Return','Replacement'].includes(requestType)||!reasons.includes(reason)||details.length<5)return res.status(400).json({success:false,message:'Please complete the request type, reason and description.'});
   const order=await Order.findOne({id:orderId,phone}).lean();if(!order)return res.status(404).json({success:false,message:'Order not found for this mobile number.'});
-  if(order.status!=='Delivered'||!order.deliveredAt)return res.status(400).json({success:false,message:'Return requests are available only after delivery.'});
+  if(order.status!=='Delivered'||!order.deliveredAt)return res.status(400).json({success:false,message:'Requests are available only after delivery.'});
   if(order.isNonRefundableOrder)return res.status(400).json({success:false,message:'This order is marked non-returnable under the product policy.'});
   const deliveredMs=new Date(order.deliveredAt).getTime(),windowMs=7*24*60*60*1000;
-  if(!Number.isFinite(deliveredMs)||deliveredMs>Date.now()||Date.now()-deliveredMs>windowMs)return res.status(400).json({success:false,message:'The 7-day return window for this order has ended.'});
-  const existing=await ReturnRequest.findOne({orderId:order.id,phone,status:{$in:['Pending','Approved','Return In Transit','Received','Refund Processing','Refunded']}}).lean();
-  if(existing)return res.status(409).json({success:false,message:'A return request is already active for this order.'});
+  if(!Number.isFinite(deliveredMs)||deliveredMs>Date.now()||Date.now()-deliveredMs>windowMs)return res.status(400).json({success:false,message:'The 7-day request window for this order has ended.'});
+  const existing=await ReturnRequest.findOne({orderId:order.id,phone}).lean();
+  if(existing)return res.status(409).json({success:false,message:'A request has already been submitted for this order. A second Return or Replacement request is not allowed.'});
   const photos=(req.files&&req.files.photos)||[],video=(req.files&&req.files.video)||[];
+  if(!photos.length)return res.status(400).json({success:false,message:'At least one product or parcel photo is mandatory.'});
+  if(!video.length)return res.status(400).json({success:false,message:'A video evidence file is mandatory.'});
   if(photos.some(f=>f.size>10*1024*1024)||video.some(f=>f.size>20*1024*1024))return res.status(413).json({success:false,message:'Each photo must be 10 MB or smaller and the video must be 20 MB or smaller.'});
   if(photos.some(f=>!String(f.mimetype||'').startsWith('image/'))||video.some(f=>!String(f.mimetype||'').startsWith('video/')))return res.status(400).json({success:false,message:'Please upload valid image and video files only.'});
-  const request={requestId:'RET-'+crypto.randomBytes(4).toString('hex').toUpperCase(),orderId:order.id,customerName:order.customerName,phone:order.phone,productSummary:(order.items||[]).map(x=>x.name).join(', ').slice(0,500),reason,details:details.slice(0,2000),status:'Pending',adminNote:'',createdAtStr:new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}),deliveredAt:order.deliveredAt};
-  await forwardReturnRequestToTelegram(order,request,{photos,video});
+  const request={requestId:'RET-'+crypto.randomBytes(4).toString('hex').toUpperCase(),orderId:order.id,customerName:order.customerName,phone:order.phone,requestType,productSummary:(order.items||[]).map(x=>x.name).join(', ').slice(0,500),productDetails:(order.items||[]).map((x,n)=>`${n+1}. ${x.name} | Qty: ${Number(x.qty)||1} | Size: ${x.selectedSize||'—'} | Colour: ${x.selectedColor||'—'}`).join('\n').slice(0,2000),orderTotal:String(order.total||''),shippingAddress:String(order.address||''),reason,details:details.slice(0,2000),status:'Pending',adminNote:'',telegramStatus:'Pending',telegramError:'',photoCount:photos.length,videoName:video[0].originalname||'Video uploaded',createdAtStr:new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}),deliveredAt:order.deliveredAt};
   await ReturnRequest.create(request);
-  res.json({success:true,requestId:request.requestId,message:'Return request sent successfully.'});
- }catch(err){console.error('Return request submission failed:',err.response?.data||err.message);res.status(502).json({success:false,message:'Could not send the request and evidence to Telegram. Please try again.'});}
+  try{await forwardReturnRequestToTelegram(order,request,{photos,video});await ReturnRequest.updateOne({requestId:request.requestId},{$set:{telegramStatus:'Sent',telegramError:''}});}
+  catch(telegramErr){console.error('Return Telegram delivery failed:',telegramErr.response?.data||telegramErr.message);await ReturnRequest.updateOne({requestId:request.requestId},{$set:{telegramStatus:'Failed',telegramError:String(telegramErr.response?.data?.description||telegramErr.message||'Telegram delivery failed').slice(0,500)}});}
+  const latest=await ReturnRequest.findOne({requestId:request.requestId}).lean();
+  res.json({success:true,requestId:request.requestId,telegramStatus:latest.telegramStatus,message:latest.telegramStatus==='Sent'?'Request submitted and evidence sent to Telegram.':'Request saved, but Telegram delivery failed. Admin can see the exact error in Returns dashboard.'});
+ }catch(err){console.error('Return request submission failed:',err.response?.data||err.message);res.status(500).json({success:false,message:err.message||'Could not submit request.'});}
+});
+
+app.post('/api/support/return-request/:requestId/cancel',async(req,res)=>{
+ try{
+  const phone=String(req.body.phone||'').replace(/\D/g,'');
+  const updated=await ReturnRequest.findOneAndUpdate({requestId:req.params.requestId,phone,status:'Pending'},{$set:{status:'Cancelled',cancelledAt:new Date(),adminNote:'Cancelled by customer'}},{new:true}).lean();
+  if(!updated)return res.status(409).json({success:false,message:'This request can no longer be cancelled. Only Pending requests can be cancelled.'});
+  res.json({success:true,request:updated,message:'Your request has been cancelled.'});
+ }catch(err){res.status(500).json({success:false,message:'Could not cancel this request.'});}
 });
 
 app.post('/api/admin/returns/list',async(req,res)=>{
@@ -1399,7 +1421,7 @@ app.post('/api/admin/returns/list',async(req,res)=>{
 app.patch('/api/admin/returns/:requestId',async(req,res)=>{
  try{
   if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
-  const allowed=['Pending','Approved','Rejected','Return In Transit','Received','Refund Processing','Refunded'],status=String(req.body.status||'').trim(),adminNote=String(req.body.adminNote||'').trim().slice(0,1000);
+  const allowed=['Pending','Return Approved','Replacement Approved','Rejected','Return In Transit','Received','Replacement Processing','Completed','Cancelled'],status=String(req.body.status||'').trim(),adminNote=String(req.body.adminNote||'').trim().slice(0,1000);
   if(!allowed.includes(status))return res.status(400).json({success:false,message:'Invalid return status.'});
   const updated=await ReturnRequest.findOneAndUpdate({requestId:req.params.requestId},{$set:{status,adminNote,reviewedAt:new Date()}},{new:true,runValidators:true}).lean();
   if(!updated)return res.status(404).json({success:false,message:'Return request not found.'});res.json({success:true,request:updated});
