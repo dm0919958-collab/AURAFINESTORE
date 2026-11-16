@@ -1031,7 +1031,7 @@ label { color: #f1e5ce; }
       const subSelect = document.getElementById('prodCategory');
       const catObj = cachedCategories.find(c => c.name === mainCatName);
       const subs = (catObj && catObj.subCategories && catObj.subCategories.length) ? catObj.subCategories : ["General"];
-      subSelect.innerHTML = subs.map(o => `<option value="${o}">${o}</option>`).join('');
+      subSelect.innerHTML = subs.map(o => `<option value="${escapeHTML(o)}">${escapeHTML(o)}</option>`).join('');
       if (selectedSub && subs.includes(selectedSub)) subSelect.value = selectedSub;
     }
 
@@ -1049,8 +1049,8 @@ label { color: #f1e5ce; }
               const subProdCount = cachedProducts.filter(p => p.mainCategory === cat.name && p.category === sub).length;
               return `
                 <div class="flex items-center justify-between bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded-xl text-[11px]">
-                  <span class="text-slate-200 font-semibold">${sub} <span class="text-slate-400 text-[10px]">(${subProdCount})</span></span>
-                  <button onclick="deleteSubCategory('${cat.name}', '${sub}', ${subProdCount})" title="Delete Sub-Category & its Products" class="text-rose-400 hover:text-rose-300 px-1.5 font-bold">
+                  <span class="text-slate-200 font-semibold">${escapeHTML(sub)} <span class="text-slate-400 text-[10px]">(${subProdCount})</span></span>
+                  <button onclick="deleteSubCategory(${safeInlineArg(cat.name)}, ${safeInlineArg(sub)}, ${subProdCount})" title="Delete Sub-Category & its Products" class="text-rose-400 hover:text-rose-300 px-1.5 font-bold">
                     <i class="fa-solid fa-trash-can"></i>
                   </button>
                 </div>
@@ -1063,10 +1063,10 @@ label { color: #f1e5ce; }
             <div class="space-y-2.5">
               <div class="flex justify-between items-center border-b border-slate-700 pb-2">
                 <div>
-                  <h4 class="font-bold text-amber-300 text-sm">${cat.name}</h4>
+                  <h4 class="font-bold text-amber-300 text-sm">${escapeHTML(cat.name)}</h4>
                   <p class="text-[10px] text-slate-400">${prodCountInCat} total products</p>
                 </div>
-                <button onclick="deleteMainCategory('${cat.name}', ${prodCountInCat})" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 px-2.5 py-1 rounded-xl text-[10px] font-bold transition">
+                <button onclick="deleteMainCategory(${safeInlineArg(cat.name)}, ${prodCountInCat})" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 px-2.5 py-1 rounded-xl text-[10px] font-bold transition">
                   <i class="fa-solid fa-trash mr-1"></i> Delete All
                 </button>
               </div>
@@ -1270,7 +1270,7 @@ label { color: #f1e5ce; }
       const box = document.getElementById('lowStockAlertBox'), txt = document.getElementById('lowStockListText');
       if (!lowList || lowList.length === 0) { box.classList.add('hidden'); return; }
       box.classList.remove('hidden');
-      txt.innerHTML = lowList.map(p => `<span class="inline-block bg-rose-900/90 border border-rose-500/40 px-2 py-0.5 rounded mr-1.5 mb-1"><b>${p.name}</b> (Only ${p.stockQuantity} left)</span>`).join('');
+      txt.innerHTML = lowList.map(p => `<span class="inline-block bg-rose-900/90 border border-rose-500/40 px-2 py-0.5 rounded mr-1.5 mb-1"><b>${escapeHTML(p.name)}</b> (Only ${Number(p.stockQuantity)||0} left)</span>`).join('');
     }
 
     function renderStockWaitlist() {
@@ -1572,8 +1572,8 @@ label { color: #f1e5ce; }
         const isExpired = c.expiresAt && c.expiresAt > 0 && Date.now() >= c.expiresAt;
         return `
           <div class="bg-slate-800 border ${isExpired ? 'border-rose-500/50 opacity-75' : 'border-slate-700'} p-2.5 rounded-xl flex justify-between items-center text-xs">
-            <div><span class="font-mono font-bold ${isExpired ? 'text-rose-400 line-through' : 'text-amber-400'}">${c.code}</span> <span class="text-emerald-400 font-bold ml-1">${c.discountPercent}% OFF</span><p class="text-[10px] text-slate-400">Min: ₹${c.minSpend || 0} • ${formatRemainingCouponTime(c.expiresAt)}</p></div>
-            <button onclick="deleteCoupon('${c.code}')" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
+            <div><span class="font-mono font-bold ${isExpired ? 'text-rose-400 line-through' : 'text-amber-400'}">${escapeHTML(c.code)}</span> <span class="text-emerald-400 font-bold ml-1">${c.discountPercent}% OFF</span><p class="text-[10px] text-slate-400">Min: ₹${c.minSpend || 0} • ${formatRemainingCouponTime(c.expiresAt)}</p></div>
+            <button onclick="deleteCoupon(${safeInlineArg(c.code)})" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
           </div>`;
       }).join('');
     }
@@ -1612,14 +1612,14 @@ label { color: #f1e5ce; }
       hint.classList.add('hidden');
       grid.innerHTML = currentFormImages.map((src, idx) => `
         <div class="relative rounded-xl overflow-hidden border border-slate-600 aspect-square bg-slate-900">
-          <img src="${src}" class="w-full h-full object-cover">
+          <img src="${src.startsWith('data:image/jpeg;base64,') ? src : safeHttpUrl(src)}" class="w-full h-full object-cover">
           ${idx === 0 ? `<span class="absolute bottom-1 left-1 bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded">MAIN</span>` : ''}
           <button type="button" onclick="removeFormImageAt(${idx})" class="absolute top-1 right-1 bg-rose-600 text-white w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center shadow">&times;</button>
         </div>`).join('');
     }
 
     function updateBannerProductDropdown() {
-      document.getElementById('bannerProductSelect').innerHTML = cachedProducts.map(p => `<option value="${p.id}">${p.name} (₹${p.price})</option>`).join('');
+      document.getElementById('bannerProductSelect').innerHTML = cachedProducts.map(p => `<option value="${Number(p.id)||0}">${escapeHTML(p.name)} (₹${Number(p.price)||0})</option>`).join('');
     }
 
     async function handleAddDealBanner(e) {
@@ -1735,10 +1735,10 @@ label { color: #f1e5ce; }
           const val = Object.prototype.hasOwnProperty.call(sourceMap, vKey) ? sourceMap[vKey] : defaultPerCell;
           rowsHtml += `
             <tr>
-              <td class="p-2 font-bold text-cyan-300">${col}</td>
-              <td class="p-2 font-bold text-amber-300">${sz}</td>
+              <td class="p-2 font-bold text-cyan-300">${escapeHTML(col)}</td>
+              <td class="p-2 font-bold text-amber-300">${escapeHTML(sz)}</td>
               <td class="p-1.5 text-center">
-                <input type="number" min="0" data-vkey="${vKey}" value="${val}" oninput="updateMatrixTotalStock()" class="variant-stock-qty-input w-20 text-center bg-slate-950 border border-slate-600 rounded-lg p-1 text-white font-bold">
+                <input type="number" min="0" data-vkey="${escapeHTML(vKey)}" value="${val}" oninput="updateMatrixTotalStock()" class="variant-stock-qty-input w-20 text-center bg-slate-950 border border-slate-600 rounded-lg p-1 text-white font-bold">
               </td>
             </tr>`;
         });
@@ -1753,7 +1753,7 @@ label { color: #f1e5ce; }
       const p = cachedProducts.find(item => item.id === id);
       if (!p) return;
       document.getElementById('editProdId').value = p.id;
-      document.getElementById('productFormHeading').innerHTML = `<i class="fa-solid fa-pen-to-square mr-1"></i> Edit Product #${p.id}`;
+      document.getElementById('productFormHeading').innerHTML = `<i class="fa-solid fa-pen-to-square mr-1"></i> Edit Product #${Number(p.id)||0}`;
       document.getElementById('cancelEditBtn').classList.remove('hidden');
       document.getElementById('saveProdBtn').innerText = "Update Product";
       document.getElementById('prodName').value = p.name;
