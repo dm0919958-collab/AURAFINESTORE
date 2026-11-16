@@ -1999,7 +1999,7 @@
       const savedPhone = String(localStorage.getItem('aura_verified_phone') || '');
       const token = localStorage.getItem('aura_customer_token') || '';
       const profilePhone = String(document.getElementById('ordPhone')?.value || '').replace(/[^0-9]/g, '');
-      if (token && savedPhone && savedPhone === profilePhone) {
+      if (token && savedPhone && (!profilePhone || savedPhone === profilePhone)) {
         showCheckoutModalAfterCustomerLogin(savedPhone);
         return;
       }
@@ -2125,51 +2125,41 @@
       renderCheckoutItemsSummary();
       document.getElementById('checkoutStep1').classList.add('hidden'); document.getElementById('checkoutStep2').classList.remove('hidden');
       document.body.classList.add('aura-payment-open');
-      document.getElementById('checkoutSasync function handlePlaceOrder(e) {
-      e.preventDefault();
-      const utr = document.getElementById('ordUTR').value.trim();
-      if (!utr) return alert("Please enter 12-digit UTR!");
-      saveCustomerProfileLocal();
-      const btn = document.getElementById('submitOrderBtn'); btn.innerText = "Verifying & Placing Order..."; btn.disabled = true;
-      const mode = document.getElementById('ordPaymentMethod').value;
-      const useAuraCoins = document.getElementById('useAuraCoinsCheckbox')?.checked || false;
-
-      const res = await fetch('/api/orders', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-customer-token': localStorage.getItem('aura_customer_token') || '' },
-        body: JSON.stringify({
-          customerName: document.getElementById('ordName').value, phone: document.getElementById('ordPhone').value, pincode: document.getElementById('ordPincode').value,
-          city: document.getElementById('ordCity').value, state: document.getElementById('ordState').value, houseNoStreet: document.getElementById('addrHouseStreet').value,
-          villageOrCity: document.getElementById('addrVillage').value, postOffice: document.getElementById('addrPostOffice').value, policeStation: document.getElementById('addrPoliceStation').value,
-          landmark: document.getElementById('addrLandmark').value,
-          items: cart.map(i => ({ id: i.id, name: i.name, selectedSize: i.selectedSize, selectedColor: i.selectedColor, qty: i.qty })),
-          couponCode: appliedCouponCode, useAuraCoins, paymentMethod: mode, utrNumber: utr
-        })
-      });
-      const data = await res.json();
-      if (data.success) {
-        // Permanently mark first order completed so welcome popup never shows again
-        localStorage.setItem('aura_first_order_completed', 'true');
-        trackMetaEvent('Purchase', { value: data.verifiedTotal || 0, currency: 'INR', order_id: data.orderId });
-        const coinsMsg = data.coinsEarned > 0 ? `\n🪙 You will receive +${data.coinsEarned} AURA Coins upon delivery!` : '';
-        alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}\nVerified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
-        cart = []; appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0;
-        persistCartLocal(); updateCartUI(); closeCheckoutModal(); loadRecentSalesFeed();
-      } else {
-        if (res.status === 401 && data.requiresOtp) {
-          localStorage.removeItem('aura_customer_token');
-          localStorage.removeItem('aura_verified_phone');
-          btn.disabled = false; btn.innerText = 'Place Order';
-          document.getElementById('checkoutModal').classList.add('hidden');
-          pendingCustomerCheckout = true;
-          openCustomerLoginModal(document.getElementById('ordPhone').value);
-          alert('Your sign-in session has expired. Please verify your WhatsApp number again.');
-          return;
-        }
-        alert(data.message || "Failed to place order.");
+      document.getElementById('checkoutStepIndicator').innerText = "Step 2 of 2: Payment & Offer Verification";
+      document.getElementById('step2SummaryName').innerText = `${name} (${phone})`; document.getElementById('step2SummaryAddr').innerText = `${house}, ${village}, P.O: ${po}, ${city} - ${pin}`;
+      handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
+      // Keep the payment step at the top of the checkout panel (not below the fold).
+      const checkoutPanel = document.querySelector('#checkoutModal > div');
+      if (checkoutPanel) {
+        checkoutPanel.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => checkoutPanel.scrollTo({ top: 0, behavior: 'smooth' }), 120);
       }
-      btn.disabled = false;
     }
-& storeMaxCoinsRedeem > 0) {
+
+    function backToStep1Address() {
+      document.body.classList.remove('aura-payment-open');
+      document.getElementById('checkoutStep2').classList.add('hidden');
+      document.getElementById('checkoutStep1').classList.remove('hidden');
+      const checkoutPanel = document.querySelector('#checkoutModal > div');
+      if (checkoutPanel) checkoutPanel.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function validateAndLookupPincode(pin) {
+      const clean = pin.trim(), err = document.getElementById('pincodeErrorMsg'), succ = document.getElementById('pincodeSuccessMsg');
+      if (clean.length !== 6 || isNaN(clean)) { isPincodeValid = false; err.classList.remove('hidden'); succ.classList.add('hidden'); return; }
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${clean}`); const data = await res.json();
+        if (data && data[0] && data[0].Status === "Success") {
+          isPincodeValid = true; err.classList.add('hidden'); succ.classList.remove('hidden');
+          const po = data[0].PostOffice[0]; document.getElementById('ordCity').value = po.District; document.getElementById('ordState').value = po.State; document.getElementById('addrPostOffice').value = po.Name;
+        } else { isPincodeValid = false; err.classList.remove('hidden'); succ.classList.add('hidden'); }
+      } catch (e) { isPincodeValid = false; }
+    }
+
+    function handlePaymentModeChange(requestedMode) {
+      const preTotals = calculateCartTotals('UPI'), netBagValue = preTotals.netBagValue;
+      const coinsBox = document.getElementById('auraCoinsCheckoutBox');
+      if (customerAvailableCoins > 0 && preTotals.maxRedeemable > 0 && storeMaxCoinsRedeem > 0) {
         document.getElementById('availableCoinsLabel').innerText = customerAvailableCoins;
         document.getElementById('redeemableCoinsAmt').innerText = preTotals.maxRedeemable;
         coinsBox.classList.remove('hidden');
@@ -2233,7 +2223,7 @@
       const useAuraCoins = document.getElementById('useAuraCoinsCheckbox')?.checked || false;
 
       const res = await fetch('/api/orders', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-customer-token': localStorage.getItem('aura_customer_token') || '' },
         body: JSON.stringify({
           customerName: document.getElementById('ordName').value, phone: document.getElementById('ordPhone').value, pincode: document.getElementById('ordPincode').value,
           city: document.getElementById('ordCity').value, state: document.getElementById('ordState').value, houseNoStreet: document.getElementById('addrHouseStreet').value,
@@ -2252,7 +2242,19 @@
         alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}\nVerified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
         cart = []; appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0;
         persistCartLocal(); updateCartUI(); closeCheckoutModal(); loadRecentSalesFeed();
-      } else alert(data.message || "Failed to place order.");
+      } else {
+        if (res.status === 401 && data.requiresOtp) {
+          localStorage.removeItem('aura_customer_token');
+          localStorage.removeItem('aura_verified_phone');
+          btn.disabled = false; btn.innerText = 'Place Order';
+          document.getElementById('checkoutModal').classList.add('hidden');
+          pendingCustomerCheckout = true;
+          openCustomerLoginModal(document.getElementById('ordPhone').value);
+          alert('Your sign-in session has expired. Please verify your WhatsApp number again.');
+          return;
+        }
+        alert(data.message || "Failed to place order.");
+      }
       btn.disabled = false;
     }
 
