@@ -802,6 +802,10 @@ label { color: #f1e5ce; }
         return parsed.href;
       } catch(e) { return ''; }
     }
+    function safeDataImageUrl(value) {
+      const raw = String(value ?? '').trim();
+      return /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(raw) ? escapeHTML(raw) : '';
+    }
 
     let adminToken = sessionStorage.getItem('aura_admin_jwt') || "";
     let cachedCategories = [];
@@ -1619,7 +1623,7 @@ label { color: #f1e5ce; }
       hint.classList.add('hidden');
       grid.innerHTML = currentFormImages.map((src, idx) => `
         <div class="relative rounded-xl overflow-hidden border border-slate-600 aspect-square bg-slate-900">
-          <img src="${src.startsWith('data:image/jpeg;base64,') ? src : safeHttpUrl(src)}" class="w-full h-full object-cover">
+          <img src="${safeDataImageUrl(src) || safeHttpUrl(src)}" class="w-full h-full object-cover">
           ${idx === 0 ? `<span class="absolute bottom-1 left-1 bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded">MAIN</span>` : ''}
           <button type="button" onclick="removeFormImageAt(${idx})" class="absolute top-1 right-1 bg-rose-600 text-white w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center shadow">&times;</button>
         </div>`).join('');
