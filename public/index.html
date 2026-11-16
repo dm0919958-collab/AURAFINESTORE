@@ -172,28 +172,26 @@
   @media(max-width:520px){#checkoutStep2:not(.hidden){padding:16px 14px 24px!important}.checkout-item-row img{width:42px;height:42px}.payment-page-top h3{font-size:18px}}
 
   
-  /* AURA requested luxury refinements — visual-only; existing behavior preserved */
-  #catalogSection{background:linear-gradient(145deg,#071b14 0%,#103b2b 55%,#071b14 100%);border:1px solid #b58b48;border-radius:24px;padding:clamp(18px,3vw,34px)!important;box-shadow:0 18px 48px rgba(5,25,17,.22)}
-  #catalogSection>div:first-child{border-color:rgba(211,177,105,.55)!important}
-  #catalogSection span,#catalogSection p{color:#e6d4a8!important}
-  #catalogSection h3{color:#f5dfaa!important;font-size:clamp(1.55rem,3vw,2.15rem)!important}
-  #catalogSection #countDisplay{color:#f2ca72!important}
-  #catalogSection #categoryTabs button,#catalogSection #subCategoryTabsBar button{font-size:13px!important;font-weight:800!important}
-  #catalogSection #productsGrid .lux-card{background:linear-gradient(155deg,#102b20,#071a13)!important;border:1px solid rgba(205,166,91,.65)!important;color:#fff7e5!important}
-  #catalogSection #productsGrid .lux-card h3,#catalogSection #productsGrid .lux-card h4{color:#f4dfb0!important}
-  #catalogSection #productsGrid .lux-card p{color:#e0d3b8!important}
-  #catalogSection #productsGrid .lux-card .text-amber-400,#catalogSection #productsGrid .lux-card .text-amber-500{color:#f2c76e!important}
-  #catalogSection #productsGrid .lux-card button[title="Save to Wishlist"]{background:#071b14!important;border:2px solid #d4ad62!important;color:#f4d58c!important;box-shadow:0 3px 12px #0008}
-  #catalogSection #productsGrid .lux-card button[title="Save to Wishlist"] i{color:#f4d58c!important}
-  #catalogSection #productsGrid .lux-card span.absolute.top-3\.5.left-3\.5{background:#071b14!important;color:#f5d78d!important;border:1px solid #d4ad62!important}
-  #liveSalesToast{background:linear-gradient(135deg,#071b14 0%,#124632 100%)!important;border:2px solid #d6b36b!important;box-shadow:0 14px 36px rgba(0,0,0,.48)!important;color:#fff!important}
-  #liveSalesToast #liveSaleText{color:#fff!important;font-size:13px!important;font-weight:800!important}
-  #liveSalesToast p:first-child{color:#a9efc5!important;font-size:11px!important}
-  #liveSalesToast p:last-of-type{color:#f4d58c!important;font-weight:700!important}
-  #liveSalesToast button{color:#fff!important}
-  #wishlistCountBadge{border-color:#d4ad62!important}
-  #catalogSection .fa-heart{color:#f4d58c!important}
-  @media(max-width:640px){#catalogSection{border-radius:18px;padding:16px!important}#liveSalesToast{left:10px!important;right:10px!important;max-width:none!important}}
+  /* Readability-only adjustment for the Handpicked Catalog heading */
+  #catalogSection > div:first-child > div:first-child > div:first-child > span {
+    color: #f6d98f !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    letter-spacing: .12em !important;
+  }
+  #catalogSection #currentCategoryHeading {
+    color: #fff4d6 !important;
+    font-size: clamp(1.9rem, 4vw, 2.35rem) !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    text-shadow: 0 2px 10px rgba(0,0,0,.45);
+  }
+  #catalogSection > div:first-child > div:first-child > div:first-child > p {
+    color: #f1eadb !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+  }
+  #catalogSection #countDisplay { color: #ffe3a0 !important; font-weight: 800 !important; }
 
 </style>
 </head>
@@ -1285,7 +1283,7 @@
     function dismissLiveSaleToast(e) { if (e) e.stopPropagation(); const toast = document.getElementById('liveSalesToast'); toast.classList.add('translate-y-24', 'opacity-0'); toast.classList.remove('translate-y-0', 'opacity-100'); }
     function handleLiveSaleToastClick() { if (activeLiveSaleProductId) { dismissLiveSaleToast(); openQuickView(activeLiveSaleProductId); } }
 
-    setTimeout(() => { showRandomLiveSaleToast(); setInterval(showRandomLiveSaleToast, 18000); }, 18000);
+    setTimeout(() => { showRandomLiveSaleToast(); setInterval(showRandomLiveSaleToast, 18000); }, 12000);
 
     function openSizeGuideModal() { document.getElementById('sizeGuideModal').classList.remove('hidden'); }
     function closeSizeGuideModal() { document.getElementById('sizeGuideModal').classList.add('hidden'); }
