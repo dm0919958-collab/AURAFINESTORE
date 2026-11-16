@@ -1398,8 +1398,8 @@ app.post('/api/support/return-request', uploadMemory.fields([{name:'photos',maxC
   if(order.isNonRefundableOrder)return res.status(400).json({success:false,message:'This order is marked non-returnable under the product policy.'});
   const deliveredMs=new Date(order.deliveredAt).getTime(),windowMs=7*24*60*60*1000;
   if(!Number.isFinite(deliveredMs)||deliveredMs>Date.now()||Date.now()-deliveredMs>windowMs)return res.status(400).json({success:false,message:'The 7-day request window for this order has ended.'});
-  const existing=await ReturnRequest.findOne({orderId:order.id,phone}).lean();
-  if(existing)return res.status(409).json({success:false,message:'A request has already been submitted for this order. A second Return or Replacement request is not allowed.'});
+  const existing=await ReturnRequest.findOne({orderId:order.id,phone,status:{$ne:'Failed'}}).lean();
+  if(existing)return res.status(409).json({success:false,message:'A request is already active for this order. A second Return or Replacement request is not allowed.'});
   const photos=(req.files&&req.files.photos)||[],video=(req.files&&req.files.video)||[];
   if(!photos.length)return res.status(400).json({success:false,message:'At least one product or parcel photo is mandatory.'});
   if(!video.length)return res.status(400).json({success:false,message:'A video evidence file is mandatory.'});
@@ -1424,17 +1424,26 @@ app.post('/api/support/return-request/:requestId/cancel',async(req,res)=>{
 });
 
 app.post('/api/admin/returns/list',async(req,res)=>{
- try{if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});const requests=await ReturnRequest.find().sort({createdAt:-1}).limit(300).lean();res.json({success:true,requests});}
+ try{if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});const requests=await ReturnRequest.find({status:{$ne:'Failed'}}).sort({createdAt:-1}).limit(300).lean();res.json({success:true,requests});}
  catch(err){res.status(500).json({success:false,requests:[]});}
 });
 app.patch('/api/admin/returns/:requestId',async(req,res)=>{
  try{
   if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
-  const allowed=['Pending','Return Approved','Replacement Approved','Rejected','Return In Transit','Received','Replacement Processing','Completed','Cancelled'],status=String(req.body.status||'').trim(),adminNote=String(req.body.adminNote||'').trim().slice(0,1000);
+  const allowed=['Pending','Approved','Return Approved','Replacement Approved','Rejected','Return In Transit','Received','Replacement Processing','Completed','Cancelled'],status=String(req.body.status||'').trim(),adminNote=String(req.body.adminNote||'').trim().slice(0,1000);
   if(!allowed.includes(status))return res.status(400).json({success:false,message:'Invalid return status.'});
   const updated=await ReturnRequest.findOneAndUpdate({requestId:req.params.requestId},{$set:{status,adminNote,reviewedAt:new Date()}},{new:true,runValidators:true}).lean();
   if(!updated)return res.status(404).json({success:false,message:'Return request not found.'});res.json({success:true,request:updated});
  }catch(err){res.status(500).json({success:false,message:'Could not update return request.'});}
+});
+
+app.delete('/api/admin/returns/:requestId',async(req,res)=>{
+ try{
+  if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
+  const updated=await ReturnRequest.findOneAndUpdate({requestId:req.params.requestId,status:{$ne:'Failed'}},{$set:{status:'Failed',adminNote:'Request closed by admin. Customer may submit a new request.',reviewedAt:new Date()}},{new:true}).lean();
+  if(!updated)return res.status(404).json({success:false,message:'Request not found or already deleted.'});
+  res.json({success:true,request:updated,message:'Request removed from Admin list. Customer can submit again.'});
+ }catch(err){res.status(500).json({success:false,message:'Could not delete return request.'});}
 });
 
 app.post('/api/admin/support/tickets', async (req, res) => {
