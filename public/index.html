@@ -1873,7 +1873,7 @@
         label.innerHTML = `🎉 অভিনন্দন! আপনি ফ্রি <b class="text-emerald-300">${escapeHTML(storeFreeGiftTitle)}</b> আনলক করেছেন!`; pctLabel.innerText = "UNLOCKED ✓"; bar.style.width = "100%";
       } else {
         const remaining = storeFreeGiftThreshold - netBagValue, pct = Math.min(99, Math.round((netBagValue / storeFreeGiftThreshold) * 100));
-        label.innerHTML = `আর মাত্র <b class="text-amber-300">₹${remaining}</b> কেনাকাটা করলে ফ্রি <b class="text-emerald-300">${storeFreeGiftTitle}</b> পাবেন!`; pctLabel.innerText = `${pct}%`; bar.style.width = `${pct}%`;
+        label.innerHTML = `আর মাত্র <b class="text-amber-300">₹${Number(remaining)||0}</b> কেনাকাটা করলে ফ্রি <b class="text-emerald-300">${escapeHTML(storeFreeGiftTitle)}</b> পাবেন!`; pctLabel.innerText = `${pct}%`; bar.style.width = `${pct}%`;
       }
     }
 
@@ -2193,7 +2193,7 @@
           ${o.awbNumber ? `<p class="text-[11px] text-cyan-300 font-mono">Courier: ${escapeHTML(courier)} | AWB: <b>${escapeHTML(o.awbNumber)}</b></p>` : ''}
           <div class="flex flex-wrap gap-2 pt-1">
             <a href="/api/orders/${encodeURIComponent(String(o.id))}/invoice" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px]"><i class="fa-solid fa-file-pdf"></i> Download Invoice</a>
-            ${o.awbNumber ? `<a href="${safeHttpUrl(trackFn(o.awbNumber))}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-location-dot"></i> Track on ${courier}</a>` : ''}
+            ${o.awbNumber ? `<a href="${safeHttpUrl(trackFn(o.awbNumber))}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-location-dot"></i> Track on ${escapeHTML(courier)}</a>` : ''}
             ${o.deliverySlipFile ? `<a href="${safeHttpUrl(o.deliverySlipFile)}" download="Slip_${escapeHTML(o.id)}" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-download"></i> Delivery Slip</a>` : ''}
           </div>
         </div>`;
