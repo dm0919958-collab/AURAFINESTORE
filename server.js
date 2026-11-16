@@ -1879,17 +1879,21 @@ app.post('/api/orders', async (req, res) => {
       return res.status(400).json({ success: false, message: "Please enter a valid 10-digit Indian mobile number!" });
     }
 
-    // Every order must have an active WhatsApp-verified customer session.
-    if (!isOtpGatewayConfigured()) {
-      return res.status(503).json({ success: false, message: "WhatsApp verification is not available yet. Please try again later." });
-    }
-    const authedPhone = getAuthenticatedCustomerPhone(req);
-    if (authedPhone !== cleanPhone) {
-      return res.status(401).json({
-        success: false,
-        requiresOtp: true,
-        message: "Please verify your mobile number with OTP before placing the order."
-      });
+    // Temporary guest checkout is explicitly enabled by the customer UI while WhatsApp approval is pending.
+    // Remove this bypass after WhatsApp OTP is approved and configured.
+    const skipOtpForThisOrder = req.body.skipOtp === true;
+    if (!skipOtpForThisOrder) {
+      if (!isOtpGatewayConfigured()) {
+        return res.status(503).json({ success: false, message: "WhatsApp verification is not available yet. Please try again later." });
+      }
+      const authedPhone = getAuthenticatedCustomerPhone(req);
+      if (authedPhone !== cleanPhone) {
+        return res.status(401).json({
+          success: false,
+          requiresOtp: true,
+          message: "Please verify your mobile number with OTP before placing the order."
+        });
+      }
     }
 
     const cleanUtr = String(utrNumber || "").trim();
