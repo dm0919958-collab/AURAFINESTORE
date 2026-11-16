@@ -204,7 +204,7 @@ label { color: #f1e5ce; }
         <a href="/" target="_blank" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs border border-slate-700">View Store &rarr;</a>
         <button onclick="logout()" class="bg-rose-600/20 text-rose-400 hover:bg-rose-600/30 px-4 py-2 rounded-xl text-xs border border-rose-600/30 font-semibold">Logout</button>
       </div>
-    </header><div id="auraAdminSidebar"><div class="aura-brand">✿ AURA <small>FINE STORE • ADMIN</small></div><nav aria-label="Admin sections"><button type="button" class="aura-all-view-btn" data-admin-view="ALL"><i class="fa-solid fa-layer-group"></i> All Sections</button><a href="#auraAdminOverview"><i class="fa-solid fa-gauge-high"></i> Overview</a><a href="#adminCatalogSection"><i class="fa-solid fa-box"></i> Products</a><a href="#auraAdminOrdersSection"><i class="fa-solid fa-truck-fast"></i> Orders</a><a href="#repeatCustomersSection"><i class="fa-solid fa-users"></i> Customers & Coins</a><a href="#salesAnalyticsSection"><i class="fa-solid fa-chart-line"></i> Sales Analytics</a><a href="#auraAdminSecuritySection"><i class="fa-solid fa-shield-halved"></i> Admin Security</a><a href="#supportDeskSection"><i class="fa-solid fa-headset"></i> Support Desk</a><a href="#auraAdminInvoicesSection" onclick="setTimeout(renderAdminInvoices,80)"><i class="fa-solid fa-file-invoice"></i> Invoices</a><a href="#storeSettingsSection"><i class="fa-solid fa-sliders"></i> Store Settings</a><a href="#categoryManagerSection"><i class="fa-solid fa-layer-group"></i> Categories</a><a href="#reviewModerationSection"><i class="fa-solid fa-star"></i> Reviews</a><a href="#stockWaitlistSection"><i class="fa-solid fa-bell"></i> Waitlist</a><a href="#abandonedCartsSection"><i class="fa-solid fa-cart-arrow-down"></i> Abandoned Carts</a><a href="#firstOrderPopupSection"><i class="fa-solid fa-gift"></i> Welcome Popup</a><a href="#couponManagerSection"><i class="fa-solid fa-ticket"></i> Coupons</a><a href="#bannerManagerSection"><i class="fa-solid fa-panorama"></i> Banners</a></nav><div class="aura-side-note"><i class="fa-solid fa-crown"></i><br><b>AURA PREMIUM ADMIN</b><br>Manage with Excellence</div></div>
+    </header><div id="auraAdminSidebar"><div class="aura-brand">✿ AURA <small>FINE STORE • ADMIN</small></div><nav aria-label="Admin sections"><button type="button" class="aura-all-view-btn" data-admin-view="ALL"><i class="fa-solid fa-layer-group"></i> All Sections</button><a href="#auraAdminOverview"><i class="fa-solid fa-gauge-high"></i> Overview</a><a href="#adminCatalogSection"><i class="fa-solid fa-box"></i> Products</a><a href="#auraAdminOrdersSection"><i class="fa-solid fa-truck-fast"></i> Orders</a><a href="#repeatCustomersSection"><i class="fa-solid fa-users"></i> Customers & Coins</a><a href="#salesAnalyticsSection"><i class="fa-solid fa-chart-line"></i> Sales Analytics</a><a href="#auraAdminSecuritySection"><i class="fa-solid fa-shield-halved"></i> Admin Security</a><a href="#supportDeskSection"><i class="fa-solid fa-headset"></i> Support Desk</a><a href="#adminReturnsSection"><i class="fa-solid fa-rotate-left"></i> Returns <span id="adminReturnsBadge" class="ml-auto rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] text-amber-200">0</span></a><a href="#auraAdminInvoicesSection" onclick="setTimeout(renderAdminInvoices,80)"><i class="fa-solid fa-file-invoice"></i> Invoices</a><a href="#storeSettingsSection"><i class="fa-solid fa-sliders"></i> Store Settings</a><a href="#categoryManagerSection"><i class="fa-solid fa-layer-group"></i> Categories</a><a href="#reviewModerationSection"><i class="fa-solid fa-star"></i> Reviews</a><a href="#stockWaitlistSection"><i class="fa-solid fa-bell"></i> Waitlist</a><a href="#abandonedCartsSection"><i class="fa-solid fa-cart-arrow-down"></i> Abandoned Carts</a><a href="#firstOrderPopupSection"><i class="fa-solid fa-gift"></i> Welcome Popup</a><a href="#couponManagerSection"><i class="fa-solid fa-ticket"></i> Coupons</a><a href="#bannerManagerSection"><i class="fa-solid fa-panorama"></i> Banners</a></nav><div class="aura-side-note"><i class="fa-solid fa-crown"></i><br><b>AURA PREMIUM ADMIN</b><br>Manage with Excellence</div></div>
 
     <!-- Low Stock Alert Banner -->
     <div id="lowStockAlertBox" class="hidden bg-rose-950/70 border border-rose-500/50 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -754,6 +754,12 @@ label { color: #f1e5ce; }
       </div>
     </div>
 
+    <section id="adminReturnsSection" class="bg-slate-900 border-2 border-amber-500/30 p-5 rounded-3xl space-y-4 shadow-xl">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3"><div><h3 class="text-lg font-bold text-amber-300"><i class="fa-solid fa-rotate-left mr-2"></i>Returns & Refund Requests</h3><p class="text-xs text-slate-400">Review requests. Photos and videos are delivered to Telegram, not stored in website file storage.</p></div><button onclick="loadAdminReturnRequests(true)" class="rounded-xl bg-amber-500 px-4 py-2 text-xs font-extrabold text-slate-950"><i class="fa-solid fa-rotate mr-1"></i> Refresh</button></div>
+      <div id="adminReturnStats" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+      <div id="adminReturnRequestsList" class="grid grid-cols-1 xl:grid-cols-2 gap-4 max-h-[680px] overflow-y-auto pr-1"><p class="col-span-full py-8 text-center text-xs text-slate-500">Loading return requests…</p></div>
+    </section>
+
     <!-- Customer Orders & Logistics Table WITH BULK CHECKBOXES & BULK 4x6 LABEL PRINT -->
     <div id="auraAdminOrdersSection" class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
@@ -856,6 +862,7 @@ label { color: #f1e5ce; }
     let cachedCoupons = [];
     let cachedBanners = [];
     let cachedSupportTickets = [];
+    let cachedReturnRequests = [];
     let currentFormImages = [];
     let firstOrderPopupPendingImg = "";
     let activeOrderStatusFilter = 'ALL';
@@ -1287,7 +1294,7 @@ label { color: #f1e5ce; }
     if (adminToken) {
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('dashboardContent').classList.remove('hidden');
-      loadAdminDashboard(true); loadAdminSupportTickets(true); startAdminLiveSync(); updateAuraAdminSecurityStatus();
+      loadAdminDashboard(true); loadAdminSupportTickets(true); loadAdminReturnRequests(true); startAdminLiveSync(); updateAuraAdminSecurityStatus();
     }
 
     async function attemptLogin() {
@@ -1299,7 +1306,7 @@ label { color: #f1e5ce; }
         if (data.success && data.token) {
           adminToken = data.token; sessionStorage.setItem('aura_admin_jwt', data.token); errEl.classList.add('hidden');
           document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('dashboardContent').classList.remove('hidden');
-          loadAdminDashboard(true); loadAdminSupportTickets(true); startAdminLiveSync(); updateAuraAdminSecurityStatus();
+          loadAdminDashboard(true); loadAdminSupportTickets(true); loadAdminReturnRequests(true); startAdminLiveSync(); updateAuraAdminSecurityStatus();
         } else { errEl.innerText = data.message || "Incorrect PIN!"; errEl.classList.remove('hidden'); }
       } catch (e) {}
     }
@@ -1310,7 +1317,7 @@ label { color: #f1e5ce; }
         if (!adminToken) return;
         const activeTag = document.activeElement ? document.activeElement.tagName : '';
         if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
-        loadAdminOrdersOnlySilently(); loadAdminSupportTickets(false); renderAdminCoupons();
+        loadAdminOrdersOnlySilently(); loadAdminSupportTickets(false); loadAdminReturnRequests(false); renderAdminCoupons();
       }, 5000);
     }
 
@@ -1521,6 +1528,28 @@ label { color: #f1e5ce; }
       const res = await fetch(`/api/admin/products/${productId}/reviews/${reviewId}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (handleUnauthorized(res)) return;
       if ((await res.json()).success) loadAdminDashboard(true);
+    }
+
+
+    async function loadAdminReturnRequests(force=false){
+      try{const res=await fetch('/api/admin/returns/list?t='+Date.now(),{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({})});if(handleUnauthorized(res))return;const data=await res.json();if(!data.success)return;const hash=JSON.stringify(data.requests||[]);if(force||hash!==window._lastReturnRequestsHash){window._lastReturnRequestsHash=hash;cachedReturnRequests=data.requests||[];document.getElementById('adminReturnsBadge').innerText=cachedReturnRequests.filter(r=>r.status==='Pending').length;renderAdminReturnRequests();}}catch(e){}
+    }
+    function renderAdminReturnRequests(){
+      const list=document.getElementById('adminReturnRequestsList'),statuses=['Pending','Approved','Rejected','Return In Transit','Received','Refund Processing','Refunded'];
+      const stats=[['Total',cachedReturnRequests.length],['Pending',cachedReturnRequests.filter(r=>r.status==='Pending').length],['Approved',cachedReturnRequests.filter(r=>r.status==='Approved').length],['Refunded',cachedReturnRequests.filter(r=>r.status==='Refunded').length]];
+      document.getElementById('adminReturnStats').innerHTML=stats.map(([n,v])=>`<div class="rounded-xl border border-slate-700 bg-slate-800 p-3"><p class="text-[10px] uppercase text-slate-400">${n}</p><p class="text-xl font-extrabold text-amber-300">${v}</p></div>`).join('');
+      if(!cachedReturnRequests.length){list.innerHTML='<p class="col-span-full py-8 text-center text-xs text-slate-500">No return requests yet.</p>';return;}
+      list.innerHTML=cachedReturnRequests.map(r=>`<article class="rounded-2xl border border-amber-500/25 bg-slate-800/90 p-4 space-y-3 text-xs shadow">
+        <div class="flex items-start justify-between gap-3 border-b border-slate-700 pb-2"><div><p class="font-mono font-extrabold text-amber-300">${escapeHTML(r.requestId)} • Order #${escapeHTML(r.orderId)}</p><p class="mt-1 font-bold text-white">${escapeHTML(r.customerName)} • ${escapeHTML(r.phone)}</p><p class="mt-1 text-[10px] text-slate-400">${escapeHTML(r.createdAtStr||'')}</p></div><span class="rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-bold text-amber-200">${escapeHTML(r.status)}</span></div>
+        <div class="rounded-xl border border-slate-700 bg-slate-900 p-3"><p class="text-[10px] font-bold uppercase text-rose-300">Reason: ${escapeHTML(r.reason)}</p><p class="mt-1 text-slate-200">${escapeHTML(r.details)}</p><p class="mt-2 text-[10px] text-slate-400">Products: ${escapeHTML(r.productSummary||'—')}</p></div>
+        <div class="rounded-xl border border-sky-500/20 bg-sky-950/20 p-2.5 text-[10px] text-sky-200"><i class="fa-brands fa-telegram mr-1"></i> Evidence sent to Telegram • not stored in website storage</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2"><div><label class="mb-1 block text-[10px] font-bold text-slate-300">Update Status</label><select id="return_status_${escapeHTML(r.requestId)}" class="w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-white">${statuses.map(s=>`<option value="${s}" ${r.status===s?'selected':''}>${s}</option>`).join('')}</select></div><div><label class="mb-1 block text-[10px] font-bold text-slate-300">Admin Note</label><input id="return_note_${escapeHTML(r.requestId)}" value="${escapeHTML(r.adminNote||'')}" maxlength="1000" placeholder="Reason / return instructions / refund reference" class="w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-white"></div></div>
+        <div class="flex flex-wrap items-center justify-between gap-2"><p class="text-[10px] text-slate-400">Set “Refunded” only after the money has actually been sent.</p><button onclick="saveAdminReturnStatus(${safeInlineArg(r.requestId)})" class="rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-2 font-extrabold text-slate-950">Save Update</button></div>
+      </article>`).join('');
+    }
+    async function saveAdminReturnStatus(requestId){
+      const status=document.getElementById('return_status_'+requestId).value,adminNote=document.getElementById('return_note_'+requestId).value.trim();
+      const res=await fetch('/api/admin/returns/'+encodeURIComponent(requestId),{method:'PATCH',headers:getAuthHeaders(),body:JSON.stringify({status,adminNote})});if(handleUnauthorized(res))return;const data=await res.json();if(!res.ok||!data.success)return alert(data.message||'Could not update return request.');alert('Return request updated.');loadAdminReturnRequests(true);
     }
 
     async function loadAdminSupportTickets(force = false) {
@@ -2035,7 +2064,7 @@ label { color: #f1e5ce; }
       const viewIds=[
         'auraAdminOverview','adminCatalogSection','auraAdminOrdersSection',
         'repeatCustomersSection','salesAnalyticsSection','auraAdminSecuritySection',
-        'supportDeskSection','auraAdminInvoicesSection','storeSettingsSection',
+        'supportDeskSection','adminReturnsSection','auraAdminInvoicesSection','storeSettingsSection',
         'categoryManagerSection','reviewModerationSection','stockWaitlistSection',
         'abandonedCartsSection','firstOrderPopupSection','couponManagerSection',
         'bannerManagerSection'
