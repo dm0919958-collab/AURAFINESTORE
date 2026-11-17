@@ -579,7 +579,7 @@ function generateOrderInvoicePDF(order) {
 
       doc.fillColor('#111827').fontSize(24).font('Helvetica-Bold').text('AURA FINE STORE', 40, 52);
       doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text('Premium Lifestyle, Ethnic Wear & Luxury Collections', 40, 78);
-      doc.fillColor('#6b7280').fontSize(8).text('Bolpur, Birbhum, West Bengal - 731204 | Support: +91 6289145092', 40, 90);
+      doc.fillColor('#6b7280').fontSize(8).text('Bolpur, Birbhum, West Bengal - 731235 | Support: +91 6289145092', 40, 90);
 
       doc.roundedRect(365, 48, 190, 52, 6).strokeColor('#e5e7eb').lineWidth(1).stroke();
       const isDelivered = order.status === 'Delivered';
@@ -601,7 +601,7 @@ function generateOrderInvoicePDF(order) {
       doc.roundedRect(305, 126, 250, 96, 6).strokeColor('#e5e7eb').stroke();
       doc.fillColor('#92400e').fontSize(8.5).font('Helvetica-Bold').text('DISPATCH LOGISTICS:', 315, 136);
       doc.fillColor('#111827').fontSize(9.5).font('Helvetica-Bold').text('AURA Central Logistics Hub', 315, 150);
-      doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text('Bolpur, Birbhum, WB - 731204', 315, 164);
+      doc.fillColor('#374151').fontSize(8.5).font('Helvetica').text('Bolpur, Birbhum, WB - 731235', 315, 164);
       doc.fillColor('#374151').fontSize(8.5).text(`Courier Partner: ${order.courierPartner || 'Delhivery'}`, 315, 177);
       doc.fillColor('#4b5563').fontSize(8).text(`AWB / Tracking: ${order.awbNumber ? order.awbNumber : 'Post-Packing Dispatch'}`, 315, 190);
       doc.fillColor('#374151').fontSize(8).font('Helvetica-Bold').text(`Order Status: ${order.status || 'Pending Verification'}`, 315, 203);
@@ -735,7 +735,7 @@ function drawThermalLabelPage(doc, order) {
   const gridY = 200;
   doc.rect(15, gridY, 108, 34).lineWidth(1.5).strokeColor('#000000').stroke();
   doc.fontSize(7).font('Helvetica-Bold').text('ROUTING PINCODE', 19, gridY + 4);
-  doc.fontSize(15).font('Helvetica-Bold').text(String(order.pincode || '731204'), 19, gridY + 14);
+  doc.fontSize(15).font('Helvetica-Bold').text(String(order.pincode || '731235'), 19, gridY + 14);
 
   if (isCOD) {
     doc.rect(128, gridY, 145, 34).fill('#000000');
@@ -772,7 +772,7 @@ function drawThermalLabelPage(doc, order) {
 
   doc.fontSize(7.5).font('Helvetica-Bold').text('RETURN / SHIPPER ADDRESS (IF UNDELIVERED):', 15, 332);
   doc.fontSize(8.5).font('Helvetica-Bold').text('AURA Fine Store Central Dispatch Hub', 15, 343);
-  doc.fontSize(7.5).font('Helvetica').text('Bolpur, Birbhum, West Bengal - 731204, India', 15, 354);
+  doc.fontSize(7.5).font('Helvetica').text('Bolpur, Birbhum, West Bengal - 731235, India', 15, 354);
   doc.font('Helvetica-Bold').text('Helpline: +91 6289145092 | Weight: 0.50 Kg', 15, 365);
 
   doc.rect(9, 381, 270, 42).fill('#000000');
