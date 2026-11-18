@@ -1693,14 +1693,65 @@
       return selected.length ? selected : ((prod && Array.isArray(prod.images)) ? prod.images : []);
     }
 
+    // Customer-friendly search: match product names, descriptions, categories and common
+    // Bengali/English spellings without requiring customers to know the admin product title.
+    const SEARCH_SYNONYM_GROUPS = [
+      ['শাড়ি','শাড়ি','saree','sari','sharee','sharee'],
+      ['টি শার্ট','টি-শার্ট','টিশার্ট','t shirt','t-shirt','tshirt','tee','tees'],
+      ['প্যান্ট','ট্রাউজার','pant','pants','trouser','trousers'],
+      ['জিন্স','জিনস','jeans','denim'],
+      ['কুর্তি','কুর্তা','kurti','kurta'],
+      ['শার্ট','shirt','shirts'],
+      ['জুতো','জুতা','জুত','shoe','shoes','footwear'],
+      ['ব্যাগ','bag','bags','handbag'],
+      ['ঘড়ি','ঘড়ি','watch','watches'],
+      ['গয়না','গয়না','জুয়েলারি','জুয়েলারি','jewellery','jewelry'],
+      ['কসমেটিক','প্রসাধনী','cosmetic','cosmetics','makeup'],
+      ['বাচ্চাদের','শিশু','kids','kid','children','baby'],
+      ['মহিলা','মেয়েদের','মেয়েদের','women','woman','ladies','女'],
+      ['পুরুষ','ছেলেদের','men','man','mens']
+    ];
+    const SEARCH_FILLER_WORDS = new Set(['দেখাও','দেখতে','চাই','দেখব','খুঁজছি','খুঁজুন','পণ্য','প্রোডাক্ট','product','products','show','me','please','for','the','একটা','কিছু','কোনো']);
+    function normalizeStoreSearch(value) {
+      return String(value || '').toLocaleLowerCase('bn').normalize('NFKC')
+        .replace(/[‐‑‒–—−]/g, '-')
+        .replace(/[^p{L}p{N}]+/gu, ' ').trim().replace(/s+/g, ' ');
+    }
+    function expandStoreSearchToken(token) {
+      const normalized = normalizeStoreSearch(token);
+      const compact = normalized.replace(/s/g, '');
+      const matches = SEARCH_SYNONYM_GROUPS.find(group =>
+        group.some(word => {
+          const n = normalizeStoreSearch(word);
+          return n === normalized || n.replace(/s/g, '') === compact;
+        })
+      );
+      return matches ? matches.map(normalizeStoreSearch) : [normalized];
+    }
+    function productMatchesStoreSearch(product, rawQuery) {
+      const query = normalizeStoreSearch(rawQuery);
+      if (!query) return true;
+      const searchable = normalizeStoreSearch([
+        product.name, product.description, product.category, product.mainCategory,
+        product.brand, product.tags, product.subCategory, product.keywords
+      ].filter(Boolean).join(' '));
+      const searchableCompact = searchable.replace(/\s/g, '');
+      const tokens = query.split(' ').filter(word => word.length > 1 && !SEARCH_FILLER_WORDS.has(word));
+      if (!tokens.length) return true;
+      return tokens.every(token => expandStoreSearchToken(token).some(alias => {
+        if (!alias) return false;
+        return searchable.includes(alias) || searchableCompact.includes(alias.replace(/\s/g, ''));
+      }));
+    }
+
     function renderStore() {
-      const search = (document.getElementById('searchInput')?.value || document.getElementById('mobileSearchInput')?.value || "").toLowerCase();
+      const search = document.getElementById('searchInput')?.value || document.getElementById('mobileSearchInput')?.value || "";
       const priceFilter = document.getElementById('priceRangeFilter')?.value || 'all';
       const sortMode = document.getElementById('sortProductsSelect')?.value || 'newest';
 
       let filtered = allProducts.filter(p => {
-        const matchesSearch = search.length > 0
-          ? (p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search) || (p.category && p.category.toLowerCase().includes(search)) || (p.mainCategory && p.mainCategory.toLowerCase().includes(search)))
+        const matchesSearch = search.trim().length > 0
+          ? productMatchesStoreSearch(p, search)
           : (activeMainSection === 'Home' ? p.showOnHome === true : (p.mainCategory === activeMainSection && (activeSubCategory === 'All' || p.category === activeSubCategory)));
         if (!matchesSearch) return false;
         if (priceFilter === 'under500' && p.price >= 500) return false;
