@@ -216,7 +216,62 @@
   .checkout-item-row{position:relative;padding-right:72px!important}
   .checkout-item-remove{position:absolute;right:0;top:50%;transform:translateY(-50%);border:1px solid #e5b8b8;background:#fff1f1;color:#a52d36;border-radius:8px;padding:6px 8px;font-size:10px;font-weight:800}
 
-</style>
+
+  /* AURA responsive storefront: compact Flipkart-style product cards */
+  #productsGrid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:12px!important;
+    align-items:stretch;
+  }
+  #productsGrid>.lux-card{min-width:0;max-width:100%;border-radius:14px!important;overflow:hidden}
+  #productsGrid>.lux-card>div:first-child{aspect-ratio:1/1;min-height:0}
+  #productsGrid>.lux-card>div:first-child>span{top:7px!important;left:7px!important;max-width:72%;font-size:8px!important;padding:4px 6px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #productsGrid>.lux-card>div:first-child>button{top:6px!important;right:6px!important;width:28px!important;height:28px!important}
+  #productsGrid>.lux-card>div:first-child>span:nth-last-child(1){right:6px!important;bottom:6px!important;font-size:8px!important;padding:3px 5px!important}
+  #productsGrid>.lux-card>div:nth-child(2){padding:9px!important;gap:7px!important;min-width:0}
+  #productsGrid>.lux-card>div:nth-child(2)>div:first-child{min-width:0}
+  #productsGrid>.lux-card>div:nth-child(2)>div:first-child>div:first-child{font-size:9px!important;gap:4px!important}
+  #productsGrid>.lux-card h3{font-family:'Plus Jakarta Sans',sans-serif!important;font-size:11px!important;line-height:1.35!important;margin-top:4px!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal}
+  #productsGrid>.lux-card p{display:none!important}
+  #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2){padding-top:7px!important;gap:7px!important}
+  #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2)>div:first-child{gap:3px!important;flex-wrap:wrap}
+  #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2)>div:first-child>div>span:first-child{font-size:15px!important;line-height:1.2}
+  #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2)>div:first-child>div>span:nth-child(2){font-size:9px!important;margin-left:3px!important}
+  #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2)>div:first-child>span{font-size:8px!important;padding:3px 5px!important}
+  #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2) button{min-width:0!important;min-height:32px!important;padding:7px 5px!important;font-size:9px!important;line-height:1.25!important;border-radius:8px!important}
+  #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2) .grid{gap:5px!important}
+  #recentlyViewedGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  @media(min-width:480px){
+    #productsGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important}
+    #productsGrid>.lux-card>div:nth-child(2){padding:11px!important}
+  }
+  @media(min-width:768px){
+    #productsGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:20px!important}
+    #productsGrid>.lux-card{border-radius:20px!important}
+    #productsGrid>.lux-card>div:nth-child(2){padding:16px!important;gap:11px!important}
+    #productsGrid>.lux-card h3{font-size:14px!important}
+    #productsGrid>.lux-card p{display:block!important}
+    #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2)>div:first-child>div>span:first-child{font-size:21px!important}
+    #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2) button{font-size:11px!important;min-height:40px!important}
+  }
+  @media(min-width:1200px){
+    #productsGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:22px!important}
+  }
+  @media(max-width:360px){
+    #productsGrid{gap:8px!important}
+    #productsGrid>.lux-card>div:nth-child(2){padding:7px!important}
+    #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2) button{font-size:8px!important}
+  }
+  /* Keep the expanded product quick-view comfortable on narrow screens */
+  @media(max-width:520px){
+    #quickViewModal{padding:8px!important;align-items:flex-start!important}
+    #quickViewModal>div{width:100%!important;max-height:96dvh!important;padding:14px!important;border-radius:18px!important}
+    #quickViewModal>div>button:first-child{top:10px!important;right:12px!important;z-index:3}
+    #quickViewModal>div>.grid{gap:13px!important}
+    #qvMainImage{object-fit:contain!important}
+  }
+
+  </style>
 </head>
 <body class="selection:bg-amber-500 selection:text-stone-950 relative min-h-screen flex flex-col justify-between">
   <div>
