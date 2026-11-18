@@ -1735,7 +1735,7 @@
                   <span class="text-[10px] text-emerald-300 font-extrabold bg-emerald-950 px-2.5 py-0.5 rounded-full">${discountPct}% OFF</span>
                 </div>
                 ${isOut ? `<button onclick="openQuickView(${Number(p.id)||0})" class="w-full bg-purple-600/30 hover:bg-purple-600 text-purple-200 hover:text-white border border-purple-500/40 py-2.5 rounded-xl text-xs font-extrabold transition"><i class="fa-solid fa-bell mr-1"></i> Sold Out • Notify Me</button>`
-                : `<div class="grid grid-cols-2 gap-2"><button onclick="openQuickView(${Number(p.id)||0})" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700 py-2.5 rounded-xl text-xs font-bold">Add</button><button onclick="openQuickView(${Number(p.id)||0})" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-2.5 rounded-xl text-xs font-extrabold">⚡ View & Buy • ₹${Number(p.price)||0}</button></div>`}
+                : `<div class="grid grid-cols-2 gap-2"><button onclick="openQuickView(${Number(p.id)||0})" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700 py-2.5 rounded-xl text-xs font-bold">Add</button><button onclick="openQuickView(${Number(p.id)||0})" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-2.5 rounded-xl text-xs font-extrabold">⚡ Instant Checkout • ₹${Number(p.price)||0}</button></div>`}
               </div>
             </div>
           </div>`;
