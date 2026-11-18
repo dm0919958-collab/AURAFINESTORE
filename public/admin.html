@@ -1847,7 +1847,8 @@ label { color: #f1e5ce; }
       e.preventDefault();
       const editId = document.getElementById('editProdId').value, btn = document.getElementById('saveProdBtn');
       btn.innerText = "Saving..."; btn.disabled = true;
-      if (!currentFormImages.length) { btn.innerText = editId ? "Update Product" : "Publish to Store"; btn.disabled = false; return alert("Add at least 1 product photo!"); }
+      const hasColorPhotos = Object.values(currentColorImages).some(photos => Array.isArray(photos) && photos.length > 0);
+      if (!currentFormImages.length && !hasColorPhotos) { btn.innerText = editId ? "Update Product" : "Publish to Store"; btn.disabled = false; return alert("Add at least 1 product photo or a photo under any color!"); }
       const sizesRaw = document.getElementById('prodSizes').value, colorsRaw = document.getElementById('prodColors').value;
       const parsedSizes = sizesRaw ? sizesRaw.split(',').map(s => s.split(':')[0].trim()).filter(Boolean) : [];
       if (!parsedSizes.length) parsedSizes.push("Standard");
