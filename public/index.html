@@ -397,39 +397,33 @@
 
 </style>
 
-<style id="aura-final-black-gold-fix">
-  html,body{background:#050505!important;background-image:none!important;color:#f7f0df!important}
-  body{background-color:#050505!important}
-  body:before{background:radial-gradient(ellipse at 50% 0%,rgba(176,125,24,.13),transparent 42%)!important;z-index:0!important}
-  body>div:first-of-type{position:relative;z-index:1}
-  body>div:first-of-type>section,
-  body>div:first-of-type>main,
-  #catalogSection{background:transparent!important}
-  .glass-nav{background:rgba(0,0,0,.97)!important}
-  #catalogSection .lux-card,
-  #productsGrid>.lux-card{background:#0b0b0b!important;border:1px solid rgba(226,178,58,.62)!important;box-shadow:0 8px 26px rgba(0,0,0,.55)!important}
-  #productsGrid>.lux-card>div:first-child{background:#f4f0e7!important;border-radius:0!important;overflow:hidden!important}
-  #productsGrid>.lux-card>div:first-child:before,
-  #productsGrid>.lux-card>div:first-child:after{content:none!important;display:none!important}
-  #productsGrid>.lux-card>div:first-child>img{
-    display:block!important;position:static!important;width:100%!important;height:100%!important;
-    border-radius:0!important;clip-path:none!important;mask:none!important;-webkit-mask:none!important;
-    opacity:1!important;filter:none!important;mix-blend-mode:normal!important;transform:none!important;
-    object-fit:cover!important;background:#f4f0e7!important
+
+<style id="aura-restore-warm-bg-remove-product-shapes">
+  /* Restore the original warm charcoal background; do not force a flat black page. */
+  html,body{background:radial-gradient(ellipse at top,#29211d 0%,#161318 45%,#0b0c12 100%)!important;color:#f5f5f4!important}
+  body:before{background:radial-gradient(ellipse at 12% 0%,rgba(215,169,59,.12),transparent 38%),radial-gradient(ellipse at 90% 12%,rgba(232,190,91,.08),transparent 32%)!important}
+  /* Product photos must render as plain images, with no oval, tint, mask or overlay. */
+  #productsGrid>.lux-card>div:first-child{
+    position:relative!important;isolation:isolate!important;overflow:hidden!important;
+    background:#f5f2eb!important;background-image:none!important;
   }
-  #productsGrid>.lux-card h3{color:#f6e6c3!important}
-  #productsGrid>.lux-card p{color:#c7bda9!important}
-  #productsGrid>.lux-card .text-stone-100,
-  #productsGrid>.lux-card .text-stone-200{color:#f5ead4!important}
-  #productsGrid>.lux-card .text-stone-400,
-  #productsGrid>.lux-card .text-stone-500{color:#b9ad98!important}
-  #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2){border-color:rgba(226,178,58,.55)!important}
-  #productsGrid>.lux-card button{border-radius:10px!important}
-  #catalogSection .bg-stone-900\/75{background:#0b0b0b!important}
-  #catalogSection #currentCategoryHeading{color:#f3cc65!important}
-  footer{background:#050505!important;color:#f6e8c9!important;border-top:1px solid #9c7427!important}
-  ::-webkit-scrollbar-track{background:#050505!important}
-  ::-webkit-scrollbar-thumb{background:#b88a2c!important}
+  #productsGrid>.lux-card>div:first-child::before,
+  #productsGrid>.lux-card>div:first-child::after,
+  #productsGrid>.lux-card>div:first-child>img::before,
+  #productsGrid>.lux-card>div:first-child>img::after{
+    content:none!important;display:none!important;visibility:hidden!important;opacity:0!important;
+    background:none!important;box-shadow:none!important;
+  }
+  #productsGrid>.lux-card>div:first-child>img{
+    display:block!important;position:relative!important;inset:auto!important;z-index:1!important;
+    width:100%!important;height:100%!important;object-fit:cover!important;
+    border:0!important;border-radius:0!important;outline:0!important;box-shadow:none!important;
+    opacity:1!important;filter:none!important;backdrop-filter:none!important;
+    mix-blend-mode:normal!important;clip-path:none!important;mask:none!important;
+    -webkit-mask:none!important;transform:none!important;background:transparent!important;
+  }
+  #productsGrid>.lux-card>div:first-child>span,
+  #productsGrid>.lux-card>div:first-child>button{z-index:2!important}
 </style>
 
 </head>
