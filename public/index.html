@@ -338,6 +338,63 @@
   #desktopDynamicNav{color:#e8d6ad!important}
   #desktopDynamicNav a:hover{color:#f5c64d!important}
   #searchInput,#mobileSearchInput{background:#15130f!important;border-color:rgba(215,169,59,.38)!important;color:#fff!important}
+
+  /* AURA HOME REFRESH — coherent black/gold storefront and product-image cleanup */
+  #productsGrid>.lux-card>div:first-child{position:relative!important;isolation:isolate!important;background:#f5f2eb!important}
+  #productsGrid>.lux-card>div:first-child::before,
+  #productsGrid>.lux-card>div:first-child::after,
+  #productsGrid>.lux-card>div:first-child>img::before,
+  #productsGrid>.lux-card>div:first-child>img::after{content:none!important;display:none!important;opacity:0!important}
+  #productsGrid>.lux-card>div:first-child>img{
+    position:relative!important;z-index:1!important;display:block!important;width:100%!important;height:100%!important;
+    object-fit:cover!important;opacity:1!important;filter:none!important;mix-blend-mode:normal!important;
+    clip-path:none!important;mask:none!important;-webkit-mask:none!important;transform:none;
+    background:#f5f2eb!important
+  }
+  #productsGrid>.lux-card>div:first-child>span,
+  #productsGrid>.lux-card>div:first-child>button{z-index:3!important}
+  #productsGrid>.lux-card{background:linear-gradient(160deg,#1d180f,#090908)!important;border:1px solid rgba(225,177,66,.42)!important;border-radius:18px!important;overflow:hidden!important}
+  #productsGrid>.lux-card h3{color:#f6e8c4!important}
+  #productsGrid>.lux-card p{color:#c4bba8!important}
+  #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2){border-color:rgba(221,174,69,.35)!important}
+  #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2)>div:first-child>div>span:first-child{color:#e8b84e!important}
+  #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2) button:first-child{background:#f2eee4!important;color:#17130b!important;border:1px solid #e5d6b4!important}
+  #productsGrid>.lux-card>div:nth-child(2)>div:nth-child(2) button:last-child{background:linear-gradient(110deg,#b9872f,#f0cf78)!important;color:#120f08!important}
+  #carouselSlide{height:clamp(330px,31vw,440px)!important;min-height:330px!important;border-radius:0!important}
+  #carouselSlide>img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center 38%!important}
+  #carouselSlide>div.absolute.inset-0{
+    background:linear-gradient(90deg,rgba(0,0,0,.94) 0%,rgba(0,0,0,.78) 36%,rgba(0,0,0,.18) 76%,rgba(0,0,0,.05) 100%)!important;
+    justify-content:center!important;align-items:flex-start!important;padding:clamp(22px,5vw,64px)!important
+  }
+  #carouselSlide h2{max-width:650px!important;font-size:clamp(27px,4.2vw,58px)!important;line-height:1.08!important;color:#ffe08a!important}
+  #carouselSlide #carouselTag{background:linear-gradient(110deg,#e8b638,#ffdf80)!important;color:#171006!important}
+  #carouselSlide>div.absolute.inset-0>span:last-child{background:linear-gradient(110deg,#eab52f,#ffdf78)!important;color:#140f05!important;border:0!important}
+  #carouselDots{left:50%!important;right:auto!important;transform:translateX(-50%)!important;bottom:16px!important}
+  #carouselSlide~button{z-index:25!important}
+  body>div>div:first-child>header.glass-nav{top:37px!important}
+  .glass-nav{border-bottom:1px solid rgba(232,184,69,.7)!important}
+  .glass-nav .aura-brand img{width:clamp(130px,15vw,205px)!important}
+  #desktopDynamicNav{gap:clamp(10px,1.5vw,22px)!important;color:#f4e5c4!important}
+  #desktopDynamicNav a{white-space:nowrap!important}
+  #searchInput{max-width:100%!important;border:1.5px solid #d8aa36!important;border-radius:999px!important;padding-top:12px!important;padding-bottom:12px!important}
+  #catalogSection{padding-top:28px!important}
+  #catalogSection>div:first-child{border-color:rgba(225,177,66,.45)!important}
+  #catalogSection #currentCategoryHeading{color:#f5d47e!important}
+  #categoryTabs{gap:9px!important}
+  #categoryTabs button,#categoryTabs a{border:1px solid rgba(225,177,66,.5)!important;background:#100f0c!important;color:#f5e5c2!important;padding:10px 16px!important}
+  #categoryTabs button.active,#categoryTabs a.active{background:linear-gradient(110deg,#e8b638,#ffdc73)!important;color:#120e05!important}
+  #catalogSection .bg-stone-900\/75{background:#12100b!important;border-color:rgba(225,177,66,.35)!important}
+  #catalogSection select{background:#17140d!important;color:#f6e5c0!important;border-color:#8e6b2d!important}
+  @media(min-width:900px){
+    #productsGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:18px!important}
+    #productsGrid>.lux-card>div:first-child{aspect-ratio:1/1!important}
+  }
+  @media(max-width:767px){
+    #carouselSlide{height:300px!important;min-height:300px!important}
+    #carouselSlide>div.absolute.inset-0{background:linear-gradient(90deg,rgba(0,0,0,.88),rgba(0,0,0,.36))!important;padding:20px!important}
+    #carouselSlide h2{max-width:82%!important;font-size:26px!important}
+  }
+
 </style>
 </head>
 <body class="selection:bg-amber-500 selection:text-stone-950 relative min-h-screen flex flex-col justify-between">
