@@ -1530,7 +1530,7 @@
       if (input) { input.value = q; syncSearchInputs(q,input); input.focus(); }
     }
     function chooseSearchCategory(category,query){activeSubmittedSearch=query;saveSearchHistory(query);document.querySelectorAll('#searchInput,#mobileSearchInput').forEach(el=>el.value=query);hideSearchPanels();renderStore();const h=document.getElementById('currentCategoryHeading');if(h)h.innerText=category+' Results';document.getElementById('productsGrid')?.scrollIntoView({behavior:'smooth',block:'start'});}
-    function submitStoreSearch(input){const q=String(input?.value||'').trim();activeSubmittedSearch=q;if(q)saveSearchHistory(q);document.querySelectorAll('#searchInput,#mobileSearchInput').forEach(el=>el.value=q);hideSearchPanels();renderStore();const h=document.getElementById('currentCategoryHeading');if(h)h.innerText=q?'Search Results: '+q:'Home Collections';}
+    function submitStoreSearch(input){const q=String(input?.value||'').trim();activeSubmittedSearch=q;if(q)saveSearchHistory(q);document.querySelectorAll('#searchInput,#mobileSearchInput').forEach(el=>el.value=q);hideSearchPanels();renderStore();const h=document.getElementById('currentCategoryHeading');if(h)h.innerText=q?'Search Results: '+q:'Home Collections';if(q)document.getElementById('productsGrid')?.scrollIntoView({behavior:'smooth',block:'start'});}
     function handleSearchKeydown(event,input){if(event.key==='Enter'){event.preventDefault();submitStoreSearch(input);}if(event.key==='Escape')hideSearchPanels();}
     document.addEventListener('click', event => {
       if (!event.target.closest('#searchInput') && !event.target.closest('#mobileSearchInput') && !event.target.closest('.aura-search-panel')) hideSearchPanels();
@@ -1811,6 +1811,12 @@
       }));
     }
 
+    function getColorPriceDetails(product,colorName){
+      const entry=product&&product.colorPrices&&product.colorPrices[colorName]&&typeof product.colorPrices[colorName]==='object'?product.colorPrices[colorName]:{};
+      const price=entry.price!==undefined&&entry.price!==null&&entry.price!==''?Number(entry.price):Number(product?.price)||0;
+      const originalPrice=entry.originalPrice!==undefined&&entry.originalPrice!==null&&entry.originalPrice!==''?Number(entry.originalPrice):Number(product?.originalPrice)||price;
+      return {price:Number.isFinite(price)?price:0,originalPrice:Number.isFinite(originalPrice)?originalPrice:(Number.isFinite(price)?price:0)};
+    }
     function renderStore() {
       const search = activeSubmittedSearch;
       const priceFilter = document.getElementById('priceRangeFilter')?.value || 'all';
@@ -1832,7 +1838,7 @@
 
       const displayProducts = filtered.flatMap(p => {
         const colors = (Array.isArray(p.colorOptions) && p.colorOptions.length) ? p.colorOptions : ['Standard'];
-        return colors.map(color => ({ ...p, __displayColor: color, __displayImages: getImagesForColor(p, color) }));
+        return colors.map(color => ({ ...p, ...getColorPriceDetails(p,color), __displayColor: color, __displayImages: getImagesForColor(p, color) }));
       });
       document.getElementById('countDisplay').innerText = displayProducts.length;
       const grid = document.getElementById('productsGrid');
@@ -1909,9 +1915,10 @@
       document.getElementById('qvThumbnailsContainer').innerHTML = galleryImages.map((u, i) => `<img id="thumb_img_${i}" src="${safeHttpUrl(u)}" onclick="setMainImage(${safeInlineArg(u)}, ${i})" class="w-14 h-14 object-cover rounded-xl border-2 ${i === 0 ? 'border-amber-400' : 'border-transparent'} cursor-pointer">`).join('');
       document.getElementById('qvBadge').innerText = isOut ? "Sold Out" : (prod.badge || prod.category);
       document.getElementById('qvTitle').innerText = prod.name;
-      document.getElementById('qvPrice').innerText = `₹${prod.price}`;
-      document.getElementById('qvOrigPrice').innerText = `₹${prod.originalPrice}`;
-      document.getElementById('qvDiscount').innerText = `${Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100)}% OFF`;
+      const selectedColorPrices = getColorPriceDetails(prod,currentSelectedColor);
+      document.getElementById('qvPrice').innerText = `₹${selectedColorPrices.price}`;
+      document.getElementById('qvOrigPrice').innerText = `₹${selectedColorPrices.originalPrice}`;
+      document.getElementById('qvDiscount').innerText = `${selectedColorPrices.originalPrice > 0 ? Math.round(((selectedColorPrices.originalPrice - selectedColorPrices.price) / selectedColorPrices.originalPrice) * 100) : 0}% OFF`;
       document.getElementById('qvDesc').innerText = prod.description;
 
       document.getElementById('qvSelectedColorDisplay').innerText = currentSelectedColor;
@@ -2025,6 +2032,10 @@
       document.querySelectorAll('.color-pill-btn').forEach(b => { b.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-stone-950 border-stone-700 text-stone-300"; });
       btn.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-amber-500 text-stone-950 border-amber-400";
       if (currentOpenedProduct) {
+        const colorPrices=getColorPriceDetails(currentOpenedProduct,val);
+        document.getElementById('qvPrice').innerText=`₹${colorPrices.price}`;
+        document.getElementById('qvOrigPrice').innerText=`₹${colorPrices.originalPrice}`;
+        document.getElementById('qvDiscount').innerText=`${colorPrices.originalPrice>0?Math.round(((colorPrices.originalPrice-colorPrices.price)/colorPrices.originalPrice)*100):0}% OFF`;
         renderQuickViewSizePills(currentOpenedProduct, val);
         const images = getImagesForColor(currentOpenedProduct, val);
         const galleryImages = images.length ? images : [""];
@@ -2071,7 +2082,8 @@
 
       const key = `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`;
       const exist = cart.find(i => i.itemKey === key);
-      if (exist) exist.qty += 1; else cart.push({ ...prod, itemKey: key, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 });
+      const pricedProduct={...prod,...getColorPriceDetails(prod,currentSelectedColor)};
+      if (exist) { exist.qty += 1; exist.price=pricedProduct.price; exist.originalPrice=pricedProduct.originalPrice; } else cart.push({ ...pricedProduct, itemKey: key, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 });
       trackMetaEvent('AddToCart', { content_name: prod.name, value: prod.price, currency: 'INR' });
       persistCartLocal(); updateCartUI(); toggleCart(true);
     }
@@ -2081,7 +2093,7 @@
       if (info.max <= 0) {
         return alert(`⚠️ Sorry! "${prod.name}" (${currentSelectedColor}, Size: ${currentSelectedSize}) is Out of Stock.`);
       }
-      cart = [{ ...prod, itemKey: `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 }];
+      cart = [{ ...prod, ...getColorPriceDetails(prod,currentSelectedColor), itemKey: `${prod.id}_${currentSelectedSize}_${currentSelectedColor}`, selectedSize: currentSelectedSize, selectedColor: currentSelectedColor, qty: 1 }];
       trackMetaEvent('InitiateCheckout', { content_name: prod.name, value: prod.price, currency: 'INR' });
       persistCartLocal(); updateCartUI(); openCheckoutModal();
     }
