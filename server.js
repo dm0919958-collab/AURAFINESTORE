@@ -156,6 +156,7 @@ const productSchema = new mongoose.Schema({
   sizeStock: { type: mongoose.Schema.Types.Mixed, default: {} },
   variantStock: { type: mongoose.Schema.Types.Mixed, default: {} },
   colorOptions: [String],
+  colorPrices: { type: mongoose.Schema.Types.Mixed, default: {} },
   colorImages: { type: mongoose.Schema.Types.Mixed, default: {} },
   images: [String],
   description: String,
@@ -1517,7 +1518,7 @@ app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
 app.post('/api/admin/products', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, nonRefundable, sizeOptions, sizeStock, variantStock, colorOptions, colorImages, badge, images, description } = req.body;
+    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, nonRefundable, sizeOptions, sizeStock, variantStock, colorOptions, colorPrices, colorImages, badge, images, description } = req.body;
 
     const uploadedUrls = await Promise.all(
       (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
@@ -1555,6 +1556,7 @@ app.post('/api/admin/products', async (req, res) => {
       sizeStock: parsedSizeStock,
       variantStock: parsedVariantStock,
       colorOptions: colorOptions || [],
+      colorPrices: colorPrices && typeof colorPrices === "object" ? colorPrices : {},
       colorImages: uploadedColorImages,
       badge: badge || "New",
       rating: 5.0,
@@ -1613,6 +1615,7 @@ app.put('/api/admin/products/:id', async (req, res) => {
         sizeStock: parsedSizeStock,
         variantStock: parsedVariantStock,
         colorOptions,
+        colorPrices: colorPrices && typeof colorPrices === "object" ? colorPrices : {},
         colorImages: uploadedColorImages,
         badge,
         description,
