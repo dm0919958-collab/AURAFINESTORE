@@ -1482,6 +1482,7 @@
 
     const AURA_SEARCH_HISTORY_KEY = 'aura_search_history_v1';
     let activeSearchPanelInput = null;
+    let activeSubmittedSearch = '';
     function getSearchHistory() {
       try { const h = JSON.parse(localStorage.getItem(AURA_SEARCH_HISTORY_KEY) || '[]'); return Array.isArray(h) ? h.slice(0,5) : []; } catch(e) { return []; }
     }
@@ -1505,27 +1506,14 @@
       renderSearchPanel(input, input.value);
     }
     function renderSearchPanel(input, query) {
-      const panel = getSearchPanel(input); if (!panel) return;
-      const q = String(query || '').trim();
-      if (!q) {
-        const history = getSearchHistory();
-        panel.innerHTML = history.length
-          ? '<div class="aura-search-heading">Recent searches</div>' + history.map((h,i) => `<button type="button" class="aura-search-history" onclick="useSearchHistory(${i})"><i class="fa-solid fa-clock-rotate-left"></i><span>${escapeHTML(h)}</span><i class="fa-solid fa-arrow-up rotate-45"></i></button>`).join('')
-          : '<div class="aura-search-empty">Your recent searches will appear here</div>';
-        panel.classList.remove('hidden'); return;
-      }
-      const matches = allProducts.filter(p => productMatchesStoreSearch(p,q));
-      const main = matches.slice(0,5);
-      const base = main[0];
-      const related = base ? allProducts.filter(p => p.id !== base.id && (p.category === base.category || p.mainCategory === base.mainCategory)).filter(p => !main.some(m=>m.id===p.id)).slice(0,3) : [];
-      const row = p => {
-        const imgs = getImagesForColor(p, (p.colorOptions||[])[0] || 'Standard');
-        const image = imgs && imgs.length ? safeHttpUrl(imgs[0]) : '';
-        return `<button type="button" class="aura-search-product" onclick="selectSearchProduct(${Number(p.id)||0}, ${safeInlineArg(q)})"><img src="${image}" alt="" onerror="this.style.visibility='hidden'"><span class="aura-search-product-info"><strong>${escapeHTML(p.name||'Product')}</strong><small>${escapeHTML(p.category||p.mainCategory||'AURA Collection')}</small></span><b>₹${Number(p.price)||0}</b></button>`;
-      };
-      panel.innerHTML = (main.length ? '<div class="aura-search-heading">Matching products</div>'+main.map(row).join('') : '<div class="aura-search-empty">No matching products found</div>') +
-        (related.length ? '<div class="aura-search-heading aura-search-related-title">You may also like</div>'+related.map(row).join('') : '');
-      panel.classList.remove('hidden');
+      const panel=getSearchPanel(input); if(!panel)return; const q=String(query||'').trim();
+      if(!q){const history=getSearchHistory();panel.innerHTML=history.length?'<div class="aura-search-heading">Recent searches</div>'+history.map((h,i)=>'<button type="button" class="aura-search-history" onclick="useSearchHistory('+i+')"><i class="fa-solid fa-clock-rotate-left"></i><span>'+escapeHTML(h)+'</span></button>').join(''):'<div class="aura-search-empty">Your recent searches will appear here</div>';panel.classList.remove('hidden');return;}
+      const matches=allProducts.filter(p=>productMatchesStoreSearch(p,q)),counts=new Map();
+      matches.forEach(p=>{const c=String(p.category||p.mainCategory||'AURA Collection');counts.set(c,(counts.get(c)||0)+1);});
+      const best=[...counts.entries()].sort((a,b)=>b[1]-a[1])[0];
+      const category=best?'<button type="button" class="aura-search-category" onclick="chooseSearchCategory('+safeInlineArg(best[0])+','+safeInlineArg(q)+')"><span>Best category match</span><strong>'+escapeHTML(best[0])+'</strong><small>'+best[1]+' matching products · View products</small></button>':'';
+      const rows=matches.slice(0,5).map(p=>{const imgs=getImagesForColor(p,(p.colorOptions||[])[0]||'Standard'),image=imgs&&imgs.length?safeHttpUrl(imgs[0]):'';return '<button type="button" class="aura-search-product" onclick="selectSearchProduct('+(Number(p.id)||0)+','+safeInlineArg(q)+')"><img src="'+image+'" alt=""><span class="aura-search-product-info"><strong>'+escapeHTML(p.name||'Product')+'</strong><small>'+escapeHTML(p.category||p.mainCategory||'AURA Collection')+'</small></span></button>';}).join('');
+      panel.innerHTML=category+(rows?'<div class="aura-search-heading">Matching products</div>'+rows:'<div class="aura-search-empty">No matching products found</div>');panel.classList.remove('hidden');
     }
     function selectSearchProduct(id, query) {
       saveSearchHistory(query); hideSearchPanels();
@@ -1537,21 +1525,13 @@
       const input = activeSearchPanelInput || document.getElementById('mobileSearchInput') || document.getElementById('searchInput');
       if (input) { input.value = q; syncSearchInputs(q,input); input.focus(); }
     }
-    function handleSearchKeydown(event,input) {
-      if (event.key === 'Enter') { saveSearchHistory(input.value); hideSearchPanels(); renderStore(); }
-      if (event.key === 'Escape') hideSearchPanels();
-    }
+    function chooseSearchCategory(category,query){activeSubmittedSearch=query;saveSearchHistory(query);document.querySelectorAll('#searchInput,#mobileSearchInput').forEach(el=>el.value=query);hideSearchPanels();renderStore();const h=document.getElementById('currentCategoryHeading');if(h)h.innerText=category+' Results';document.getElementById('productsGrid')?.scrollIntoView({behavior:'smooth',block:'start'});}
+    function submitStoreSearch(input){const q=String(input?.value||'').trim();activeSubmittedSearch=q;if(q)saveSearchHistory(q);document.querySelectorAll('#searchInput,#mobileSearchInput').forEach(el=>el.value=q);hideSearchPanels();renderStore();const h=document.getElementById('currentCategoryHeading');if(h)h.innerText=q?'Search Results: '+q:'Home Collections';}
+    function handleSearchKeydown(event,input){if(event.key==='Enter'){event.preventDefault();submitStoreSearch(input);}if(event.key==='Escape')hideSearchPanels();}
     document.addEventListener('click', event => {
       if (!event.target.closest('#searchInput') && !event.target.closest('#mobileSearchInput') && !event.target.closest('.aura-search-panel')) hideSearchPanels();
     });
-    function syncSearchInputs(val, sourceInput = null) {
-      const desk = document.getElementById('searchInput'), mob = document.getElementById('mobileSearchInput');
-      if (desk && desk.value !== val) desk.value = val;
-      if (mob && mob.value !== val) mob.value = val;
-      if (sourceInput) { activeSearchPanelInput = sourceInput; renderSearchPanel(sourceInput,val); }
-      else if (activeSearchPanelInput) renderSearchPanel(activeSearchPanelInput,val);
-      renderStore();
-    }
+    function syncSearchInputs(val,sourceInput=null){const desk=document.getElementById('searchInput'),mob=document.getElementById('mobileSearchInput');if(desk&&desk.value!==val)desk.value=val;if(mob&&mob.value!==val)mob.value=val;if(sourceInput){activeSearchPanelInput=sourceInput;renderSearchPanel(sourceInput,val);}else if(activeSearchPanelInput)renderSearchPanel(activeSearchPanelInput,val);if(!String(val||'').trim()){activeSubmittedSearch='';renderStore();}}
 
     function updateWishlistBadges() {
       const count = wishlistIds.length;
@@ -1828,7 +1808,7 @@
     }
 
     function renderStore() {
-      const search = document.getElementById('searchInput')?.value || document.getElementById('mobileSearchInput')?.value || "";
+      const search = activeSubmittedSearch;
       const priceFilter = document.getElementById('priceRangeFilter')?.value || 'all';
       const sortMode = document.getElementById('sortProductsSelect')?.value || 'newest';
 
