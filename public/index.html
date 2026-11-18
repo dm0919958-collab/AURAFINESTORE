@@ -1715,11 +1715,11 @@
     function normalizeStoreSearch(value) {
       return String(value || '').toLocaleLowerCase('bn').normalize('NFKC')
         .replace(/[‐‑‒–—−]/g, '-')
-        .replace(/[^p{L}p{N}]+/gu, ' ').trim().replace(/s+/g, ' ');
+        .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
     }
     function expandStoreSearchToken(token) {
       const normalized = normalizeStoreSearch(token);
-      const compact = normalized.replace(/s/g, '');
+      const compact = normalized.replace(/\s/g, '');
       const matches = SEARCH_SYNONYM_GROUPS.find(group =>
         group.some(word => {
           const n = normalizeStoreSearch(word);
