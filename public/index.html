@@ -1510,10 +1510,7 @@
     function shareCurrentProductWhatsApp() {
       if (!currentOpenedProduct) return;
       const p = currentOpenedProduct, productUrl = `${window.location.origin}/?product=${p.id}`;
-      window.open(`https://wa.me/?text=${encodeURIComponent(`✨ *AURA Fine Store* ✨
-Check out: *${escapeHTML(p.name)}*
-Price: *₹${p.price}* (MRP ₹${p.originalPrice})
-Order here: ${productUrl}`)}`, '_blank');
+      window.open(`https://wa.me/?text=${encodeURIComponent(`✨ *AURA Fine Store* ✨\nCheck out: *${escapeHTML(p.name)}*\nPrice: *₹${p.price}* (MRP ₹${p.originalPrice})\nOrder here: ${productUrl}`)}`, '_blank');
     }
 
     function setupDealCarousel() {
@@ -2360,11 +2357,8 @@ Order here: ${productUrl}`)}`, '_blank');
         // Permanently mark first order completed so welcome popup never shows again
         localStorage.setItem('aura_first_order_completed', 'true');
         trackMetaEvent('Purchase', { value: data.verifiedTotal || 0, currency: 'INR', order_id: data.orderId });
-        const coinsMsg = data.coinsEarned > 0 ? `
-🪙 You will receive +${data.coinsEarned} AURA Coins upon delivery!` : '';
-        alert(`🎉 Order Confirmed!
-Order ID: #${data.orderId}
-Verified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
+        const coinsMsg = data.coinsEarned > 0 ? `\n🪙 You will receive +${data.coinsEarned} AURA Coins upon delivery!` : '';
+        alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}\nVerified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
         cart = []; appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0;
         persistCartLocal(); updateCartUI(); closeCheckoutModal(); loadRecentSalesFeed();
       } else {
@@ -2565,8 +2559,7 @@ Verified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
           xhr.onload=()=>{let body={};try{body=JSON.parse(xhr.responseText||'{}');}catch(e){}if(xhr.status>=200&&xhr.status<300&&body.success){setReturnProgress(100,'Upload complete. Request submitted.');resolve(body);}else reject(new Error(body.message||'Could not submit request.'));};
           xhr.onerror=()=>reject(new Error('Network error while uploading evidence.'));xhr.ontimeout=()=>reject(new Error('Upload timed out. Please try again.'));xhr.timeout=180000;xhr.send(form);
         });
-        alert(data.message+'
-Request ID: '+data.requestId);closeReturnForm();await searchOrdersForSupport();
+        alert(data.message+'\nRequest ID: '+data.requestId);closeReturnForm();await searchOrdersForSupport();
       }catch(err){alert(err.message||'Could not submit request.');}
       finally{btn.disabled=false;btn.innerText='Submit Request';setTimeout(()=>progress.classList.add('hidden'),1200);}
     }
@@ -2590,8 +2583,7 @@ Request ID: '+data.requestId);closeReturnForm();await searchOrdersForSupport();
         const rawResp = await uploadFormDataWithProgress('/api/support/ticket', formData, (pct) => { progBar.style.width = `${pct}%`; progPercent.innerText = `${pct}%`; progLabel.innerText = pct < 100 ? `Uploading files (${pct}%)...` : "Forwarding to support desk..."; });
         const data = JSON.parse(rawResp);
         if (data.success) {
-          alert(`✅ Support request submitted!
-Ticket ID: ${data.ticketId}`);
+          alert(`✅ Support request submitted!\nTicket ID: ${data.ticketId}`);
           document.getElementById('supportIssueText').value = ""; supportPhotoFiles = []; renderSupportPhotosPreview(); clearSupportVideo(); backToSupportStep1(); searchOrdersForSupport();
         } else alert(data.message || "Failed to submit ticket.");
       } catch (err) { alert("Network error while uploading."); }
