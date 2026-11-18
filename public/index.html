@@ -1510,7 +1510,10 @@
     function shareCurrentProductWhatsApp() {
       if (!currentOpenedProduct) return;
       const p = currentOpenedProduct, productUrl = `${window.location.origin}/?product=${p.id}`;
-      window.open(`https://wa.me/?text=${encodeURIComponent(`✨ *AURA Fine Store* ✨\nCheck out: *${escapeHTML(p.name)}*\nPrice: *₹${p.price}* (MRP ₹${p.originalPrice})\nOrder here: ${productUrl}`)}`, '_blank');
+      window.open(`https://wa.me/?text=${encodeURIComponent(`✨ *AURA Fine Store* ✨
+Check out: *${escapeHTML(p.name)}*
+Price: *₹${p.price}* (MRP ₹${p.originalPrice})
+Order here: ${productUrl}`)}`, '_blank');
     }
 
     function setupDealCarousel() {
@@ -1723,7 +1726,8 @@
       grid.innerHTML = displayProducts.map(p => {
         const discountPct = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
         const qtyLeft = Number(p.stockQuantity) || 0, isOut = p.inStock === false || qtyLeft <= 0, isLowUrgency = !isOut && qtyLeft < 5;
-        const cardImages = p.__displayImages || p.images || [];\n        const mainImage = cardImages[0] || "", isWished = wishlistIds.includes(p.id);
+        const cardImages = p.__displayImages || p.images || [];
+        const mainImage = cardImages[0] || "", isWished = wishlistIds.includes(p.id);
         return `
           <div class="rounded-3xl border border-amber-500/20 overflow-hidden shadow-lg lux-card flex flex-col justify-between group">
             <div onclick="openQuickView(${Number(p.id)||0}, ${safeInlineArg(p.__displayColor)})" class="relative overflow-hidden aspect-square bg-stone-950 cursor-pointer">
@@ -1736,7 +1740,8 @@
             <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
               <div onclick="openQuickView(${Number(p.id)||0}, ${safeInlineArg(p.__displayColor)})" class="cursor-pointer">
                 <div class="flex justify-between text-amber-400 text-xs"><span>★ <b>${p.rating}</b> (${p.reviewsCount})</span><span class="underline text-[10px]">Write Review</span></div>
-                <h3 class="font-cinzel font-bold text-stone-100 text-base mt-1.5 line-clamp-1">${escapeHTML(p.name)}</h3>\n                <span class="inline-flex mt-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 px-2.5 py-1 text-[10px] font-bold">Color: ${escapeHTML(p.__displayColor)}</span>
+                <h3 class="font-cinzel font-bold text-stone-100 text-base mt-1.5 line-clamp-1">${escapeHTML(p.name)}</h3>
+                <span class="inline-flex mt-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 px-2.5 py-1 text-[10px] font-bold">Color: ${escapeHTML(p.__displayColor)}</span>
                 <p class="text-stone-400 text-xs mt-1 line-clamp-2">${escapeHTML(p.description)}</p>
               </div>
               <div class="pt-3 border-t border-stone-800 space-y-3">
@@ -2355,8 +2360,11 @@
         // Permanently mark first order completed so welcome popup never shows again
         localStorage.setItem('aura_first_order_completed', 'true');
         trackMetaEvent('Purchase', { value: data.verifiedTotal || 0, currency: 'INR', order_id: data.orderId });
-        const coinsMsg = data.coinsEarned > 0 ? `\n🪙 You will receive +${data.coinsEarned} AURA Coins upon delivery!` : '';
-        alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}\nVerified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
+        const coinsMsg = data.coinsEarned > 0 ? `
+🪙 You will receive +${data.coinsEarned} AURA Coins upon delivery!` : '';
+        alert(`🎉 Order Confirmed!
+Order ID: #${data.orderId}
+Verified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
         cart = []; appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0;
         persistCartLocal(); updateCartUI(); closeCheckoutModal(); loadRecentSalesFeed();
       } else {
@@ -2557,7 +2565,8 @@
           xhr.onload=()=>{let body={};try{body=JSON.parse(xhr.responseText||'{}');}catch(e){}if(xhr.status>=200&&xhr.status<300&&body.success){setReturnProgress(100,'Upload complete. Request submitted.');resolve(body);}else reject(new Error(body.message||'Could not submit request.'));};
           xhr.onerror=()=>reject(new Error('Network error while uploading evidence.'));xhr.ontimeout=()=>reject(new Error('Upload timed out. Please try again.'));xhr.timeout=180000;xhr.send(form);
         });
-        alert(data.message+'\nRequest ID: '+data.requestId);closeReturnForm();await searchOrdersForSupport();
+        alert(data.message+'
+Request ID: '+data.requestId);closeReturnForm();await searchOrdersForSupport();
       }catch(err){alert(err.message||'Could not submit request.');}
       finally{btn.disabled=false;btn.innerText='Submit Request';setTimeout(()=>progress.classList.add('hidden'),1200);}
     }
@@ -2581,7 +2590,8 @@
         const rawResp = await uploadFormDataWithProgress('/api/support/ticket', formData, (pct) => { progBar.style.width = `${pct}%`; progPercent.innerText = `${pct}%`; progLabel.innerText = pct < 100 ? `Uploading files (${pct}%)...` : "Forwarding to support desk..."; });
         const data = JSON.parse(rawResp);
         if (data.success) {
-          alert(`✅ Support request submitted!\nTicket ID: ${data.ticketId}`);
+          alert(`✅ Support request submitted!
+Ticket ID: ${data.ticketId}`);
           document.getElementById('supportIssueText').value = ""; supportPhotoFiles = []; renderSupportPhotosPreview(); clearSupportVideo(); backToSupportStep1(); searchOrdersForSupport();
         } else alert(data.message || "Failed to submit ticket.");
       } catch (err) { alert("Network error while uploading."); }
