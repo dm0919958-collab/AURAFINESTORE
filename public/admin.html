@@ -675,10 +675,14 @@ label { color: #f1e5ce; }
               </div>
               <div>
                 <label class="text-slate-400 font-bold block mb-1">Colors (Comma separated)</label>
-                <input type="text" id="prodColors" oninput="rebuildVariantStockMatrixUI(); renderColorImageEditors()" placeholder="Black, White, Navy" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white font-semibold">
+                <input type="text" id="prodColors" oninput="rebuildVariantStockMatrixUI(); renderColorImageEditors(); rebuildColorPriceEditorsUI()" placeholder="Black, White, Navy" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white font-semibold">
               </div>
             </div>
 
+            <div class="bg-slate-800/80 p-4 rounded-2xl border border-amber-500/30 space-y-3">
+              <div><label class="text-amber-300 font-bold text-xs">Separate price for each color</label><p class="text-[10px] text-slate-400 mt-1">Set a different Sale Price and MRP for every color. Leave blank to use the main product price.</p></div>
+              <div id="colorPriceEditors" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+            </div>
             <div class="bg-slate-800/80 p-4 rounded-2xl border border-emerald-500/30 space-y-3">
               <div>
                 <label class="text-emerald-300 font-bold text-xs">🎨 Photos for Each Color</label>
@@ -1874,6 +1878,11 @@ label { color: #f1e5ce; }
         sizeOptions: parsedSizes,
         variantStock: variantStockObj,
         colorOptions: parsedColors,
+        colorPrices: Object.fromEntries(parsedColors.map(color => {
+          const sale = [...document.querySelectorAll("[data-color-sale]")].find(el => el.getAttribute("data-color-sale") === color);
+          const mrp = [...document.querySelectorAll("[data-color-mrp]")].find(el => el.getAttribute("data-color-mrp") === color);
+          return [color, { price: sale && sale.value !== "" ? Number(sale.value) : null, originalPrice: mrp && mrp.value !== "" ? Number(mrp.value) : null }];
+        }).filter(([,v]) => v.price !== null || v.originalPrice !== null)),
         colorImages: Object.fromEntries(Object.entries(currentColorImages).filter(([color, photos]) => parsedColors.includes(color) && Array.isArray(photos) && photos.length)),
         badge: document.getElementById('prodBadge').value || "New", images: [...currentFormImages], description: document.getElementById('prodDesc').value
       };
@@ -1883,6 +1892,12 @@ label { color: #f1e5ce; }
       btn.innerText = "Publish to Store"; btn.disabled = false;
     }
 
+    function rebuildColorPriceEditorsUI(existing = {}) {
+      const box=document.getElementById('colorPriceEditors');if(!box)return;const current={};
+      box.querySelectorAll('[data-color-sale]').forEach(el=>{const c=el.getAttribute('data-color-sale');const mrp=[...box.querySelectorAll('[data-color-mrp]')].find(x=>x.getAttribute('data-color-mrp')===c);current[c]={price:el.value,originalPrice:mrp?mrp.value:''};});
+      const colors=(document.getElementById('prodColors').value||'').split(',').map(c=>c.trim()).filter(Boolean);
+      box.innerHTML=colors.length?colors.map(color=>{const v=current[color]||existing[color]||{};return '<div class="rounded-xl border border-slate-600 bg-slate-950/70 p-3 space-y-2"><strong class="block text-xs text-cyan-300">'+escapeHTML(color)+'</strong><div class="grid grid-cols-2 gap-2"><label class="text-[10px] text-slate-400">Sale ₹<input type="number" min="0" data-color-sale="'+escapeHTML(color)+'" value="'+(v.price??'')+'" placeholder="Use main price" class="mt-1 w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"></label><label class="text-[10px] text-slate-400">MRP ₹<input type="number" min="0" data-color-mrp="'+escapeHTML(color)+'" value="'+(v.originalPrice??'')+'" placeholder="Use main MRP" class="mt-1 w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"></label></div></div>';}).join(''):'<p class="text-xs text-slate-500">Add color names above to set separate prices.</p>';
+    }
     function updateMatrixTotalStock() {
       let total = 0;
       document.querySelectorAll('.variant-stock-qty-input').forEach(inp => {
@@ -1951,6 +1966,7 @@ label { color: #f1e5ce; }
       document.getElementById('prodCostPrice').value = p.costPrice || 0; document.getElementById('prodStock').value = p.stockQuantity;
       document.getElementById('prodSizes').value = (p.sizeOptions || []).join(', ');
       document.getElementById('prodColors').value = (p.colorOptions || []).join(', ');
+      rebuildColorPriceEditorsUI(p.colorPrices || {});
       currentColorImages = (p.colorImages && typeof p.colorImages === 'object') ? Object.fromEntries(Object.entries(p.colorImages).map(([c, imgs]) => [c, Array.isArray(imgs) ? [...imgs] : []])) : {};
       renderColorImageEditors();
 
@@ -1976,7 +1992,7 @@ label { color: #f1e5ce; }
       document.getElementById('prodShowOnHome').checked = true; document.getElementById('prodNonRefundable').checked = false;
       document.getElementById('variantStockMatrixBox').classList.add('hidden');
       document.getElementById('variantStockMatrixBody').innerHTML = '';
-      populateCategoryDropdowns(); currentFormImages = []; currentColorImages = {}; renderFormImagesPreview(); renderColorImageEditors();
+      populateCategoryDropdowns(); currentFormImages = []; currentColorImages = {}; renderFormImagesPreview(); renderColorImageEditors(); rebuildColorPriceEditorsUI({});
     }
 
     async function saveQuickCatalogRow(id) {
