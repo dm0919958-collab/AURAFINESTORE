@@ -1687,6 +1687,12 @@
       renderDynamicNavigation(); renderSubCategoryBar(mainSec, subCat); renderStore();
     }
 
+    function getImagesForColor(prod, colorName) {
+      const byColor = prod && prod.colorImages && typeof prod.colorImages === 'object' ? prod.colorImages : {};
+      const selected = Array.isArray(byColor[colorName]) ? byColor[colorName].filter(Boolean) : [];
+      return selected.length ? selected : ((prod && Array.isArray(prod.images)) ? prod.images : []);
+    }
+
     function renderStore() {
       const search = (document.getElementById('searchInput')?.value || document.getElementById('mobileSearchInput')?.value || "").toLowerCase();
       const priceFilter = document.getElementById('priceRangeFilter')?.value || 'all';
@@ -1706,27 +1712,31 @@
       if (sortMode === 'lowToHigh') filtered = [...filtered].sort((a, b) => a.price - b.price);
       else if (sortMode === 'highToLow') filtered = [...filtered].sort((a, b) => b.price - a.price);
 
-      document.getElementById('countDisplay').innerText = filtered.length;
+      const displayProducts = filtered.flatMap(p => {
+        const colors = (Array.isArray(p.colorOptions) && p.colorOptions.length) ? p.colorOptions : ['Standard'];
+        return colors.map(color => ({ ...p, __displayColor: color, __displayImages: getImagesForColor(p, color) }));
+      });
+      document.getElementById('countDisplay').innerText = displayProducts.length;
       const grid = document.getElementById('productsGrid');
-      if (!filtered.length) { grid.innerHTML = `<div class="col-span-full py-20 text-center text-stone-500">No designs found matching your filter.</div>`; return; }
+      if (!displayProducts.length) { grid.innerHTML = `<div class="col-span-full py-20 text-center text-stone-500">No designs found matching your filter.</div>`; return; }
 
-      grid.innerHTML = filtered.map(p => {
+      grid.innerHTML = displayProducts.map(p => {
         const discountPct = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
         const qtyLeft = Number(p.stockQuantity) || 0, isOut = p.inStock === false || qtyLeft <= 0, isLowUrgency = !isOut && qtyLeft < 5;
-        const mainImage = (p.images && p.images[0]) || "", isWished = wishlistIds.includes(p.id);
+        const cardImages = p.__displayImages || p.images || [];\n        const mainImage = cardImages[0] || "", isWished = wishlistIds.includes(p.id);
         return `
           <div class="rounded-3xl border border-amber-500/20 overflow-hidden shadow-lg lux-card flex flex-col justify-between group">
-            <div onclick="openQuickView(${Number(p.id)||0})" class="relative overflow-hidden aspect-square bg-stone-950 cursor-pointer">
+            <div onclick="openQuickView(${Number(p.id)||0}, ${safeInlineArg(p.__displayColor)})" class="relative overflow-hidden aspect-square bg-stone-950 cursor-pointer">
               <img src="${safeHttpUrl(mainImage)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isOut ? 'opacity-40 grayscale' : ''}">
               <span class="absolute top-3.5 left-3.5 ${isOut ? 'bg-rose-600 text-white' : 'bg-stone-950/90 text-amber-300 border border-amber-500/30'} text-[10px] font-extrabold uppercase px-3 py-1 rounded-full">${isOut ? 'Sold Out' : escapeHTML(p.badge || '')}</span>
               <button onclick="toggleWishlist(${Number(p.id)||0}, event)" title="Save to Wishlist" class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-stone-950/85 hover:bg-stone-900 border border-rose-500/30 flex items-center justify-center transition shadow"><i class="${isWished ? 'fa-solid text-rose-500' : 'fa-regular text-stone-300'} fa-heart text-sm"></i></button>
               ${isLowUrgency ? `<span class="absolute bottom-3.5 left-3.5 bg-rose-600/95 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow animate-pulse">🔥 মাত্র ${qtyLeft}টি পিস বাকি আছে!</span>` : ''}
-              <span class="absolute bottom-3.5 right-3.5 bg-black/75 text-white text-[10px] font-bold px-2.5 py-1 rounded-full"><i class="fa-regular fa-images text-amber-400"></i> ${(p.images || []).length} Photos</span>
+              <span class="absolute bottom-3.5 right-3.5 bg-black/75 text-white text-[10px] font-bold px-2.5 py-1 rounded-full"><i class="fa-regular fa-images text-amber-400"></i> ${cardImages.length} Photos</span>
             </div>
             <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
-              <div onclick="openQuickView(${Number(p.id)||0})" class="cursor-pointer">
+              <div onclick="openQuickView(${Number(p.id)||0}, ${safeInlineArg(p.__displayColor)})" class="cursor-pointer">
                 <div class="flex justify-between text-amber-400 text-xs"><span>★ <b>${p.rating}</b> (${p.reviewsCount})</span><span class="underline text-[10px]">Write Review</span></div>
-                <h3 class="font-cinzel font-bold text-stone-100 text-base mt-1.5 line-clamp-1">${escapeHTML(p.name)}</h3>
+                <h3 class="font-cinzel font-bold text-stone-100 text-base mt-1.5 line-clamp-1">${escapeHTML(p.name)}</h3>\n                <span class="inline-flex mt-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 px-2.5 py-1 text-[10px] font-bold">Color: ${escapeHTML(p.__displayColor)}</span>
                 <p class="text-stone-400 text-xs mt-1 line-clamp-2">${escapeHTML(p.description)}</p>
               </div>
               <div class="pt-3 border-t border-stone-800 space-y-3">
@@ -1734,15 +1744,15 @@
                   <div><span class="text-2xl font-black text-amber-400">₹${p.price}</span><span class="text-xs line-through text-stone-500 ml-1.5">₹${p.originalPrice}</span></div>
                   <span class="text-[10px] text-emerald-300 font-extrabold bg-emerald-950 px-2.5 py-0.5 rounded-full">${discountPct}% OFF</span>
                 </div>
-                ${isOut ? `<button onclick="openQuickView(${Number(p.id)||0})" class="w-full bg-purple-600/30 hover:bg-purple-600 text-purple-200 hover:text-white border border-purple-500/40 py-2.5 rounded-xl text-xs font-extrabold transition"><i class="fa-solid fa-bell mr-1"></i> Sold Out • Notify Me</button>`
-                : `<div class="grid grid-cols-2 gap-2"><button onclick="openQuickView(${Number(p.id)||0})" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700 py-2.5 rounded-xl text-xs font-bold">Add</button><button onclick="openQuickView(${Number(p.id)||0})" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-2.5 rounded-xl text-xs font-extrabold">⚡ Instant Checkout • ₹${Number(p.price)||0}</button></div>`}
+                ${isOut ? `<button onclick="openQuickView(${Number(p.id)||0}, ${safeInlineArg(p.__displayColor)})" class="w-full bg-purple-600/30 hover:bg-purple-600 text-purple-200 hover:text-white border border-purple-500/40 py-2.5 rounded-xl text-xs font-extrabold transition"><i class="fa-solid fa-bell mr-1"></i> Sold Out • Notify Me</button>`
+                : `<div class="grid grid-cols-2 gap-2"><button onclick="openQuickView(${Number(p.id)||0}, ${safeInlineArg(p.__displayColor)})" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700 py-2.5 rounded-xl text-xs font-bold">Add</button><button onclick="openQuickView(${Number(p.id)||0}, ${safeInlineArg(p.__displayColor)})" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-2.5 rounded-xl text-xs font-extrabold">⚡ Instant Checkout • ₹${Number(p.price)||0}</button></div>`}
               </div>
             </div>
           </div>`;
       }).join('');
     }
 
-    function openQuickView(id) {
+    function openQuickView(id, selectedColor = '') {
       const prod = allProducts.find(p => p.id === id);
       if (!prod) return;
       currentOpenedProduct = prod; clearReviewPhoto(); recordRecentlyViewed(prod.id);
@@ -1771,9 +1781,12 @@
         if (saved) { if (saved.name) document.getElementById('notifyCustomerName').value = saved.name; if (saved.phone) document.getElementById('notifyCustomerPhone').value = saved.phone; }
       } else { inStockBox.classList.remove('hidden'); notifyForm.classList.add('hidden'); }
 
-      const images = (prod.images && prod.images.length) ? prod.images : [""];
-      document.getElementById('qvMainImage').src = safeImageUrl(images[0]);
-      document.getElementById('qvThumbnailsContainer').innerHTML = images.map((u, i) => `<img id="thumb_img_${i}" src="${safeHttpUrl(u)}" onclick="setMainImage(${safeInlineArg(u)}, ${i})" class="w-14 h-14 object-cover rounded-xl border-2 ${i === 0 ? 'border-amber-400' : 'border-transparent'} cursor-pointer">`).join('');
+      const colors = (prod.colorOptions && prod.colorOptions.length) ? prod.colorOptions : ["Standard"];
+      currentSelectedColor = colors.includes(selectedColor) ? selectedColor : colors[0];
+      const images = getImagesForColor(prod, currentSelectedColor);
+      const galleryImages = images.length ? images : [""];
+      document.getElementById('qvMainImage').src = safeImageUrl(galleryImages[0]);
+      document.getElementById('qvThumbnailsContainer').innerHTML = galleryImages.map((u, i) => `<img id="thumb_img_${i}" src="${safeHttpUrl(u)}" onclick="setMainImage(${safeInlineArg(u)}, ${i})" class="w-14 h-14 object-cover rounded-xl border-2 ${i === 0 ? 'border-amber-400' : 'border-transparent'} cursor-pointer">`).join('');
       document.getElementById('qvBadge').innerText = isOut ? "Sold Out" : (prod.badge || prod.category);
       document.getElementById('qvTitle').innerText = prod.name;
       document.getElementById('qvPrice').innerText = `₹${prod.price}`;
@@ -1781,10 +1794,8 @@
       document.getElementById('qvDiscount').innerText = `${Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100)}% OFF`;
       document.getElementById('qvDesc').innerText = prod.description;
 
-      const colors = (prod.colorOptions && prod.colorOptions.length) ? prod.colorOptions : ["Standard"];
-      currentSelectedColor = colors[0];
       document.getElementById('qvSelectedColorDisplay').innerText = currentSelectedColor;
-      document.getElementById('qvColorContainer').innerHTML = colors.map((c, i) => `<button type="button" onclick="selectVariantColor(${safeInlineArg(c)}, ${i}, this)" class="color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${i === 0 ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300'}">${escapeHTML(c)}</button>`).join('');
+      document.getElementById('qvColorContainer').innerHTML = colors.map((c, i) => `<button type="button" onclick="selectVariantColor(${safeInlineArg(c)}, ${i}, this)" class="color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold ${c === currentSelectedColor ? 'bg-amber-500 text-stone-950 border-amber-400' : 'bg-stone-950 border-stone-700 text-stone-300'}">${escapeHTML(c)}</button>`).join('');
 
       renderQuickViewSizePills(prod, currentSelectedColor);
 
@@ -1895,9 +1906,10 @@
       btn.className = "color-pill-btn px-3.5 py-1.5 text-xs border rounded-xl font-bold bg-amber-500 text-stone-950 border-amber-400";
       if (currentOpenedProduct) {
         renderQuickViewSizePills(currentOpenedProduct, val);
-        if (currentOpenedProduct.images && currentOpenedProduct.images.length) {
-          setMainImage(currentOpenedProduct.images[idx < currentOpenedProduct.images.length ? idx : 0], idx);
-        }
+        const images = getImagesForColor(currentOpenedProduct, val);
+        const galleryImages = images.length ? images : [""];
+        document.getElementById('qvMainImage').src = safeImageUrl(galleryImages[0]);
+        document.getElementById('qvThumbnailsContainer').innerHTML = galleryImages.map((u, imageIdx) => `<img id="thumb_img_${imageIdx}" src="${safeHttpUrl(u)}" onclick="setMainImage(${safeInlineArg(u)}, ${imageIdx})" class="w-14 h-14 object-cover rounded-xl border-2 ${imageIdx === 0 ? 'border-amber-400' : 'border-transparent'} cursor-pointer">`).join('');
       }
     }
 
