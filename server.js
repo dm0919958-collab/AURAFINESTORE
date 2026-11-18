@@ -156,6 +156,7 @@ const productSchema = new mongoose.Schema({
   sizeStock: { type: mongoose.Schema.Types.Mixed, default: {} },
   variantStock: { type: mongoose.Schema.Types.Mixed, default: {} },
   colorOptions: [String],
+  colorImages: { type: mongoose.Schema.Types.Mixed, default: {} },
   images: [String],
   description: String,
   reviews: [
@@ -1516,11 +1517,17 @@ app.delete('/api/admin/support/tickets/:ticketId', async (req, res) => {
 app.post('/api/admin/products', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, nonRefundable, sizeOptions, sizeStock, variantStock, colorOptions, badge, images, description } = req.body;
+    const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, nonRefundable, sizeOptions, sizeStock, variantStock, colorOptions, colorImages, badge, images, description } = req.body;
 
     const uploadedUrls = await Promise.all(
       (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
     );
+    const uploadedColorImages = {};
+    for (const [color, photos] of Object.entries(colorImages || {})) {
+      uploadedColorImages[color] = await Promise.all(
+        (Array.isArray(photos) ? photos : []).map(img => uploadToCloudinary(img, 'aura_store/products'))
+      );
+    }
 
     const parsedVariantStock = parseCleanStockMap(variantStock);
     const parsedSizeStock = parseCleanStockMap(sizeStock);
@@ -1548,6 +1555,7 @@ app.post('/api/admin/products', async (req, res) => {
       sizeStock: parsedSizeStock,
       variantStock: parsedVariantStock,
       colorOptions: colorOptions || [],
+      colorImages: uploadedColorImages,
       badge: badge || "New",
       rating: 5.0,
       reviewsCount: 1,
@@ -1599,6 +1607,7 @@ app.put('/api/admin/products/:id', async (req, res) => {
         sizeStock: parsedSizeStock,
         variantStock: parsedVariantStock,
         colorOptions,
+        colorImages: uploadedColorImages,
         badge,
         description,
         images: uploadedUrls,
