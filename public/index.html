@@ -229,6 +229,10 @@
   .aura-search-product-info small{font-size:9px;color:#718076}
   .aura-search-product>b{font-size:11px;color:#176044;white-space:nowrap}
   .aura-search-history{font-size:11px;font-weight:700}
+  .aura-search-category{display:flex;flex-direction:column;gap:5px;width:100%;padding:11px 10px;margin-bottom:5px;text-align:left;border:1px solid #cdb783;border-radius:11px;background:#f5f1e6;color:#214b3a}
+  .aura-search-category>span{font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#8b672f}
+  .aura-search-category>strong{font-size:13px}
+  .aura-search-category>small{font-size:10px;color:#64756a}
   .aura-search-history span{flex:1}
   .aura-search-history i{color:#9a835c;font-size:11px}
   .aura-search-empty{padding:16px 10px;text-align:center;font-size:11px;color:#718076}
@@ -354,8 +358,8 @@
 
         <!-- Desktop Search Input -->
         <div class="hidden md:flex flex-1 max-w-[200px] mx-2 relative">
-          <input type="text" id="searchInput" onfocus="showSearchPanel(this)" onkeydown="handleSearchKeydown(event,this)" oninput="syncSearchInputs(this.value,this)" placeholder="Search jewellery, shirts..." class="w-full bg-stone-900/90 border border-stone-700 text-stone-200 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-amber-500">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-stone-500 text-xs"></i>
+          <input type="text" id="searchInput" onfocus="showSearchPanel(this)" onkeydown="handleSearchKeydown(event,this)" oninput="syncSearchInputs(this.value,this)" placeholder="Search jewellery, shirts..." class="w-full bg-stone-900/90 border border-stone-700 text-stone-200 rounded-full py-2 pl-9 pr-20 text-xs focus:outline-none focus:border-amber-500">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-stone-500 text-xs"></i><button type="button" onclick="submitStoreSearch(document.getElementById('searchInput'))" class="absolute right-1 top-1 bottom-1 rounded-full bg-emerald-800 px-3 text-[10px] font-extrabold text-white">Search</button>
         </div>
 
         <!-- Right Action Buttons -->
@@ -381,7 +385,7 @@
       <div class="md:hidden px-4 pb-3">
         <div class="relative">
           <input type="text" id="mobileSearchInput" onfocus="showSearchPanel(this)" onkeydown="handleSearchKeydown(event,this)" oninput="syncSearchInputs(this.value,this)" placeholder="Search shirts, jhumkas, watches, gifts..." class="w-full bg-stone-900/95 border border-stone-700 text-stone-200 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-amber-500">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-2.5 text-stone-500 text-xs"></i>
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-2.5 text-stone-500 text-xs"></i><button type="button" onclick="submitStoreSearch(document.getElementById('mobileSearchInput'))" class="absolute right-1 top-1 bottom-1 rounded-full bg-emerald-800 px-3 text-[10px] font-extrabold text-white">Search</button>
         </div>
       </div>
     </header>
