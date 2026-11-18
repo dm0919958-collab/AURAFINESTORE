@@ -679,6 +679,14 @@ label { color: #f1e5ce; }
               </div>
             </div>
 
+            <div class="bg-slate-800/80 p-4 rounded-2xl border border-emerald-500/30 space-y-3">
+              <div>
+                <label class="text-emerald-300 font-bold text-xs">🎨 Photos for Each Color</label>
+                <p class="text-[10px] text-slate-400 mt-1">Add multiple photos under the matching color. These photos stay together in one color card.</p>
+              </div>
+              <div id="colorImageEditors" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
               <div>
                 <label class="text-slate-400 font-bold block mb-1">Highlight Badge</label>
@@ -898,6 +906,7 @@ label { color: #f1e5ce; }
     let cachedSupportTickets = [];
     let cachedReturnRequests = [];
     let currentFormImages = [];
+    let currentColorImages = {};
     let firstOrderPopupPendingImg = "";
     let activeOrderStatusFilter = 'ALL';
     let selectedOrderIdsSet = new Set();
@@ -1734,6 +1743,54 @@ label { color: #f1e5ce; }
       input.value = ""; renderFormImagesPreview();
     }
 
+    async function handleColorPhotos(input) {
+      const color = input.dataset.color || '';
+      if (!color) return;
+      if (!Array.isArray(currentColorImages[color])) currentColorImages[color] = [];
+      for (const file of Array.from(input.files || [])) currentColorImages[color].push(await compressImageFile(file));
+      input.value = '';
+      renderColorImageEditors();
+    }
+
+    function removeColorPhoto(color, idx) {
+      if (!Array.isArray(currentColorImages[color])) return;
+      currentColorImages[color].splice(idx, 1);
+      renderColorImageEditors();
+    }
+
+    function renderColorImageEditors() {
+      const host = document.getElementById('colorImageEditors');
+      if (!host) return;
+      const colors = (document.getElementById('prodColors')?.value || '').split(',').map(c => c.trim()).filter(Boolean);
+      const uniqueColors = [...new Set(colors)];
+      uniqueColors.forEach(color => { if (!Array.isArray(currentColorImages[color])) currentColorImages[color] = []; });
+      Object.keys(currentColorImages).forEach(color => { if (!uniqueColors.includes(color)) delete currentColorImages[color]; });
+      if (!uniqueColors.length) {
+        host.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Enter colors above (for example: Black, White, Navy) to add photos for each color.</p>';
+        return;
+      }
+      host.innerHTML = uniqueColors.map(color => {
+        const photos = currentColorImages[color] || [];
+        return `
+          <div class="rounded-xl border border-slate-700 bg-slate-950/70 p-3 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-sm font-bold text-emerald-300">${escapeHTML(color)}</span>
+              <label class="cursor-pointer rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-extrabold px-3 py-2">+ Add Photos
+                <input type="file" accept="image/*" multiple data-color="${escapeHTML(color)}" onchange="handleColorPhotos(this)" class="hidden">
+              </label>
+            </div>
+            <div class="grid grid-cols-4 gap-2">
+              ${photos.map((src, idx) => `
+                <div class="relative aspect-square rounded-lg overflow-hidden border border-slate-700">
+                  <img src="${safeDataImageUrl(src) || safeHttpUrl(src)}" class="w-full h-full object-cover">
+                  <button type="button" onclick="removeColorPhoto(${safeInlineArg(color)}, ${idx})" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white text-xs font-bold">&times;</button>
+                </div>`).join('')}
+            </div>
+            <p class="text-[10px] text-slate-500">${photos.length} photo(s) for ${escapeHTML(color)}</p>
+          </div>`;
+      }).join('');
+    }
+
     function removeFormImageAt(idx) { currentFormImages.splice(idx, 1); renderFormImagesPreview(); }
 
     function renderFormImagesPreview() {
@@ -1816,6 +1873,7 @@ label { color: #f1e5ce; }
         sizeOptions: parsedSizes,
         variantStock: variantStockObj,
         colorOptions: parsedColors,
+        colorImages: Object.fromEntries(Object.entries(currentColorImages).filter(([color, photos]) => parsedColors.includes(color) && Array.isArray(photos) && photos.length)),
         badge: document.getElementById('prodBadge').value || "New", images: [...currentFormImages], description: document.getElementById('prodDesc').value
       };
       const res = await fetch(editId ? `/api/admin/products/${editId}` : '/api/admin/products', { method: editId ? 'PUT' : 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
@@ -1892,6 +1950,8 @@ label { color: #f1e5ce; }
       document.getElementById('prodCostPrice').value = p.costPrice || 0; document.getElementById('prodStock').value = p.stockQuantity;
       document.getElementById('prodSizes').value = (p.sizeOptions || []).join(', ');
       document.getElementById('prodColors').value = (p.colorOptions || []).join(', ');
+      currentColorImages = (p.colorImages && typeof p.colorImages === 'object') ? Object.fromEntries(Object.entries(p.colorImages).map(([c, imgs]) => [c, Array.isArray(imgs) ? [...imgs] : []])) : {};
+      renderColorImageEditors();
 
       const vMap = (p.variantStock && typeof p.variantStock === 'object' && Object.keys(p.variantStock).length) ? { ...p.variantStock } : {};
       if (!Object.keys(vMap).length && p.sizeStock && typeof p.sizeStock === 'object') {
@@ -1915,7 +1975,7 @@ label { color: #f1e5ce; }
       document.getElementById('prodShowOnHome').checked = true; document.getElementById('prodNonRefundable').checked = false;
       document.getElementById('variantStockMatrixBox').classList.add('hidden');
       document.getElementById('variantStockMatrixBody').innerHTML = '';
-      populateCategoryDropdowns(); currentFormImages = []; renderFormImagesPreview();
+      populateCategoryDropdowns(); currentFormImages = []; currentColorImages = {}; renderFormImagesPreview(); renderColorImageEditors();
     }
 
     async function saveQuickCatalogRow(id) {
