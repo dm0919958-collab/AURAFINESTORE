@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" role="img" aria-labelledby="title">
+<title id="title">Aura Fine Store</title>
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0a6"/><stop offset=".48" stop-color="#e9b83e"/><stop offset="1" stop-color="#a66b12"/></linearGradient></defs>
+<g fill="none" stroke="url(#g)" stroke-width="5" stroke-linejoin="round"><path d="M17 43h61l7 61H10z"/><path d="M29 44V29c0-13 9-22 19-22s19 9 19 22v15"/><path d="M5 100 48 56l34 44M27 78h42"/></g>
+<text x="103" y="62" fill="url(#g)" font-family="Georgia,serif" font-size="56" font-weight="700" letter-spacing="3">AURA</text>
+<text x="107" y="94" fill="#fff" font-family="Arial,sans-serif" font-size="24" font-weight="700" letter-spacing="5">FINE STORE</text>
+</svg>
