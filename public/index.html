@@ -1952,7 +1952,7 @@
         return `
           <div class="rounded-3xl border border-amber-500/20 overflow-hidden shadow-lg lux-card flex flex-col justify-between group">
             <div onclick="openQuickView(${Number(p.id)||0}, ${safeInlineArg(p.__displayColor)})" class="relative overflow-hidden aspect-square bg-stone-950 cursor-pointer">
-              <img src="${safeHttpUrl(mainImage)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isOut ? 'opacity-40 grayscale' : ''}">
+              <img src="${safeHttpUrl(mainImage)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" style="opacity:1!important;filter:none!important;-webkit-filter:none!important;mix-blend-mode:normal!important;clip-path:none!important;mask:none!important;-webkit-mask:none!important;border-radius:0!important;">
               <span class="absolute top-3.5 left-3.5 ${isOut ? 'bg-rose-600 text-white' : 'bg-stone-950/90 text-amber-300 border border-amber-500/30'} text-[10px] font-extrabold uppercase px-3 py-1 rounded-full">${isOut ? 'Sold Out' : escapeHTML(p.badge || '')}</span>
               <button onclick="toggleWishlist(${Number(p.id)||0}, event)" title="Save to Wishlist" class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-stone-950/85 hover:bg-stone-900 border border-rose-500/30 flex items-center justify-center transition shadow"><i class="${isWished ? 'fa-solid text-rose-500' : 'fa-regular text-stone-300'} fa-heart text-sm"></i></button>
               ${isLowUrgency ? `<span class="absolute bottom-3.5 left-3.5 bg-rose-600/95 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow animate-pulse">🔥 মাত্র ${qtyLeft}টি পিস বাকি আছে!</span>` : ''}
