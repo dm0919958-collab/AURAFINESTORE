@@ -2124,6 +2124,87 @@ app.post('/api/payments/razorpay/retry', async (req, res) => {
   }
 });
 
+app.get('/api/admin/payment-attempts/:razorpayOrderId/history', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const attempt = await PaymentAttempt.findOne({ razorpayOrderId: String(req.params.razorpayOrderId || '').trim() }).lean();
+    if (!attempt) return res.status(404).json({ success: false, message: "Payment attempt not found." });
+    const groupId = attempt.retryGroupId || attempt.razorpayOrderId;
+    const group = await PaymentAttempt.find({
+      phone: attempt.phone, $or: [{ retryGroupId: groupId }, { razorpayOrderId: groupId }]
+    }).sort({ createdAt: 1 }).lean();
+    const keyId = process.env.RAZORPAY_KEY_ID, keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) return res.status(503).json({ success: false, message: "Razorpay is not configured." });
+    const history = await Promise.all(group.map(async a => {
+      try {
+        const r = await axios.get('https://api.razorpay.com/v1/orders/' + encodeURIComponent(a.razorpayOrderId) + '/payments',
+          { auth: { username: keyId, password: keySecret }, timeout: 12000 });
+        const payments = (Array.isArray(r.data.items) ? r.data.items : []).map(p => ({
+          id: p.id, status: p.status, method: p.method || '', amount: Number(p.amount || 0) / 100,
+          currency: p.currency || 'INR', createdAt: p.created_at ? new Date(p.created_at * 1000) : null,
+          errorCode: p.error_code || '', errorDescription: p.error_description || '',
+          errorSource: p.error_source || '', errorStep: p.error_step || '', errorReason: p.error_reason || ''
+        }));
+        return { razorpayOrderId: a.razorpayOrderId, retryOf: a.retryOf || '', status: a.status,
+          failureReason: a.failureReason || '', createdAt: a.createdAt, amountToCollect: a.amountToCollect,
+          payments, checked: true };
+      } catch (e) {
+        return { razorpayOrderId: a.razorpayOrderId, retryOf: a.retryOf || '', status: a.status,
+          failureReason: a.failureReason || '', createdAt: a.createdAt, amountToCollect: a.amountToCollect,
+          payments: [], checked: false, checkError: e.response?.data?.error?.description || e.message };
+      }
+    }));
+    res.json({ success: true, groupId, customerName: attempt.customerName, phone: attempt.phone,
+      total: attempt.total, history, hasCaptured: history.some(x => x.payments.some(p => p.status === 'captured')) });
+  } catch (err) {
+    console.error("Payment history lookup failed:", err.message);
+    res.status(500).json({ success: false, message: "Could not load payment history." });
+  }
+});
+
+app.post('/api/admin/payment-attempts/:razorpayOrderId/approve', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const attempt = await PaymentAttempt.findOne({ razorpayOrderId: String(req.params.razorpayOrderId || '').trim() }).lean();
+    if (!attempt) return res.status(404).json({ success: false, message: "Payment attempt not found." });
+    const groupId = attempt.retryGroupId || attempt.razorpayOrderId;
+    const group = await PaymentAttempt.find({ phone: attempt.phone, $or: [{ retryGroupId: groupId }, { razorpayOrderId: groupId }] }).sort({ createdAt: -1 }).lean();
+    const keyId = process.env.RAZORPAY_KEY_ID, keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) return res.status(503).json({ success: false, message: "Razorpay is not configured." });
+    let captured = null, capturedAttempt = null;
+    for (const a of group) {
+      const r = await axios.get('https://api.razorpay.com/v1/orders/' + encodeURIComponent(a.razorpayOrderId) + '/payments',
+        { auth: { username: keyId, password: keySecret }, timeout: 12000 });
+      const p = (Array.isArray(r.data.items) ? r.data.items : []).find(x => x.status === 'captured');
+      if (p) { captured = p; capturedAttempt = a; break; }
+    }
+    if (!captured || !capturedAttempt) return res.status(409).json({ success: false, message: "Razorpay has no captured payment in this retry group. Order was not created." });
+    if (capturedAttempt.orderId || await Order.findOne({ razorpayPaymentId: captured.id }).lean()) {
+      return res.status(409).json({ success: false, message: "This captured payment is already linked to an order." });
+    }
+    if (!capturedAttempt.checkoutPayload || !Array.isArray(capturedAttempt.checkoutPayload.items) || !capturedAttempt.checkoutPayload.items.length)
+      return res.status(409).json({ success: false, message: "Checkout details are missing. Do not create a manual order; review this payment." });
+    if (Number(captured.amount) !== Math.round(Number(capturedAttempt.amountToCollect || 0) * 100))
+      return res.status(409).json({ success: false, message: "Captured amount does not match the saved checkout amount. Manual review is required." });
+    const signature = crypto.createHmac('sha256', keySecret).update(captured.order_id + "|" + captured.id).digest('hex');
+    const payload = { ...capturedAttempt.checkoutPayload, razorpay_order_id: captured.order_id,
+      razorpay_payment_id: captured.id, razorpay_signature: signature };
+    const result = await axios.post('http://127.0.0.1:' + PORT + '/api/orders', payload,
+      { headers: { 'Content-Type': 'application/json' }, timeout: 30000 });
+    if (!result.data?.success || !result.data?.order) {
+      return res.status(502).json({ success: false, message: "Payment was captured, but normal order creation did not complete. Keep this payment in review.", details: result.data?.message || "Order creation failed." });
+    }
+    await PaymentAttempt.updateMany(
+      { phone: attempt.phone, $or: [{ retryGroupId: groupId }, { razorpayOrderId: groupId }] },
+      { $set: { status: "Completed", orderId: result.data.order.id, razorpayPaymentId: captured.id, failureReason: "", updatedAt: new Date() } }
+    );
+    res.json({ success: true, orderId: result.data.order.id, message: "Captured payment approved. The order has been created using the normal checkout validation and is now in Admin Orders and customer My Orders." });
+  } catch (err) {
+    console.error("Admin payment approval failed:", err.response?.data || err.message);
+    res.status(502).json({ success: false, message: err.response?.data?.message || "Could not safely create an order from this payment. Keep it in Payment Review." });
+  }
+});
+
 app.delete('/api/admin/payment-attempts/:razorpayOrderId', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
@@ -2134,9 +2215,21 @@ app.delete('/api/admin/payment-attempts/:razorpayOrderId', async (req, res) => {
     const groupAttempts = await PaymentAttempt.find({
       phone: attempt.phone,
       $or: [{ retryGroupId: groupId }, { razorpayOrderId: groupId }]
-    }).select('status').lean();
+    }).lean();
     if (groupAttempts.some(a => ["Completed", "Payment Received - Order Pending"].includes(a.status)))
       return res.status(409).json({ success: false, message: "This payment history contains a captured or completed payment and cannot be deleted." });
+    const keyId = process.env.RAZORPAY_KEY_ID, keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) return res.status(503).json({ success: false, message: "Razorpay is not configured; deletion was blocked safely." });
+    for (const a of groupAttempts) {
+      const check = await axios.get('https://api.razorpay.com/v1/orders/' + encodeURIComponent(a.razorpayOrderId) + '/payments',
+        { auth: { username: keyId, password: keySecret }, timeout: 12000 });
+      const payments = Array.isArray(check.data.items) ? check.data.items : [];
+      const captured = payments.find(p => p.status === 'captured');
+      if (captured) {
+        await PaymentAttempt.updateOne({ _id: a._id }, { $set: { status: "Payment Received - Order Pending", razorpayPaymentId: captured.id, failureReason: "Razorpay confirms captured payment. Admin approval required.", updatedAt: new Date() } });
+        return res.status(409).json({ success: false, message: "Razorpay confirms money was captured. History is protected; use Approve & Create Order." });
+      }
+    }
     const result = await PaymentAttempt.deleteMany({
       phone: attempt.phone,
       $or: [{ retryGroupId: groupId }, { razorpayOrderId: groupId }],
