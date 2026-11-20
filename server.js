@@ -629,6 +629,11 @@ async function applyInventoryMovement(item, direction, session, actor, orderId =
 
 async function atomicallyDeductStock(verifiedItems, prodMap, session, orderId = '') { for (const item of verifiedItems) await applyInventoryMovement(item, 'deduct', session, 'system:checkout', orderId); return { ok: true }; }
 
+async function writeAdminStockAudit(before, after, session, action = 'ADMIN_STOCK_UPDATED') {
+  if (JSON.stringify(inventorySnapshot(before)) === JSON.stringify(inventorySnapshot(after))) return;
+  await InventoryAuditLog.create([{ actor: 'admin', action, productId: Number(after.id), productName: after.name || before.name || '', quantity: Math.abs((Number(after.stockQuantity) || 0) - (Number(before.stockQuantity) || 0)), before: inventorySnapshot(before), after: inventorySnapshot(after) }], { session });
+}
+
 async function seedInitialData() {
   try {
     const catCount = await Category.countDocuments();
@@ -1869,6 +1874,7 @@ app.post('/api/admin/products', async (req, res) => {
       description: description || "",
       reviews: []
     });
+    await InventoryAuditLog.create([{ actor: 'admin', action: 'ADMIN_PRODUCT_CREATED', productId: newProd.id, productName: newProd.name || '', quantity: finalTotalStock, before: { stockQuantity: 0, sizeStock: {}, variantStock: {}, inStock: false }, after: inventorySnapshot(newProd) }]);
     res.json({ success: true, product: newProd });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -1879,82 +1885,74 @@ app.put('/api/admin/products/:id', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, nonRefundable, sizeOptions, sizeStock, variantStock, colorOptions, colorPrices, colorImages, badge, images, description } = req.body;
-
-    const uploadedUrls = await Promise.all(
-      (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
-    );
+    const uploadedUrls = await Promise.all((images || []).map(img => uploadToCloudinary(img, 'aura_store/products')));
     const uploadedColorImages = {};
-    for (const [color, photos] of Object.entries(colorImages || {})) {
-      uploadedColorImages[color] = await Promise.all(
-        (Array.isArray(photos) ? photos : []).map(img => uploadToCloudinary(img, 'aura_store/products'))
-      );
-    }
-
+    for (const [color, photos] of Object.entries(colorImages || {})) uploadedColorImages[color] = await Promise.all((Array.isArray(photos) ? photos : []).map(img => uploadToCloudinary(img, 'aura_store/products')));
     const normalizedStock = normalizeStockMaps(variantStock, sizeStock, stockQuantity);
-    const parsedVariantStock = normalizedStock.variantStock;
-    const parsedSizeStock = normalizedStock.sizeStock;
-    const finalTotalStock = normalizedStock.stockQuantity;
-
     const prodId = Number(req.params.id);
-    const updated = await Product.findOneAndUpdate(
-      { id: prodId },
-      {
-        name,
-        mainCategory,
-        category,
-        price: Number(price),
-        originalPrice: Number(originalPrice),
-        costPrice: Number(costPrice) || 0,
-        stockQuantity: finalTotalStock,
-        showOnHome: showOnHome !== false,
-        nonRefundable: Boolean(nonRefundable),
-        sizeOptions,
-        sizeStock: parsedSizeStock,
-        variantStock: parsedVariantStock,
-        colorOptions,
-        colorPrices: colorPrices && typeof colorPrices === "object" ? colorPrices : {},
-        colorImages: uploadedColorImages,
-        badge,
-        description,
-        images: uploadedUrls,
-        inStock: finalTotalStock > 0
-      },
-      { new: true }
-    );
-
-    if (!updated) return res.status(404).json({ success: false, message: "Product not found" });
+    const session = await mongoose.startSession();
+    let updated;
+    try {
+      await session.withTransaction(async () => {
+        const before = await Product.findOne({ id: prodId }).session(session).lean();
+        if (!before) { const error = new Error('Product not found'); error.statusCode = 404; throw error; }
+        updated = await Product.findOneAndUpdate({ id: prodId }, {
+          name, mainCategory, category, price: Number(price), originalPrice: Number(originalPrice),
+          costPrice: Number(costPrice) || 0, stockQuantity: normalizedStock.stockQuantity,
+          showOnHome: showOnHome !== false, nonRefundable: Boolean(nonRefundable), sizeOptions,
+          sizeStock: normalizedStock.sizeStock, variantStock: normalizedStock.variantStock,
+          colorOptions, colorPrices: colorPrices && typeof colorPrices === "object" ? colorPrices : {},
+          colorImages: uploadedColorImages, badge, description, images: uploadedUrls,
+          inStock: normalizedStock.inStock
+        }, { new: true, session });
+        await writeAdminStockAudit(before, updated, session);
+      });
+    } finally { await session.endSession(); }
     res.json({ success: true, product: updated });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(err.statusCode || 500).json({ success: false, message: err.message });
   }
 });
 
 app.patch('/api/admin/products/:id/quick-update', async (req, res) => {
+  if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+  const { price, costPrice, stockQuantity } = req.body;
+  const prodId = Number(req.params.id);
+  if (price !== undefined && (!Number.isFinite(Number(price)) || Number(price) < 0)) return res.status(400).json({ success: false, message: "Invalid price." });
+  if (costPrice !== undefined && (!Number.isFinite(Number(costPrice)) || Number(costPrice) < 0)) return res.status(400).json({ success: false, message: "Invalid cost price." });
+  if (stockQuantity !== undefined && (!Number.isSafeInteger(Number(stockQuantity)) || Number(stockQuantity) < 0)) return res.status(400).json({ success: false, message: "Stock must be a non-negative whole number." });
+  const updateFields = {};
+  if (price !== undefined) updateFields.price = Number(price);
+  if (costPrice !== undefined) updateFields.costPrice = Number(costPrice);
+  if (stockQuantity !== undefined) { updateFields.stockQuantity = Number(stockQuantity); updateFields.inStock = Number(stockQuantity) > 0; }
+  const session = await mongoose.startSession();
+  let updated;
+  try {
+    await session.withTransaction(async () => {
+      const before = await Product.findOne({ id: prodId }).session(session).lean();
+      if (!before) { const error = new Error('Product not found'); error.statusCode = 404; throw error; }
+      if (stockQuantity !== undefined && (Object.keys(before.variantStock || {}).length || Object.keys(before.sizeStock || {}).length)) {
+        const error = new Error('For variant/size products, update the matching stock map instead of total stock only.'); error.statusCode = 400; throw error;
+      }
+      updated = await Product.findOneAndUpdate({ id: prodId }, updateFields, { new: true, session });
+      if (stockQuantity !== undefined) await writeAdminStockAudit(before, updated, session);
+    });
+    return res.json({ success: true, product: updated });
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({ success: false, message: err.message });
+  } finally { await session.endSession(); }
+});
+
+app.get('/api/admin/inventory-audit', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { price, costPrice, stockQuantity } = req.body;
-    const prodId = Number(req.params.id);
-
-    const updateFields = {};
-    if (price !== undefined) updateFields.price = Math.max(0, Number(price));
-    if (costPrice !== undefined) updateFields.costPrice = Math.max(0, Number(costPrice));
-    if (stockQuantity !== undefined) {
-      updateFields.stockQuantity = Math.max(0, Number(stockQuantity));
-      updateFields.inStock = updateFields.stockQuantity > 0;
-    }
-
-    if (stockQuantity !== undefined) {
-      const current = await Product.findOne({ id: prodId }).lean();
-      if (!current) return res.status(404).json({ success: false, message: "Product not found" });
-      if (Object.keys(current.variantStock || {}).length || Object.keys(current.sizeStock || {}).length) return res.status(400).json({ success: false, message: "For variant/size products, update the matching stock map instead of total stock only." });
-      if (!Number.isSafeInteger(Number(stockQuantity)) || Number(stockQuantity) < 0) return res.status(400).json({ success: false, message: "Stock must be a non-negative whole number." });
-    }
-    const updated = await Product.findOneAndUpdate({ id: prodId }, updateFields, { new: true });
-    if (!updated) return res.status(404).json({ success: false, message: "Product not found" });
-    res.json({ success: true, product: updated });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+    const limit = Math.min(200, Math.max(1, Number.parseInt(req.query.limit, 10) || 50));
+    const query = {};
+    if (req.query.productId) query.productId = Number(req.query.productId);
+    if (req.query.orderId) query.orderId = String(req.query.orderId).slice(0, 80);
+    const entries = await InventoryAuditLog.find(query).sort({ createdAt: -1, _id: -1 }).limit(limit).lean();
+    res.set('Cache-Control', 'no-store').json({ success: true, entries });
+  } catch (err) { res.status(500).json({ success: false, message: 'Could not load inventory audit history.' }); }
 });
 
 app.patch('/api/admin/products/:id/toggle-home', async (req, res) => {
