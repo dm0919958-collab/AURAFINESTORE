@@ -681,39 +681,34 @@ async function seedInitialData() {
 // Credit an order's earned coins with a wallet-side idempotency ledger.
 // If the process stops after the wallet write but before the order update, a retry
 // observes creditedOrderIds and repairs the order without incrementing the wallet again.
-async function creditOrderCoinsOnce(order) {
+async function creditOrderCoinsOnce(order, session = null) {
   const amount = Math.max(0, Number(order?.coinsEarned) || 0);
   const phone = String(order?.phone || '');
   const orderId = String(order?.id || '');
   if (!amount || !phone || !orderId) return false;
+  const sessionOption = session ? { session } : {};
 
   try {
     await Wallet.findOneAndUpdate(
       { phone },
       { $setOnInsert: { phone, coins: 0, creditedOrderIds: [] } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true, ...sessionOption }
     );
   } catch (error) {
-    // Another order for this phone may create the unique wallet at the same time.
-    if (error?.code !== 11000) throw error;
+    if (error?.code !== 11000 || session) throw error;
   }
   const creditedWallet = await Wallet.findOneAndUpdate(
     { phone, creditedOrderIds: { $ne: orderId } },
-    {
-      $set: { customerName: order.customerName, updatedAt: new Date() },
-      $inc: { coins: amount },
-      $addToSet: { creditedOrderIds: orderId }
-    },
-    { new: true }
+    { $set: { customerName: order.customerName, updatedAt: new Date() }, $inc: { coins: amount }, $addToSet: { creditedOrderIds: orderId } },
+    { new: true, ...sessionOption }
   );
   if (!creditedWallet) {
-    const ledgerEntry = await Wallet.exists({ phone, creditedOrderIds: orderId });
+    const ledgerQuery = Wallet.exists({ phone, creditedOrderIds: orderId });
+    if (session) ledgerQuery.session(session);
+    const ledgerEntry = await ledgerQuery;
     if (!ledgerEntry) throw new Error('Wallet coin credit could not be confirmed.');
   }
-  await Order.updateOne(
-    { _id: order._id },
-    { $set: { coinsCredited: true, coinsStatus: 'credited' } }
-  );
+  await Order.updateOne({ _id: order._id }, { $set: { coinsCredited: true, coinsStatus: 'credited' } }, sessionOption);
   order.coinsCredited = true;
   order.coinsStatus = 'credited';
   return Boolean(creditedWallet);
@@ -3084,127 +3079,64 @@ app.delete('/api/admin/orders/:id', async (req, res) => {
 });
 
 app.patch('/api/admin/orders/:id/status', async (req, res) => {
+  if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+  const { status } = req.body;
+  const allowedStatuses = ['Pending Verification', 'Verified & Packing', 'Verified & Shipped', 'Delivered', 'Cancelled'];
+  if (!allowedStatuses.includes(status)) return res.status(400).json({ success: false, message: 'Invalid order status' });
+  const session = await mongoose.startSession();
+  let response;
   try {
-    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { status } = req.body;
-    const order = await Order.findOne({ id: req.params.id });
-    if (!order) return res.status(404).json({ success: false });
+    await session.withTransaction(async () => {
+      const order = await Order.findOne({ id: req.params.id }).session(session);
+      if (!order) { const error = new Error('Order not found'); error.statusCode = 404; throw error; }
+      const prevStatus = order.status;
+      if (prevStatus === status) { response = { success: true, status: order.status, deliveredAt: order.deliveredAt }; return; }
 
-    const allowedStatuses = ['Pending Verification', 'Verified & Packing', 'Verified & Shipped', 'Delivered', 'Cancelled'];
-    if (!allowedStatuses.includes(status)) return res.status(400).json({ success: false, message: 'Invalid order status' });
-
-    const prevStatus = order.status;
-    if (prevStatus !== 'Cancelled' && status === 'Cancelled') {
-      for (const item of (order.items || [])) {
-        const p = await Product.findOne({ id: item.id });
-        if (p) {
-          const varMap = (p.variantStock && typeof p.variantStock === 'object') ? { ...p.variantStock } : {};
-          const vKey = `${item.selectedColor || 'Standard'}__${item.selectedSize || 'Standard'}`;
-          const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
-
-          if (Object.keys(varMap).length > 0 && Object.prototype.hasOwnProperty.call(varMap, vKey)) {
-            varMap[vKey] = (Number(varMap[vKey]) || 0) + (item.qty || 1);
-            p.variantStock = varMap;
-            p.markModified('variantStock');
-            p.stockQuantity = Object.values(varMap).reduce((s, n) => s + (Number(n) || 0), 0);
-          } else if (Object.keys(sizeMap).length > 0 && item.selectedSize && Object.prototype.hasOwnProperty.call(sizeMap, item.selectedSize)) {
-            sizeMap[item.selectedSize] = (Number(sizeMap[item.selectedSize]) || 0) + (item.qty || 1);
-            p.sizeStock = sizeMap;
-            p.markModified('sizeStock');
-            p.stockQuantity = Object.values(sizeMap).reduce((s, n) => s + (Number(n) || 0), 0);
-          } else {
-            p.stockQuantity = (p.stockQuantity || 0) + (item.qty || 1);
-          }
-          p.inStock = p.stockQuantity > 0;
-          await p.save();
-        }
-      }
-      // Reverse earned coins if already credited
-      if (order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
-        // Preserve the previous zero-floor behavior while removing the idempotency key atomically.
-        await Wallet.collection.updateOne(
-          { phone: order.phone },
-          [{ $set: {
+      if (prevStatus !== 'Cancelled' && status === 'Cancelled') {
+        for (const item of (order.items || [])) await applyInventoryMovement(item, 'restore', session, 'admin:order-cancel', order.id);
+        if (order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
+          await Wallet.collection.updateOne({ phone: order.phone }, [{ $set: {
             coins: { $max: [0, { $subtract: [{ $ifNull: ['$coins', 0] }, Math.max(0, Number(order.coinsEarned) || 0)] }] },
-            creditedOrderIds: { $filter: {
-              input: { $ifNull: ['$creditedOrderIds', []] },
-              as: 'creditedId',
-              cond: { $ne: ['$creditedId', order.id] }
-            } },
+            creditedOrderIds: { $filter: { input: { $ifNull: ['$creditedOrderIds', []] }, as: 'creditedId', cond: { $ne: ['$creditedId', order.id] } } },
             updatedAt: new Date()
-          } }]
-        );
-        order.coinsCredited = false;
+          } }], { session });
+          order.coinsCredited = false;
+        }
+        if ((order.coinsEarned || 0) > 0) { order.coinsStatus = 'forfeited'; order.coinsUnlockAt = 0; }
+        if ((order.coinsUsed || 0) > 0 && order.phone) {
+          await Wallet.findOneAndUpdate({ phone: order.phone },
+            { $setOnInsert: { phone: order.phone }, $set: { customerName: order.customerName, updatedAt: new Date() }, $inc: { coins: order.coinsUsed } },
+            { upsert: true, session });
+          order.coinsUsed = 0;
+        }
+      } else if (prevStatus === 'Cancelled' && status !== 'Cancelled') {
+        for (const item of (order.items || [])) await applyInventoryMovement(item, 'deduct', session, 'admin:order-reopen', order.id);
       }
-      if ((order.coinsEarned || 0) > 0) {
-        order.coinsStatus = 'forfeited';
-        order.coinsUnlockAt = 0;
-      }
-      // Refund customer's redeemed coins (coinsUsed) back to their Wallet when order is Cancelled
-      if ((order.coinsUsed || 0) > 0 && order.phone) {
-        await Wallet.findOneAndUpdate(
-          { phone: order.phone },
-          {
-            $setOnInsert: { phone: order.phone },
-            $set: { customerName: order.customerName, updatedAt: new Date() },
-            $inc: { coins: order.coinsUsed }
-          },
-          { upsert: true }
-        );
-        order.coinsUsed = 0;
-      }
-    } else if (prevStatus === 'Cancelled' && status !== 'Cancelled') {
-      for (const item of (order.items || [])) {
-        const p = await Product.findOne({ id: item.id });
-        if (p) {
-          const varMap = (p.variantStock && typeof p.variantStock === 'object') ? { ...p.variantStock } : {};
-          const vKey = `${item.selectedColor || 'Standard'}__${item.selectedSize || 'Standard'}`;
-          const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
 
-          if (Object.keys(varMap).length > 0 && Object.prototype.hasOwnProperty.call(varMap, vKey)) {
-            varMap[vKey] = Math.max(0, (Number(varMap[vKey]) || 0) - (item.qty || 1));
-            p.variantStock = varMap;
-            p.markModified('variantStock');
-            p.stockQuantity = Object.values(varMap).reduce((s, n) => s + (Number(n) || 0), 0);
-          } else if (Object.keys(sizeMap).length > 0 && item.selectedSize && Object.prototype.hasOwnProperty.call(sizeMap, item.selectedSize)) {
-            sizeMap[item.selectedSize] = Math.max(0, (Number(sizeMap[item.selectedSize]) || 0) - (item.qty || 1));
-            p.sizeStock = sizeMap;
-            p.markModified('sizeStock');
-            p.stockQuantity = Object.values(sizeMap).reduce((s, n) => s + (Number(n) || 0), 0);
-          } else {
-            p.stockQuantity = Math.max(0, (p.stockQuantity || 0) - (item.qty || 1));
-          }
-          p.inStock = p.stockQuantity > 0;
-          await p.save();
+      if (status === 'Delivered' && !order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
+        const storeCfg = await Settings.findOne({ key: 'main' }).session(session).lean();
+        const refundDays = storeCfg ? (storeCfg.refundWindowDays ?? 7) : 7;
+        if (order.isNonRefundableOrder || refundDays <= 0) {
+          await creditOrderCoinsOnce(order, session);
+          order.coinsUnlockAt = Date.now();
+        } else {
+          order.coinsStatus = 'pending_refund_window';
+          order.coinsUnlockAt = Date.now() + (refundDays * 24 * 60 * 60 * 1000);
         }
       }
-    }
-
-    if (status === 'Delivered' && !order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
-      const storeCfg = await Settings.findOne({ key: 'main' }).lean();
-      const refundDays = storeCfg ? (storeCfg.refundWindowDays ?? 7) : 7;
-
-      // Non-Refundable orders (or 0-day refund window) credit coins IMMEDIATELY on delivery;
-      // Refundable orders unlock coins automatically after the refund window passes.
-      if (order.isNonRefundableOrder || refundDays <= 0) {
-        await creditOrderCoinsOnce(order);
-        order.coinsUnlockAt = Date.now();
-      } else {
-        order.coinsStatus = 'pending_refund_window';
-        order.coinsUnlockAt = Date.now() + (refundDays * 24 * 60 * 60 * 1000);
-      }
-    }
-
-    order.status = status;
-    if (status === 'Delivered') {
-      if (prevStatus !== 'Delivered' || !order.deliveredAt) order.deliveredAt = new Date();
-    } else {
-      order.deliveredAt = null;
-    }
-    await order.save();
-    res.json({ success: true, status: order.status, deliveredAt: order.deliveredAt });
+      order.status = status;
+      if (status === 'Delivered') {
+        if (prevStatus !== 'Delivered' || !order.deliveredAt) order.deliveredAt = new Date();
+      } else order.deliveredAt = null;
+      await order.save({ session });
+      response = { success: true, status: order.status, deliveredAt: order.deliveredAt };
+    });
+    return res.json(response);
   } catch (err) {
-    res.status(500).json({ success: false });
+    console.error('Order status transaction failed:', err.message);
+    return res.status(err.statusCode || 409).json({ success: false, message: err.statusCode ? err.message : 'Order status or inventory could not be updated atomically.' });
+  } finally {
+    await session.endSession();
   }
 });
 
