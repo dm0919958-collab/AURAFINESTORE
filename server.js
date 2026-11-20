@@ -13,6 +13,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const helmet = require('helmet');
 const { rateLimit } = require('express-rate-limit');
+const { cleanStockMap, normalizeStockMaps, stockMutationPlan } = require('./inventory-domain');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -335,6 +336,9 @@ const stockNotifySchema = new mongoose.Schema({
 
 const Category = mongoose.model('Category', categorySchema);
 const Product = mongoose.model('Product', productSchema);
+const inventoryAuditSchema = new mongoose.Schema({ actor: { type: String, required: true }, action: { type: String, required: true }, productId: { type: Number, required: true, index: true }, productName: String, orderId: { type: String, default: '', index: true }, quantity: { type: Number, default: 0 }, before: { type: mongoose.Schema.Types.Mixed, required: true }, after: { type: mongoose.Schema.Types.Mixed, required: true }, createdAt: { type: Date, default: Date.now, immutable: true } }, { versionKey: false });
+inventoryAuditSchema.index({ createdAt: -1 });
+const InventoryAuditLog = mongoose.model('InventoryAuditLog', inventoryAuditSchema);
 const Banner = mongoose.model('Banner', bannerSchema);
 const Coupon = mongoose.model('Coupon', couponSchema);
 const Settings = mongoose.model('Settings', settingsSchema);
@@ -603,15 +607,45 @@ const defaultProducts = [
   }
 ];
 
-function parseCleanStockMap(rawMap) {
-  const map = {};
-  if (rawMap && typeof rawMap === 'object' && !Array.isArray(rawMap)) {
-    for (const [k, v] of Object.entries(rawMap)) {
-      const cleanK = String(k || '').trim();
-      if (cleanK) map[cleanK] = Math.max(0, parseInt(v, 10) || 0);
-    }
+function parseCleanStockMap(rawMap) { return cleanStockMap(rawMap); }
+
+function inventorySnapshot(product) { return { stockQuantity: Number(product.stockQuantity) || 0, sizeStock: { ...(product.sizeStock || {}) }, variantStock: { ...(product.variantStock || {}) }, inStock: Boolean(product.inStock) }; }
+
+async function applyInventoryMovement(item, direction, session, actor, orderId = '') {
+  const product = await Product.findOne({ id: Number(item.id) }).session(session).lean();
+  if (!product) throw new Error('Inventory product not found: ' + item.id);
+  const plan = stockMutationPlan(product, item, direction);
+  const filter = { id: Number(item.id) };
+  if (direction === 'deduct') {
+    if (plan.type === 'total') filter.stockQuantity = { $gte: plan.qty };
+    else for (const key of Object.keys(plan.fields)) if (key !== 'stockQuantity') filter[key] = { $gte: plan.qty };
   }
-  return map;
+  const addExpr = (path, delta) => ({ $add: [{ $ifNull: ['$' + path, 0] }, delta] });
+  const firstStage = {};
+  for (const [path, delta] of Object.entries(plan.fields)) {
+    if (path !== 'stockQuantity') firstStage[path] = addExpr(path, delta);
+  }
+  if (plan.type === 'total') firstStage.stockQuantity = addExpr('stockQuantity', plan.fields.stockQuantity);
+  let totalExpr = { $ifNull: ['$stockQuantity', 0] };
+  if (plan.type === 'variant') {
+    totalExpr = { $sum: { $map: { input: { $objectToArray: { $ifNull: ['$variantStock', {}] } }, as: 'entry', in: '$$entry.v' } } };
+  } else if (plan.type === 'size') {
+    totalExpr = { $sum: { $map: { input: { $objectToArray: { $ifNull: ['$sizeStock', {}] } }, as: 'entry', in: '$$entry.v' } } };
+  }
+  const updated = await Product.findOneAndUpdate(filter, [
+    { $set: firstStage },
+    { $set: { stockQuantity: totalExpr, inStock: { $gt: [totalExpr, 0] } } }
+  ], { new: true, session }).lean();
+  if (!updated) throw new Error('Insufficient stock for ' + (item.name || ('product ' + item.id)) + '.');
+  await InventoryAuditLog.create([{ actor, action: direction === 'deduct' ? 'ORDER_STOCK_DEDUCTED' : 'ORDER_STOCK_RESTORED', productId: Number(item.id), productName: product.name || item.name || '', orderId: String(orderId || ''), quantity: plan.qty, before: inventorySnapshot(product), after: inventorySnapshot(updated) }], { session });
+  return updated;
+}
+
+async function atomicallyDeductStock(verifiedItems, prodMap, session, orderId = '') { for (const item of verifiedItems) await applyInventoryMovement(item, 'deduct', session, 'system:checkout', orderId); return { ok: true }; }
+
+async function writeAdminStockAudit(before, after, session, action = 'ADMIN_STOCK_UPDATED') {
+  if (JSON.stringify(inventorySnapshot(before)) === JSON.stringify(inventorySnapshot(after))) return;
+  await InventoryAuditLog.create([{ actor: 'admin', action, productId: Number(after.id), productName: after.name || before.name || '', quantity: Math.abs((Number(after.stockQuantity) || 0) - (Number(before.stockQuantity) || 0)), before: inventorySnapshot(before), after: inventorySnapshot(after) }], { session });
 }
 
 async function seedInitialData() {
@@ -666,39 +700,34 @@ async function seedInitialData() {
 // Credit an order's earned coins with a wallet-side idempotency ledger.
 // If the process stops after the wallet write but before the order update, a retry
 // observes creditedOrderIds and repairs the order without incrementing the wallet again.
-async function creditOrderCoinsOnce(order) {
+async function creditOrderCoinsOnce(order, session = null) {
   const amount = Math.max(0, Number(order?.coinsEarned) || 0);
   const phone = String(order?.phone || '');
   const orderId = String(order?.id || '');
   if (!amount || !phone || !orderId) return false;
+  const sessionOption = session ? { session } : {};
 
   try {
     await Wallet.findOneAndUpdate(
       { phone },
       { $setOnInsert: { phone, coins: 0, creditedOrderIds: [] } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true, ...sessionOption }
     );
   } catch (error) {
-    // Another order for this phone may create the unique wallet at the same time.
-    if (error?.code !== 11000) throw error;
+    if (error?.code !== 11000 || session) throw error;
   }
   const creditedWallet = await Wallet.findOneAndUpdate(
     { phone, creditedOrderIds: { $ne: orderId } },
-    {
-      $set: { customerName: order.customerName, updatedAt: new Date() },
-      $inc: { coins: amount },
-      $addToSet: { creditedOrderIds: orderId }
-    },
-    { new: true }
+    { $set: { customerName: order.customerName, updatedAt: new Date() }, $inc: { coins: amount }, $addToSet: { creditedOrderIds: orderId } },
+    { new: true, ...sessionOption }
   );
   if (!creditedWallet) {
-    const ledgerEntry = await Wallet.exists({ phone, creditedOrderIds: orderId });
+    const ledgerQuery = Wallet.exists({ phone, creditedOrderIds: orderId });
+    if (session) ledgerQuery.session(session);
+    const ledgerEntry = await ledgerQuery;
     if (!ledgerEntry) throw new Error('Wallet coin credit could not be confirmed.');
   }
-  await Order.updateOne(
-    { _id: order._id },
-    { $set: { coinsCredited: true, coinsStatus: 'credited' } }
-  );
+  await Order.updateOne({ _id: order._id }, { $set: { coinsCredited: true, coinsStatus: 'credited' } }, sessionOption);
   order.coinsCredited = true;
   order.coinsStatus = 'credited';
   return Boolean(creditedWallet);
@@ -1829,16 +1858,10 @@ app.post('/api/admin/products', async (req, res) => {
       );
     }
 
-    const parsedVariantStock = parseCleanStockMap(variantStock);
-    const parsedSizeStock = parseCleanStockMap(sizeStock);
-    const vKeys = Object.keys(parsedVariantStock);
-    const sKeys = Object.keys(parsedSizeStock);
-
-    const finalTotalStock = vKeys.length > 0
-      ? vKeys.reduce((sum, k) => sum + (Number(parsedVariantStock[k]) || 0), 0)
-      : (sKeys.length > 0
-          ? sKeys.reduce((sum, k) => sum + (Number(parsedSizeStock[k]) || 0), 0)
-          : (Number(stockQuantity) || 0));
+    const normalizedStock = normalizeStockMaps(variantStock, sizeStock, stockQuantity);
+    const parsedVariantStock = normalizedStock.variantStock;
+    const parsedSizeStock = normalizedStock.sizeStock;
+    const finalTotalStock = normalizedStock.stockQuantity;
 
     const newProd = await Product.create({
       id: Date.now(),
@@ -1865,6 +1888,7 @@ app.post('/api/admin/products', async (req, res) => {
       description: description || "",
       reviews: []
     });
+    await InventoryAuditLog.create([{ actor: 'admin', action: 'ADMIN_PRODUCT_CREATED', productId: newProd.id, productName: newProd.name || '', quantity: finalTotalStock, before: { stockQuantity: 0, sizeStock: {}, variantStock: {}, inStock: false }, after: inventorySnapshot(newProd) }]);
     res.json({ success: true, product: newProd });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -1875,82 +1899,74 @@ app.put('/api/admin/products/:id', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     const { name, mainCategory, category, price, originalPrice, costPrice, stockQuantity, showOnHome, nonRefundable, sizeOptions, sizeStock, variantStock, colorOptions, colorPrices, colorImages, badge, images, description } = req.body;
-
-    const uploadedUrls = await Promise.all(
-      (images || []).map(img => uploadToCloudinary(img, 'aura_store/products'))
-    );
+    const uploadedUrls = await Promise.all((images || []).map(img => uploadToCloudinary(img, 'aura_store/products')));
     const uploadedColorImages = {};
-    for (const [color, photos] of Object.entries(colorImages || {})) {
-      uploadedColorImages[color] = await Promise.all(
-        (Array.isArray(photos) ? photos : []).map(img => uploadToCloudinary(img, 'aura_store/products'))
-      );
-    }
-
-    const parsedVariantStock = parseCleanStockMap(variantStock);
-    const parsedSizeStock = parseCleanStockMap(sizeStock);
-    const vKeys = Object.keys(parsedVariantStock);
-    const sKeys = Object.keys(parsedSizeStock);
-
-    const finalTotalStock = vKeys.length > 0
-      ? vKeys.reduce((sum, k) => sum + (Number(parsedVariantStock[k]) || 0), 0)
-      : (sKeys.length > 0
-          ? sKeys.reduce((sum, k) => sum + (Number(parsedSizeStock[k]) || 0), 0)
-          : (Number(stockQuantity) || 0));
-
+    for (const [color, photos] of Object.entries(colorImages || {})) uploadedColorImages[color] = await Promise.all((Array.isArray(photos) ? photos : []).map(img => uploadToCloudinary(img, 'aura_store/products')));
+    const normalizedStock = normalizeStockMaps(variantStock, sizeStock, stockQuantity);
     const prodId = Number(req.params.id);
-    const updated = await Product.findOneAndUpdate(
-      { id: prodId },
-      {
-        name,
-        mainCategory,
-        category,
-        price: Number(price),
-        originalPrice: Number(originalPrice),
-        costPrice: Number(costPrice) || 0,
-        stockQuantity: finalTotalStock,
-        showOnHome: showOnHome !== false,
-        nonRefundable: Boolean(nonRefundable),
-        sizeOptions,
-        sizeStock: parsedSizeStock,
-        variantStock: parsedVariantStock,
-        colorOptions,
-        colorPrices: colorPrices && typeof colorPrices === "object" ? colorPrices : {},
-        colorImages: uploadedColorImages,
-        badge,
-        description,
-        images: uploadedUrls,
-        inStock: finalTotalStock > 0
-      },
-      { new: true }
-    );
-
-    if (!updated) return res.status(404).json({ success: false, message: "Product not found" });
+    const session = await mongoose.startSession();
+    let updated;
+    try {
+      await session.withTransaction(async () => {
+        const before = await Product.findOne({ id: prodId }).session(session).lean();
+        if (!before) { const error = new Error('Product not found'); error.statusCode = 404; throw error; }
+        updated = await Product.findOneAndUpdate({ id: prodId }, {
+          name, mainCategory, category, price: Number(price), originalPrice: Number(originalPrice),
+          costPrice: Number(costPrice) || 0, stockQuantity: normalizedStock.stockQuantity,
+          showOnHome: showOnHome !== false, nonRefundable: Boolean(nonRefundable), sizeOptions,
+          sizeStock: normalizedStock.sizeStock, variantStock: normalizedStock.variantStock,
+          colorOptions, colorPrices: colorPrices && typeof colorPrices === "object" ? colorPrices : {},
+          colorImages: uploadedColorImages, badge, description, images: uploadedUrls,
+          inStock: normalizedStock.inStock
+        }, { new: true, session });
+        await writeAdminStockAudit(before, updated, session);
+      });
+    } finally { await session.endSession(); }
     res.json({ success: true, product: updated });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(err.statusCode || 500).json({ success: false, message: err.message });
   }
 });
 
 app.patch('/api/admin/products/:id/quick-update', async (req, res) => {
+  if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+  const { price, costPrice, stockQuantity } = req.body;
+  const prodId = Number(req.params.id);
+  if (price !== undefined && (!Number.isFinite(Number(price)) || Number(price) < 0)) return res.status(400).json({ success: false, message: "Invalid price." });
+  if (costPrice !== undefined && (!Number.isFinite(Number(costPrice)) || Number(costPrice) < 0)) return res.status(400).json({ success: false, message: "Invalid cost price." });
+  if (stockQuantity !== undefined && (!Number.isSafeInteger(Number(stockQuantity)) || Number(stockQuantity) < 0)) return res.status(400).json({ success: false, message: "Stock must be a non-negative whole number." });
+  const updateFields = {};
+  if (price !== undefined) updateFields.price = Number(price);
+  if (costPrice !== undefined) updateFields.costPrice = Number(costPrice);
+  if (stockQuantity !== undefined) { updateFields.stockQuantity = Number(stockQuantity); updateFields.inStock = Number(stockQuantity) > 0; }
+  const session = await mongoose.startSession();
+  let updated;
+  try {
+    await session.withTransaction(async () => {
+      const before = await Product.findOne({ id: prodId }).session(session).lean();
+      if (!before) { const error = new Error('Product not found'); error.statusCode = 404; throw error; }
+      if (stockQuantity !== undefined && (Object.keys(before.variantStock || {}).length || Object.keys(before.sizeStock || {}).length)) {
+        const error = new Error('For variant/size products, update the matching stock map instead of total stock only.'); error.statusCode = 400; throw error;
+      }
+      updated = await Product.findOneAndUpdate({ id: prodId }, updateFields, { new: true, session });
+      if (stockQuantity !== undefined) await writeAdminStockAudit(before, updated, session);
+    });
+    return res.json({ success: true, product: updated });
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({ success: false, message: err.message });
+  } finally { await session.endSession(); }
+});
+
+app.get('/api/admin/inventory-audit', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { price, costPrice, stockQuantity } = req.body;
-    const prodId = Number(req.params.id);
-
-    const updateFields = {};
-    if (price !== undefined) updateFields.price = Math.max(0, Number(price));
-    if (costPrice !== undefined) updateFields.costPrice = Math.max(0, Number(costPrice));
-    if (stockQuantity !== undefined) {
-      updateFields.stockQuantity = Math.max(0, Number(stockQuantity));
-      updateFields.inStock = updateFields.stockQuantity > 0;
-    }
-
-    const updated = await Product.findOneAndUpdate({ id: prodId }, updateFields, { new: true });
-    if (!updated) return res.status(404).json({ success: false, message: "Product not found" });
-    res.json({ success: true, product: updated });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+    const limit = Math.min(200, Math.max(1, Number.parseInt(req.query.limit, 10) || 50));
+    const query = {};
+    if (req.query.productId) query.productId = Number(req.query.productId);
+    if (req.query.orderId) query.orderId = String(req.query.orderId).slice(0, 80);
+    const entries = await InventoryAuditLog.find(query).sort({ createdAt: -1, _id: -1 }).limit(limit).lean();
+    res.set('Cache-Control', 'no-store').json({ success: true, entries });
+  } catch (err) { res.status(500).json({ success: false, message: 'Could not load inventory audit history.' }); }
 });
 
 app.patch('/api/admin/products/:id/toggle-home', async (req, res) => {
@@ -2103,86 +2119,7 @@ app.post('/api/admin/change-pin', async (req, res) => {
   return res.status(410).json({ success: false, message: 'Admin credentials are managed in Render Environment. Update ADMIN_PIN there, then restart the service.' });
 });
 
-// Atomic Stock Deduction Helper with Rollback Support
-async function atomicallyDeductStock(verifiedItems, prodMap) {
-  const appliedOps = [];
-  try {
-    for (const vItem of verifiedItems) {
-      const dbProd = prodMap.get(vItem.id);
-      const varMap = (dbProd.variantStock && typeof dbProd.variantStock === 'object') ? dbProd.variantStock : {};
-      const vKey = `${vItem.selectedColor}__${vItem.selectedSize}`;
-      const sizeMap = (dbProd.sizeStock && typeof dbProd.sizeStock === 'object') ? dbProd.sizeStock : {};
-
-      if (Object.keys(varMap).length > 0 && Object.prototype.hasOwnProperty.call(varMap, vKey)) {
-        const updated = await Product.findOneAndUpdate(
-          { id: vItem.id, [`variantStock.${vKey}`]: { $gte: vItem.qty } },
-          { $inc: { [`variantStock.${vKey}`]: -vItem.qty, stockQuantity: -vItem.qty } },
-          { new: true }
-        );
-        if (!updated) {
-          throw new Error(`Sorry! "${vItem.name}" (${vItem.selectedColor}, Size: ${vItem.selectedSize}) just went out of stock.`);
-        }
-        if (updated.stockQuantity <= 0 && updated.inStock) {
-          updated.stockQuantity = Math.max(0, updated.stockQuantity);
-          updated.inStock = updated.stockQuantity > 0;
-          await updated.save();
-        }
-        appliedOps.push({ type: 'variant', id: vItem.id, vKey, qty: vItem.qty });
-      } else if (Object.keys(sizeMap).length > 0 && Object.prototype.hasOwnProperty.call(sizeMap, vItem.selectedSize)) {
-        const updated = await Product.findOneAndUpdate(
-          { id: vItem.id, [`sizeStock.${vItem.selectedSize}`]: { $gte: vItem.qty } },
-          { $inc: { [`sizeStock.${vItem.selectedSize}`]: -vItem.qty, stockQuantity: -vItem.qty } },
-          { new: true }
-        );
-        if (!updated) {
-          throw new Error(`Sorry! Size "${vItem.selectedSize}" of "${vItem.name}" just went out of stock.`);
-        }
-        if (updated.stockQuantity <= 0 && updated.inStock) {
-          updated.stockQuantity = Math.max(0, updated.stockQuantity);
-          updated.inStock = updated.stockQuantity > 0;
-          await updated.save();
-        }
-        appliedOps.push({ type: 'size', id: vItem.id, sz: vItem.selectedSize, qty: vItem.qty });
-      } else {
-        const updated = await Product.findOneAndUpdate(
-          { id: vItem.id, stockQuantity: { $gte: vItem.qty } },
-          { $inc: { stockQuantity: -vItem.qty } },
-          { new: true }
-        );
-        if (!updated) {
-          throw new Error(`Sorry! "${vItem.name}" just went out of stock.`);
-        }
-        if (updated.stockQuantity <= 0 && updated.inStock) {
-          updated.inStock = false;
-          await updated.save();
-        }
-        appliedOps.push({ type: 'total', id: vItem.id, qty: vItem.qty });
-      }
-    }
-    return { ok: true, appliedOps };
-  } catch (err) {
-    // Rollback any already-deducted items in this batch
-    for (const op of appliedOps) {
-      if (op.type === 'variant') {
-        await Product.findOneAndUpdate(
-          { id: op.id },
-          { $inc: { [`variantStock.${op.vKey}`]: op.qty, stockQuantity: op.qty }, $set: { inStock: true } }
-        ).catch(() => {});
-      } else if (op.type === 'size') {
-        await Product.findOneAndUpdate(
-          { id: op.id },
-          { $inc: { [`sizeStock.${op.sz}`]: op.qty, stockQuantity: op.qty }, $set: { inStock: true } }
-        ).catch(() => {});
-      } else {
-        await Product.findOneAndUpdate(
-          { id: op.id },
-          { $inc: { stockQuantity: op.qty }, $set: { inStock: true } }
-        ).catch(() => {});
-      }
-    }
-    return { ok: false, message: err.message };
-  }
-}
+// Inventory deduction is implemented above by the session-aware transaction helper.
 
 // Create a server-priced Razorpay order. Browser totals are never trusted.
 app.post('/api/payments/razorpay/create-order', async (req, res) => {
@@ -2725,59 +2662,57 @@ app.post('/api/orders', async (req, res) => {
       if (deductedCoinsAmount > 0) await Wallet.findOneAndUpdate({ phone: deductedCoinsPhone }, { $inc: { coins: deductedCoinsAmount } }).catch(() => {});
       return res.status(400).json({ success: false, message: "Paid amount does not match the verified order total." });
     }
-        // Atomically deduct stock across all items (prevents overselling under concurrent orders)
-    const stockResult = await atomicallyDeductStock(verifiedItems, prodMap);
-    if (!stockResult.ok) {
-      if (deductedCoinsAmount > 0) {
-        await Wallet.findOneAndUpdate({ phone: deductedCoinsPhone }, { $inc: { coins: deductedCoinsAmount } }).catch(() => {});
-      }
-      return res.status(400).json({ success: false, message: stockResult.message });
-    }
+        // Stock deduction and Order creation share one MongoDB transaction.
     const estimatedNetProfit = netBagValue - verifiedTotalCost;
-
     const structuredAddress = `${houseNoStreet}, ${villageOrCity}, P.O: ${postOffice}${policeStation ? ', P.S: ' + policeStation : ''}${landmark ? ' (Landmark: ' + landmark + ')' : ''}, ${city}, ${state} - ${pincode}`;
     const orderId = 'AUR-' + Math.floor(100000 + Math.random() * 900000);
     const orderDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
-
-    const order = await Order.create({
-      id: orderId,
-      customerName: String(customerName || '').trim(),
-      phone: cleanPhone,
-      address: structuredAddress,
-      pincode,
-      city,
-      state,
-      items: verifiedItems,
-      freeGiftUnlocked: unlockedGift,
-      subTotal: verifiedSubTotal,
-      discountApplied: verifiedDiscount,
-      coinsUsed: verifiedCoinsUsed,
-      coinsEarned: potentialCoinsEarned,
-      coinsCredited: false,
-      coinsStatus: potentialCoinsEarned > 0 ? "pending_delivery" : "none",
-      coinsUnlockAt: 0,
-      isNonRefundableOrder: allItemsNonRefundable,
-      deliveryCharge: appliedDelivery,
-      couponCode: verifiedCouponCode,
-      total: verifiedFinalTotal,
-      totalCost: verifiedTotalCost,
-      netProfit: estimatedNetProfit,
-      paymentMethod: normalizedMode,
-      advancePaid: verifiedAdvancePaid,
-      balanceDue: verifiedBalanceDue,
-      utrNumber: isRazorpay ? '' : cleanUtr,
-      paymentGateway: isRazorpay ? 'Razorpay' : 'Manual UPI',
-      razorpayOrderId: isRazorpay ? razorpayOrderId : '',
-      razorpayPaymentId: isRazorpay ? razorpayPaymentId : '',
-      paymentStatus: isRazorpay ? (normalizedMode === 'COD' ? 'Advance Paid' : 'Paid') : 'Pending Verification',
-      status: isRazorpay ? 'Verified' : 'Pending Verification',
-      courierPartner: "Delhivery",
-      awbNumber: "",
-      deliverySlipFile: "",
-      date: orderDate,
-      orderDateRaw: todayStr
-    });
+    const inventorySession = await mongoose.startSession();
+    let order;
+    try {
+      await inventorySession.withTransaction(async () => {
+        await atomicallyDeductStock(verifiedItems, prodMap, inventorySession, orderId);
+        const created = await Order.create([{
+          id: orderId,
+          customerName: String(customerName || '').trim(),
+          phone: cleanPhone,
+          address: structuredAddress,
+          pincode, city, state, items: verifiedItems,
+          freeGiftUnlocked: unlockedGift,
+          subTotal: verifiedSubTotal,
+          discountApplied: verifiedDiscount,
+          coinsUsed: verifiedCoinsUsed,
+          coinsEarned: potentialCoinsEarned,
+          coinsCredited: false,
+          coinsStatus: potentialCoinsEarned > 0 ? "pending_delivery" : "none",
+          coinsUnlockAt: 0,
+          isNonRefundableOrder: allItemsNonRefundable,
+          deliveryCharge: appliedDelivery,
+          couponCode: verifiedCouponCode,
+          total: verifiedFinalTotal,
+          totalCost: verifiedTotalCost,
+          netProfit: estimatedNetProfit,
+          paymentMethod: normalizedMode,
+          advancePaid: verifiedAdvancePaid,
+          balanceDue: verifiedBalanceDue,
+          utrNumber: isRazorpay ? '' : cleanUtr,
+          paymentGateway: isRazorpay ? 'Razorpay' : 'Manual UPI',
+          razorpayOrderId: isRazorpay ? razorpayOrderId : '',
+          razorpayPaymentId: isRazorpay ? razorpayPaymentId : '',
+          paymentStatus: isRazorpay ? (normalizedMode === 'COD' ? 'Advance Paid' : 'Paid') : 'Pending Verification',
+          status: isRazorpay ? 'Verified' : 'Pending Verification',
+          courierPartner: "Delhivery",
+          awbNumber: "",
+          deliverySlipFile: "",
+          date: orderDate,
+          orderDateRaw: todayStr
+        }], { session: inventorySession });
+        order = created[0];
+      });
+    } finally {
+      await inventorySession.endSession();
+    }
 
     if (isRazorpay) {
       await PaymentAttempt.findOneAndUpdate(
@@ -3077,127 +3012,64 @@ app.delete('/api/admin/orders/:id', async (req, res) => {
 });
 
 app.patch('/api/admin/orders/:id/status', async (req, res) => {
+  if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+  const { status } = req.body;
+  const allowedStatuses = ['Pending Verification', 'Verified & Packing', 'Verified & Shipped', 'Delivered', 'Cancelled'];
+  if (!allowedStatuses.includes(status)) return res.status(400).json({ success: false, message: 'Invalid order status' });
+  const session = await mongoose.startSession();
+  let response;
   try {
-    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
-    const { status } = req.body;
-    const order = await Order.findOne({ id: req.params.id });
-    if (!order) return res.status(404).json({ success: false });
+    await session.withTransaction(async () => {
+      const order = await Order.findOne({ id: req.params.id }).session(session);
+      if (!order) { const error = new Error('Order not found'); error.statusCode = 404; throw error; }
+      const prevStatus = order.status;
+      if (prevStatus === status) { response = { success: true, status: order.status, deliveredAt: order.deliveredAt }; return; }
 
-    const allowedStatuses = ['Pending Verification', 'Verified & Packing', 'Verified & Shipped', 'Delivered', 'Cancelled'];
-    if (!allowedStatuses.includes(status)) return res.status(400).json({ success: false, message: 'Invalid order status' });
-
-    const prevStatus = order.status;
-    if (prevStatus !== 'Cancelled' && status === 'Cancelled') {
-      for (const item of (order.items || [])) {
-        const p = await Product.findOne({ id: item.id });
-        if (p) {
-          const varMap = (p.variantStock && typeof p.variantStock === 'object') ? { ...p.variantStock } : {};
-          const vKey = `${item.selectedColor || 'Standard'}__${item.selectedSize || 'Standard'}`;
-          const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
-
-          if (Object.keys(varMap).length > 0 && Object.prototype.hasOwnProperty.call(varMap, vKey)) {
-            varMap[vKey] = (Number(varMap[vKey]) || 0) + (item.qty || 1);
-            p.variantStock = varMap;
-            p.markModified('variantStock');
-            p.stockQuantity = Object.values(varMap).reduce((s, n) => s + (Number(n) || 0), 0);
-          } else if (Object.keys(sizeMap).length > 0 && item.selectedSize && Object.prototype.hasOwnProperty.call(sizeMap, item.selectedSize)) {
-            sizeMap[item.selectedSize] = (Number(sizeMap[item.selectedSize]) || 0) + (item.qty || 1);
-            p.sizeStock = sizeMap;
-            p.markModified('sizeStock');
-            p.stockQuantity = Object.values(sizeMap).reduce((s, n) => s + (Number(n) || 0), 0);
-          } else {
-            p.stockQuantity = (p.stockQuantity || 0) + (item.qty || 1);
-          }
-          p.inStock = p.stockQuantity > 0;
-          await p.save();
-        }
-      }
-      // Reverse earned coins if already credited
-      if (order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
-        // Preserve the previous zero-floor behavior while removing the idempotency key atomically.
-        await Wallet.collection.updateOne(
-          { phone: order.phone },
-          [{ $set: {
+      if (prevStatus !== 'Cancelled' && status === 'Cancelled') {
+        for (const item of (order.items || [])) await applyInventoryMovement(item, 'restore', session, 'admin:order-cancel', order.id);
+        if (order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
+          await Wallet.collection.updateOne({ phone: order.phone }, [{ $set: {
             coins: { $max: [0, { $subtract: [{ $ifNull: ['$coins', 0] }, Math.max(0, Number(order.coinsEarned) || 0)] }] },
-            creditedOrderIds: { $filter: {
-              input: { $ifNull: ['$creditedOrderIds', []] },
-              as: 'creditedId',
-              cond: { $ne: ['$creditedId', order.id] }
-            } },
+            creditedOrderIds: { $filter: { input: { $ifNull: ['$creditedOrderIds', []] }, as: 'creditedId', cond: { $ne: ['$creditedId', order.id] } } },
             updatedAt: new Date()
-          } }]
-        );
-        order.coinsCredited = false;
+          } }], { session });
+          order.coinsCredited = false;
+        }
+        if ((order.coinsEarned || 0) > 0) { order.coinsStatus = 'forfeited'; order.coinsUnlockAt = 0; }
+        if ((order.coinsUsed || 0) > 0 && order.phone) {
+          await Wallet.findOneAndUpdate({ phone: order.phone },
+            { $setOnInsert: { phone: order.phone }, $set: { customerName: order.customerName, updatedAt: new Date() }, $inc: { coins: order.coinsUsed } },
+            { upsert: true, session });
+          order.coinsUsed = 0;
+        }
+      } else if (prevStatus === 'Cancelled' && status !== 'Cancelled') {
+        for (const item of (order.items || [])) await applyInventoryMovement(item, 'deduct', session, 'admin:order-reopen', order.id);
       }
-      if ((order.coinsEarned || 0) > 0) {
-        order.coinsStatus = 'forfeited';
-        order.coinsUnlockAt = 0;
-      }
-      // Refund customer's redeemed coins (coinsUsed) back to their Wallet when order is Cancelled
-      if ((order.coinsUsed || 0) > 0 && order.phone) {
-        await Wallet.findOneAndUpdate(
-          { phone: order.phone },
-          {
-            $setOnInsert: { phone: order.phone },
-            $set: { customerName: order.customerName, updatedAt: new Date() },
-            $inc: { coins: order.coinsUsed }
-          },
-          { upsert: true }
-        );
-        order.coinsUsed = 0;
-      }
-    } else if (prevStatus === 'Cancelled' && status !== 'Cancelled') {
-      for (const item of (order.items || [])) {
-        const p = await Product.findOne({ id: item.id });
-        if (p) {
-          const varMap = (p.variantStock && typeof p.variantStock === 'object') ? { ...p.variantStock } : {};
-          const vKey = `${item.selectedColor || 'Standard'}__${item.selectedSize || 'Standard'}`;
-          const sizeMap = (p.sizeStock && typeof p.sizeStock === 'object') ? { ...p.sizeStock } : {};
 
-          if (Object.keys(varMap).length > 0 && Object.prototype.hasOwnProperty.call(varMap, vKey)) {
-            varMap[vKey] = Math.max(0, (Number(varMap[vKey]) || 0) - (item.qty || 1));
-            p.variantStock = varMap;
-            p.markModified('variantStock');
-            p.stockQuantity = Object.values(varMap).reduce((s, n) => s + (Number(n) || 0), 0);
-          } else if (Object.keys(sizeMap).length > 0 && item.selectedSize && Object.prototype.hasOwnProperty.call(sizeMap, item.selectedSize)) {
-            sizeMap[item.selectedSize] = Math.max(0, (Number(sizeMap[item.selectedSize]) || 0) - (item.qty || 1));
-            p.sizeStock = sizeMap;
-            p.markModified('sizeStock');
-            p.stockQuantity = Object.values(sizeMap).reduce((s, n) => s + (Number(n) || 0), 0);
-          } else {
-            p.stockQuantity = Math.max(0, (p.stockQuantity || 0) - (item.qty || 1));
-          }
-          p.inStock = p.stockQuantity > 0;
-          await p.save();
+      if (status === 'Delivered' && !order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
+        const storeCfg = await Settings.findOne({ key: 'main' }).session(session).lean();
+        const refundDays = storeCfg ? (storeCfg.refundWindowDays ?? 7) : 7;
+        if (order.isNonRefundableOrder || refundDays <= 0) {
+          await creditOrderCoinsOnce(order, session);
+          order.coinsUnlockAt = Date.now();
+        } else {
+          order.coinsStatus = 'pending_refund_window';
+          order.coinsUnlockAt = Date.now() + (refundDays * 24 * 60 * 60 * 1000);
         }
       }
-    }
-
-    if (status === 'Delivered' && !order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
-      const storeCfg = await Settings.findOne({ key: 'main' }).lean();
-      const refundDays = storeCfg ? (storeCfg.refundWindowDays ?? 7) : 7;
-
-      // Non-Refundable orders (or 0-day refund window) credit coins IMMEDIATELY on delivery;
-      // Refundable orders unlock coins automatically after the refund window passes.
-      if (order.isNonRefundableOrder || refundDays <= 0) {
-        await creditOrderCoinsOnce(order);
-        order.coinsUnlockAt = Date.now();
-      } else {
-        order.coinsStatus = 'pending_refund_window';
-        order.coinsUnlockAt = Date.now() + (refundDays * 24 * 60 * 60 * 1000);
-      }
-    }
-
-    order.status = status;
-    if (status === 'Delivered') {
-      if (prevStatus !== 'Delivered' || !order.deliveredAt) order.deliveredAt = new Date();
-    } else {
-      order.deliveredAt = null;
-    }
-    await order.save();
-    res.json({ success: true, status: order.status, deliveredAt: order.deliveredAt });
+      order.status = status;
+      if (status === 'Delivered') {
+        if (prevStatus !== 'Delivered' || !order.deliveredAt) order.deliveredAt = new Date();
+      } else order.deliveredAt = null;
+      await order.save({ session });
+      response = { success: true, status: order.status, deliveredAt: order.deliveredAt };
+    });
+    return res.json(response);
   } catch (err) {
-    res.status(500).json({ success: false });
+    console.error('Order status transaction failed:', err.message);
+    return res.status(err.statusCode || 409).json({ success: false, message: err.statusCode ? err.message : 'Order status or inventory could not be updated atomically.' });
+  } finally {
+    await session.endSession();
   }
 });
 
@@ -3278,4 +3150,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { app, startServer, removeLegacyAdminPinHashes, Settings, creditOrderCoinsOnce, claimPaymentRetryLock, Wallet, Order, PaymentAttempt };
+module.exports = { app, startServer, removeLegacyAdminPinHashes, Settings, creditOrderCoinsOnce, claimPaymentRetryLock, Wallet, Order, PaymentAttempt, InventoryAuditLog, applyInventoryMovement, atomicallyDeductStock };
