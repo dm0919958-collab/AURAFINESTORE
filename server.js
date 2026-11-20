@@ -301,6 +301,10 @@ const SupportTicket = mongoose.model('SupportTicket', supportTicketSchema);
 const returnRequestSchema = new mongoose.Schema({
  requestId:{type:String,unique:true},orderId:{type:String,index:true},customerName:String,phone:{type:String,index:true},
  requestType:{type:String,enum:['Return','Replacement'],default:'Return'},productSummary:String,productDetails:String,orderTotal:String,shippingAddress:String,
+ returnedProduct:{type:String,default:''},replacementProduct:{type:String,default:''},
+ refundAmountRequested:{type:Number,default:0},refundAmountApproved:{type:Number,default:0},refundAmountPaid:{type:Number,default:0},
+ refundStatus:{type:String,enum:['Not Applicable','Requested','Approved','Processing','Refunded','Rejected'],default:'Not Applicable'},
+ refundReference:{type:String,default:''},
  reason:String,details:String,status:{type:String,default:'Pending',index:true},adminNote:{type:String,default:''},
  telegramStatus:{type:String,default:'Pending'},telegramError:{type:String,default:''},photoCount:{type:Number,default:0},videoName:{type:String,default:''},
  createdAtStr:String,deliveredAt:Date,reviewedAt:{type:Date,default:null},cancelledAt:{type:Date,default:null}
@@ -1492,7 +1496,7 @@ app.post('/api/support/return-request', uploadMemory.fields([{name:'photos',maxC
   if(!video.length)return res.status(400).json({success:false,message:'A video evidence file is mandatory.'});
   if(photos.some(f=>f.size>10*1024*1024)||video.some(f=>f.size>20*1024*1024))return res.status(413).json({success:false,message:'Each photo must be 10 MB or smaller and the video must be 20 MB or smaller.'});
   if(photos.some(f=>!String(f.mimetype||'').startsWith('image/'))||video.some(f=>!String(f.mimetype||'').startsWith('video/')))return res.status(400).json({success:false,message:'Please upload valid image and video files only.'});
-  const request={requestId:'RET-'+crypto.randomBytes(4).toString('hex').toUpperCase(),orderId:order.id,customerName:order.customerName,phone:order.phone,requestType,productSummary:(order.items||[]).map(x=>x.name).join(', ').slice(0,500),productDetails:(order.items||[]).map((x,n)=>`${n+1}. ${x.name} | Qty: ${Number(x.qty)||1} | Size: ${x.selectedSize||'—'} | Colour: ${x.selectedColor||'—'}`).join('\n').slice(0,2000),orderTotal:String(order.total||''),shippingAddress:String(order.address||''),reason,details:details.slice(0,2000),status:'Pending',adminNote:'',telegramStatus:'Pending',telegramError:'',photoCount:photos.length,videoName:video[0].originalname||'Video uploaded',createdAtStr:new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}),deliveredAt:order.deliveredAt};
+  const request={requestId:'RET-'+crypto.randomBytes(4).toString('hex').toUpperCase(),orderId:order.id,customerName:order.customerName,phone:order.phone,requestType,productSummary:(order.items||[]).map(x=>x.name).join(', ').slice(0,500),productDetails:(order.items||[]).map((x,n)=>`${n+1}. ${x.name} | Qty: ${Number(x.qty)||1} | Size: ${x.selectedSize||'—'} | Colour: ${x.selectedColor||'—'}`).join('\n').slice(0,2000),orderTotal:String(order.total||''),shippingAddress:String(order.address||''),reason,details:details.slice(0,2000),returnedProduct:'',replacementProduct:'',refundAmountRequested:0,refundAmountApproved:0,refundAmountPaid:0,refundStatus:requestType==='Return'?'Requested':'Not Applicable',refundReference:'',status:'Pending',adminNote:'',telegramStatus:'Pending',telegramError:'',photoCount:photos.length,videoName:video[0].originalname||'Video uploaded',createdAtStr:new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}),deliveredAt:order.deliveredAt};
   await ReturnRequest.create(request);
   try{await forwardReturnRequestToTelegram(order,request,{photos,video});await ReturnRequest.updateOne({requestId:request.requestId},{$set:{telegramStatus:'Sent',telegramError:''}});}
   catch(telegramErr){console.error('Return Telegram delivery failed:',telegramErr.response?.data||telegramErr.message);await ReturnRequest.updateOne({requestId:request.requestId},{$set:{telegramStatus:'Failed',telegramError:String(telegramErr.response?.data?.description||telegramErr.message||'Telegram delivery failed').slice(0,500)}});}
@@ -1530,12 +1534,27 @@ app.post('/api/admin/returns/list',async(req,res)=>{
    });
    const productDetails=r.productDetails||itemLines.join('\\n');
    const productSummary=r.productSummary||(items.map(item=>item.name||item.productName||item.title||item.product?.name||'Product').join(', '));
+   const orderItems=items.map((item,index)=>({
+    name:item.name||item.productName||item.title||item.product?.name||'Product',
+    qty:Number(item.qty||item.quantity||1)||1,
+    size:item.selectedSize||item.size||item.variantSize||'—',
+    colour:item.selectedColor||item.color||item.variantColor||'—',
+    price:Number(item.price||item.unitPrice||0)||0
+   }));
    return {
     ...r,
+    orderItems,
     productDetails:productDetails||r.productSummary||'',
     productSummary:productSummary||r.productDetails||'',
     orderTotal:r.orderTotal||(order?.total!==undefined?String(order.total):''),
-    shippingAddress:r.shippingAddress||order?.address||''
+    shippingAddress:r.shippingAddress||order?.address||'',
+    returnedProduct:r.returnedProduct||'',
+    replacementProduct:r.replacementProduct||'',
+    refundAmountRequested:Number(r.refundAmountRequested)||0,
+    refundAmountApproved:Number(r.refundAmountApproved)||0,
+    refundAmountPaid:Number(r.refundAmountPaid)||0,
+    refundStatus:r.refundStatus||(r.requestType==='Return'?'Requested':'Not Applicable'),
+    refundReference:r.refundReference||''
    };
   });
   res.json({success:true,requests:enrichedRequests});
@@ -1548,9 +1567,19 @@ app.post('/api/admin/returns/list',async(req,res)=>{
 app.patch('/api/admin/returns/:requestId',async(req,res)=>{
  try{
   if(!(await verifyAdminAuth(req)))return res.status(403).json({success:false,message:'Unauthorized'});
-  const allowed=['Pending','Approved','Return Approved','Replacement Approved','Rejected','Return In Transit','Received','Replacement Processing','Completed','Cancelled'],status=String(req.body.status||'').trim(),adminNote=String(req.body.adminNote||'').trim().slice(0,1000);
+  const allowed=['Pending','Approved','Return Approved','Replacement Approved','Rejected','Return In Transit','Received','Replacement Processing','Completed','Cancelled'],refundStatuses=['Not Applicable','Requested','Approved','Processing','Refunded','Rejected'],status=String(req.body.status||'').trim(),adminNote=String(req.body.adminNote||'').trim().slice(0,1000);
   if(!allowed.includes(status))return res.status(400).json({success:false,message:'Invalid return status.'});
-  const updated=await ReturnRequest.findOneAndUpdate({requestId:req.params.requestId},{$set:{status,adminNote,reviewedAt:new Date()}},{new:true,runValidators:true}).lean();
+  const refundStatus=String(req.body.refundStatus||'Not Applicable').trim();
+  if(!refundStatuses.includes(refundStatus))return res.status(400).json({success:false,message:'Invalid refund status.'});
+  const amountFields=['refundAmountRequested','refundAmountApproved','refundAmountPaid'];
+  const amounts={};
+  for(const key of amountFields){
+   const value=Number(req.body[key]??0);
+   if(!Number.isFinite(value)||value<0||value>10000000)return res.status(400).json({success:false,message:'Refund amounts must be valid non-negative numbers.'});
+   amounts[key]=Math.round(value*100)/100;
+  }
+  const patch={status,adminNote,reviewedAt:new Date(),refundStatus,returnedProduct:String(req.body.returnedProduct||'').trim().slice(0,500),replacementProduct:String(req.body.replacementProduct||'').trim().slice(0,500),refundReference:String(req.body.refundReference||'').trim().slice(0,200),...amounts};
+  const updated=await ReturnRequest.findOneAndUpdate({requestId:req.params.requestId},{$set:patch},{new:true,runValidators:true}).lean();
   if(!updated)return res.status(404).json({success:false,message:'Return request not found.'});res.json({success:true,request:updated});
  }catch(err){res.status(500).json({success:false,message:'Could not update return request.'});}
 });
