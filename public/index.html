@@ -2558,6 +2558,54 @@
       } catch (e) { console.warn('Could not save payment attempt status:', e.message); }
     }
 
+    async function retryRazorpayPayment(originalOrderId) {
+      const phone = document.getElementById('myOrdersPhoneInput').value.replace(/[^0-9]/g, '');
+      if (!phone) return alert("Enter the same mobile number used for this order.");
+      try {
+        const res = await fetch('/api/payments/razorpay/retry', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ razorpayOrderId: originalOrderId, phone })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || "Payment retry is unavailable.");
+        if (typeof Razorpay === 'undefined') throw new Error("Secure payment window did not load. Please refresh.");
+        const payload = data.checkoutPayload;
+        const checkout = new Razorpay({
+          key: data.keyId, amount: data.amount, currency: data.currency || 'INR',
+          name: 'AURA Fine Store', description: payload.paymentMethod === 'COD' ? 'COD advance payment retry' : 'Order payment retry',
+          order_id: data.razorpayOrderId,
+          prefill: { name: payload.customerName, contact: payload.phone },
+          theme: { color: '#D6A84B' }, retry: { enabled: true, max_count: 2 },
+          handler: async function (response) {
+            try {
+              const verifyRes = await fetch('/api/orders', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...payload, razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature })
+              });
+              const result = await verifyRes.json();
+              if (!verifyRes.ok || !result.success) throw new Error(result.message || "Payment verification is pending.");
+              alert("Payment successful! Your order is confirmed. Order ID: #" + result.orderId);
+              await fetchMyOrders();
+            } catch (err) {
+              alert("Payment may have been received, but order confirmation is pending. Please contact support with Payment ID: " + response.razorpay_payment_id + "\\n" + err.message);
+              await fetchMyOrders();
+            }
+          },
+          modal: { ondismiss: function () {
+            updateRazorpayAttemptStatus(data.razorpayOrderId, "Cancelled", "Customer closed the Razorpay payment window.");
+            fetchMyOrders();
+          }}
+        });
+        checkout.on('payment.failed', function (response) {
+          updateRazorpayAttemptStatus(data.razorpayOrderId, "Failed", response.error?.description || "Payment failed.");
+          alert("Payment failed: " + (response.error?.description || "Please try again."));
+          fetchMyOrders();
+        });
+        checkout.open();
+      } catch (err) { alert(err.message || "Unable to retry payment."); }
+    }
+
     async function handlePlaceOrder(e) {
       e.preventDefault();
       if (!cart.length) return alert("Your shopping bag is empty.");
@@ -2675,6 +2723,7 @@
           <p class="text-[11px] text-stone-300">Amount: <b class="text-white">₹${Number(p.amountToCollect)||0}</b> • Shipping: ₹${Number(p.deliveryCharge)||0}</p>
           ${p.orderId ? `<p class="text-[11px] text-emerald-300">Order #${escapeHTML(p.orderId)} created</p>` : ''}
           ${p.failureReason ? `<p class="text-[10px] ${cancelled ? 'text-rose-300' : 'text-amber-300'}">${escapeHTML(p.failureReason)}</p>` : ''}
+          ${p.expiresAt && new Date(p.expiresAt).getTime() > Date.now() && state !== 'Payment Received - Order Pending' ? `<p class="text-[10px] text-amber-300">Retry available until ${new Date(p.expiresAt).toLocaleString('en-IN')}</p><button type="button" onclick="retryRazorpayPayment('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full bg-amber-500 hover:bg-amber-400 text-stone-950 py-2 rounded-lg font-extrabold text-xs">Retry Payment</button>` : ''}
         </div>`;
       }).join('');
       if ((!data.orders || !data.orders.length) && !paymentAttemptsHTML) { box.innerHTML = `<p class="text-center py-6 text-rose-400 font-bold">No orders found!</p>`; return; }
