@@ -2575,7 +2575,7 @@
           name: 'AURA Fine Store', description: payload.paymentMethod === 'COD' ? 'COD advance payment retry' : 'Order payment retry',
           order_id: data.razorpayOrderId,
           prefill: { name: payload.customerName, contact: payload.phone },
-          theme: { color: '#D6A84B' }, retry: { enabled: true, max_count: 2 },
+          theme: { color: '#D6A84B' },
           handler: async function (response) {
             try {
               const verifyRes = await fetch('/api/orders', {
@@ -2636,7 +2636,7 @@
           name: 'AURA Fine Store', description: mode === 'COD' ? 'COD advance payment' : 'Order payment',
           order_id: paymentOrder.razorpayOrderId,
           prefill: { name: orderPayload.customerName, contact: orderPayload.phone },
-          theme: { color: '#D6A84B' }, retry: { enabled: true, max_count: 2 },
+          theme: { color: '#D6A84B' },
           handler: async function (response) {
             btn.innerText = "Verifying payment...";
             try {
