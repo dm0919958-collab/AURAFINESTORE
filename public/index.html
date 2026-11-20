@@ -2547,6 +2547,15 @@
       }
     }
 
+    async function updateRazorpayAttemptStatus(orderId, status, reason) {
+      try {
+        await fetch('/api/payments/razorpay/status', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ razorpayOrderId: orderId, status, reason: reason || '' })
+        });
+      } catch (e) { console.warn('Could not save payment attempt status:', e.message); }
+    }
+
     async function handlePlaceOrder(e) {
       e.preventDefault();
       if (!cart.length) return alert("Your shopping bag is empty.");
@@ -2567,7 +2576,7 @@
       try {
         const createRes = await fetch('/api/payments/razorpay/create-order', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items: orderPayload.items, phone: orderPayload.phone, couponCode: orderPayload.couponCode, useAuraCoins, paymentMethod: mode })
+          body: JSON.stringify({ ...orderPayload })
         });
         const paymentOrder = await createRes.json();
         if (!createRes.ok || !paymentOrder.success) throw new Error(paymentOrder.message || "Could not start payment.");
@@ -2598,12 +2607,14 @@
             } finally { btn.disabled = false; btn.innerText = originalText; }
           },
           modal: { ondismiss: function () {
+            updateRazorpayAttemptStatus(paymentOrder.razorpayOrderId, "Cancelled", "Customer closed the Razorpay payment window.");
             btn.disabled = false; btn.innerText = originalText;
-            alert("Payment cancelled. No order has been confirmed. You can retry from checkout.");
+            alert("Payment cancelled. No order was confirmed. You can retry from checkout.");
           }}
         });
         checkout.on('payment.failed', function (response) {
           btn.disabled = false; btn.innerText = originalText;
+          updateRazorpayAttemptStatus(paymentOrder.razorpayOrderId, "Failed", response.error?.description || "Payment failed.");
           alert("Payment failed: " + (response.error?.description || "Please try again."));
         });
         checkout.open();
@@ -2652,8 +2663,20 @@
       } else walletBanner.classList.add('hidden');
 
       const box = document.getElementById('myOrdersListContainer');
-      if (!data.orders || !data.orders.length) { box.innerHTML = `<p class="text-center py-6 text-rose-400 font-bold">No orders found!</p>`; return; }
-      box.innerHTML = data.orders.map(o => {
+      const paymentAttemptsHTML = (data.paymentAttempts || []).map(p => {
+        const state = p.status || 'Payment Pending';
+        const cancelled = state === 'Cancelled' || state === 'Failed';
+        const title = state === 'Cancelled' ? 'Payment Cancelled' : state === 'Failed' ? 'Payment Failed' : state === 'Payment Received - Order Pending' ? 'Payment Received — Order Pending' : 'Payment Pending';
+        return `<div class="border border-amber-500/30 bg-stone-950 p-4 rounded-2xl space-y-2">
+          <div class="flex justify-between gap-2 items-center"><b class="text-amber-300 text-xs">${title}</b><span class="text-[10px] text-stone-400">${new Date(p.createdAt).toLocaleString('en-IN')}</span></div>
+          <p class="text-[11px] text-stone-300">Payment reference: <span class="font-mono">${escapeHTML(p.razorpayOrderId || '')}</span></p>
+          <p class="text-[11px] text-stone-300">Amount: <b class="text-white">₹${Number(p.amountToCollect)||0}</b> • Shipping: ₹${Number(p.deliveryCharge)||0}</p>
+          ${p.orderId ? `<p class="text-[11px] text-emerald-300">Order #${escapeHTML(p.orderId)} created</p>` : ''}
+          ${p.failureReason ? `<p class="text-[10px] ${cancelled ? 'text-rose-300' : 'text-amber-300'}">${escapeHTML(p.failureReason)}</p>` : ''}
+        </div>`;
+      }).join('');
+      if ((!data.orders || !data.orders.length) && !paymentAttemptsHTML) { box.innerHTML = `<p class="text-center py-6 text-rose-400 font-bold">No orders found!</p>`; return; }
+      box.innerHTML = paymentAttemptsHTML + (data.orders || []).map(o => {
         const courier = o.courierPartner || 'Delhivery', trackFn = courierTrackingUrls[courier] || courierTrackingUrls["Delhivery"];
         return `
         <div class="border border-stone-800 bg-stone-950 p-4 rounded-2xl space-y-3">
