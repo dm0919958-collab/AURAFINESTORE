@@ -347,7 +347,7 @@ async function expireRazorpayPaymentAttempts() {
   }
   const expired = await PaymentAttempt.find({
     expiresAt: { $ne: null, $lte: now },
-    status: { $in: ["Payment Pending", "Cancelled", "Failed", "Payment Received - Order Pending"] }
+    status: { $in: ["Payment Pending", "Cancelled", "Failed"] }
   }).limit(100).lean();
 
   for (const attempt of expired) {
@@ -2073,6 +2073,8 @@ app.post('/api/payments/razorpay/retry', async (req, res) => {
 
     const source = await PaymentAttempt.findOne({ razorpayOrderId, phone }).lean();
     if (!source) return res.status(404).json({ success: false, message: "Payment retry record was not found." });
+    if (!["Cancelled", "Failed"].includes(source.status))
+      return res.status(409).json({ success: false, message: "Only cancelled or failed payments can be retried." });
     const retryGroupId = source.retryGroupId || source.razorpayOrderId;
     const root = await PaymentAttempt.findOne({ razorpayOrderId: retryGroupId, phone }).lean() || source;
     const expiresAt = root.expiresAt || source.expiresAt;
