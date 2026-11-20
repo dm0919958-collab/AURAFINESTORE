@@ -360,7 +360,7 @@ async function expireRazorpayPaymentAttempts() {
       // No captured payment exists at Razorpay: remove the expired attempt from both customer and admin lists.
       await PaymentAttempt.deleteOne({
         _id: attempt._id, expiresAt: { $lte: new Date() },
-        status: { $in: ["Payment Pending", "Cancelled", "Failed"] }
+        status: { $in: ["Payment Pending", "Cancelled", "Failed", "Payment Received - Order Pending"] }
       });
     } catch (err) {
       // If Razorpay cannot be checked, keep the record. Never delete on an uncertain payment state.
@@ -2059,7 +2059,7 @@ app.post('/api/payments/razorpay/retry', async (req, res) => {
     if (!keyId || !keySecret) return res.status(503).json({ success: false, message: "Online payment is not configured." });
     const razorpayOrderId = String(req.body.razorpayOrderId || '').trim();
     const phone = String(req.body.phone || '').replace(/[^0-9]/g, '');
-    if (!/^order_[A-Za-z0-9]+$/.test(razorpayOrderId) || !/^[6-9]\\d{9}$/.test(phone))
+    if (!/^order_[A-Za-z0-9]+$/.test(razorpayOrderId) || !/^[6-9]\d{9}$/.test(phone))
       return res.status(400).json({ success: false, message: "Invalid payment retry request." });
 
     const source = await PaymentAttempt.findOne({ razorpayOrderId, phone }).lean();
