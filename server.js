@@ -2086,11 +2086,17 @@ app.post('/api/payments/razorpay/retry', async (req, res) => {
     const expiresAt = root.expiresAt || source.expiresAt;
     if (!expiresAt || Date.now() >= new Date(expiresAt).getTime())
       return res.status(410).json({ success: false, message: "The 24-hour payment retry period has expired. Please place a new order." });
-    const groupAttempts = await PaymentAttempt.find({ retryGroupId, phone }).select('status retryOf').lean();
+    const groupAttempts = await PaymentAttempt.find({
+      phone, $or: [{ retryGroupId }, { razorpayOrderId: retryGroupId }]
+    }).select('razorpayOrderId status retryOf createdAt').sort({ createdAt: -1 }).lean();
     if (groupAttempts.some(a => a.status === "Completed" || a.status === "Payment Received - Order Pending"))
       return res.status(409).json({ success: false, message: "This order has already been paid or is awaiting payment review." });
-    if (groupAttempts.some(a => a.retryOf))
-      return res.status(409).json({ success: false, message: "A retry has already been used for this payment. Please place a new order." });
+    const latestAttempt = groupAttempts[0];
+    if (!latestAttempt || latestAttempt.razorpayOrderId !== source.razorpayOrderId)
+      return res.status(409).json({ success: false, message: "Please use the latest payment attempt shown in My Orders." });
+    const retryCount = groupAttempts.filter(a => Boolean(a.retryOf)).length;
+    if (retryCount >= 3)
+      return res.status(410).json({ success: false, message: "All 3 payment retries have been used. Please place a new order." });
     if (!source.checkoutPayload || !Array.isArray(source.checkoutPayload.items) || !source.checkoutPayload.items.length)
       return res.status(409).json({ success: false, message: "This older payment attempt cannot be retried. Please place a new order." });
 
@@ -2592,7 +2598,7 @@ app.get('/api/orders/track', async (req, res) => {
     // Never expose the saved checkout address/payload in the public order-tracking response.
     const paymentAttempts = Array.from(latestByGroup.values()).map(({ checkoutPayload, ...attempt }) => ({
       ...attempt,
-      canRetry: Boolean(checkoutPayload && !rawPaymentAttempts.some(a => (a.retryGroupId || a.razorpayOrderId) === (attempt.retryGroupId || attempt.razorpayOrderId) && a.retryOf) && attempt.expiresAt && Date.now() < new Date(attempt.expiresAt).getTime())
+      canRetry: Boolean(checkoutPayload && rawPaymentAttempts.filter(a => (a.retryGroupId || a.razorpayOrderId) === (attempt.retryGroupId || attempt.razorpayOrderId) && a.retryOf).length < 3 && attempt.expiresAt && Date.now() < new Date(attempt.expiresAt).getTime())
     }));
 
     let walletCoins = 0;
