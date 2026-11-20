@@ -671,11 +671,16 @@ async function creditOrderCoinsOnce(order) {
   const orderId = String(order?.id || '');
   if (!amount || !phone || !orderId) return false;
 
-  await Wallet.findOneAndUpdate(
-    { phone },
-    { $setOnInsert: { phone, coins: 0, creditedOrderIds: [] } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
+  try {
+    await Wallet.findOneAndUpdate(
+      { phone },
+      { $setOnInsert: { phone, coins: 0, creditedOrderIds: [] } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  } catch (error) {
+    // Another order for this phone may create the unique wallet at the same time.
+    if (error?.code !== 11000) throw error;
+  }
   const creditedWallet = await Wallet.findOneAndUpdate(
     { phone, creditedOrderIds: { $ne: orderId } },
     {
@@ -3043,9 +3048,18 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
       }
       // Reverse earned coins if already credited
       if (order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
-        await Wallet.findOneAndUpdate(
+        // Preserve the previous zero-floor behavior while removing the idempotency key atomically.
+        await Wallet.collection.updateOne(
           { phone: order.phone },
-          { $inc: { coins: -(order.coinsEarned || 0) }, $pull: { creditedOrderIds: order.id } }
+          [{ $set: {
+            coins: { $max: [0, { $subtract: [{ $ifNull: ['$coins', 0] }, Math.max(0, Number(order.coinsEarned) || 0)] }] },
+            creditedOrderIds: { $filter: {
+              input: { $ifNull: ['$creditedOrderIds', []] },
+              as: 'creditedId',
+              cond: { $ne: ['$creditedId', order.id] }
+            } },
+            updatedAt: new Date()
+          } }]
         );
         order.coinsCredited = false;
       }
