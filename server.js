@@ -1923,7 +1923,14 @@ app.post('/api/payments/razorpay/create-order', async (req, res) => {
     const settings = await Settings.findOne({ key: 'main' }).lean();
     let discount = 0;
     if (couponCode) {
-      const c = await Coupon.findOne({ code: String(couponCode).trim().toUpperCase() }).lean();
+      const cleanCode = String(couponCode).trim().toUpperCase();
+      const firstOrderCode = settings && settings.firstOrderPopupEnabled && settings.firstOrderPopupCoupon
+        ? String(settings.firstOrderPopupCoupon).trim().toUpperCase() : "";
+      if (firstOrderCode && cleanCode === firstOrderCode) {
+        const priorOrder = await Order.findOne({ phone: cleanPhone, status: { $ne: 'Cancelled' } }).lean();
+        if (priorOrder) return res.status(400).json({ success: false, message: "This coupon is available for first-time customers only." });
+      }
+      const c = await Coupon.findOne({ code: cleanCode }).lean();
       if (c && (!c.expiresAt || c.expiresAt <= 0 || Date.now() < c.expiresAt) && subtotal >= (c.minSpend || 0))
         discount = Math.round((subtotal * Number(c.discountPercent || 0)) / 100);
     }
@@ -1939,6 +1946,9 @@ app.post('/api/payments/razorpay/create-order', async (req, res) => {
     const shipping = settings ? Number(settings.deliveryCharge || 0) : 0;
     const total = net + shipping;
     const mode = paymentMethod === 'COD' ? 'COD' : 'UPI';
+    const maxCodLimit = settings ? (settings.maxCodOrderAmount ?? 2000) : 2000;
+    if (mode === 'COD' && maxCodLimit > 0 && net > maxCodLimit)
+      return res.status(400).json({ success: false, message: `Cash on Delivery is unavailable above ₹${maxCodLimit}. Please select prepaid payment.` });
     const amountToCollect = mode === 'COD'
       ? Math.max(1, Math.round((total * (settings ? (settings.codAdvancePercent || 15) : 15)) / 100))
       : total;
@@ -1990,7 +2000,15 @@ app.post('/api/orders', async (req, res) => {
         auth: { username: keyId, password: keySecret }, timeout: 15000
       });
       verifiedRazorpayPayment = paymentResponse.data;
-      if (verifiedRazorpayPayment.order_id !== razorpayOrderId || verifiedRazorpayPayment.currency !== 'INR' || verifiedRazorpayPayment.status !== 'captured')
+      if (verifiedRazorpayPayment.order_id !== razorpayOrderId || verifiedRazorpayPayment.currency !== 'INR')
+        return res.status(400).json({ success: false, message: "Payment details do not match this order." });
+      if (verifiedRazorpayPayment.status === 'authorized') {
+        const captured = await axios.post('https://api.razorpay.com/v1/payments/' + encodeURIComponent(razorpayPaymentId) + '/capture',
+          { amount: verifiedRazorpayPayment.amount, currency: 'INR' },
+          { auth: { username: keyId, password: keySecret }, timeout: 15000 });
+        verifiedRazorpayPayment = captured.data;
+      }
+      if (verifiedRazorpayPayment.status !== 'captured')
         return res.status(400).json({ success: false, message: "Payment is not captured. Your order has not been confirmed." });
     } else {
       const isRepeatedDigits = /^(\d)\1{11}$/.test(cleanUtr);
@@ -2011,7 +2029,7 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
-    const existingUtrOrder = await Order.findOne({ utrNumber: cleanUtr }).lean();
+    const existingUtrOrder = (!isRazorpay && cleanUtr) ? await Order.findOne({ utrNumber: cleanUtr }).lean() : null;
     if (existingUtrOrder) {
       return res.status(400).json({
         success: false,
