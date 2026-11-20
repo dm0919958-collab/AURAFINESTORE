@@ -10,7 +10,7 @@ test('no default or database-backed Admin PIN fallback', () => {
   assert.doesNotMatch(server, /DEFAULT_ADMIN_PIN|AURA@9821|storedPin/);
   assert.match(server, /ADMIN_PIN_HASH/);
   assert.match(server, /ADMIN_PIN.length < 16/);
-  assert.match(server, /\\$unset: \\{ adminPin: 1 \\}/);
+  assert.match(server, /\$unset: \{ adminPin: 1 \}/);
 });
 test('JWT secret is mandatory and admin tokens are scoped', () => {
   assert.match(server, /Buffer.byteLength\(JWT_SECRET, 'utf8'\) < 32/);
