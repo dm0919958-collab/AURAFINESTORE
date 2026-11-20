@@ -987,8 +987,8 @@
           <div>
             <label class="block font-semibold text-stone-300 mb-1">Select Payment Mode</label>
             <select id="ordPaymentMethod" onchange="handlePaymentModeChange(this.value)" class="w-full bg-stone-950 border border-stone-700 p-2.5 rounded-xl font-bold text-amber-300">
-              <option value="UPI">⚡ 100% Prepaid via UPI (FREE Delivery)</option>
-              <option id="codOptionElement" value="COD">🛡️ Cash on Delivery (COD Charge + Advance Token)</option>
+              <option value="UPI">⚡ 100% Prepaid via Secure Payment</option>
+              <option id="codOptionElement" value="COD">🛡️ Cash on Delivery (Advance via Secure Payment)</option>
             </select>
             <p id="codLimitWarningMsg" class="hidden text-[11px] text-amber-400 font-semibold mt-1"></p>
           </div>
@@ -1000,23 +1000,14 @@
             <div class="checkout-grand-total flex justify-between items-center text-amber-400 font-extrabold text-base pt-3 mt-2 border-t border-emerald-500/30"><span>Total Payable</span><span id="chkFinalPayable">₹0</span></div>
             <p id="chkEarnCoinsHint" class="hidden text-[10px] text-amber-300 pt-1"><i class="fa-solid fa-sparkles mr-1"></i>You will earn <b id="chkWillEarnCoins">0</b> AURA Coins upon delivery!</p>
           </div>
-          <div class="bg-stone-950 p-4 rounded-2xl border border-amber-500/30 space-y-3 text-center">
+          <div class="bg-stone-950 p-4 rounded-2xl border border-emerald-500/30 space-y-3 text-center">
             <div id="codNoticeBanner" class="hidden text-left bg-amber-950/60 border border-amber-500/30 p-2.5 rounded-xl space-y-1">
-              <p class="font-bold text-amber-300 text-xs">COD Confirmation Token:</p>
-              <p class="text-[11px] text-stone-300">Please pay <b id="codAdvanceDisplay" class="text-emerald-400">Advance (₹0)</b> now via UPI. Remaining <b id="codBalanceDisplay" class="text-amber-300">₹0</b> is payable in cash on delivery.</p>
+              <p class="font-bold text-amber-300 text-xs">COD Confirmation Advance:</p>
+              <p class="text-[11px] text-stone-300">Pay <b id="codAdvanceDisplay" class="text-emerald-400">₹0</b> securely now. Remaining <b id="codBalanceDisplay" class="text-amber-300">₹0</b> is payable in cash on delivery.</p>
             </div>
-            <p id="qrBoxTitle" class="text-xs text-amber-300 font-bold">Scan QR or Tap Button to Pay via UPI</p>
-            <div class="flex justify-center"><img id="dynamicQRCode" src="" alt="UPI QR" class="w-36 h-36 bg-white p-2 rounded-2xl border border-amber-400"></div>
-            
-            <a id="directUpiAppBtn" href="#" class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-2.5 px-4 rounded-xl text-xs shadow-lg transition">
-              <i class="fa-solid fa-mobile-screen-button"></i> <span id="directUpiBtnLabel">Pay ₹0 via GPay / PhonePe / Paytm</span>
-            </a>
-
-            <p class="text-[11px] text-stone-400">Merchant UPI: <span class="bg-stone-900 text-amber-300 px-2.5 py-0.5 rounded font-mono font-bold select-all">6289145092@ptsbi</span></p>
-            <div class="text-left pt-1">
-              <label class="block text-[11px] font-semibold text-stone-300 mb-1">Enter 12-Digit UPI Transaction ID (UTR) *</label>
-              <input type="text" id="ordUTR" required placeholder="12-digit UTR" class="w-full bg-stone-900 border border-stone-700 text-white p-2.5 rounded-xl text-xs font-mono">
-            </div>
+            <div class="flex items-center justify-center gap-2 text-emerald-300 font-bold text-xs"><i class="fa-solid fa-shield-halved"></i> Secure payment powered by Razorpay</div>
+            <p class="text-[11px] text-stone-300">UPI • Google Pay • PhonePe • Paytm • Cards • Net Banking</p>
+            <p class="text-[10px] text-stone-500">Choose your preferred payment method after clicking Pay Securely. No QR scan or UTR entry required.</p>
           </div>
           <div class="flex gap-2 pt-2">
             <button type="button" onclick="backToStep1Address()" class="w-1/3 bg-stone-800 text-stone-300 py-3.5 rounded-xl font-bold text-xs">&larr; Back</button>
@@ -1199,6 +1190,7 @@
     </div>
   </footer>
 
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script>
 
     function escapeHTML(str) {
@@ -2288,7 +2280,7 @@
       const maxRedeemable = Math.min(customerAvailableCoins, storeMaxCoinsRedeem, Math.max(0, afterCouponValue - 1));
       const coinsDiscount = (useCoinsChecked && maxRedeemable > 0) ? maxRedeemable : 0;
       const netBagValue = Math.max(1, afterCouponValue - coinsDiscount);
-      const deliveryCharge = mode === 'COD' ? storeDeliveryCharge : 0;
+      const deliveryCharge = storeDeliveryCharge;
       return { subTotal, discountAmt, afterCouponValue, maxRedeemable, coinsDiscount, netBagValue, finalAmt: netBagValue + deliveryCharge, deliveryCharge };
     }
 
@@ -2535,8 +2527,8 @@
       if (coinsDiscount > 0) { coinsRow.classList.remove('hidden'); document.getElementById('chkCoinsAmt').innerText = `-₹${coinsDiscount}`; } else coinsRow.classList.add('hidden');
 
       const delEl = document.getElementById('chkDeliveryAmt');
-      delEl.innerText = (mode === 'COD' && deliveryCharge > 0) ? `+₹${deliveryCharge} (COD Charge)` : "FREE";
-      delEl.className = (mode === 'COD' && deliveryCharge > 0) ? "font-bold text-amber-400" : "font-bold text-emerald-400";
+      delEl.innerText = deliveryCharge > 0 ? `+₹${deliveryCharge}` : "FREE";
+      delEl.className = deliveryCharge > 0 ? "font-bold text-amber-400" : "font-bold text-emerald-400";
       document.getElementById('chkFinalPayable').innerText = `₹${finalAmt}`;
 
       const earnHint = document.getElementById('chkEarnCoinsHint'), willEarn = storeCoinsEarnPct > 0 ? Math.floor((netBagValue * storeCoinsEarnPct) / 100) : 0;
@@ -2546,55 +2538,79 @@
       if (mode === 'COD') {
         const adv = Math.max(1, Math.round((finalAmt * storeCodAdvancePct) / 100)); payAmt = adv;
         document.getElementById('codNoticeBanner').classList.remove('hidden');
-        document.getElementById('codAdvanceDisplay').innerText = `Advance Token: ₹${adv} (${storeCodAdvancePct}%)`;
+        document.getElementById('codAdvanceDisplay').innerText = `₹${adv} (${storeCodAdvancePct}%)`;
         document.getElementById('codBalanceDisplay').innerText = `₹${finalAmt - adv}`;
-        document.getElementById('qrBoxTitle').innerText = `Scan QR or Tap Button to Pay ₹${adv} Token`;
-        document.getElementById('submitOrderBtn').innerText = `Pay ₹${adv} Advance & Place Order`;
+        document.getElementById('submitOrderBtn').innerText = `Pay ₹${adv} Advance Securely`;
       } else {
         document.getElementById('codNoticeBanner').classList.add('hidden');
-        document.getElementById('qrBoxTitle').innerText = `Scan QR or Tap Button to Pay ₹${finalAmt}`;
-        document.getElementById('submitOrderBtn').innerText = `Pay ₹${finalAmt} via UPI & Place Order`;
+        document.getElementById('submitOrderBtn').innerText = `Pay ₹${finalAmt} Securely`;
       }
-
-      const upiDeepLink = `upi://pay?pa=${STORE_UPI_ID}&pn=AURA_FINE_STORE&am=${payAmt}&cu=INR`;
-      document.getElementById('dynamicQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiDeepLink)}`;
-      document.getElementById('directUpiAppBtn').href = upiDeepLink;
-      document.getElementById('directUpiBtnLabel').innerText = `Pay ₹${payAmt} via GPay / PhonePe / Paytm`;
     }
 
     async function handlePlaceOrder(e) {
       e.preventDefault();
-      const utr = document.getElementById('ordUTR').value.trim();
-      if (!utr) return alert("Please enter 12-digit UTR!");
+      if (!cart.length) return alert("Your shopping bag is empty.");
       saveCustomerProfileLocal();
-      const btn = document.getElementById('submitOrderBtn'); btn.innerText = "Verifying & Placing Order..."; btn.disabled = true;
+      const btn = document.getElementById('submitOrderBtn'), originalText = btn.innerText;
+      btn.innerText = "Opening secure payment..."; btn.disabled = true;
       const mode = document.getElementById('ordPaymentMethod').value;
       const useAuraCoins = document.getElementById('useAuraCoinsCheckbox')?.checked || false;
-
-      const res = await fetch('/api/orders', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerName: document.getElementById('ordName').value, phone: document.getElementById('ordPhone').value, pincode: document.getElementById('ordPincode').value,
-          city: document.getElementById('ordCity').value, state: document.getElementById('ordState').value, houseNoStreet: document.getElementById('addrHouseStreet').value,
-          villageOrCity: document.getElementById('addrVillage').value, postOffice: document.getElementById('addrPostOffice').value, policeStation: document.getElementById('addrPoliceStation').value,
-          landmark: document.getElementById('addrLandmark').value,
-          items: cart.map(i => ({ id: i.id, name: i.name, selectedSize: i.selectedSize, selectedColor: i.selectedColor, qty: i.qty })),
-          couponCode: appliedCouponCode, useAuraCoins, paymentMethod: mode, utrNumber: utr
-        })
-      });
-      const data = await res.json();
-      if (data.success) {
-        // Permanently mark first order completed so welcome popup never shows again
-        localStorage.setItem('aura_first_order_completed', 'true');
-        trackMetaEvent('Purchase', { value: data.verifiedTotal || 0, currency: 'INR', order_id: data.orderId });
-        const coinsMsg = data.coinsEarned > 0 ? `\n🪙 You will receive +${data.coinsEarned} AURA Coins upon delivery!` : '';
-        alert(`🎉 Order Confirmed!\nOrder ID: #${data.orderId}\nVerified Bill: ₹${data.verifiedTotal}${coinsMsg}`);
-        cart = []; appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0;
-        persistCartLocal(); updateCartUI(); closeCheckoutModal(); loadRecentSalesFeed();
-      } else {
-        alert(data.message || "Failed to place order.");
+      const orderPayload = {
+        customerName: document.getElementById('ordName').value, phone: document.getElementById('ordPhone').value,
+        pincode: document.getElementById('ordPincode').value, city: document.getElementById('ordCity').value,
+        state: document.getElementById('ordState').value, houseNoStreet: document.getElementById('addrHouseStreet').value,
+        villageOrCity: document.getElementById('addrVillage').value, postOffice: document.getElementById('addrPostOffice').value,
+        policeStation: document.getElementById('addrPoliceStation').value, landmark: document.getElementById('addrLandmark').value,
+        items: cart.map(i => ({ id: i.id, name: i.name, selectedSize: i.selectedSize, selectedColor: i.selectedColor, qty: i.qty })),
+        couponCode: appliedCouponCode, useAuraCoins, paymentMethod: mode
+      };
+      try {
+        const createRes = await fetch('/api/payments/razorpay/create-order', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: orderPayload.items, phone: orderPayload.phone, couponCode: orderPayload.couponCode, useAuraCoins, paymentMethod: mode })
+        });
+        const paymentOrder = await createRes.json();
+        if (!createRes.ok || !paymentOrder.success) throw new Error(paymentOrder.message || "Could not start payment.");
+        if (typeof Razorpay === 'undefined') throw new Error("Secure payment window did not load. Please refresh and try again.");
+        const checkout = new Razorpay({
+          key: paymentOrder.keyId, amount: paymentOrder.amount, currency: paymentOrder.currency || 'INR',
+          name: 'AURA Fine Store', description: mode === 'COD' ? 'COD advance payment' : 'Order payment',
+          order_id: paymentOrder.razorpayOrderId,
+          prefill: { name: orderPayload.customerName, contact: orderPayload.phone },
+          theme: { color: '#D6A84B' }, retry: { enabled: true, max_count: 2 },
+          handler: async function (response) {
+            btn.innerText = "Verifying payment...";
+            try {
+              const verifyRes = await fetch('/api/orders', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...orderPayload, razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature })
+              });
+              const data = await verifyRes.json();
+              if (!verifyRes.ok || !data.success) throw new Error(data.message || "Payment verification failed.");
+              localStorage.setItem('aura_first_order_completed', 'true');
+              trackMetaEvent('Purchase', { value: data.verifiedTotal || 0, currency: 'INR', order_id: data.orderId });
+              alert(\`Payment successful and order verified!\\nOrder ID: #\${data.orderId}\\nTotal: ₹\${data.verifiedTotal}\${mode === 'COD' ? '\\nCOD balance is payable on delivery.' : ''}\`);
+              cart = []; appliedCouponCode = ""; appliedDiscountRate = 0; appliedCouponExpiresAt = 0;
+              persistCartLocal(); updateCartUI(); closeCheckoutModal(); loadRecentSalesFeed();
+            } catch (verifyError) {
+              alert("Payment received but order verification is pending. Contact support with Payment ID: " + response.razorpay_payment_id + "\\n" + verifyError.message);
+            } finally { btn.disabled = false; btn.innerText = originalText; }
+          },
+          modal: { ondismiss: function () {
+            btn.disabled = false; btn.innerText = originalText;
+            alert("Payment cancelled. No order has been confirmed. You can retry from checkout.");
+          }}
+        });
+        checkout.on('payment.failed', function (response) {
+          btn.disabled = false; btn.innerText = originalText;
+          alert("Payment failed: " + (response.error?.description || "Please try again."));
+        });
+        checkout.open();
+      } catch (err) {
+        alert(err.message || "Unable to open secure payment.");
+        btn.disabled = false; btn.innerText = originalText;
       }
-      btn.disabled = false;
     }
 
     function openMyOrdersModal() {
