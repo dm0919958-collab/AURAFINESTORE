@@ -849,7 +849,7 @@ label { color: #f1e5ce; }
           <span id="razorpayAttemptsCount" class="text-xs rounded-full bg-slate-800 px-3 py-1 text-amber-300">0</span>
         </div>
         <div class="overflow-x-auto"><table class="w-full text-left text-xs">
-          <thead><tr class="text-slate-400 border-b border-slate-800"><th class="p-2">Date / Payment Ref</th><th class="p-2">Customer</th><th class="p-2">Items</th><th class="p-2">Total / Paid</th><th class="p-2">Shipping</th><th class="p-2">Status / Reason</th></tr></thead>
+          <thead><tr class="text-slate-400 border-b border-slate-800"><th class="p-2">Date / Payment Ref</th><th class="p-2">Customer</th><th class="p-2">Items</th><th class="p-2">Total / Paid</th><th class="p-2">Shipping</th><th class="p-2">Status / Reason</th><th class="p-2">Admin Actions</th></tr></thead>
           <tbody id="razorpayAttemptsTableBody"><tr><td colspan="6" class="p-4 text-center text-slate-500">No payment attempts.</td></tr></tbody>
         </table></div>
       </section>
@@ -2106,6 +2106,26 @@ label { color: #f1e5ce; }
       window.open(`/api/admin/orders/${orderId}/shipping-label?token=${encodeURIComponent(adminToken)}`, '_blank');
     }
 
+    async function verifyAdminPaymentAttempt(orderId) {
+      if (!confirm("Check this payment directly with Razorpay?")) return;
+      try {
+        const res = await fetch('/api/admin/payment-attempts/' + encodeURIComponent(orderId) + '/verify', {
+          method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({})
+        });
+        if (handleUnauthorized(res)) return;
+        const data = await res.json();
+        alert(data.message || (data.success ? 'Payment check completed.' : 'Could not verify payment.'));
+        await loadAdminOrdersOnlySilently();
+      } catch (e) { alert("Razorpay could not be checked. The payment record is kept."); }
+    }
+
+    function sendPaymentRetryInstructions(phone, orderId) {
+      const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
+      if (cleanPhone.length !== 10) return alert("Customer phone number is unavailable.");
+      const msg = "AURA Fine Store: Your payment was not completed. Please open our website, go to My Orders, and use Retry Payment within 7 days. Payment reference: " + orderId;
+      window.open('https://wa.me/91' + cleanPhone + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+    }
+
     function renderAdminPaymentAttempts() {
       const body = document.getElementById('razorpayAttemptsTableBody');
       if (!body) return;
@@ -2113,7 +2133,7 @@ label { color: #f1e5ce; }
       const count = document.getElementById('razorpayAttemptsCount');
       if (count) count.innerText = String(rows.length);
       if (!rows.length) {
-        body.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">No pending, cancelled or failed Razorpay attempts.</td></tr>';
+        body.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-500">No pending, cancelled, failed or payment-review attempts.</td></tr>';
         return;
       }
       body.innerHTML = rows.map(p => {
@@ -2126,7 +2146,8 @@ label { color: #f1e5ce; }
           <td class="p-2 text-slate-300">${items || '—'}</td>
           <td class="p-2"><b class="text-white">₹${Number(p.total) || 0}</b><span class="block text-slate-400">Payment: ₹${Number(p.amountToCollect) || 0}</span>${p.orderId ? `<span class="block text-emerald-300">Order #${escapeHTML(p.orderId)}</span>` : ''}</td>
           <td class="p-2 text-slate-300">₹${Number(p.deliveryCharge) || 0}</td>
-          <td class="p-2"><b class="${color}">${escapeHTML(state)}</b>${p.failureReason ? `<span class="block mt-1 text-[10px] text-rose-300">${escapeHTML(p.failureReason)}</span>` : ''}</td>
+          <td class="p-2"><b class="${color}">${escapeHTML(state)}</b>${p.failureReason ? `<span class="block mt-1 text-[10px] text-rose-300">${escapeHTML(p.failureReason)}</span>` : ''}${p.expiresAt ? `<span class="block mt-1 text-[10px] text-slate-400">Expires: ${new Date(p.expiresAt).toLocaleString('en-IN')}</span>` : ''}</td>
+          <td class="p-2 min-w-[145px] space-y-1"><button onclick="verifyAdminPaymentAttempt('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-cyan-700 hover:bg-cyan-600 px-2 py-1.5 text-[10px] font-bold text-white">Check Payment</button>${['Cancelled','Failed'].includes(state) ? `<button onclick="sendPaymentRetryInstructions('${escapeHTML(p.phone || '')}','${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-amber-500 hover:bg-amber-400 px-2 py-1.5 text-[10px] font-bold text-slate-950">Send Retry Link</button>` : state === 'Payment Received - Order Pending' ? '<span class="block text-[10px] font-bold text-rose-300">PAYMENT REVIEW</span>' : ''}</td>
         </tr>`;
       }).join('');
     }
