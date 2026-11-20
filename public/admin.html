@@ -199,7 +199,7 @@ label { color: #f1e5ce; }
         <h2 class="text-2xl font-cinzel font-bold text-amber-400">AURA Admin</h2>
         <p class="text-xs text-slate-400 mt-1">Encrypted JWT Command Desk</p>
       </div>
-      <input type="password" id="adminPinInput" onkeydown="if(event.key==='Enter') attemptLogin()" placeholder="Enter Admin PIN" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-center text-white tracking-widest font-mono focus:outline-none focus:border-amber-500">
+      <input type="password" id="adminPinInput" onkeydown="if(event.key==='Enter') attemptLogin()" placeholder="Enter Admin Passphrase" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-center text-white tracking-widest font-mono focus:outline-none focus:border-amber-500">
       <button onclick="attemptLogin()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 rounded-xl text-sm transition shadow-lg">Unlock Store Command</button>
       <p id="loginError" class="text-xs text-rose-400 hidden font-semibold">Incorrect PIN!</p>
     </div>
@@ -539,11 +539,8 @@ label { color: #f1e5ce; }
             </div>
           </div>
           <div class="bg-slate-800/80 p-3 rounded-2xl border border-rose-500/30 space-y-1">
-            <label class="block font-bold text-rose-300 text-[11px]"><i class="fa-solid fa-key mr-1"></i> Change Admin Login PIN:</label>
-            <div class="flex gap-2">
-              <input type="password" id="newAdminPinInput" placeholder="New PIN (min 4 chars)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-1.5 text-white font-mono">
-              <button onclick="changeAdminPin()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap">Update</button>
-            </div>
+            <label class="block font-bold text-rose-300 text-[11px]"><i class="fa-solid fa-key mr-1"></i> Admin Credential Management:</label>
+            <p class="text-xs text-slate-300">The admin passphrase is stored only as a Render Environment secret. To rotate it, update <code>ADMIN_PIN</code> in Render (minimum 16 characters) and restart the service. It is never saved in the store database.</p>
           </div>
         </div>
       </div>
@@ -1136,10 +1133,28 @@ label { color: #f1e5ce; }
       updateBulkPrintButtonUI();
     }
 
+    async function openAdminPdf(url) {
+      const preview = window.open('about:blank', '_blank');
+      try {
+        const response = await fetch(url, { headers: getAuthHeaders(false) });
+        if (handleUnauthorized(response)) { if (preview) preview.close(); return; }
+        if (!response.ok) throw new Error(await response.text() || 'PDF download failed.');
+        const objectUrl = URL.createObjectURL(await response.blob());
+        if (preview) preview.location.href = objectUrl;
+        else {
+          const link = document.createElement('a'); link.href = objectUrl; link.download = 'AURA_shipping_labels.pdf';
+          document.body.appendChild(link); link.click(); link.remove();
+        }
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+      } catch (error) {
+        if (preview) preview.close();
+        alert(error.message || 'Could not open the PDF.');
+      }
+    }
     function printBulkSelectedLabels() {
       const ids = Array.from(selectedOrderIdsSet);
       if (!ids.length) return alert("Please select at least 1 order using the checkboxes!");
-      window.open(`/api/admin/orders/bulk-shipping-labels?ids=${encodeURIComponent(ids.join(','))}&token=${encodeURIComponent(adminToken)}`, '_blank');
+      openAdminPdf(`/api/admin/orders/bulk-shipping-labels?ids=${encodeURIComponent(ids.join(','))}`);
     }
 
     function populateCategoryDropdowns(selectedMain = "", selectedSub = "") {
@@ -1354,16 +1369,7 @@ label { color: #f1e5ce; }
     }
 
     async function changeAdminPin() {
-      const newPin = (document.getElementById('newAdminPinInput').value || "").trim();
-      if (newPin.length < 4) return alert("New PIN must be at least 4 characters!");
-      if (!confirm("Change Admin Login PIN?")) return;
-      const res = await fetch('/api/admin/change-pin', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ newPin }) });
-      if (handleUnauthorized(res)) return;
-      const data = await res.json();
-      if (data.success) {
-        if (data.token) { adminToken = data.token; sessionStorage.setItem('aura_admin_jwt', data.token); }
-        document.getElementById('newAdminPinInput').value = ""; alert("✅ Admin PIN updated!");
-      } else alert(data.message || "Failed!");
+      alert("Admin credentials are managed securely in Render Environment. Update ADMIN_PIN there and restart the service.");
     }
 
     if (adminToken) {
@@ -2167,7 +2173,7 @@ label { color: #f1e5ce; }
     }
 
     function openThermalShippingLabel(orderId) {
-      window.open(`/api/admin/orders/${orderId}/shipping-label?token=${encodeURIComponent(adminToken)}`, '_blank');
+      openAdminPdf(`/api/admin/orders/${encodeURIComponent(orderId)}/shipping-label`);
     }
 
     async function verifyAdminPaymentAttempt(orderId) {
