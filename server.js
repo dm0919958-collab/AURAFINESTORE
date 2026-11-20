@@ -616,12 +616,26 @@ async function applyInventoryMovement(item, direction, session, actor, orderId =
   if (!product) throw new Error('Inventory product not found: ' + item.id);
   const plan = stockMutationPlan(product, item, direction);
   const filter = { id: Number(item.id) };
-  if (direction === 'deduct') { filter.stockQuantity = { $gte: plan.qty }; for (const key of Object.keys(plan.fields)) if (key !== 'stockQuantity') filter[key] = { $gte: plan.qty }; }
+  if (direction === 'deduct') {
+    if (plan.type === 'total') filter.stockQuantity = { $gte: plan.qty };
+    else for (const key of Object.keys(plan.fields)) if (key !== 'stockQuantity') filter[key] = { $gte: plan.qty };
+  }
   const addExpr = (path, delta) => ({ $add: [{ $ifNull: ['$' + path, 0] }, delta] });
-  const setFields = {};
-  for (const [path, delta] of Object.entries(plan.fields)) setFields[path] = addExpr(path, delta);
-  setFields.inStock = { $gt: [addExpr('stockQuantity', plan.fields.stockQuantity), 0] };
-  const updated = await Product.findOneAndUpdate(filter, [{ $set: setFields }], { new: true, session, runValidators: true }).lean();
+  const firstStage = {};
+  for (const [path, delta] of Object.entries(plan.fields)) {
+    if (path !== 'stockQuantity') firstStage[path] = addExpr(path, delta);
+  }
+  if (plan.type === 'total') firstStage.stockQuantity = addExpr('stockQuantity', plan.fields.stockQuantity);
+  let totalExpr = { $ifNull: ['$stockQuantity', 0] };
+  if (plan.type === 'variant') {
+    totalExpr = { $sum: { $map: { input: { $objectToArray: { $ifNull: ['$variantStock', {}] } }, as: 'entry', in: '$$entry.v' } } };
+  } else if (plan.type === 'size') {
+    totalExpr = { $sum: { $map: { input: { $objectToArray: { $ifNull: ['$sizeStock', {}] } }, as: 'entry', in: '$$entry.v' } } };
+  }
+  const updated = await Product.findOneAndUpdate(filter, [
+    { $set: firstStage },
+    { $set: { stockQuantity: totalExpr, inStock: { $gt: [totalExpr, 0] } } }
+  ], { new: true, session }).lean();
   if (!updated) throw new Error('Insufficient stock for ' + (item.name || ('product ' + item.id)) + '.');
   await InventoryAuditLog.create([{ actor, action: direction === 'deduct' ? 'ORDER_STOCK_DEDUCTED' : 'ORDER_STOCK_RESTORED', productId: Number(item.id), productName: product.name || item.name || '', orderId: String(orderId || ''), quantity: plan.qty, before: inventorySnapshot(product), after: inventorySnapshot(updated) }], { session });
   return updated;
