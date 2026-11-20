@@ -29,4 +29,4 @@ Multer is pinned to `2.5.0` (the patched release for the October 22, 2026 async 
 
 ## CSP compatibility note
 
-The current pages use inline scripts/styles and the Tailwind Play CDN. The enforced CSP therefore still permits inline script/style and eval for compatibility while restricting script/style hosts and disabling objects and framing. A stricter nonce/hash-based CSP requires refactoring those inline blocks and bundling Tailwind before enabling it.
+The current pages use inline scripts/styles and the Tailwind Play CDN. The enforced CSP therefore still permits inline script/style and eval for compatibility while restricting script/style hosts and disabling objects and framing. Media sources are limited to the store itself and Cloudinary rather than every HTTPS host. A stricter nonce/hash-based CSP requires refactoring inline event handlers/scripts and replacing the Tailwind Play CDN with compiled local CSS before removing the remaining inline/eval allowances.

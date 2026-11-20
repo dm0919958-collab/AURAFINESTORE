@@ -296,7 +296,9 @@ const walletSchema = new mongoose.Schema({
   phone: { type: String, unique: true },
   customerName: String,
   coins: { type: Number, default: 0 },
-  updatedAt: { type: Date, default: Date.now }
+  updatedAt: { type: Date, default: Date.now },
+  // Durable idempotency ledger: an order ID can add coins to this wallet only once.
+  creditedOrderIds: { type: [String], default: [] }
 });
 
 const abandonedCartSchema = new mongoose.Schema({
@@ -369,6 +371,9 @@ const paymentAttemptSchema = new mongoose.Schema({
   checkoutPayload: { type: mongoose.Schema.Types.Mixed, default: null },
   retryGroupId: { type: String, index: true, default: "" },
   retryOf: { type: String, default: "" },
+  // A source attempt is atomically locked while a new Razorpay order is being created.
+  retryLockToken: { type: String, default: "" },
+  retryLockAt: { type: Date, default: null },
   expiresAt: { type: Date, index: true, default: null },
   verificationExpiresAt: { type: Date, index: true, default: null },
   createdAt: { type: Date, default: Date.now },
@@ -657,6 +662,72 @@ async function seedInitialData() {
   }
 }
 
+// Credit an order's earned coins with a wallet-side idempotency ledger.
+// If the process stops after the wallet write but before the order update, a retry
+// observes creditedOrderIds and repairs the order without incrementing the wallet again.
+async function creditOrderCoinsOnce(order) {
+  const amount = Math.max(0, Number(order?.coinsEarned) || 0);
+  const phone = String(order?.phone || '');
+  const orderId = String(order?.id || '');
+  if (!amount || !phone || !orderId) return false;
+
+  try {
+    await Wallet.findOneAndUpdate(
+      { phone },
+      { $setOnInsert: { phone, coins: 0, creditedOrderIds: [] } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  } catch (error) {
+    // Another order for this phone may create the unique wallet at the same time.
+    if (error?.code !== 11000) throw error;
+  }
+  const creditedWallet = await Wallet.findOneAndUpdate(
+    { phone, creditedOrderIds: { $ne: orderId } },
+    {
+      $set: { customerName: order.customerName, updatedAt: new Date() },
+      $inc: { coins: amount },
+      $addToSet: { creditedOrderIds: orderId }
+    },
+    { new: true }
+  );
+  if (!creditedWallet) {
+    const ledgerEntry = await Wallet.exists({ phone, creditedOrderIds: orderId });
+    if (!ledgerEntry) throw new Error('Wallet coin credit could not be confirmed.');
+  }
+  await Order.updateOne(
+    { _id: order._id },
+    { $set: { coinsCredited: true, coinsStatus: 'credited' } }
+  );
+  order.coinsCredited = true;
+  order.coinsStatus = 'credited';
+  return Boolean(creditedWallet);
+}
+
+// Atomically claim one failed/cancelled source attempt before calling Razorpay.
+async function claimPaymentRetryLock(source, lockToken) {
+  return PaymentAttempt.findOneAndUpdate(
+    {
+      _id: source._id,
+      status: { $in: ["Cancelled", "Failed"] },
+      $or: [
+        { retryLockToken: { $exists: false } },
+        { retryLockToken: "" },
+        { retryLockToken: null }
+      ]
+    },
+    { $set: { retryLockToken: lockToken, retryLockAt: new Date() } },
+    { new: true }
+  ).lean();
+}
+
+async function releasePaymentRetryLock(lock) {
+  if (!lock) return;
+  await PaymentAttempt.updateOne(
+    { _id: lock.id, retryLockToken: lock.token },
+    { $set: { retryLockToken: "" }, $unset: { retryLockAt: "" } }
+  );
+}
+
 // Automatically credit pending coins whose refund window has passed
 async function processMaturedPendingCoins(phoneFilter = null) {
   try {
@@ -667,24 +738,8 @@ async function processMaturedPendingCoins(phoneFilter = null) {
       coinsUnlockAt: { $gt: 0, $lte: Date.now() }
     };
     if (phoneFilter) query.phone = phoneFilter;
-
     const maturedOrders = await Order.find(query);
-    for (const ord of maturedOrders) {
-      if (ord.phone) {
-        await Wallet.findOneAndUpdate(
-          { phone: ord.phone },
-          {
-            $setOnInsert: { phone: ord.phone },
-            $set: { customerName: ord.customerName, updatedAt: new Date() },
-            $inc: { coins: ord.coinsEarned }
-          },
-          { upsert: true }
-        );
-      }
-      ord.coinsCredited = true;
-      ord.coinsStatus = 'credited';
-      await ord.save();
-    }
+    for (const ord of maturedOrders) await creditOrderCoinsOnce(ord);
   } catch (e) {
     console.error('Mature coins sweep error:', e.message);
   }
@@ -1060,7 +1115,9 @@ app.use(helmet({
     styleSrc: ["'self'","'unsafe-inline'",'https://fonts.googleapis.com','https://cdnjs.cloudflare.com','https://cdn.jsdelivr.net'],
     fontSrc: ["'self'",'data:','https://fonts.gstatic.com','https://cdnjs.cloudflare.com','https://cdn.jsdelivr.net'],
     imgSrc: ["'self'",'data:','blob:','https://images.unsplash.com','https://res.cloudinary.com','https://www.facebook.com'],
-    mediaSrc: ["'self'",'data:','blob:','https:'],
+    // Uploaded customer videos are served from Cloudinary; avoid allowing every HTTPS host.
+    mediaSrc: ["'self'",'data:','blob:','https://res.cloudinary.com'],
+    manifestSrc: ["'self'"],
     connectSrc: ["'self'",'https://api.postalpincode.in','https://api.razorpay.com','https://checkout.razorpay.com','https://connect.facebook.net','https://www.facebook.com'],
     frameSrc: ["'self'",'https://api.razorpay.com','https://checkout.razorpay.com'],
     workerSrc: ["'self'",'blob:'],
@@ -2146,6 +2203,8 @@ app.post('/api/payments/razorpay/create-order', async (req, res) => {
 
 
 app.post('/api/payments/razorpay/retry', async (req, res) => {
+  let retryLock = null;
+  let providerOrderCreated = false;
   try {
     const keyId = process.env.RAZORPAY_KEY_ID, keySecret = process.env.RAZORPAY_KEY_SECRET;
     if (!keyId || !keySecret) return res.status(503).json({ success: false, message: "Online payment is not configured." });
@@ -2177,11 +2236,18 @@ app.post('/api/payments/razorpay/retry', async (req, res) => {
     if (!source.checkoutPayload || !Array.isArray(source.checkoutPayload.items) || !source.checkoutPayload.items.length)
       return res.status(409).json({ success: false, message: "This older payment attempt cannot be retried. Please place a new order." });
 
+    // Only one request can claim this failed/cancelled source attempt.
+    const lockToken = crypto.randomBytes(24).toString('hex');
+    const lockedSource = await claimPaymentRetryLock(source, lockToken);
+    if (!lockedSource) return res.status(409).json({ success: false, message: "A payment retry is already being processed. Please wait and refresh My Orders." });
+    retryLock = { id: source._id, token: lockToken };
+
     const created = await axios.post('https://api.razorpay.com/v1/orders', {
       amount: Math.round(Number(source.amountToCollect) * 100), currency: 'INR',
       receipt: 'AURAR' + Date.now().toString().slice(-9),
       notes: { phone, payment_mode: source.paymentMethod || 'UPI', retry_of: source.razorpayOrderId }
     }, { auth: { username: keyId, password: keySecret }, timeout: 15000 });
+    providerOrderCreated = true;
 
     await PaymentAttempt.create({
       razorpayOrderId: created.data.id, phone, customerName: source.customerName,
@@ -2190,14 +2256,21 @@ app.post('/api/payments/razorpay/retry', async (req, res) => {
       checkoutPayload: source.checkoutPayload, retryGroupId, retryOf: source.razorpayOrderId,
       expiresAt, status: "Payment Pending"
     });
+    await releasePaymentRetryLock(retryLock);
+    retryLock = null;
     return res.json({
       success: true, keyId, razorpayOrderId: created.data.id, amount: created.data.amount,
       currency: created.data.currency, checkoutPayload: source.checkoutPayload,
       expiresAt, verificationExpiresAt: root.verificationExpiresAt || source.verificationExpiresAt
     });
   } catch (err) {
+    // Release only when Razorpay did not create an order. If it did, retain the
+    // lock for manual reconciliation rather than risk creating a duplicate order.
+    if (retryLock && !providerOrderCreated) {
+      await releasePaymentRetryLock(retryLock).catch(() => {});
+    }
     console.error("Razorpay payment retry failed:", err.response?.data || err.message);
-    return res.status(502).json({ success: false, message: "Could not restart payment. Please try again." });
+    return res.status(502).json({ success: false, message: "Could not restart payment. Please try again. If the request remains in progress, contact support before retrying again." });
   }
 });
 
@@ -2975,11 +3048,19 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
       }
       // Reverse earned coins if already credited
       if (order.coinsCredited && (order.coinsEarned || 0) > 0 && order.phone) {
-        const w = await Wallet.findOne({ phone: order.phone });
-        if (w) {
-          w.coins = Math.max(0, (w.coins || 0) - order.coinsEarned);
-          await w.save();
-        }
+        // Preserve the previous zero-floor behavior while removing the idempotency key atomically.
+        await Wallet.collection.updateOne(
+          { phone: order.phone },
+          [{ $set: {
+            coins: { $max: [0, { $subtract: [{ $ifNull: ['$coins', 0] }, Math.max(0, Number(order.coinsEarned) || 0)] }] },
+            creditedOrderIds: { $filter: {
+              input: { $ifNull: ['$creditedOrderIds', []] },
+              as: 'creditedId',
+              cond: { $ne: ['$creditedId', order.id] }
+            } },
+            updatedAt: new Date()
+          } }]
+        );
         order.coinsCredited = false;
       }
       if ((order.coinsEarned || 0) > 0) {
@@ -3033,17 +3114,7 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
       // Non-Refundable orders (or 0-day refund window) credit coins IMMEDIATELY on delivery;
       // Refundable orders unlock coins automatically after the refund window passes.
       if (order.isNonRefundableOrder || refundDays <= 0) {
-        await Wallet.findOneAndUpdate(
-          { phone: order.phone },
-          {
-            $setOnInsert: { phone: order.phone },
-            $set: { customerName: order.customerName, updatedAt: new Date() },
-            $inc: { coins: order.coinsEarned }
-          },
-          { upsert: true }
-        );
-        order.coinsCredited = true;
-        order.coinsStatus = 'credited';
+        await creditOrderCoinsOnce(order);
         order.coinsUnlockAt = Date.now();
       } else {
         order.coinsStatus = 'pending_refund_window';
@@ -3141,4 +3212,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { app, startServer, removeLegacyAdminPinHashes, Settings };
+module.exports = { app, startServer, removeLegacyAdminPinHashes, Settings, creditOrderCoinsOnce, claimPaymentRetryLock, Wallet, Order, PaymentAttempt };

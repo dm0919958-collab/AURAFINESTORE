@@ -66,3 +66,31 @@ test('admin PDF endpoints no longer receive JWTs in query strings', () => {
   assert.doesNotMatch(admin, /shipping-label[^\n]*[?&]token=|bulk-shipping-labels[^\n]*[?&]token=/);
   assert.match(admin, /openAdminPdf/);
 });
+
+
+test('payment retry source attempts are atomically locked before Razorpay order creation', () => {
+  assert.match(server, /retryLockToken/);
+  assert.match(server, /async function claimPaymentRetryLock/);
+  assert.match(server, /providerOrderCreated = true/);
+  assert.match(server, /lock for manual reconciliation/);
+});
+
+test('wallet coin credits use a durable per-order idempotency ledger', () => {
+  assert.match(server, /creditedOrderIds: \{ type: \[String\], default: \[\] \}/);
+  assert.match(server, /\$addToSet: \{ creditedOrderIds: orderId \}/);
+  assert.match(server, /async function creditOrderCoinsOnce/);
+  assert.match(server, /await creditOrderCoinsOnce\(ord\)/);
+  assert.match(server, /await creditOrderCoinsOnce\(order\)/);
+});
+
+test('CSP limits media sources to trusted origins and declares a same-origin manifest', () => {
+  assert.match(server, /mediaSrc: \["'self'",'data:','blob:','https:\/\/res\.cloudinary\.com'\]/);
+  assert.match(server, /manifestSrc: \["'self'"\]/);
+  assert.doesNotMatch(server, /mediaSrc:.*'https:'\]/);
+  // Tailwind Play CDN still needs unsafe-eval; remove it only after migrating to compiled local CSS.
+  assert.match(server, /'unsafe-eval'.*https:\/\/cdn\.tailwindcss\.com/);
+});
+
+test('dependency lockfile is committed for reproducible installs', () => {
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'package-lock.json')));
+});
