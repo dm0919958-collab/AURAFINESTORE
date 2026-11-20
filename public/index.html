@@ -2659,14 +2659,14 @@
           modal: { ondismiss: async function () {
             await updateRazorpayAttemptStatus(paymentOrder.razorpayOrderId, "Cancelled", "Customer closed the Razorpay payment window.");
             btn.disabled = false; btn.innerText = originalText;
-            alert("Payment cancelled. Your payment attempt is saved for 7 days. Opening My Orders so you can retry.");
+            alert("Payment cancelled. Your payment attempt is saved for 7 days for payment verification. Retry is available for 24 hours. Opening My Orders.");
             openMyOrdersModal();
           }}
         });
         checkout.on('payment.failed', async function (response) {
           btn.disabled = false; btn.innerText = originalText;
           await updateRazorpayAttemptStatus(paymentOrder.razorpayOrderId, "Failed", response.error?.description || "Payment failed.");
-          alert("Payment failed: " + (response.error?.description || "Please try again.") + "\nOpening My Orders so you can retry within 7 days.");
+          alert("Payment failed: " + (response.error?.description || "Please try again.") + "\nOpening My Orders so you can retry within 24 hours.");
           openMyOrdersModal();
         });
         checkout.open();
