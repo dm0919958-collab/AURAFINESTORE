@@ -336,6 +336,15 @@ async function expireRazorpayPaymentAttempts() {
   const keyId = process.env.RAZORPAY_KEY_ID, keySecret = process.env.RAZORPAY_KEY_SECRET;
   if (!keyId || !keySecret) return;
   const now = new Date();
+  // Give older attempts created before this feature the same 24-hour expiry window.
+  const legacyAttempts = await PaymentAttempt.find({ expiresAt: null, createdAt: { $ne: null } })
+    .select('_id createdAt').limit(200).lean();
+  for (const legacy of legacyAttempts) {
+    await PaymentAttempt.updateOne(
+      { _id: legacy._id, expiresAt: null },
+      { $set: { expiresAt: new Date(new Date(legacy.createdAt).getTime() + 24 * 60 * 60 * 1000) } }
+    );
+  }
   const expired = await PaymentAttempt.find({
     expiresAt: { $ne: null, $lte: now },
     status: { $in: ["Payment Pending", "Cancelled", "Failed", "Payment Received - Order Pending"] }
@@ -2499,8 +2508,13 @@ app.get('/api/orders/track', async (req, res) => {
 
     const dbQuery = targetOrderId ? { phone: targetPhone, id: targetOrderId } : { phone: targetPhone };
     const matched = await Order.find(dbQuery).sort({ createdAt: -1 }).limit(30).lean();
-    const paymentAttempts = await PaymentAttempt.find({ phone: targetPhone, status: { $ne: "Completed" } })
+    const rawPaymentAttempts = await PaymentAttempt.find({ phone: targetPhone, status: { $ne: "Completed" } })
       .sort({ createdAt: -1 }).limit(20).lean();
+    // Never expose the saved checkout address/payload in the public order-tracking response.
+    const paymentAttempts = rawPaymentAttempts.map(({ checkoutPayload, ...attempt }) => ({
+      ...attempt,
+      canRetry: Boolean(checkoutPayload && attempt.expiresAt && Date.now() < new Date(attempt.expiresAt).getTime())
+    }));
 
     let walletCoins = 0;
     let pendingCoins = 0;
