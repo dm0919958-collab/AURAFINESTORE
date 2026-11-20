@@ -342,7 +342,7 @@ async function expireRazorpayPaymentAttempts() {
   for (const legacy of legacyAttempts) {
     await PaymentAttempt.updateOne(
       { _id: legacy._id, expiresAt: null },
-      { $set: { expiresAt: new Date(new Date(legacy.createdAt).getTime() + 24 * 60 * 60 * 1000) } }
+      { $set: { expiresAt: new Date(new Date(legacy.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000) } }
     );
   }
   const expired = await PaymentAttempt.find({
@@ -2048,12 +2048,12 @@ app.post('/api/payments/razorpay/create-order', async (req, res) => {
       total, amountToCollect, deliveryCharge: shipping, paymentMethod: mode,
       checkoutPayload: { ...req.body, items: items.map(i => ({ ...i })) },
       retryGroupId: created.data.id,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       status: "Payment Pending"
     });
     return res.json({ success: true, keyId, razorpayOrderId: created.data.id, amount: created.data.amount,
       currency: created.data.currency, verifiedTotal: total, amountToCollect, deliveryCharge: shipping, paymentMode: mode,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) });
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
   } catch (err) {
     console.error("Razorpay order creation failed:", err.response?.data || err.message);
     return res.status(502).json({ success: false, message: "Could not start payment. Please try again." });
@@ -2079,7 +2079,7 @@ app.post('/api/payments/razorpay/retry', async (req, res) => {
     const root = await PaymentAttempt.findOne({ razorpayOrderId: retryGroupId, phone }).lean() || source;
     const expiresAt = root.expiresAt || source.expiresAt;
     if (!expiresAt || Date.now() >= new Date(expiresAt).getTime())
-      return res.status(410).json({ success: false, message: "The 24-hour payment retry period has expired. Please place a new order." });
+      return res.status(410).json({ success: false, message: "The 7-day payment retry period has expired. Please place a new order." });
     const completed = await PaymentAttempt.findOne({ retryGroupId, status: "Completed" }).lean();
     if (completed) return res.status(409).json({ success: false, message: "This order has already been paid and confirmed." });
     if (!source.checkoutPayload || !Array.isArray(source.checkoutPayload.items) || !source.checkoutPayload.items.length)
