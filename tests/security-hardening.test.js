@@ -83,6 +83,22 @@ test('wallet coin credits use a durable per-order idempotency ledger', () => {
   assert.match(server, /await creditOrderCoinsOnce\(order\)/);
 });
 
+
+test('inventory stock operations are transactional and auditable', () => {
+  assert.match(server, /inventoryAuditSchema/);
+  assert.match(server, /async function applyInventoryMovement/);
+  assert.match(server, /await inventorySession\.withTransaction/);
+  assert.match(server, /await session\.withTransaction/);
+  assert.match(server, /app\.get\('\/api\/admin\/inventory-audit'/);
+  assert.match(server, /ORDER_STOCK_RESTORED/);
+  assert.match(server, /ADMIN_STOCK_UPDATED/);
+});
+
+test('variant and size stock edits are normalized and total-only quick edits are blocked', () => {
+  assert.match(server, /normalizeStockMaps\(variantStock, sizeStock, stockQuantity\)/);
+  assert.match(server, /update the matching stock map instead of total stock only/);
+});
+
 test('CSP limits media sources to trusted origins and declares a same-origin manifest', () => {
   assert.match(server, /mediaSrc: \["'self'",'data:','blob:','https:\/\/res\.cloudinary\.com'\]/);
   assert.match(server, /manifestSrc: \["'self'"\]/);
