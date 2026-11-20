@@ -306,6 +306,24 @@ const returnRequestSchema = new mongoose.Schema({
  createdAtStr:String,deliveredAt:Date,reviewedAt:{type:Date,default:null},cancelledAt:{type:Date,default:null}
 },{timestamps:true});
 const ReturnRequest = mongoose.model('ReturnRequest', returnRequestSchema);
+
+const paymentAttemptSchema = new mongoose.Schema({
+  razorpayOrderId: { type: String, unique: true, index: true },
+  razorpayPaymentId: { type: String, default: "" },
+  phone: { type: String, index: true },
+  customerName: String,
+  items: Array,
+  total: Number,
+  amountToCollect: Number,
+  deliveryCharge: Number,
+  paymentMethod: String,
+  status: { type: String, default: "Payment Pending", index: true },
+  orderId: { type: String, default: "" },
+  failureReason: { type: String, default: "" },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+const PaymentAttempt = mongoose.model('PaymentAttempt', paymentAttemptSchema);
 const StockNotify = mongoose.model('StockNotify', stockNotifySchema);
 
 const defaultCategories = [
@@ -1957,11 +1975,39 @@ app.post('/api/payments/razorpay/create-order', async (req, res) => {
       receipt: 'AURA' + Date.now().toString().slice(-10),
       notes: { phone: cleanPhone, payment_mode: mode }
     }, { auth: { username: keyId, password: keySecret }, timeout: 15000 });
+    await PaymentAttempt.create({
+      razorpayOrderId: created.data.id,
+      phone: cleanPhone,
+      customerName: String(req.body.customerName || '').trim(),
+      items: items.map(i => ({ id: Number(i.id), name: String(byId.get(Number(i.id)).name || i.name || ''), qty: Math.max(1, parseInt(i.qty, 10) || 1) })),
+      total, amountToCollect, deliveryCharge: shipping, paymentMethod: mode,
+      status: "Payment Pending"
+    });
     return res.json({ success: true, keyId, razorpayOrderId: created.data.id, amount: created.data.amount,
       currency: created.data.currency, verifiedTotal: total, amountToCollect, deliveryCharge: shipping, paymentMode: mode });
   } catch (err) {
     console.error("Razorpay order creation failed:", err.response?.data || err.message);
     return res.status(502).json({ success: false, message: "Could not start payment. Please try again." });
+  }
+});
+
+
+app.post('/api/payments/razorpay/status', async (req, res) => {
+  try {
+    const razorpayOrderId = String(req.body.razorpayOrderId || '').trim();
+    const requestedStatus = String(req.body.status || '').trim();
+    const reason = String(req.body.reason || '').slice(0, 300);
+    if (!/^order_[A-Za-z0-9]+$/.test(razorpayOrderId) || !['Cancelled', 'Failed'].includes(requestedStatus))
+      return res.status(400).json({ success: false, message: "Invalid payment status update." });
+    const attempt = await PaymentAttempt.findOneAndUpdate(
+      { razorpayOrderId, status: "Payment Pending" },
+      { $set: { status: requestedStatus, failureReason: reason, updatedAt: new Date() } },
+      { new: true }
+    ).lean();
+    return res.json({ success: true, unchanged: !attempt, status: attempt?.status || "Payment Received - Order Pending" });
+  } catch (err) {
+    console.error("Razorpay payment status update failed:", err.message);
+    return res.status(500).json({ success: false, message: "Could not update payment status." });
   }
 });
 
@@ -2010,6 +2056,10 @@ app.post('/api/orders', async (req, res) => {
       }
       if (verifiedRazorpayPayment.status !== 'captured')
         return res.status(400).json({ success: false, message: "Payment is not captured. Your order has not been confirmed." });
+      await PaymentAttempt.findOneAndUpdate(
+        { razorpayOrderId },
+        { $set: { razorpayPaymentId, status: "Payment Received - Order Pending", updatedAt: new Date() } }
+      ).catch(e => console.error("Payment attempt update failed:", e.message));
     } else {
       const isRepeatedDigits = /^(\d)\1{11}$/.test(cleanUtr);
       const fakeUtrs = new Set(["123456789012", "123456123456", "987654321098", "012345678901"]);
@@ -2220,6 +2270,13 @@ app.post('/api/orders', async (req, res) => {
       orderDateRaw: todayStr
     });
 
+    if (isRazorpay) {
+      await PaymentAttempt.findOneAndUpdate(
+        { razorpayOrderId },
+        { $set: { razorpayPaymentId, status: "Completed", orderId: order.id, updatedAt: new Date() } }
+      ).catch(e => console.error("Payment attempt completion update failed:", e.message));
+    }
+
     await AbandonedCart.deleteOne({ phone: cleanPhone }).catch(() => {});
 
     res.json({
@@ -2231,6 +2288,12 @@ app.post('/api/orders', async (req, res) => {
     });
     sendTelegramAlert(order).catch(e => console.error("Background Telegram error:", e.message));
   } catch (err) {
+    if (req.body && req.body.razorpay_order_id) {
+      await PaymentAttempt.findOneAndUpdate(
+        { razorpayOrderId: String(req.body.razorpay_order_id), status: "Payment Received - Order Pending" },
+        { $set: { failureReason: "Payment captured; order creation needs support review.", updatedAt: new Date() } }
+      ).catch(() => {});
+    }
     if (deductedCoinsAmount > 0 && deductedCoinsPhone) {
       await Wallet.findOneAndUpdate({ phone: deductedCoinsPhone }, { $inc: { coins: deductedCoinsAmount } }).catch(() => {});
     }
@@ -2327,6 +2390,8 @@ app.get('/api/orders/track', async (req, res) => {
 
     const dbQuery = targetOrderId ? { phone: targetPhone, id: targetOrderId } : { phone: targetPhone };
     const matched = await Order.find(dbQuery).sort({ createdAt: -1 }).limit(30).lean();
+    const paymentAttempts = await PaymentAttempt.find({ phone: targetPhone, status: { $ne: "Completed" } })
+      .sort({ createdAt: -1 }).limit(20).lean();
 
     let walletCoins = 0;
     let pendingCoins = 0;
@@ -2343,7 +2408,7 @@ app.get('/api/orders/track', async (req, res) => {
       address: authedPhone === targetPhone ? o.address : maskCustomerAddress(o.address)
     }));
 
-    res.json({ success: true, orders: safeOrders, walletCoins, pendingCoins });
+    res.json({ success: true, orders: safeOrders, paymentAttempts, walletCoins, pendingCoins });
   } catch (err) {
     res.status(500).json({ success: false, orders: [], walletCoins: 0, pendingCoins: 0 });
   }
@@ -2399,7 +2464,7 @@ app.post('/api/admin/orders', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-    const [orders, coupons, settings, products, abandonedCarts, stockNotifies, categories, wallets] = await Promise.all([
+    const [orders, coupons, settings, products, abandonedCarts, stockNotifies, categories, wallets, paymentAttempts] = await Promise.all([
       Order.find().sort({ createdAt: -1 }).lean(),
       Coupon.find().lean(),
       Settings.findOne({ key: 'main' }),
@@ -2407,7 +2472,8 @@ app.post('/api/admin/orders', async (req, res) => {
       AbandonedCart.find().sort({ updatedAt: -1 }).lean(),
       StockNotify.find().sort({ createdAt: -1 }).lean(),
       Category.find().lean(),
-      Wallet.find().sort({ coins: -1 }).lean()
+      Wallet.find().sort({ coins: -1 }).lean(),
+      PaymentAttempt.find({ status: { $ne: "Completed" } }).sort({ createdAt: -1 }).limit(100).lean()
     ]);
 
     let activeSettings = settings
@@ -2465,6 +2531,7 @@ app.post('/api/admin/orders', async (req, res) => {
     res.json({
       success: true,
       orders,
+      paymentAttempts,
       products,
       categories,
       coupons,
