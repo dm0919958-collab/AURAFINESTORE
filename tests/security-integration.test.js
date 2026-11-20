@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 
 process.env.ADMIN_PIN = 'ci-only-admin-passphrase-2026';
 process.env.JWT_SECRET = 'ci-only-random-jwt-secret-which-is-longer-than-32-bytes';
@@ -32,6 +33,13 @@ test('Admin login rejects an incorrect PIN and issues a scoped token for the cor
   assert.equal(accepted.status, 200);
   assert.equal(accepted.body.success, true);
   assert.equal(typeof accepted.body.token, 'string');
+  const claims = jwt.verify(accepted.body.token, process.env.JWT_SECRET, {
+    algorithms: ['HS256'],
+    issuer: 'aura-fine-store',
+    audience: 'aura-admin'
+  });
+  assert.equal(claims.role, 'admin');
+  assert.equal(claims.sub, 'admin');
   assert.equal(accepted.headers['cache-control'], 'no-store');
 });
 
