@@ -83,8 +83,7 @@ async function verifyAdminAuth(req) {
 function getAuthenticatedCustomerPhone(req) {
   const authHeader = req.headers['x-customer-token'] || req.headers['authorization'] || '';
   const rawToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : String(authHeader).trim();
-  const queryToken = req.query && req.query.ctoken ? String(req.query.ctoken).trim() : '';
-  const token = rawToken || queryToken;
+  const token = rawToken;
   if (!token) return null;
   try {
     const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
