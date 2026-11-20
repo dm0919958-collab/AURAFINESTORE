@@ -2251,22 +2251,31 @@ app.post('/api/admin/payment-attempts/:razorpayOrderId/verify', async (req, res)
     if (!attempt) return res.status(404).json({ success: false, message: "Payment attempt not found." });
     const keyId = process.env.RAZORPAY_KEY_ID, keySecret = process.env.RAZORPAY_KEY_SECRET;
     if (!keyId || !keySecret) return res.status(503).json({ success: false, message: "Razorpay is not configured." });
-    const response = await axios.get('https://api.razorpay.com/v1/orders/' + encodeURIComponent(razorpayOrderId) + '/payments',
-      { auth: { username: keyId, password: keySecret }, timeout: 15000 });
-    const payments = Array.isArray(response.data.items) ? response.data.items : [];
-    const captured = payments.find(p => p.status === 'captured');
-    if (captured) {
-      attempt.razorpayPaymentId = captured.id;
-      attempt.status = attempt.orderId ? "Completed" : "Payment Received - Order Pending";
-      attempt.failureReason = attempt.orderId ? "" : "Razorpay confirms captured payment. Order creation still requires review.";
-      attempt.updatedAt = new Date();
-      await attempt.save();
-      return res.json({ success: true, captured: true, status: attempt.status, paymentId: captured.id,
-        message: attempt.orderId ? "Captured payment verified; linked order exists." : "Captured payment verified. Keep in Payment Review until the order is safely created." });
+    const groupId = attempt.retryGroupId || attempt.razorpayOrderId;
+    const group = await PaymentAttempt.find({ phone: attempt.phone, $or: [{ retryGroupId: groupId }, { razorpayOrderId: groupId }] }).sort({ createdAt: -1 }).lean();
+    let captured = null, capturedAttempt = null, latest = null;
+    for (const item of group) {
+      const response = await axios.get('https://api.razorpay.com/v1/orders/' + encodeURIComponent(item.razorpayOrderId) + '/payments',
+        { auth: { username: keyId, password: keySecret }, timeout: 15000 });
+      const payments = Array.isArray(response.data.items) ? response.data.items : [];
+      const found = payments.find(p => p.status === 'captured');
+      if (found) { captured = found; capturedAttempt = item; break; }
+      const newest = payments.sort((x, y) => Number(y.created_at || 0) - Number(x.created_at || 0))[0];
+      if (!latest && newest) latest = newest;
     }
-    const latest = payments.sort((x, y) => Number(y.created_at || 0) - Number(x.created_at || 0))[0];
+    if (captured && capturedAttempt) {
+      const linkedOrder = capturedAttempt.orderId || (await Order.findOne({ razorpayPaymentId: captured.id }).lean())?.id || "";
+      await PaymentAttempt.updateOne({ _id: capturedAttempt._id }, { $set: {
+        razorpayPaymentId: captured.id, status: linkedOrder ? "Completed" : "Payment Received - Order Pending",
+        orderId: linkedOrder, failureReason: linkedOrder ? "" : "Razorpay confirms captured payment. Admin approval required.",
+        updatedAt: new Date()
+      } });
+      return res.json({ success: true, captured: true, status: linkedOrder ? "Completed" : "Payment Received - Order Pending",
+        paymentId: captured.id, capturedOrderId: capturedAttempt.razorpayOrderId,
+        message: linkedOrder ? "Captured payment verified; linked order exists." : "Captured payment found in this retry group. Use Approve & Create Order." });
+    }
     return res.json({ success: true, captured: false, status: latest ? latest.status : "No payment found",
-      message: "No captured payment found. The attempt has not been deleted." });
+      message: "No captured payment found in this retry group. The attempt has not been deleted." });
   } catch (err) {
     console.error("Admin Razorpay verification failed:", err.response?.data || err.message);
     return res.status(502).json({ success: false, message: "Razorpay could not be checked. The attempt was kept safely." });
