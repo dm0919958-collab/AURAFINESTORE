@@ -1525,7 +1525,7 @@ label { color: #f1e5ce; }
         const ordData = await ordRes.json(), storeData = await storeRes.json();
 
         if (ordData.success) {
-          cachedOrders = ordData.orders || []; cachedAbandonedCarts = ordData.abandonedCarts || []; cachedStockNotifies = ordData.stockNotifies || []; cachedWallets = ordData.wallets || [];
+          cachedOrders = ordData.orders || []; cachedPaymentAttempts = ordData.paymentAttempts || []; cachedAbandonedCarts = ordData.abandonedCarts || []; cachedStockNotifies = ordData.stockNotifies || []; cachedWallets = ordData.wallets || [];
           renderAdminInvoices(); renderAdminPaymentAttempts();
           cachedCategories = ordData.categories || storeData.categories || []; cachedProducts = ordData.products || storeData.products || [];
           window._lastOrdersHash = JSON.stringify({ o: cachedOrders, pa: cachedPaymentAttempts, a: cachedAbandonedCarts, w: cachedStockNotifies, wl: cachedWallets });
