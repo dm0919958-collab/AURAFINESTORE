@@ -320,11 +320,58 @@ const paymentAttemptSchema = new mongoose.Schema({
   status: { type: String, default: "Payment Pending", index: true },
   orderId: { type: String, default: "" },
   failureReason: { type: String, default: "" },
+  checkoutPayload: { type: mongoose.Schema.Types.Mixed, default: null },
+  retryGroupId: { type: String, index: true, default: "" },
+  retryOf: { type: String, default: "" },
+  expiresAt: { type: Date, index: true, default: null },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
 const PaymentAttempt = mongoose.model('PaymentAttempt', paymentAttemptSchema);
 const StockNotify = mongoose.model('StockNotify', stockNotifySchema);
+
+
+async function expireRazorpayPaymentAttempts() {
+  if (mongoose.connection.readyState !== 1) return;
+  const keyId = process.env.RAZORPAY_KEY_ID, keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) return;
+  const now = new Date();
+  const expired = await PaymentAttempt.find({
+    expiresAt: { $ne: null, $lte: now },
+    status: { $in: ["Payment Pending", "Cancelled", "Failed", "Payment Received - Order Pending"] }
+  }).limit(100).lean();
+
+  for (const attempt of expired) {
+    try {
+      const response = await axios.get(
+        'https://api.razorpay.com/v1/orders/' + encodeURIComponent(attempt.razorpayOrderId) + '/payments',
+        { auth: { username: keyId, password: keySecret }, timeout: 12000 }
+      );
+      const payments = Array.isArray(response.data.items) ? response.data.items : [];
+      const captured = payments.find(p => p.status === 'captured');
+      if (captured) {
+        await PaymentAttempt.updateOne(
+          { _id: attempt._id, status: { $ne: "Completed" } },
+          { $set: { status: "Payment Received - Order Pending", razorpayPaymentId: captured.id,
+            failureReason: "Payment was captured; order confirmation requires review.", updatedAt: new Date() } }
+        );
+        continue;
+      }
+      // No captured payment exists at Razorpay: remove the expired attempt from both customer and admin lists.
+      await PaymentAttempt.deleteOne({
+        _id: attempt._id, expiresAt: { $lte: new Date() },
+        status: { $in: ["Payment Pending", "Cancelled", "Failed"] }
+      });
+    } catch (err) {
+      // If Razorpay cannot be checked, keep the record. Never delete on an uncertain payment state.
+      console.warn("Payment-attempt expiry check deferred:", attempt.razorpayOrderId, err.message);
+    }
+  }
+}
+setTimeout(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 15000);
+setInterval(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 5 * 60 * 1000);
+
+
 
 const defaultCategories = [
   { name: "Men", subCategories: ["Shirts", "T-Shirts", "Watches", "Trousers", "Perfumes"] },
@@ -1990,16 +2037,66 @@ app.post('/api/payments/razorpay/create-order', async (req, res) => {
       customerName: String(req.body.customerName || '').trim(),
       items: items.map(i => ({ id: Number(i.id), name: String(byId.get(Number(i.id)).name || i.name || ''), qty: Math.max(1, parseInt(i.qty, 10) || 1) })),
       total, amountToCollect, deliveryCharge: shipping, paymentMethod: mode,
+      checkoutPayload: { ...req.body, items: items.map(i => ({ ...i })) },
+      retryGroupId: created.data.id,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       status: "Payment Pending"
     });
     return res.json({ success: true, keyId, razorpayOrderId: created.data.id, amount: created.data.amount,
-      currency: created.data.currency, verifiedTotal: total, amountToCollect, deliveryCharge: shipping, paymentMode: mode });
+      currency: created.data.currency, verifiedTotal: total, amountToCollect, deliveryCharge: shipping, paymentMode: mode,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) });
   } catch (err) {
     console.error("Razorpay order creation failed:", err.response?.data || err.message);
     return res.status(502).json({ success: false, message: "Could not start payment. Please try again." });
   }
 });
 
+
+
+app.post('/api/payments/razorpay/retry', async (req, res) => {
+  try {
+    const keyId = process.env.RAZORPAY_KEY_ID, keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) return res.status(503).json({ success: false, message: "Online payment is not configured." });
+    const razorpayOrderId = String(req.body.razorpayOrderId || '').trim();
+    const phone = String(req.body.phone || '').replace(/[^0-9]/g, '');
+    if (!/^order_[A-Za-z0-9]+$/.test(razorpayOrderId) || !/^[6-9]\\d{9}$/.test(phone))
+      return res.status(400).json({ success: false, message: "Invalid payment retry request." });
+
+    const source = await PaymentAttempt.findOne({ razorpayOrderId, phone }).lean();
+    if (!source) return res.status(404).json({ success: false, message: "Payment retry record was not found." });
+    const retryGroupId = source.retryGroupId || source.razorpayOrderId;
+    const root = await PaymentAttempt.findOne({ razorpayOrderId: retryGroupId, phone }).lean() || source;
+    const expiresAt = root.expiresAt || source.expiresAt;
+    if (!expiresAt || Date.now() >= new Date(expiresAt).getTime())
+      return res.status(410).json({ success: false, message: "The 24-hour payment retry period has expired. Please place a new order." });
+    const completed = await PaymentAttempt.findOne({ retryGroupId, status: "Completed" }).lean();
+    if (completed) return res.status(409).json({ success: false, message: "This order has already been paid and confirmed." });
+    if (!source.checkoutPayload || !Array.isArray(source.checkoutPayload.items) || !source.checkoutPayload.items.length)
+      return res.status(409).json({ success: false, message: "This older payment attempt cannot be retried. Please place a new order." });
+
+    const created = await axios.post('https://api.razorpay.com/v1/orders', {
+      amount: Math.round(Number(source.amountToCollect) * 100), currency: 'INR',
+      receipt: 'AURAR' + Date.now().toString().slice(-9),
+      notes: { phone, payment_mode: source.paymentMethod || 'UPI', retry_of: source.razorpayOrderId }
+    }, { auth: { username: keyId, password: keySecret }, timeout: 15000 });
+
+    await PaymentAttempt.create({
+      razorpayOrderId: created.data.id, phone, customerName: source.customerName,
+      items: source.items, total: source.total, amountToCollect: source.amountToCollect,
+      deliveryCharge: source.deliveryCharge, paymentMethod: source.paymentMethod,
+      checkoutPayload: source.checkoutPayload, retryGroupId, retryOf: source.razorpayOrderId,
+      expiresAt, status: "Payment Pending"
+    });
+    return res.json({
+      success: true, keyId, razorpayOrderId: created.data.id, amount: created.data.amount,
+      currency: created.data.currency, checkoutPayload: source.checkoutPayload,
+      expiresAt
+    });
+  } catch (err) {
+    console.error("Razorpay payment retry failed:", err.response?.data || err.message);
+    return res.status(502).json({ success: false, message: "Could not restart payment. Please try again." });
+  }
+});
 
 app.post('/api/payments/razorpay/status', async (req, res) => {
   try {
