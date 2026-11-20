@@ -2122,7 +2122,7 @@ label { color: #f1e5ce; }
     function sendPaymentRetryInstructions(phone, orderId) {
       const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
       if (cleanPhone.length !== 10) return alert("Customer phone number is unavailable.");
-      const msg = "AURA Fine Store: Your payment was not completed. Please open our website, go to My Orders, and use Retry Payment within 7 days. Payment reference: " + orderId;
+      const msg = "AURA Fine Store: Your payment was not completed. Please open our website, go to My Orders, and use Retry Payment within 24 hours. Payment reference: " + orderId;
       window.open('https://wa.me/91' + cleanPhone + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
     }
 
