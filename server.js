@@ -41,9 +41,52 @@ cloudinary.config({
 });
 
 const ALLOWED_UPLOAD_MIME_TYPES = new Set(['image/jpeg','image/png','image/webp','video/mp4','video/quicktime','video/webm','application/pdf']);
+const UPLOAD_FIELD_MAX_BYTES = Object.freeze({
+  photos: 5 * 1024 * 1024,
+  video: 10 * 1024 * 1024,
+  slipFile: 8 * 1024 * 1024
+});
+// Buffer only bounded file chunks. Per-field caps keep a 6-photo + video request <= 40 MB.
+const boundedUploadMemoryStorage = {
+  _handleFile(req, file, callback) {
+    const maxBytes = UPLOAD_FIELD_MAX_BYTES[file.fieldname];
+    if (!maxBytes) return callback(new multer.MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname));
+    let size = 0;
+    let rejected = false;
+    const chunks = [];
+    file.stream.on('limit', () => { rejected = true; chunks.length = 0; });
+    file.stream.on('data', chunk => {
+      size += chunk.length;
+      if (size > maxBytes) {
+        rejected = true;
+        chunks.length = 0;
+      } else if (!rejected) {
+        chunks.push(chunk);
+      }
+    });
+    file.stream.once('error', callback);
+    file.stream.once('end', () => {
+      if (rejected || file.stream.truncated) return callback(new multer.MulterError('LIMIT_FILE_SIZE', file.fieldname));
+      callback(null, { buffer: Buffer.concat(chunks, size), size });
+    });
+  },
+  _removeFile(req, file, callback) {
+    delete file.buffer;
+    delete file.size;
+    callback(null);
+  }
+};
 const uploadMemory = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024, files: 7, fields: 40, fieldSize: 2 * 1024 * 1024, parts: 50 },
+  storage: boundedUploadMemoryStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+    files: 7,
+    fields: 8,
+    fieldSize: 16 * 1024,
+    fieldNameSize: 100,
+    fieldNestingDepth: 4,
+    parts: 16
+  },
   fileFilter(req, file, callback) {
     if (!ALLOWED_UPLOAD_MIME_TYPES.has(file.mimetype)) return callback(new Error('Unsupported upload type. Use JPG, PNG, WebP, MP4, MOV, WebM or PDF.'));
     callback(null, true);
@@ -131,9 +174,6 @@ mongoose.set('autoIndex', false);
 mongoose.set('bufferCommands', false);
 const mongoOptions = { serverSelectionTimeoutMS: 10000, maxPoolSize: 10, minPoolSize: 1, autoIndex: false };
 if (process.env.NODE_ENV === 'production') mongoOptions.tls = true;
-mongoose.connect(MONGO_URI, mongoOptions)
-  .then(() => { console.log('✅ MongoDB Connected Successfully to aura_store'); return seedInitialData(); })
-  .catch(err => { console.error('❌ MongoDB connection failed; application startup aborted:', err.message); process.exit(1); });
 
 const categorySchema = new mongoose.Schema({
   name: { type: String, unique: true },
@@ -388,8 +428,10 @@ async function expireRazorpayPaymentAttempts() {
     }
   }
 }
-setTimeout(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 15000);
-setInterval(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 60 * 1000);
+if (require.main === module) {
+  setTimeout(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 15000);
+  setInterval(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 60 * 1000);
+}
 
 
 
@@ -601,7 +643,6 @@ async function seedInitialData() {
       });
     } else {
       let dirty = false;
-      await Settings.updateOne({ key: 'main' }, { $unset: { adminPin: 1 } });
       if (existingSettings.maxCodOrderAmount === undefined) { existingSettings.maxCodOrderAmount = 2000; dirty = true; }
       if (existingSettings.freeGiftThreshold === undefined) { existingSettings.freeGiftThreshold = 1499; dirty = true; }
       if (existingSettings.coinsEarnPercent === undefined) { existingSettings.coinsEarnPercent = 5; dirty = true; }
@@ -612,6 +653,7 @@ async function seedInitialData() {
     }
   } catch (err) {
     console.error('Seed error:', err.message);
+    throw err;
   }
 }
 
@@ -647,7 +689,7 @@ async function processMaturedPendingCoins(phoneFilter = null) {
     console.error('Mature coins sweep error:', e.message);
   }
 }
-setInterval(() => { processMaturedPendingCoins(); }, 10 * 60 * 1000);
+if (require.main === module) setInterval(() => { processMaturedPendingCoins(); }, 10 * 60 * 1000);
 
 function generateOrderInvoicePDF(order) {
   return new Promise((resolve, reject) => {
@@ -3069,7 +3111,34 @@ app.use((err, req, res, next) => {
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-app.listen(PORT, () => {
-  console.log(`🛍️ Store: http://localhost:${PORT}`);
-  console.log(`🔒 Admin: http://localhost:${PORT}/admin`);
-});
+async function removeLegacyAdminPinHashes() {
+  // Use the native collection API: Mongoose strict mode otherwise strips unknown paths.
+  await Settings.collection.updateMany({ adminPin: { $exists: true } }, { $unset: { adminPin: "" } });
+  const remaining = await Settings.collection.countDocuments({ adminPin: { $exists: true } });
+  if (remaining !== 0) throw new Error(`Legacy Admin PIN cleanup failed: ${remaining} document(s) still contain adminPin.`);
+  console.log('🔐 Legacy Admin PIN hashes verified absent.');
+}
+
+async function startServer() {
+  await mongoose.connect(MONGO_URI, mongoOptions);
+  console.log('✅ MongoDB Connected Successfully to aura_store');
+  await removeLegacyAdminPinHashes();
+  await seedInitialData();
+  const server = app.listen(PORT, () => {
+    console.log(`🛍️ Store: http://localhost:${PORT}`);
+    console.log(`🔒 Admin: http://localhost:${PORT}/admin`);
+  });
+  setTimeout(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 15000);
+  setInterval(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 60 * 1000);
+  setInterval(() => { processMaturedPendingCoins(); }, 10 * 60 * 1000);
+  return server;
+}
+
+if (require.main === module) {
+  startServer().catch(err => {
+    console.error('❌ Application startup aborted:', err.message);
+    process.exit(1);
+  });
+}
+
+module.exports = { app, startServer, removeLegacyAdminPinHashes };
