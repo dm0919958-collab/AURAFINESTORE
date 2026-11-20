@@ -10,23 +10,27 @@ const FormDataNode = require('form-data');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const helmet = require('helmet');
+const { rateLimit } = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const ADMIN_PIN = String(process.env.ADMIN_PIN || '');
+const JWT_SECRET = String(process.env.JWT_SECRET || '');
+const MONGO_URI = String(process.env.MONGO_URI || '');
 
-if (!process.env.ADMIN_PIN) {
-  console.warn('⚠️ SECURITY WARNING: ADMIN_PIN is not set in environment variables! Set ADMIN_PIN in Render.');
-}
-if (!process.env.JWT_SECRET) {
-  console.warn('⚠️ SECURITY WARNING: JWT_SECRET is not set! Using ephemeral cryptographic fallback.');
-}
+if (ADMIN_PIN.length < 16) throw new Error('Startup blocked: set ADMIN_PIN to a unique passphrase of at least 16 characters in the hosting environment.');
+if (Buffer.byteLength(JWT_SECRET, 'utf8') < 32) throw new Error('Startup blocked: set JWT_SECRET to a random secret of at least 32 bytes in the hosting environment.');
+if (ADMIN_PIN === JWT_SECRET) throw new Error('Startup blocked: ADMIN_PIN and JWT_SECRET must be different values.');
+if (!/^mongodb(?:\+srv)?:\/\//i.test(MONGO_URI)) throw new Error('Startup blocked: a valid MONGO_URI is required.');
 
-const DEFAULT_ADMIN_PIN = process.env.ADMIN_PIN || "AURA@9821";
-const JWT_SECRET = process.env.JWT_SECRET || crypto.createHash('sha256').update(String(process.env.MONGO_URI || crypto.randomBytes(32).toString('hex'))).digest('hex');
+const ADMIN_PIN_HASH = bcrypt.hashSync(ADMIN_PIN, 12);
+const ADMIN_JWT_ISSUER = 'aura-fine-store';
+const ADMIN_JWT_AUDIENCE = 'aura-admin';
+const ADMIN_JWT_TTL = '30m';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const SUPPORT_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN;
-const MONGO_URI = process.env.MONGO_URI;
 
 // Customer WhatsApp OTP login has been removed; checkout is guest-only.
 
@@ -36,47 +40,96 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const uploadMemory = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 }
+const ALLOWED_UPLOAD_MIME_TYPES = new Set(['image/jpeg','image/png','image/webp','video/mp4','video/quicktime','video/webm','application/pdf']);
+const UPLOAD_FIELD_MAX_BYTES = Object.freeze({
+  photos: 5 * 1024 * 1024,
+  video: 10 * 1024 * 1024,
+  slipFile: 8 * 1024 * 1024
 });
-
-const loginAttempts = new Map();
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 5 * 60 * 1000;
-
-async function verifyAdminAuth(req) {
-  const authHeader = req.headers['authorization'] || '';
-  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-  const tokenOrPin = bearerToken || (req.body && (req.body.token || req.body.pin)) || (req.query && req.query.token) || '';
-  if (!tokenOrPin) return false;
-
-  try {
-    const decoded = jwt.verify(tokenOrPin, JWT_SECRET);
-    if (decoded && decoded.role === 'admin') return true;
-  } catch (e) {}
-
-  try {
-    const s = await Settings.findOne({ key: 'main' }).lean();
-    const storedPin = (s && s.adminPin) ? s.adminPin : DEFAULT_ADMIN_PIN;
-    if (storedPin.startsWith('$2a$') || storedPin.startsWith('$2b$')) {
-      return await bcrypt.compare(String(tokenOrPin).trim(), storedPin);
-    }
-    return String(tokenOrPin).trim() === String(storedPin).trim();
-  } catch (err) {
-    return false;
+// Buffer only bounded file chunks. Per-field caps keep a 6-photo + video request <= 40 MB.
+const boundedUploadMemoryStorage = {
+  _handleFile(req, file, callback) {
+    const maxBytes = UPLOAD_FIELD_MAX_BYTES[file.fieldname];
+    if (!maxBytes) return callback(new multer.MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname));
+    let size = 0;
+    let rejected = false;
+    const chunks = [];
+    file.stream.on('limit', () => { rejected = true; chunks.length = 0; });
+    file.stream.on('data', chunk => {
+      size += chunk.length;
+      if (size > maxBytes) {
+        rejected = true;
+        chunks.length = 0;
+      } else if (!rejected) {
+        chunks.push(chunk);
+      }
+    });
+    file.stream.once('error', callback);
+    file.stream.once('end', () => {
+      if (rejected || file.stream.truncated) return callback(new multer.MulterError('LIMIT_FILE_SIZE', file.fieldname));
+      callback(null, { buffer: Buffer.concat(chunks, size), size });
+    });
+  },
+  _removeFile(req, file, callback) {
+    delete file.buffer;
+    delete file.size;
+    callback(null);
   }
+};
+const uploadMemory = multer({
+  storage: boundedUploadMemoryStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+    files: 7,
+    fields: 8,
+    fieldSize: 16 * 1024,
+    fieldNameSize: 100,
+    fieldNestingDepth: 4,
+    parts: 16
+  },
+  fileFilter(req, file, callback) {
+    if (!ALLOWED_UPLOAD_MIME_TYPES.has(file.mimetype)) return callback(new Error('Unsupported upload type. Use JPG, PNG, WebP, MP4, MOV, WebM or PDF.'));
+    callback(null, true);
+  }
+});
+async function detectUploadedFileType(buffer) {
+  const fileTypeModule = await import('file-type');
+  return fileTypeModule.fileTypeFromBuffer(buffer);
+}
+async function uploadedFilesMatchTypes(files, allowedTypes) {
+  for (const file of files || []) {
+    const detected = await detectUploadedFileType(file.buffer);
+    if (!detected || detected.mime !== file.mimetype || !allowedTypes.includes(detected.mime)) return false;
+  }
+  return true;
+}
+async function isValidImageDataUrl(value, maxBytes = 5 * 1024 * 1024) {
+  const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(String(value || ''));
+  if (!match) return false;
+  const buffer = Buffer.from(match[2], 'base64');
+  if (!buffer.length || buffer.length > maxBytes) return false;
+  const detected = await detectUploadedFileType(buffer);
+  return Boolean(detected && detected.mime === match[1]);
+}
+async function verifyAdminAuth(req) {
+  const authHeader = String(req.headers.authorization || '');
+  if (!authHeader.startsWith('Bearer ')) return false;
+  const token = authHeader.slice(7).trim();
+  if (!token) return false;
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'], issuer: ADMIN_JWT_ISSUER, audience: ADMIN_JWT_AUDIENCE, maxAge: ADMIN_JWT_TTL });
+    return decoded?.role === 'admin' && decoded?.sub === 'admin';
+  } catch (err) { return false; }
 }
 
 // Customer 30-Day Persistent Session Token Verification
 function getAuthenticatedCustomerPhone(req) {
   const authHeader = req.headers['x-customer-token'] || req.headers['authorization'] || '';
   const rawToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : String(authHeader).trim();
-  const queryToken = req.query && req.query.ctoken ? String(req.query.ctoken).trim() : '';
-  const token = rawToken || queryToken;
+  const token = rawToken;
   if (!token) return null;
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
     if (decoded && decoded.role === 'customer' && decoded.phone) {
       return String(decoded.phone).replace(/[^0-9]/g, '');
     }
@@ -93,19 +146,14 @@ function maskCustomerAddress(addr) {
 
 async function uploadToCloudinary(fileData, folder = 'aura_store') {
   if (!fileData) return "";
-  if (typeof fileData === 'string' && (fileData.startsWith('http://') || fileData.startsWith('https://'))) {
-    return fileData;
+  if (typeof fileData === 'string' && /^https?:\/\//i.test(fileData)) {
+    const imageUrl = new URL(fileData);
+    if (imageUrl.protocol !== 'https:' || !['images.unsplash.com', 'res.cloudinary.com'].includes(imageUrl.hostname)) throw new Error('Only HTTPS images from approved image hosts are allowed.');
+    return imageUrl.toString();
   }
-  try {
-    const result = await cloudinary.uploader.upload(fileData, {
-      folder: folder,
-      resource_type: 'auto'
-    });
-    return result.secure_url;
-  } catch (err) {
-    console.error('Cloudinary Upload Error:', err.message);
-    return typeof fileData === 'string' ? fileData : "";
-  }
+  if (!(await isValidImageDataUrl(fileData))) throw new Error('Invalid image data. Only valid JPEG, PNG or WebP images up to 5 MB are accepted.');
+  const result = await cloudinary.uploader.upload(fileData, { folder, resource_type: 'image', allowed_formats: ['jpg','jpeg','png','webp'] });
+  return result.secure_url;
 }
 
 function uploadBufferToCloudinary(buffer, folder = 'aura_store/delivery_slips') {
@@ -121,16 +169,11 @@ function uploadBufferToCloudinary(buffer, folder = 'aura_store/delivery_slips') 
   });
 }
 
-if (!MONGO_URI) {
-  console.error('❌ CRITICAL: MONGO_URI is missing in Environment Variables!');
-} else {
-  mongoose.connect(MONGO_URI)
-    .then(() => {
-      console.log('✅ MongoDB Connected Successfully to aura_store');
-      seedInitialData();
-    })
-    .catch(err => console.error('❌ MongoDB Connection Error:', err.message));
-}
+mongoose.set('strictQuery', true);
+mongoose.set('autoIndex', false);
+mongoose.set('bufferCommands', false);
+const mongoOptions = { serverSelectionTimeoutMS: 10000, maxPoolSize: 10, minPoolSize: 1, autoIndex: false };
+if (process.env.NODE_ENV === 'production') mongoOptions.tls = true;
 
 const categorySchema = new mongoose.Schema({
   name: { type: String, unique: true },
@@ -200,7 +243,6 @@ const settingsSchema = new mongoose.Schema({
   maxCoinsRedeemPerOrder: { type: Number, default: 200 },
   refundWindowDays: { type: Number, default: 7 },
   dealEndTime: { type: Number, default: 0 },
-  adminPin: { type: String, default: "" },
   metaPixelId: { type: String, default: "" },
   firstOrderPopupEnabled: { type: Boolean, default: true },
   firstOrderPopupTitle: { type: String, default: "Exclusive First-Order Privilege" },
@@ -386,8 +428,10 @@ async function expireRazorpayPaymentAttempts() {
     }
   }
 }
-setTimeout(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 15000);
-setInterval(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 60 * 1000);
+if (require.main === module) {
+  setTimeout(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 15000);
+  setInterval(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 60 * 1000);
+}
 
 
 
@@ -578,7 +622,6 @@ async function seedInitialData() {
     const couponCount = await Coupon.countDocuments();
     if (couponCount === 0) await Coupon.insertMany(defaultCoupons);
 
-    const hashedDefaultPin = await bcrypt.hash(DEFAULT_ADMIN_PIN, 10);
     const existingSettings = await Settings.findOne({ key: 'main' });
     if (!existingSettings) {
       await Settings.create({
@@ -591,7 +634,6 @@ async function seedInitialData() {
         coinsEarnPercent: 5,
         maxCoinsRedeemPerOrder: 200,
         dealEndTime: 0,
-        adminPin: hashedDefaultPin,
         metaPixelId: "",
         firstOrderPopupEnabled: true,
         firstOrderPopupTitle: "Exclusive First-Order Privilege",
@@ -601,13 +643,6 @@ async function seedInitialData() {
       });
     } else {
       let dirty = false;
-      if (!existingSettings.adminPin) {
-        existingSettings.adminPin = hashedDefaultPin;
-        dirty = true;
-      } else if (!existingSettings.adminPin.startsWith('$2a$') && !existingSettings.adminPin.startsWith('$2b$')) {
-        existingSettings.adminPin = await bcrypt.hash(existingSettings.adminPin, 10);
-        dirty = true;
-      }
       if (existingSettings.maxCodOrderAmount === undefined) { existingSettings.maxCodOrderAmount = 2000; dirty = true; }
       if (existingSettings.freeGiftThreshold === undefined) { existingSettings.freeGiftThreshold = 1499; dirty = true; }
       if (existingSettings.coinsEarnPercent === undefined) { existingSettings.coinsEarnPercent = 5; dirty = true; }
@@ -618,6 +653,7 @@ async function seedInitialData() {
     }
   } catch (err) {
     console.error('Seed error:', err.message);
+    throw err;
   }
 }
 
@@ -653,7 +689,7 @@ async function processMaturedPendingCoins(phoneFilter = null) {
     console.error('Mature coins sweep error:', e.message);
   }
 }
-setInterval(() => { processMaturedPendingCoins(); }, 10 * 60 * 1000);
+if (require.main === module) setInterval(() => { processMaturedPendingCoins(); }, 10 * 60 * 1000);
 
 function generateOrderInvoicePDF(order) {
   return new Promise((resolve, reject) => {
@@ -1013,29 +1049,46 @@ async function forwardSupportToTelegram(order, issueText, files) {
   }
 }
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean);
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (
-      origin.includes('aurafinestore.in') ||
-      origin.endsWith('.onrender.com') ||
-      origin.startsWith('http://localhost') ||
-      origin.startsWith('http://127.0.0.1') ||
-      allowedOrigins.includes(origin)
-    ) {
-      return callback(null, true);
-    }
-    return callback(new Error('CORS policy: Origin not allowed'), false);
-  },
-  credentials: true
+const configuredOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(value => value.trim().replace(/\/$/, '')).filter(Boolean);
+const allowedOrigins = new Set(['https://aura-fine-store.onrender.com','https://aurafinestore.in','https://www.aurafinestore.in',...configuredOrigins]);
+app.set('trust proxy', 1);
+app.use(helmet({
+  contentSecurityPolicy: { directives: {
+    defaultSrc: ["'self'"], baseUri: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"],
+    formAction: ["'self'",'https://checkout.razorpay.com'],
+    scriptSrc: ["'self'","'unsafe-inline'","'unsafe-eval'",'https://cdn.tailwindcss.com','https://cdnjs.cloudflare.com','https://cdn.jsdelivr.net','https://connect.facebook.net','https://checkout.razorpay.com'],
+    styleSrc: ["'self'","'unsafe-inline'",'https://fonts.googleapis.com','https://cdnjs.cloudflare.com','https://cdn.jsdelivr.net'],
+    fontSrc: ["'self'",'data:','https://fonts.gstatic.com','https://cdnjs.cloudflare.com','https://cdn.jsdelivr.net'],
+    imgSrc: ["'self'",'data:','blob:','https://images.unsplash.com','https://res.cloudinary.com','https://www.facebook.com'],
+    mediaSrc: ["'self'",'data:','blob:','https:'],
+    connectSrc: ["'self'",'https://api.postalpincode.in','https://api.razorpay.com','https://checkout.razorpay.com','https://connect.facebook.net','https://www.facebook.com'],
+    frameSrc: ["'self'",'https://api.razorpay.com','https://checkout.razorpay.com'],
+    workerSrc: ["'self'",'blob:'],
+    ...(process.env.NODE_ENV === 'production' ? { upgradeInsecureRequests: [] } : {})
+  }},
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  crossOriginEmbedderPolicy: false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    let normalized;
+    try { normalized = new URL(origin).origin; } catch (err) { return callback(new Error('CORS policy: Invalid origin')); }
+    const localDev = process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(normalized);
+    if (allowedOrigins.has(normalized) || localDev) return callback(null, true);
+    return callback(new Error('CORS policy: Origin not allowed'));
+  },
+  credentials: true,
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization','X-Customer-Token'],
+  maxAge: 600
+}));
+const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 900, standardHeaders: 'draft-8', legacyHeaders: false, message: { success: false, message: 'Too many requests. Please try again later.' } });
+const adminLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, skipSuccessfulRequests: true, standardHeaders: 'draft-8', legacyHeaders: false, message: { success: false, message: 'Too many login attempts. Try again in 15 minutes.' } });
+app.use('/api', apiLimiter);
+app.use(express.json({ limit: '30mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/store', async (req, res) => {
@@ -1454,6 +1507,10 @@ app.get('/api/support/search', async (req, res) => {
 
 app.post('/api/support/ticket', uploadMemory.fields([{ name: 'photos', maxCount: 6 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
   try {
+    const photos = (req.files && req.files.photos) || [];
+    const videos = (req.files && req.files.video) || [];
+    if (photos.some(file => file.size > 5 * 1024 * 1024) || videos.some(file => file.size > 10 * 1024 * 1024)) return res.status(413).json({ success: false, message: 'Each photo must be 5 MB or smaller and the video must be 10 MB or smaller.' });
+    if (!(await uploadedFilesMatchTypes(photos, ['image/jpeg','image/png','image/webp'])) || !(await uploadedFilesMatchTypes(videos, ['video/mp4','video/quicktime','video/webm']))) return res.status(400).json({ success: false, message: 'The uploaded file content does not match an allowed image or video type.' });
     const { orderId, issueText } = req.body;
     const order = await Order.findOne({ id: orderId }).lean();
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
@@ -1499,8 +1556,8 @@ app.post('/api/support/return-request', uploadMemory.fields([{name:'photos',maxC
   const photos=(req.files&&req.files.photos)||[],video=(req.files&&req.files.video)||[];
   if(!photos.length)return res.status(400).json({success:false,message:'At least one product or parcel photo is mandatory.'});
   if(!video.length)return res.status(400).json({success:false,message:'A video evidence file is mandatory.'});
-  if(photos.some(f=>f.size>10*1024*1024)||video.some(f=>f.size>20*1024*1024))return res.status(413).json({success:false,message:'Each photo must be 10 MB or smaller and the video must be 20 MB or smaller.'});
-  if(photos.some(f=>!String(f.mimetype||'').startsWith('image/'))||video.some(f=>!String(f.mimetype||'').startsWith('video/')))return res.status(400).json({success:false,message:'Please upload valid image and video files only.'});
+  if(photos.some(f=>f.size>5*1024*1024)||video.some(f=>f.size>10*1024*1024))return res.status(413).json({success:false,message:'Each photo must be 5 MB or smaller and the video must be 10 MB or smaller.'});
+  if(!(await uploadedFilesMatchTypes(photos,['image/jpeg','image/png','image/webp']))||!(await uploadedFilesMatchTypes(video,['video/mp4','video/quicktime','video/webm'])))return res.status(400).json({success:false,message:'The uploaded file content does not match an allowed image or video type.'});
   const request={requestId:'RET-'+crypto.randomBytes(4).toString('hex').toUpperCase(),orderId:order.id,customerName:order.customerName,phone:order.phone,requestType,productSummary:(order.items||[]).map(x=>x.name).join(', ').slice(0,500),productDetails:(order.items||[]).map((x,n)=>`${n+1}. ${x.name} | Qty: ${Number(x.qty)||1} | Size: ${x.selectedSize||'—'} | Colour: ${x.selectedColor||'—'}`).join('\n').slice(0,2000),orderTotal:String(order.total||''),shippingAddress:String(order.address||''),reason,details:details.slice(0,2000),selectedProductIndex:productIndex,returnedProduct:selectedName+` | Qty: ${selectedQty} | Size: ${selectedItem.selectedSize||selectedItem.size||'—'} | Colour: ${selectedItem.selectedColor||selectedItem.color||'—'}`,replacementProduct:'',refundAmountRequested,refundAmountApproved:0,refundAmountPaid:0,refundStatus:requestType==='Return'?'Requested':'Not Applicable',refundReference:'',status:'Pending',adminNote:'',telegramStatus:'Pending',telegramError:'',photoCount:photos.length,videoName:video[0].originalname||'Video uploaded',createdAtStr:new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}),deliveredAt:order.deliveredAt};
   await ReturnRequest.create(request);
   try{await forwardReturnRequestToTelegram(order,request,{photos,video});await ReturnRequest.updateOne({requestId:request.requestId},{$set:{telegramStatus:'Sent',telegramError:''}});}
@@ -1919,22 +1976,8 @@ app.post('/api/admin/store-settings', async (req, res) => {
 });
 
 app.post('/api/admin/change-pin', async (req, res) => {
-  try {
-    if (!(await verifyAdminAuth(req))) {
-      return res.status(403).json({ success: false, message: "Session expired or unauthorized!" });
-    }
-    const { newPin } = req.body;
-    const cleanNew = String(newPin || "").trim();
-    if (cleanNew.length < 4) {
-      return res.status(400).json({ success: false, message: "New PIN must be at least 4 characters!" });
-    }
-    const hashedPin = await bcrypt.hash(cleanNew, 10);
-    await Settings.findOneAndUpdate({ key: 'main' }, { adminPin: hashedPin }, { upsert: true });
-    const newToken = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
-    res.json({ success: true, token: newToken, message: "Admin PIN encrypted & updated successfully!" });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+  if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: 'Session expired or unauthorized!' });
+  return res.status(410).json({ success: false, message: 'Admin credentials are managed in Render Environment. Update ADMIN_PIN there, then restart the service.' });
 });
 
 // Atomic Stock Deduction Helper with Rollback Support
@@ -2763,50 +2806,15 @@ app.get('/api/orders/track', async (req, res) => {
   }
 });
 
-app.post('/api/admin/login', async (req, res) => {
-  const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
-  const record = loginAttempts.get(clientIp);
-
-  if (record && record.lockUntil && Date.now() < record.lockUntil) {
-    const minsLeft = Math.ceil((record.lockUntil - Date.now()) / 60000);
-    return res.status(429).json({
-      success: false,
-      message: `Too many wrong attempts! Locked for ${minsLeft} minute(s).`
-    });
-  }
-
-  const { pin } = req.body;
-  let isValid = false;
-  try {
-    const s = await Settings.findOne({ key: 'main' }).lean();
-    const storedPin = (s && s.adminPin) ? s.adminPin : DEFAULT_ADMIN_PIN;
-    if (storedPin.startsWith('$2a$') || storedPin.startsWith('$2b$')) {
-      isValid = await bcrypt.compare(String(pin || '').trim(), storedPin);
-    } else {
-      isValid = String(pin || '').trim() === String(storedPin).trim();
-    }
-  } catch (e) {}
-
-  if (isValid) {
-    loginAttempts.delete(clientIp);
-    const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
-    return res.json({ success: true, token });
-  }
-
-  const currentCount = (record ? record.count : 0) + 1;
-  if (currentCount >= MAX_LOGIN_ATTEMPTS) {
-    loginAttempts.set(clientIp, { count: currentCount, lockUntil: Date.now() + LOCKOUT_DURATION_MS });
-    return res.status(429).json({
-      success: false,
-      message: "5 wrong attempts! Admin login locked for 5 minutes."
-    });
-  } else {
-    loginAttempts.set(clientIp, { count: currentCount, lockUntil: null });
-    return res.status(401).json({
-      success: false,
-      message: `Incorrect PIN! (${MAX_LOGIN_ATTEMPTS - currentCount} attempts remaining)`
-    });
-  }
+app.post('/api/admin/login', adminLoginLimiter, async (req, res) => {
+  const suppliedPin = String(req.body?.pin || '');
+  if (!(await bcrypt.compare(suppliedPin, ADMIN_PIN_HASH))) return res.status(401).json({ success: false, message: 'Invalid admin credentials.' });
+  const token = jwt.sign({ role: 'admin' }, JWT_SECRET, {
+    algorithm: 'HS256', expiresIn: ADMIN_JWT_TTL, issuer: ADMIN_JWT_ISSUER,
+    audience: ADMIN_JWT_AUDIENCE, subject: 'admin', jwtid: crypto.randomBytes(16).toString('hex')
+  });
+  res.set('Cache-Control', 'no-store');
+  return res.json({ success: true, token, expiresIn: ADMIN_JWT_TTL });
 });
 
 app.post('/api/admin/orders', async (req, res) => {
@@ -3076,6 +3084,7 @@ app.post('/api/admin/orders/:id/upload-slip', uploadMemory.single('slipFile'), a
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     if (!req.file) return res.status(400).json({ success: false, message: "No slip file uploaded!" });
+    if (!(await uploadedFilesMatchTypes([req.file], ['application/pdf','image/jpeg','image/png','image/webp']))) return res.status(400).json({ success: false, message: 'Only valid PDF, JPEG, PNG or WebP files are accepted.' });
 
     const slipUrl = await uploadBufferToCloudinary(req.file.buffer, 'aura_store/delivery_slips');
     const order = await Order.findOneAndUpdate(
@@ -3090,10 +3099,46 @@ app.post('/api/admin/orders/:id/upload-slip', uploadMemory.single('slipFile'), a
   }
 });
 
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  if (err instanceof multer.MulterError) return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ success: false, message: 'Upload rejected: file count, size or form limits were exceeded.' });
+  if (String(err.message || '').startsWith('CORS policy:')) return res.status(403).json({ success: false, message: 'Request origin is not allowed.' });
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) return res.status(400).json({ success: false, message: 'Invalid JSON request body.' });
+  console.error('Request middleware error:', err.message);
+  return res.status(400).json({ success: false, message: err.message || 'Request rejected.' });
+});
+
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-app.listen(PORT, () => {
-  console.log(`🛍️ Store: http://localhost:${PORT}`);
-  console.log(`🔒 Admin: http://localhost:${PORT}/admin`);
-});
+async function removeLegacyAdminPinHashes() {
+  // Use the native collection API: Mongoose strict mode otherwise strips unknown paths.
+  await Settings.collection.updateMany({ adminPin: { $exists: true } }, { $unset: { adminPin: "" } });
+  const remaining = await Settings.collection.countDocuments({ adminPin: { $exists: true } });
+  if (remaining !== 0) throw new Error(`Legacy Admin PIN cleanup failed: ${remaining} document(s) still contain adminPin.`);
+  console.log('🔐 Legacy Admin PIN hashes verified absent.');
+}
+
+async function startServer() {
+  await mongoose.connect(MONGO_URI, mongoOptions);
+  console.log('✅ MongoDB Connected Successfully to aura_store');
+  await removeLegacyAdminPinHashes();
+  await seedInitialData();
+  const server = app.listen(PORT, () => {
+    console.log(`🛍️ Store: http://localhost:${PORT}`);
+    console.log(`🔒 Admin: http://localhost:${PORT}/admin`);
+  });
+  setTimeout(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 15000);
+  setInterval(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 60 * 1000);
+  setInterval(() => { processMaturedPendingCoins(); }, 10 * 60 * 1000);
+  return server;
+}
+
+if (require.main === module) {
+  startServer().catch(err => {
+    console.error('❌ Application startup aborted:', err.message);
+    process.exit(1);
+  });
+}
+
+module.exports = { app, startServer, removeLegacyAdminPinHashes, Settings };
