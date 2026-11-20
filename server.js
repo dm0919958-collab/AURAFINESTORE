@@ -997,6 +997,7 @@ app.get('/api/store', async (req, res) => {
           deliveryCharge: settings.deliveryCharge,
           codAdvancePercent: settings.codAdvancePercent,
           maxCodOrderAmount: settings.maxCodOrderAmount ?? 2000,
+          freeDeliveryThreshold: settings.freeDeliveryThreshold ?? 0,
           freeGiftThreshold: settings.freeGiftThreshold ?? 1499,
           freeGiftTitle: settings.freeGiftTitle || "Luxury Surprise Jewellery Box",
           coinsEarnPercent: settings.coinsEarnPercent ?? 5,
@@ -1015,6 +1016,7 @@ app.get('/api/store', async (req, res) => {
           deliveryCharge: 0,
           codAdvancePercent: 15,
           maxCodOrderAmount: 2000,
+          freeDeliveryThreshold: 0,
           freeGiftThreshold: 1499,
           freeGiftTitle: "Luxury Surprise Jewellery Box",
           coinsEarnPercent: 5,
@@ -1782,7 +1784,7 @@ app.post('/api/admin/store-settings', async (req, res) => {
   try {
     if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
     const {
-      deliveryCharge, codAdvancePercent, maxCodOrderAmount,
+      deliveryCharge, codAdvancePercent, maxCodOrderAmount, freeDeliveryThreshold,
       freeGiftThreshold, freeGiftTitle, coinsEarnPercent, maxCoinsRedeemPerOrder, refundWindowDays,
       dealEndTime, metaPixelId,
       firstOrderPopupEnabled, firstOrderPopupTitle, firstOrderPopupSubtitle, firstOrderPopupCoupon, firstOrderPopupImage
@@ -1792,6 +1794,7 @@ app.post('/api/admin/store-settings', async (req, res) => {
     if (deliveryCharge !== undefined) updateFields.deliveryCharge = Number(deliveryCharge) || 0;
     if (codAdvancePercent !== undefined) updateFields.codAdvancePercent = Number(codAdvancePercent) || 15;
     if (maxCodOrderAmount !== undefined) updateFields.maxCodOrderAmount = Math.max(0, Number(maxCodOrderAmount) || 0);
+    if (freeDeliveryThreshold !== undefined) updateFields.freeDeliveryThreshold = Math.max(0, Number(freeDeliveryThreshold) || 0);
     if (freeGiftThreshold !== undefined) updateFields.freeGiftThreshold = Math.max(0, Number(freeGiftThreshold) || 0);
     if (freeGiftTitle !== undefined) updateFields.freeGiftTitle = String(freeGiftTitle || "Luxury Surprise Jewellery Box").trim();
     if (coinsEarnPercent !== undefined) updateFields.coinsEarnPercent = Math.max(0, Math.min(50, Number(coinsEarnPercent) || 0));
@@ -1963,14 +1966,18 @@ app.post('/api/payments/razorpay/create-order', async (req, res) => {
       if (wallet && wallet.coins > 0) coins = Math.min(wallet.coins, maxCoins, Math.max(0, afterDiscount - 1));
     }
     const net = Math.max(1, afterDiscount - coins);
-    const shipping = settings ? Number(settings.deliveryCharge || 0) : 0;
-    const total = net + shipping;
     const mode = paymentMethod === 'COD' ? 'COD' : 'UPI';
+    const codAdvancePercent = settings ? (settings.codAdvancePercent || 15) : 15;
+    const freeDeliveryThreshold = settings ? (settings.freeDeliveryThreshold ?? 0) : 0;
+    const qualifiesForFreeDelivery = freeDeliveryThreshold > 0 && net >= freeDeliveryThreshold;
+    const shipping = mode === 'COD' && codAdvancePercent < 50 && !qualifiesForFreeDelivery
+      ? (settings ? Number(settings.deliveryCharge || 0) : 0) : 0;
+    const total = net + shipping;
     const maxCodLimit = settings ? (settings.maxCodOrderAmount ?? 2000) : 2000;
     if (mode === 'COD' && maxCodLimit > 0 && net > maxCodLimit)
       return res.status(400).json({ success: false, message: `Cash on Delivery is unavailable above ₹${maxCodLimit}. Please select prepaid payment.` });
     const amountToCollect = mode === 'COD'
-      ? Math.max(1, Math.round((total * (settings ? (settings.codAdvancePercent || 15) : 15)) / 100))
+      ? Math.max(1, Math.round((total * codAdvancePercent) / 100))
       : total;
     const created = await axios.post('https://api.razorpay.com/v1/orders', {
       amount: Math.round(amountToCollect * 100), currency: 'INR',
@@ -2161,6 +2168,7 @@ app.post('/api/orders', async (req, res) => {
 
     const deliveryFeeSetting = storeSettings ? (storeSettings.deliveryCharge || 0) : 0;
     const codAdvancePctSetting = storeSettings ? (storeSettings.codAdvancePercent || 15) : 15;
+    const freeDeliveryThreshold = storeSettings ? (storeSettings.freeDeliveryThreshold ?? 0) : 0;
     const maxCodLimit = storeSettings ? (storeSettings.maxCodOrderAmount ?? 2000) : 2000;
     const giftThreshold = storeSettings ? (storeSettings.freeGiftThreshold ?? 1499) : 1499;
     const giftTitle = storeSettings ? (storeSettings.freeGiftTitle || "Luxury Surprise Jewellery Box") : "Luxury Surprise Jewellery Box";
@@ -2205,7 +2213,9 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
-    const appliedDelivery = deliveryFeeSetting;
+    const qualifiesForFreeDelivery = freeDeliveryThreshold > 0 && netBagValue >= freeDeliveryThreshold;
+    const appliedDelivery = normalizedMode === 'COD' && codAdvancePctSetting < 50 && !qualifiesForFreeDelivery
+      ? deliveryFeeSetting : 0;
     const verifiedFinalTotal = Math.max(1, netBagValue + appliedDelivery);
     const unlockedGift = (giftThreshold > 0 && netBagValue >= giftThreshold) ? giftTitle : "";
     const potentialCoinsEarned = coinsEarnPct > 0 ? Math.floor((netBagValue * coinsEarnPct) / 100) : 0;
@@ -2483,6 +2493,7 @@ app.post('/api/admin/orders', async (req, res) => {
           deliveryCharge: settings.deliveryCharge,
           codAdvancePercent: settings.codAdvancePercent,
           maxCodOrderAmount: settings.maxCodOrderAmount ?? 2000,
+          freeDeliveryThreshold: settings.freeDeliveryThreshold ?? 0,
           freeGiftThreshold: settings.freeGiftThreshold ?? 1499,
           freeGiftTitle: settings.freeGiftTitle || "Luxury Surprise Jewellery Box",
           coinsEarnPercent: settings.coinsEarnPercent ?? 5,
@@ -2501,6 +2512,7 @@ app.post('/api/admin/orders', async (req, res) => {
           deliveryCharge: 0,
           codAdvancePercent: 15,
           maxCodOrderAmount: 2000,
+          freeDeliveryThreshold: 0,
           freeGiftThreshold: 1499,
           freeGiftTitle: "Luxury Surprise Jewellery Box",
           coinsEarnPercent: 5,
