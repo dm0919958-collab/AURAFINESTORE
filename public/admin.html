@@ -1892,47 +1892,84 @@ label { color: #f1e5ce; }
 
     async function handleSaveProduct(e) {
       e.preventDefault();
-      const editId = document.getElementById('editProdId').value, btn = document.getElementById('saveProdBtn');
-      btn.innerText = "Saving..."; btn.disabled = true;
-      const hasColorPhotos = Object.values(currentColorImages).some(photos => Array.isArray(photos) && photos.length > 0);
-      if (!currentFormImages.length && !hasColorPhotos) { btn.innerText = editId ? "Update Product" : "Publish to Store"; btn.disabled = false; return alert("Add at least 1 product photo or a photo under any color!"); }
-      const sizesRaw = document.getElementById('prodSizes').value, colorsRaw = document.getElementById('prodColors').value;
-      const parsedSizes = sizesRaw ? sizesRaw.split(',').map(s => s.split(':')[0].trim()).filter(Boolean) : [];
-      if (!parsedSizes.length) parsedSizes.push("Standard");
+      const editId = document.getElementById('editProdId').value;
+      const btn = document.getElementById('saveProdBtn');
+      const originalLabel = editId ? "Update Product" : "Publish to Store";
+      btn.innerText = "Saving...";
+      btn.disabled = true;
 
-      const parsedColors = colorsRaw ? colorsRaw.split(',').map(c => c.trim()).filter(Boolean) : [];
-      if (!parsedColors.length) parsedColors.push("Standard");
+      try {
+        const hasColorPhotos = Object.values(currentColorImages).some(photos => Array.isArray(photos) && photos.length > 0);
+        if (!currentFormImages.length && !hasColorPhotos) {
+          throw new Error("Add at least 1 product photo or a photo under any color!");
+        }
 
-      const variantStockObj = {};
-      document.querySelectorAll('.variant-stock-qty-input').forEach(inp => {
-        const vKey = inp.getAttribute('data-vkey');
-        if (vKey) variantStockObj[vKey] = Math.max(0, parseInt(inp.value, 10) || 0);
-      });
+        const sizesRaw = document.getElementById('prodSizes').value;
+        const colorsRaw = document.getElementById('prodColors').value;
+        const parsedSizes = sizesRaw ? sizesRaw.split(',').map(s => s.split(':')[0].trim()).filter(Boolean) : [];
+        if (!parsedSizes.length) parsedSizes.push("Standard");
+        const parsedColors = colorsRaw ? colorsRaw.split(',').map(c => c.trim()).filter(Boolean) : [];
+        if (!parsedColors.length) parsedColors.push("Standard");
 
-      const varKeys = Object.keys(variantStockObj);
-      const computedStock = varKeys.length > 0
-        ? varKeys.reduce((s, k) => s + variantStockObj[k], 0)
-        : (Number(document.getElementById('prodStock').value) || 0);
+        const variantStockObj = {};
+        document.querySelectorAll('.variant-stock-qty-input').forEach(inp => {
+          const vKey = inp.getAttribute('data-vkey');
+          if (vKey) variantStockObj[vKey] = Math.max(0, parseInt(inp.value, 10) || 0);
+        });
+        const varKeys = Object.keys(variantStockObj);
+        const computedStock = varKeys.length > 0
+          ? varKeys.reduce((sum, key) => sum + variantStockObj[key], 0)
+          : (Number(document.getElementById('prodStock').value) || 0);
 
-      const payload = {
-        name: document.getElementById('prodName').value, mainCategory: document.getElementById('prodMainCategory').value, category: document.getElementById('prodCategory').value,
-        price: document.getElementById('prodPrice').value, originalPrice: document.getElementById('prodOrigPrice').value, costPrice: document.getElementById('prodCostPrice').value,
-        stockQuantity: computedStock, showOnHome: document.getElementById('prodShowOnHome').checked, nonRefundable: document.getElementById('prodNonRefundable').checked,
-        sizeOptions: parsedSizes,
-        variantStock: variantStockObj,
-        colorOptions: parsedColors,
-        colorPrices: Object.fromEntries(parsedColors.map(color => {
-          const sale = [...document.querySelectorAll("[data-color-sale]")].find(el => el.getAttribute("data-color-sale") === color);
-          const mrp = [...document.querySelectorAll("[data-color-mrp]")].find(el => el.getAttribute("data-color-mrp") === color);
-          return [color, { price: sale && sale.value !== "" ? Number(sale.value) : null, originalPrice: mrp && mrp.value !== "" ? Number(mrp.value) : null }];
-        }).filter(([,v]) => v.price !== null || v.originalPrice !== null)),
-        colorImages: Object.fromEntries(Object.entries(currentColorImages).filter(([color, photos]) => parsedColors.includes(color) && Array.isArray(photos) && photos.length)),
-        badge: document.getElementById('prodBadge').value || "New", images: [...currentFormImages], description: document.getElementById('prodDesc').value
-      };
-      const res = await fetch(editId ? `/api/admin/products/${editId}` : '/api/admin/products', { method: editId ? 'PUT' : 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
-      if (handleUnauthorized(res)) return;
-      if ((await res.json()).success) { alert(editId ? "Product Updated!" : "Product Published!"); resetProductForm(); loadAdminDashboard(true); }
-      btn.innerText = "Publish to Store"; btn.disabled = false;
+        const payload = {
+          name: document.getElementById('prodName').value.trim(),
+          mainCategory: document.getElementById('prodMainCategory').value,
+          category: document.getElementById('prodCategory').value,
+          price: document.getElementById('prodPrice').value,
+          originalPrice: document.getElementById('prodOrigPrice').value,
+          costPrice: document.getElementById('prodCostPrice').value,
+          stockQuantity: computedStock,
+          showOnHome: document.getElementById('prodShowOnHome').checked,
+          nonRefundable: document.getElementById('prodNonRefundable').checked,
+          sizeOptions: parsedSizes,
+          variantStock: variantStockObj,
+          colorOptions: parsedColors,
+          colorPrices: Object.fromEntries(parsedColors.map(color => {
+            const sale = [...document.querySelectorAll("[data-color-sale]")].find(el => el.getAttribute("data-color-sale") === color);
+            const mrp = [...document.querySelectorAll("[data-color-mrp]")].find(el => el.getAttribute("data-color-mrp") === color);
+            return [color, { price: sale && sale.value !== "" ? Number(sale.value) : null, originalPrice: mrp && mrp.value !== "" ? Number(mrp.value) : null }];
+          }).filter(([, value]) => value.price !== null || value.originalPrice !== null)),
+          colorImages: Object.fromEntries(Object.entries(currentColorImages).filter(([color, photos]) => parsedColors.includes(color) && Array.isArray(photos) && photos.length)),
+          badge: document.getElementById('prodBadge').value || "New",
+          images: [...currentFormImages],
+          description: document.getElementById('prodDesc').value.trim()
+        };
+
+        const response = await fetch(editId ? `/api/admin/products/${encodeURIComponent(editId)}` : '/api/admin/products', {
+          method: editId ? 'PUT' : 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload)
+        });
+        if (handleUnauthorized(response)) return;
+
+        let result;
+        try { result = await response.json(); }
+        catch (_) { throw new Error(`Server returned an unreadable response (HTTP ${response.status}). Please try again.`); }
+
+        if (!response.ok || !result || result.success !== true) {
+          throw new Error((result && (result.message || result.error)) || `Product could not be saved (HTTP ${response.status}).`);
+        }
+
+        alert(editId ? "✅ Product changes saved successfully!" : "✅ Product published successfully!");
+        resetProductForm();
+        await loadAdminDashboard(true);
+      } catch (error) {
+        console.error("Product save failed:", error);
+        alert("❌ Product save failed: " + (error && error.message ? error.message : "Unknown error") + "\n\nYour form data is still here. Please fix the issue and try again.");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = document.getElementById('editProdId').value ? "Update Product" : "Publish to Store";
+      }
     }
 
     function rebuildColorPriceEditorsUI(existing = {}) {
