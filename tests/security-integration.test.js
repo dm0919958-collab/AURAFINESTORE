@@ -72,6 +72,22 @@ test('upload parser rejects a file exceeding the per-field memory cap', async ()
   assert.match(response.body.message, /Upload rejected/i);
 });
 
+test('multipart parser rejects excessive text fields', async () => {
+  const response = await request(app)
+    .post('/api/admin/orders/TEST/upload-slip')
+    .field('field1', 'x')
+    .field('field2', 'x')
+    .field('field3', 'x')
+    .field('field4', 'x')
+    .field('field5', 'x')
+    .field('field6', 'x')
+    .field('field7', 'x')
+    .field('field8', 'x')
+    .field('field9', 'x');
+  assert.equal(response.status, 400);
+  assert.match(response.body.message, /Upload rejected/i);
+});
+
 test('upload route rejects spoofed file content after authenticated parsing', async () => {
   const login = await request(app).post('/api/admin/login').send({ pin: process.env.ADMIN_PIN });
   assert.equal(login.status, 200);
