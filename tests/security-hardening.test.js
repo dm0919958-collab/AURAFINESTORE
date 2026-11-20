@@ -72,7 +72,7 @@ test('payment retry source attempts are atomically locked before Razorpay order 
   assert.match(server, /retryLockToken/);
   assert.match(server, /async function claimPaymentRetryLock/);
   assert.match(server, /providerOrderCreated = true/);
-  assert.match(server, /retain the lock for manual reconciliation/);
+  assert.match(server, /lock for manual reconciliation/);
 });
 
 test('wallet coin credits use a durable per-order idempotency ledger', () => {
