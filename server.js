@@ -1138,16 +1138,14 @@ async function sendHtmlWithCspNonce(req, res, next) {
     const nonce = res.locals.cspNonce;
     let html = await fs.readFile(path.join(__dirname, 'public', fileName), 'utf8');
     html = html
-      .replace(/<script\\b(?![^>]*\\bnonce=)/gi, `<script nonce="${nonce}"`)
-      .replace(/<style\\b(?![^>]*\\bnonce=)/gi, `<style nonce="${nonce}"`);
+      .replace(/<script\b(?![^>]*\bnonce=)/gi, `<script nonce="${nonce}"`)
+      .replace(/<style\b(?![^>]*\bnonce=)/gi, `<style nonce="${nonce}"`);
     res.set('Cache-Control', 'no-store');
     res.type('html').send(html);
   } catch (error) {
     next(error);
   }
 }
-app.get(['/', '/index.html', '/admin.html'], sendHtmlWithCspNonce);
-
 const configuredOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(value => value.trim().replace(/\/$/, '')).filter(Boolean);
 const allowedOrigins = new Set(['https://aura-fine-store.onrender.com','https://aurafinestore.in','https://www.aurafinestore.in',...configuredOrigins]);
 app.set('trust proxy', 1);
@@ -1171,6 +1169,7 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
+app.get(['/', '/index.html', '/admin.html'], sendHtmlWithCspNonce);
 app.use(cors({
   origin(origin, callback) {
     if (!origin) return callback(null, true);
