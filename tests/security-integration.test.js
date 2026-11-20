@@ -111,8 +111,8 @@ test('strict CSP is monitored in report-only mode with per-response script/style
     assert.match(policy, /style-src-attr 'none'/);
     assert.doesNotMatch(policy, /unsafe-inline|unsafe-eval/);
     const nonce = policy.match(/'nonce-([^']+)'/)[1];
-    assert.match(response.text, new RegExp('<script nonce="' + nonce + '"'));
-    assert.match(response.text, new RegExp('<style nonce="' + nonce + '"'));
+    assert.ok(response.text.includes(`<script nonce="${nonce}"`));
+    assert.ok(response.text.includes(`<style nonce="${nonce}"`));
     assert.equal(response.headers['cache-control'], 'no-store');
   }
 });
