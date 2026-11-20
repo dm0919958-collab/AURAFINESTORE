@@ -47,7 +47,7 @@ test('same order can credit Aura Coins only once, including after an interrupted
 test('concurrent payment retry requests cannot both claim the same source attempt', async () => {
   const original = PaymentAttempt.findOneAndUpdate;
   let claimed = false;
-  PaymentAttempt.findOneAndUpdate = async (filter, update) => {
+  PaymentAttempt.findOneAndUpdate = (filter, update) => {
     assert.equal(filter._id, 'attempt-1');
     assert.deepEqual(filter.status, { $in: ['Cancelled', 'Failed'] });
     if (claimed) return { lean: async () => null };
