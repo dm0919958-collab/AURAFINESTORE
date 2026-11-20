@@ -2734,59 +2734,57 @@ app.post('/api/orders', async (req, res) => {
       if (deductedCoinsAmount > 0) await Wallet.findOneAndUpdate({ phone: deductedCoinsPhone }, { $inc: { coins: deductedCoinsAmount } }).catch(() => {});
       return res.status(400).json({ success: false, message: "Paid amount does not match the verified order total." });
     }
-        // Atomically deduct stock across all items (prevents overselling under concurrent orders)
-    const stockResult = await atomicallyDeductStock(verifiedItems, prodMap);
-    if (!stockResult.ok) {
-      if (deductedCoinsAmount > 0) {
-        await Wallet.findOneAndUpdate({ phone: deductedCoinsPhone }, { $inc: { coins: deductedCoinsAmount } }).catch(() => {});
-      }
-      return res.status(400).json({ success: false, message: stockResult.message });
-    }
+        // Stock deduction and Order creation share one MongoDB transaction.
     const estimatedNetProfit = netBagValue - verifiedTotalCost;
-
     const structuredAddress = `${houseNoStreet}, ${villageOrCity}, P.O: ${postOffice}${policeStation ? ', P.S: ' + policeStation : ''}${landmark ? ' (Landmark: ' + landmark + ')' : ''}, ${city}, ${state} - ${pincode}`;
     const orderId = 'AUR-' + Math.floor(100000 + Math.random() * 900000);
     const orderDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
-
-    const order = await Order.create({
-      id: orderId,
-      customerName: String(customerName || '').trim(),
-      phone: cleanPhone,
-      address: structuredAddress,
-      pincode,
-      city,
-      state,
-      items: verifiedItems,
-      freeGiftUnlocked: unlockedGift,
-      subTotal: verifiedSubTotal,
-      discountApplied: verifiedDiscount,
-      coinsUsed: verifiedCoinsUsed,
-      coinsEarned: potentialCoinsEarned,
-      coinsCredited: false,
-      coinsStatus: potentialCoinsEarned > 0 ? "pending_delivery" : "none",
-      coinsUnlockAt: 0,
-      isNonRefundableOrder: allItemsNonRefundable,
-      deliveryCharge: appliedDelivery,
-      couponCode: verifiedCouponCode,
-      total: verifiedFinalTotal,
-      totalCost: verifiedTotalCost,
-      netProfit: estimatedNetProfit,
-      paymentMethod: normalizedMode,
-      advancePaid: verifiedAdvancePaid,
-      balanceDue: verifiedBalanceDue,
-      utrNumber: isRazorpay ? '' : cleanUtr,
-      paymentGateway: isRazorpay ? 'Razorpay' : 'Manual UPI',
-      razorpayOrderId: isRazorpay ? razorpayOrderId : '',
-      razorpayPaymentId: isRazorpay ? razorpayPaymentId : '',
-      paymentStatus: isRazorpay ? (normalizedMode === 'COD' ? 'Advance Paid' : 'Paid') : 'Pending Verification',
-      status: isRazorpay ? 'Verified' : 'Pending Verification',
-      courierPartner: "Delhivery",
-      awbNumber: "",
-      deliverySlipFile: "",
-      date: orderDate,
-      orderDateRaw: todayStr
-    });
+    const inventorySession = await mongoose.startSession();
+    let order;
+    try {
+      await inventorySession.withTransaction(async () => {
+        await atomicallyDeductStock(verifiedItems, prodMap, inventorySession, orderId);
+        const created = await Order.create([{
+          id: orderId,
+          customerName: String(customerName || '').trim(),
+          phone: cleanPhone,
+          address: structuredAddress,
+          pincode, city, state, items: verifiedItems,
+          freeGiftUnlocked: unlockedGift,
+          subTotal: verifiedSubTotal,
+          discountApplied: verifiedDiscount,
+          coinsUsed: verifiedCoinsUsed,
+          coinsEarned: potentialCoinsEarned,
+          coinsCredited: false,
+          coinsStatus: potentialCoinsEarned > 0 ? "pending_delivery" : "none",
+          coinsUnlockAt: 0,
+          isNonRefundableOrder: allItemsNonRefundable,
+          deliveryCharge: appliedDelivery,
+          couponCode: verifiedCouponCode,
+          total: verifiedFinalTotal,
+          totalCost: verifiedTotalCost,
+          netProfit: estimatedNetProfit,
+          paymentMethod: normalizedMode,
+          advancePaid: verifiedAdvancePaid,
+          balanceDue: verifiedBalanceDue,
+          utrNumber: isRazorpay ? '' : cleanUtr,
+          paymentGateway: isRazorpay ? 'Razorpay' : 'Manual UPI',
+          razorpayOrderId: isRazorpay ? razorpayOrderId : '',
+          razorpayPaymentId: isRazorpay ? razorpayPaymentId : '',
+          paymentStatus: isRazorpay ? (normalizedMode === 'COD' ? 'Advance Paid' : 'Paid') : 'Pending Verification',
+          status: isRazorpay ? 'Verified' : 'Pending Verification',
+          courierPartner: "Delhivery",
+          awbNumber: "",
+          deliverySlipFile: "",
+          date: orderDate,
+          orderDateRaw: todayStr
+        }], { session: inventorySession });
+        order = created[0];
+      });
+    } finally {
+      await inventorySession.endSession();
+    }
 
     if (isRazorpay) {
       await PaymentAttempt.findOneAndUpdate(
