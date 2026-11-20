@@ -25,7 +25,7 @@ These Atlas account, network and backup settings cannot be changed by applicatio
 
 The default CORS allowlist contains the production Render URL and the AURA custom domains. If the store uses another frontend hostname, add its exact origin (scheme and hostname, no path) to `ALLOWED_ORIGINS` in Render.
 
-The current Express rate-limit store is process-local. It protects the current single service process, but counters reset on restart and are not shared if the service is scaled to multiple instances. Use a shared Redis/Valkey or Mongo-backed store before horizontal scaling.
+Multer is pinned to `2.5.0` (the patched release for the October 22, 2026 async `fileFilter` denial-of-service advisory). Multipart uploads use per-field in-memory caps: photos 5 MB each, video 10 MB, delivery slips 8 MB; parser limits also cap files, fields, field sizes, field names, nesting depth and total parts. A support/return request can therefore buffer at most 40 MB of file content. Keep these limits aligned with the customer-facing upload guidance.\n\nThe security CI now runs HTTP integration tests for Admin PIN login, protected API rejection, exact-origin CORS, multipart size rejection and file-signature spoofing, in addition to static regression tests.\n\nThe current Express rate-limit store is process-local. It protects the current single service process, but counters reset on restart and are not shared if the service is scaled to multiple instances. Use a shared Redis/Valkey or Mongo-backed store before horizontal scaling.
 
 ## CSP compatibility note
 
