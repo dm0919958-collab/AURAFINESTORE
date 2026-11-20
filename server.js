@@ -236,6 +236,10 @@ const orderSchema = new mongoose.Schema({
   advancePaid: Number,
   balanceDue: Number,
   utrNumber: String,
+  paymentGateway: { type: String, default: "" },
+  razorpayOrderId: { type: String, default: "" },
+  razorpayPaymentId: { type: String, default: "" },
+  paymentStatus: { type: String, default: "Pending" },
   status: String,
   deliveredAt: { type: Date, default: null },
   courierPartner: String,
@@ -1898,6 +1902,59 @@ async function atomicallyDeductStock(verifiedItems, prodMap) {
   }
 }
 
+// Create a server-priced Razorpay order. Browser totals are never trusted.
+app.post('/api/payments/razorpay/create-order', async (req, res) => {
+  try {
+    const keyId = process.env.RAZORPAY_KEY_ID, keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) return res.status(503).json({ success: false, message: "Online payment is not configured." });
+    const { items, phone, couponCode, useAuraCoins, paymentMethod } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
+    if (!/^[6-9]\d{9}$/.test(cleanPhone) || !Array.isArray(items) || !items.length)
+      return res.status(400).json({ success: false, message: "Please check your mobile number and shopping bag." });
+    const ids = items.map(i => Number(i.id));
+    const products = await Product.find({ id: { $in: ids } }).lean();
+    const byId = new Map(products.map(p => [p.id, p]));
+    let subtotal = 0;
+    for (const item of items) {
+      const p = byId.get(Number(item.id)), qty = Math.max(1, parseInt(item.qty, 10) || 1);
+      if (!p) return res.status(400).json({ success: false, message: "A product in your bag is no longer available." });
+      subtotal += Number(p.price || 0) * qty;
+    }
+    const settings = await Settings.findOne({ key: 'main' }).lean();
+    let discount = 0;
+    if (couponCode) {
+      const c = await Coupon.findOne({ code: String(couponCode).trim().toUpperCase() }).lean();
+      if (c && (!c.expiresAt || c.expiresAt <= 0 || Date.now() < c.expiresAt) && subtotal >= (c.minSpend || 0))
+        discount = Math.round((subtotal * Number(c.discountPercent || 0)) / 100);
+    }
+    const afterDiscount = Math.max(1, subtotal - discount);
+    let coins = 0;
+    if (useAuraCoins) {
+      await processMaturedPendingCoins(cleanPhone);
+      const wallet = await Wallet.findOne({ phone: cleanPhone }).lean();
+      const maxCoins = settings ? (settings.maxCoinsRedeemPerOrder ?? 200) : 200;
+      if (wallet && wallet.coins > 0) coins = Math.min(wallet.coins, maxCoins, Math.max(0, afterDiscount - 1));
+    }
+    const net = Math.max(1, afterDiscount - coins);
+    const shipping = settings ? Number(settings.deliveryCharge || 0) : 0;
+    const total = net + shipping;
+    const mode = paymentMethod === 'COD' ? 'COD' : 'UPI';
+    const amountToCollect = mode === 'COD'
+      ? Math.max(1, Math.round((total * (settings ? (settings.codAdvancePercent || 15) : 15)) / 100))
+      : total;
+    const created = await axios.post('https://api.razorpay.com/v1/orders', {
+      amount: Math.round(amountToCollect * 100), currency: 'INR',
+      receipt: 'AURA' + Date.now().toString().slice(-10),
+      notes: { phone: cleanPhone, payment_mode: mode }
+    }, { auth: { username: keyId, password: keySecret }, timeout: 15000 });
+    return res.json({ success: true, keyId, razorpayOrderId: created.data.id, amount: created.data.amount,
+      currency: created.data.currency, verifiedTotal: total, amountToCollect, deliveryCharge: shipping, paymentMode: mode });
+  } catch (err) {
+    console.error("Razorpay order creation failed:", err.response?.data || err.message);
+    return res.status(502).json({ success: false, message: "Could not start payment. Please try again." });
+  }
+});
+
 app.post('/api/orders', async (req, res) => {
   let deductedCoinsPhone = "";
   let deductedCoinsAmount = 0;
@@ -1917,10 +1974,29 @@ app.post('/api/orders', async (req, res) => {
 
     // Guest checkout: the customer enters a contact number; no OTP or customer login is required.
     const cleanUtr = String(utrNumber || "").trim();
-    const isRepeatedDigits = /^(\d){11}$/.test(cleanUtr);
-    const fakeUtrs = new Set(["123456789012", "123456123456", "987654321098", "012345678901"]);
-    if (!/^\d{12}$/.test(cleanUtr) || isRepeatedDigits || fakeUtrs.has(cleanUtr)) {
-      return res.status(400).json({ success: false, message: "Please enter a valid 12-digit numeric UPI UTR number!" });
+    const razorpayOrderId = String(req.body.razorpay_order_id || "").trim();
+    const razorpayPaymentId = String(req.body.razorpay_payment_id || "").trim();
+    const razorpaySignature = String(req.body.razorpay_signature || "").trim();
+    const isRazorpay = Boolean(razorpayOrderId && razorpayPaymentId && razorpaySignature);
+    let verifiedRazorpayPayment = null;
+    if (isRazorpay) {
+      const keyId = process.env.RAZORPAY_KEY_ID, keySecret = process.env.RAZORPAY_KEY_SECRET;
+      if (!keyId || !keySecret) return res.status(503).json({ success: false, message: "Online payment is not configured." });
+      const expected = crypto.createHmac('sha256', keySecret).update(razorpayOrderId + "|" + razorpayPaymentId).digest('hex');
+      const a = Buffer.from(expected), b = Buffer.from(razorpaySignature);
+      if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return res.status(400).json({ success: false, message: "Payment signature verification failed." });
+      if (await Order.findOne({ razorpayPaymentId }).lean()) return res.status(409).json({ success: false, message: "This payment has already been used." });
+      const paymentResponse = await axios.get('https://api.razorpay.com/v1/payments/' + encodeURIComponent(razorpayPaymentId), {
+        auth: { username: keyId, password: keySecret }, timeout: 15000
+      });
+      verifiedRazorpayPayment = paymentResponse.data;
+      if (verifiedRazorpayPayment.order_id !== razorpayOrderId || verifiedRazorpayPayment.currency !== 'INR' || verifiedRazorpayPayment.status !== 'captured')
+        return res.status(400).json({ success: false, message: "Payment is not captured. Your order has not been confirmed." });
+    } else {
+      const isRepeatedDigits = /^(\d)\1{11}$/.test(cleanUtr);
+      const fakeUtrs = new Set(["123456789012", "123456123456", "987654321098", "012345678901"]);
+      if (!/^\d{12}$/.test(cleanUtr) || isRepeatedDigits || fakeUtrs.has(cleanUtr))
+        return res.status(400).json({ success: false, message: "Please enter a valid 12-digit numeric UPI UTR number!" });
     }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -2068,7 +2144,7 @@ app.post('/api/orders', async (req, res) => {
       return res.status(400).json({ success: false, message: stockResult.message });
     }
 
-    const appliedDelivery = normalizedMode === 'COD' ? deliveryFeeSetting : 0;
+    const appliedDelivery = deliveryFeeSetting;
     const verifiedFinalTotal = Math.max(1, netBagValue + appliedDelivery);
     const unlockedGift = (giftThreshold > 0 && netBagValue >= giftThreshold) ? giftTitle : "";
     const potentialCoinsEarned = coinsEarnPct > 0 ? Math.floor((netBagValue * coinsEarnPct) / 100) : 0;
@@ -2077,6 +2153,10 @@ app.post('/api/orders', async (req, res) => {
       ? Math.max(1, Math.round((verifiedFinalTotal * codAdvancePctSetting) / 100))
       : verifiedFinalTotal;
     const verifiedBalanceDue = verifiedFinalTotal - verifiedAdvancePaid;
+    if (isRazorpay && Number(verifiedRazorpayPayment.amount) !== Math.round(verifiedAdvancePaid * 100)) {
+      if (deductedCoinsAmount > 0) await Wallet.findOneAndUpdate({ phone: deductedCoinsPhone }, { $inc: { coins: deductedCoinsAmount } }).catch(() => {});
+      return res.status(400).json({ success: false, message: "Paid amount does not match the verified order total." });
+    }
     const estimatedNetProfit = netBagValue - verifiedTotalCost;
 
     const structuredAddress = `${houseNoStreet}, ${villageOrCity}, P.O: ${postOffice}${policeStation ? ', P.S: ' + policeStation : ''}${landmark ? ' (Landmark: ' + landmark + ')' : ''}, ${city}, ${state} - ${pincode}`;
@@ -2110,8 +2190,12 @@ app.post('/api/orders', async (req, res) => {
       paymentMethod: normalizedMode,
       advancePaid: verifiedAdvancePaid,
       balanceDue: verifiedBalanceDue,
-      utrNumber: cleanUtr,
-      status: "Pending Verification",
+      utrNumber: isRazorpay ? '' : cleanUtr,
+      paymentGateway: isRazorpay ? 'Razorpay' : 'Manual UPI',
+      razorpayOrderId: isRazorpay ? razorpayOrderId : '',
+      razorpayPaymentId: isRazorpay ? razorpayPaymentId : '',
+      paymentStatus: isRazorpay ? (normalizedMode === 'COD' ? 'Advance Paid' : 'Paid') : 'Pending Verification',
+      status: isRazorpay ? 'Verified' : 'Pending Verification',
       courierPartner: "Delhivery",
       awbNumber: "",
       deliverySlipFile: "",
