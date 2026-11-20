@@ -369,7 +369,7 @@ async function expireRazorpayPaymentAttempts() {
   }
 }
 setTimeout(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 15000);
-setInterval(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 5 * 60 * 1000);
+setInterval(() => expireRazorpayPaymentAttempts().catch(e => console.error("Payment expiry cleanup failed:", e.message)), 60 * 1000);
 
 
 
