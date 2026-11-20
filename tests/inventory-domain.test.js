@@ -53,3 +53,9 @@ test('rejects invalid operation and quantity', () => {
   assert.throws(() => stockMutationPlan({}, { qty: 1 }, 'remove'), /Invalid stock operation/);
   assert.throws(() => stockMutationPlan({}, { qty: 0 }, 'deduct'), /Invalid stock quantity/);
 });
+
+test('does not fall back to a size aggregate when a color variant is missing', () => {
+  assert.throws(() => stockMutationPlan({
+    variantStock: { 'Blue__S': 3 }, sizeStock: { S: 3 }
+  }, { selectedColor: 'Red', selectedSize: 'S', qty: 1 }, 'deduct'), /combination is unavailable/);
+});
