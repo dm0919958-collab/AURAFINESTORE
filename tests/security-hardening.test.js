@@ -22,6 +22,7 @@ test('JWT secret is mandatory and admin tokens are scoped', () => {
 });
 test('Multer 2 and file content-signature validation are enabled', () => {
   assert.match(pkg.dependencies.multer, /^\^2\./);
+  assert.match(pkg.dependencies['file-type'], /^\^22\./);
   assert.match(server, /fileTypeFromBuffer/);
   assert.match(server, /uploadedFilesMatchTypes/);
   assert.match(server, /isValidImageDataUrl/);
