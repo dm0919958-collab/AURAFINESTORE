@@ -324,6 +324,7 @@ const paymentAttemptSchema = new mongoose.Schema({
   retryGroupId: { type: String, index: true, default: "" },
   retryOf: { type: String, default: "" },
   expiresAt: { type: Date, index: true, default: null },
+  verificationExpiresAt: { type: Date, index: true, default: null },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
@@ -336,17 +337,20 @@ async function expireRazorpayPaymentAttempts() {
   const keyId = process.env.RAZORPAY_KEY_ID, keySecret = process.env.RAZORPAY_KEY_SECRET;
   if (!keyId || !keySecret) return;
   const now = new Date();
-  // Give older attempts created before this feature the same 24-hour expiry window.
-  const legacyAttempts = await PaymentAttempt.find({ expiresAt: null, createdAt: { $ne: null } })
-    .select('_id createdAt').limit(200).lean();
+  // Retry access expires after 24 hours; payment verification records are retained for 7 days.
+  const legacyAttempts = await PaymentAttempt.find({
+    createdAt: { $ne: null },
+    $or: [{ expiresAt: null }, { verificationExpiresAt: null }]
+  }).select('_id createdAt expiresAt verificationExpiresAt').limit(300).lean();
   for (const legacy of legacyAttempts) {
-    await PaymentAttempt.updateOne(
-      { _id: legacy._id, expiresAt: null },
-      { $set: { expiresAt: new Date(new Date(legacy.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000) } }
-    );
+    const created = new Date(legacy.createdAt || now).getTime();
+    const patch = {};
+    if (!legacy.expiresAt) patch.expiresAt = new Date(created + 24 * 60 * 60 * 1000);
+    if (!legacy.verificationExpiresAt) patch.verificationExpiresAt = new Date(created + 7 * 24 * 60 * 60 * 1000);
+    if (Object.keys(patch).length) await PaymentAttempt.updateOne({ _id: legacy._id }, { $set: patch });
   }
   const expired = await PaymentAttempt.find({
-    expiresAt: { $ne: null, $lte: now },
+    verificationExpiresAt: { $ne: null, $lte: now },
     status: { $in: ["Payment Pending", "Cancelled", "Failed"] }
   }).limit(100).lean();
 
@@ -362,18 +366,18 @@ async function expireRazorpayPaymentAttempts() {
         await PaymentAttempt.updateOne(
           { _id: attempt._id, status: { $ne: "Completed" } },
           { $set: { status: "Payment Received - Order Pending", razorpayPaymentId: captured.id,
-            failureReason: "Payment was captured; order confirmation requires review.", updatedAt: new Date() } }
+            failureReason: "Razorpay confirms captured payment. Admin review required; record retained.",
+            updatedAt: new Date() } }
         );
         continue;
       }
-      // No captured payment exists at Razorpay: remove the expired attempt from both customer and admin lists.
+      // Delete only after the 7-day verification window and a successful Razorpay check with no captured payment.
       await PaymentAttempt.deleteOne({
-        _id: attempt._id, expiresAt: { $lte: new Date() },
-        status: { $in: ["Payment Pending", "Cancelled", "Failed", "Payment Received - Order Pending"] }
+        _id: attempt._id, verificationExpiresAt: { $lte: new Date() },
+        status: { $in: ["Payment Pending", "Cancelled", "Failed"] }
       });
     } catch (err) {
-      // If Razorpay cannot be checked, keep the record. Never delete on an uncertain payment state.
-      console.warn("Payment-attempt expiry check deferred:", attempt.razorpayOrderId, err.message);
+      console.warn("Payment-attempt verification deferred; record retained:", attempt.razorpayOrderId, err.message);
     }
   }
 }
@@ -2048,12 +2052,13 @@ app.post('/api/payments/razorpay/create-order', async (req, res) => {
       total, amountToCollect, deliveryCharge: shipping, paymentMethod: mode,
       checkoutPayload: { ...req.body, items: items.map(i => ({ ...i })) },
       retryGroupId: created.data.id,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      verificationExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       status: "Payment Pending"
     });
     return res.json({ success: true, keyId, razorpayOrderId: created.data.id, amount: created.data.amount,
       currency: created.data.currency, verifiedTotal: total, amountToCollect, deliveryCharge: shipping, paymentMode: mode,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), verificationExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
   } catch (err) {
     console.error("Razorpay order creation failed:", err.response?.data || err.message);
     return res.status(502).json({ success: false, message: "Could not start payment. Please try again." });
@@ -2079,7 +2084,7 @@ app.post('/api/payments/razorpay/retry', async (req, res) => {
     const root = await PaymentAttempt.findOne({ razorpayOrderId: retryGroupId, phone }).lean() || source;
     const expiresAt = root.expiresAt || source.expiresAt;
     if (!expiresAt || Date.now() >= new Date(expiresAt).getTime())
-      return res.status(410).json({ success: false, message: "The 7-day payment retry period has expired. Please place a new order." });
+      return res.status(410).json({ success: false, message: "The 24-hour payment retry period has expired. Please place a new order." });
     const completed = await PaymentAttempt.findOne({ retryGroupId, status: "Completed" }).lean();
     if (completed) return res.status(409).json({ success: false, message: "This order has already been paid and confirmed." });
     if (!source.checkoutPayload || !Array.isArray(source.checkoutPayload.items) || !source.checkoutPayload.items.length)
@@ -2101,7 +2106,7 @@ app.post('/api/payments/razorpay/retry', async (req, res) => {
     return res.json({
       success: true, keyId, razorpayOrderId: created.data.id, amount: created.data.amount,
       currency: created.data.currency, checkoutPayload: source.checkoutPayload,
-      expiresAt
+      expiresAt, verificationExpiresAt: root.verificationExpiresAt || source.verificationExpiresAt
     });
   } catch (err) {
     console.error("Razorpay payment retry failed:", err.response?.data || err.message);
