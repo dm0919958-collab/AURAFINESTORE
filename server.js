@@ -2546,10 +2546,27 @@ app.get('/api/orders/track', async (req, res) => {
 
     const dbQuery = targetOrderId ? { phone: targetPhone, id: targetOrderId } : { phone: targetPhone };
     const matched = await Order.find(dbQuery).sort({ createdAt: -1 }).limit(30).lean();
-    const rawPaymentAttempts = await PaymentAttempt.find({ phone: targetPhone, status: { $ne: "Completed" } })
-      .sort({ createdAt: -1 }).limit(20).lean();
+    const rawPaymentAttempts = await PaymentAttempt.find({ phone: targetPhone })
+      .sort({ createdAt: -1 }).limit(100).lean();
+    // Group every retry under its original payment attempt. Show only the newest failed/pending
+    // attempt, and hide the entire group once any retry in that group has completed or an order exists.
+    const completedGroups = new Set(rawPaymentAttempts
+      .filter(a => a.status === "Completed")
+      .map(a => a.retryGroupId || a.razorpayOrderId));
+    const orderPaymentIds = new Set(matched.map(o => o.razorpayOrderId).filter(Boolean));
+    for (const attempt of rawPaymentAttempts) {
+      if (attempt.status === "Completed" || orderPaymentIds.has(attempt.razorpayOrderId)) {
+        completedGroups.add(attempt.retryGroupId || attempt.razorpayOrderId);
+      }
+    }
+    const latestByGroup = new Map();
+    for (const attempt of rawPaymentAttempts) {
+      const groupId = attempt.retryGroupId || attempt.razorpayOrderId;
+      if (completedGroups.has(groupId)) continue;
+      if (!latestByGroup.has(groupId)) latestByGroup.set(groupId, attempt);
+    }
     // Never expose the saved checkout address/payload in the public order-tracking response.
-    const paymentAttempts = rawPaymentAttempts.map(({ checkoutPayload, ...attempt }) => ({
+    const paymentAttempts = Array.from(latestByGroup.values()).map(({ checkoutPayload, ...attempt }) => ({
       ...attempt,
       canRetry: Boolean(checkoutPayload && attempt.expiresAt && Date.now() < new Date(attempt.expiresAt).getTime())
     }));
