@@ -504,6 +504,15 @@ label { color: #f1e5ce; }
           </div>
         </div>
 
+        <div class="bg-emerald-950/35 p-3.5 rounded-2xl border border-emerald-500/35 space-y-2">
+          <label class="block font-bold text-emerald-300"><i class="fa-solid fa-truck-fast mr-1"></i> Free Delivery Above Order Amount (₹):</label>
+          <div class="flex gap-2">
+            <input type="number" id="freeDeliveryThresholdInput" min="0" placeholder="e.g. 999 (0 = Disabled)" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-bold">
+            <button onclick="saveFreeDeliveryThreshold()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-3.5 py-2 rounded-xl font-extrabold whitespace-nowrap">Save Threshold</button>
+          </div>
+          <p class="text-[10px] text-slate-400">Orders at or above this amount get free delivery for both COD and Prepaid.</p>
+        </div>
+
         <div class="grid grid-cols-2 gap-2">
           <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 space-y-1.5 flex flex-col justify-between">
             <label class="block font-bold text-slate-200 text-[11px]">COD Delivery Fee (₹):</label>
@@ -1538,6 +1547,7 @@ label { color: #f1e5ce; }
             document.getElementById('deliveryChargeInput').value = st.deliveryCharge || 0;
             document.getElementById('codAdvanceInput').value = st.codAdvancePercent || 15;
             document.getElementById('maxCodAmountInput').value = st.maxCodOrderAmount ?? 2000;
+            document.getElementById('freeDeliveryThresholdInput').value = st.freeDeliveryThreshold ?? 0;
             document.getElementById('freeGiftThresholdInput').value = st.freeGiftThreshold ?? 1499;
             document.getElementById('freeGiftTitleInput').value = st.freeGiftTitle || "Luxury Surprise Jewellery Box";
             document.getElementById('coinsEarnPctInput').value = st.coinsEarnPercent ?? 5;
@@ -1677,6 +1687,13 @@ label { color: #f1e5ce; }
       const res = await fetch(`/api/admin/support/tickets/${ticketId}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (handleUnauthorized(res)) return;
       if ((await res.json()).success) loadAdminSupportTickets(true);
+    }
+
+    async function saveFreeDeliveryThreshold() {
+      const threshold = Math.max(0, Number(document.getElementById('freeDeliveryThresholdInput').value) || 0);
+      const res = await fetch('/api/admin/store-settings', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ freeDeliveryThreshold: threshold }) });
+      if (handleUnauthorized(res)) return;
+      if ((await res.json()).success) alert(threshold > 0 ? `✅ Free delivery enabled on orders of ₹${threshold} or more for COD and Prepaid!` : "Free delivery threshold disabled.");
     }
 
     async function saveDeliveryCharge() {
