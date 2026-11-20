@@ -1228,7 +1228,7 @@
     let wishlistIds = JSON.parse(localStorage.getItem('aura_wishlist') || '[]');
     let recentlyViewedIds = JSON.parse(localStorage.getItem('aura_recent_views') || '[]');
     let appliedDiscountRate = 0, appliedCouponCode = localStorage.getItem('aura_saved_coupon') || "", appliedCouponMinSpend = 0, appliedCouponExpiresAt = 0;
-    let storeDeliveryCharge = 0, storeCodAdvancePct = 15, storeMaxCodAmount = 2000;
+    let storeDeliveryCharge = 0, storeCodAdvancePct = 15, storeMaxCodAmount = 2000, storeFreeDeliveryThreshold = 0;
     let storeFreeGiftThreshold = 1499, storeFreeGiftTitle = "Luxury Surprise Jewellery Box";
     let storeCoinsEarnPct = 5, storeMaxCoinsRedeem = 200, customerAvailableCoins = 0;
     let firstOrderPopupConfig = { enabled: true, title: "Exclusive First-Order Privilege", subtitle: "", coupon: "AURA20", image: "" };
@@ -1738,6 +1738,7 @@
           storeDeliveryCharge = st.deliveryCharge || 0;
           storeCodAdvancePct = st.codAdvancePercent || 15;
           storeMaxCodAmount = st.maxCodOrderAmount ?? 2000;
+          storeFreeDeliveryThreshold = st.freeDeliveryThreshold ?? 0;
           storeFreeGiftThreshold = st.freeGiftThreshold ?? 1499;
           storeFreeGiftTitle = st.freeGiftTitle || "Luxury Surprise Jewellery Box";
           storeCoinsEarnPct = st.coinsEarnPercent ?? 5;
@@ -2280,7 +2281,8 @@
       const maxRedeemable = Math.min(customerAvailableCoins, storeMaxCoinsRedeem, Math.max(0, afterCouponValue - 1));
       const coinsDiscount = (useCoinsChecked && maxRedeemable > 0) ? maxRedeemable : 0;
       const netBagValue = Math.max(1, afterCouponValue - coinsDiscount);
-      const deliveryCharge = storeDeliveryCharge;
+      const qualifiesForFreeDelivery = storeFreeDeliveryThreshold > 0 && netBagValue >= storeFreeDeliveryThreshold;
+      const deliveryCharge = mode === 'COD' && storeCodAdvancePct < 50 && !qualifiesForFreeDelivery ? storeDeliveryCharge : 0;
       return { subTotal, discountAmt, afterCouponValue, maxRedeemable, coinsDiscount, netBagValue, finalAmt: netBagValue + deliveryCharge, deliveryCharge };
     }
 
