@@ -2127,7 +2127,7 @@ label { color: #f1e5ce; }
     }
 
     async function deleteAdminPaymentAttempt(razorpayOrderId) {
-      if (!confirm("Delete this payment retry and every retry in the same group? The customer will no longer see or retry it and must place a new order. Captured/payment-review records are protected.")) return;
+      if (!confirm("Delete the complete payment history for this cancelled/failed payment, including all retries? It will also disappear from the customer's My Orders. Captured/completed payments are protected.")) return;
       try {
         const res = await fetch('/api/admin/payment-attempts/' + encodeURIComponent(razorpayOrderId), {
           method: 'DELETE', headers: getAuthHeaders()
@@ -2161,7 +2161,7 @@ label { color: #f1e5ce; }
           <td class="p-2"><b class="text-white">₹${Number(p.total) || 0}</b><span class="block text-slate-400">Payment: ₹${Number(p.amountToCollect) || 0}</span>${p.orderId ? `<span class="block text-emerald-300">Order #${escapeHTML(p.orderId)}</span>` : ''}</td>
           <td class="p-2 text-slate-300">₹${Number(p.deliveryCharge) || 0}</td>
           <td class="p-2"><b class="${color}">${escapeHTML(state)}</b>${p.failureReason ? `<span class="block mt-1 text-[10px] text-rose-300">${escapeHTML(p.failureReason)}</span>` : ''}${p.expiresAt ? `<span class="block mt-1 text-[10px] text-slate-400">Expires: ${new Date(p.expiresAt).toLocaleString('en-IN')}</span>` : ''}</td>
-          <td class="p-2 min-w-[145px] space-y-1"><button onclick="verifyAdminPaymentAttempt('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-cyan-700 hover:bg-cyan-600 px-2 py-1.5 text-[10px] font-bold text-white">Check Payment</button>${['Cancelled','Failed'].includes(state) ? `<button onclick="sendPaymentRetryInstructions('${escapeHTML(p.phone || '')}','${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-amber-500 hover:bg-amber-400 px-2 py-1.5 text-[10px] font-bold text-slate-950">Send Retry Instructions</button>` : state === 'Payment Received - Order Pending' ? '<span class="block text-[10px] font-bold text-rose-300">PAYMENT REVIEW — KEEP</span>' : ''}<button onclick="deleteAdminPaymentAttempt('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-rose-700 hover:bg-rose-600 px-2 py-1.5 text-[10px] font-bold text-white">Delete Retry</button></td>
+          <td class="p-2 min-w-[145px] space-y-1"><button onclick="verifyAdminPaymentAttempt('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-cyan-700 hover:bg-cyan-600 px-2 py-1.5 text-[10px] font-bold text-white">Check Payment</button>${['Cancelled','Failed'].includes(state) ? `<button onclick="sendPaymentRetryInstructions('${escapeHTML(p.phone || '')}','${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-amber-500 hover:bg-amber-400 px-2 py-1.5 text-[10px] font-bold text-slate-950">Send Retry Instructions</button>` : state === 'Payment Received - Order Pending' ? '<span class="block text-[10px] font-bold text-rose-300">PAYMENT REVIEW — KEEP</span>' : ''}<button onclick="deleteAdminPaymentAttempt('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-rose-700 hover:bg-rose-600 px-2 py-1.5 text-[10px] font-bold text-white">Delete History</button></td>
         </tr>`;
       }).join('');
     }
