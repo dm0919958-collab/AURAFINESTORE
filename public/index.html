@@ -2592,13 +2592,13 @@
               await fetchMyOrders();
             }
           },
-          modal: { ondismiss: function () {
-            updateRazorpayAttemptStatus(data.razorpayOrderId, "Cancelled", "Customer closed the Razorpay payment window.");
+          modal: { ondismiss: async function () {
+            await updateRazorpayAttemptStatus(data.razorpayOrderId, "Cancelled", "Customer closed the Razorpay payment window.");
             fetchMyOrders();
           }}
         });
-        checkout.on('payment.failed', function (response) {
-          updateRazorpayAttemptStatus(data.razorpayOrderId, "Failed", response.error?.description || "Payment failed.");
+        checkout.on('payment.failed', async function (response) {
+          await updateRazorpayAttemptStatus(data.razorpayOrderId, "Failed", response.error?.description || "Payment failed.");
           alert("Payment failed: " + (response.error?.description || "Please try again."));
           fetchMyOrders();
         });
@@ -2656,16 +2656,16 @@
               alert("Payment received but order verification is pending. Contact support with Payment ID: " + response.razorpay_payment_id + "\n" + verifyError.message);
             } finally { btn.disabled = false; btn.innerText = originalText; }
           },
-          modal: { ondismiss: function () {
-            updateRazorpayAttemptStatus(paymentOrder.razorpayOrderId, "Cancelled", "Customer closed the Razorpay payment window.");
+          modal: { ondismiss: async function () {
+            await updateRazorpayAttemptStatus(paymentOrder.razorpayOrderId, "Cancelled", "Customer closed the Razorpay payment window.");
             btn.disabled = false; btn.innerText = originalText;
             alert("Payment cancelled. Your payment attempt is saved for 24 hours. Opening My Orders so you can retry.");
             openMyOrdersModal();
           }}
         });
-        checkout.on('payment.failed', function (response) {
+        checkout.on('payment.failed', async function (response) {
           btn.disabled = false; btn.innerText = originalText;
-          updateRazorpayAttemptStatus(paymentOrder.razorpayOrderId, "Failed", response.error?.description || "Payment failed.");
+          await updateRazorpayAttemptStatus(paymentOrder.razorpayOrderId, "Failed", response.error?.description || "Payment failed.");
           alert("Payment failed: " + (response.error?.description || "Please try again.") + "\nOpening My Orders so you can retry within 24 hours.");
           openMyOrdersModal();
         });
@@ -2725,7 +2725,7 @@
           <p class="text-[11px] text-stone-300">Amount: <b class="text-white">₹${Number(p.amountToCollect)||0}</b> • Shipping: ₹${Number(p.deliveryCharge)||0}</p>
           ${p.orderId ? `<p class="text-[11px] text-emerald-300">Order #${escapeHTML(p.orderId)} created</p>` : ''}
           ${p.failureReason ? `<p class="text-[10px] ${cancelled ? 'text-rose-300' : 'text-amber-300'}">${escapeHTML(p.failureReason)}</p>` : ''}
-          ${p.canRetry && p.expiresAt && new Date(p.expiresAt).getTime() > Date.now() && state !== 'Payment Received - Order Pending' ? `<p class="text-[10px] text-amber-300">Retry available until ${new Date(p.expiresAt).toLocaleString('en-IN')}</p><button type="button" onclick="retryRazorpayPayment('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full bg-amber-500 hover:bg-amber-400 text-stone-950 py-2 rounded-lg font-extrabold text-xs">Retry Payment</button>` : ''}
+          ${p.canRetry && ['Cancelled', 'Failed'].includes(state) && p.expiresAt && new Date(p.expiresAt).getTime() > Date.now() ? `<p class="text-[10px] text-amber-300">Retry available until ${new Date(p.expiresAt).toLocaleString('en-IN')}</p><button type="button" onclick="retryRazorpayPayment('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full bg-amber-500 hover:bg-amber-400 text-stone-950 py-2 rounded-lg font-extrabold text-xs">Retry Payment</button>` : ''}
         </div>`;
       }).join('');
       if ((!data.orders || !data.orders.length) && !paymentAttemptsHTML) { box.innerHTML = `<p class="text-center py-6 text-rose-400 font-bold">No orders found!</p>`; return; }
