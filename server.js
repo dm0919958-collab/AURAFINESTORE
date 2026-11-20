@@ -602,9 +602,7 @@ async function seedInitialData() {
       });
     } else {
       let dirty = false;
-      if (Object.prototype.hasOwnProperty.call(existingSettings.toObject(), 'adminPin')) {
-        await Settings.updateOne({ key: 'main' }, { $unset: { adminPin: 1 } });
-      }
+      await Settings.updateOne({ key: 'main' }, { $unset: { adminPin: 1 } });
       if (existingSettings.maxCodOrderAmount === undefined) { existingSettings.maxCodOrderAmount = 2000; dirty = true; }
       if (existingSettings.freeGiftThreshold === undefined) { existingSettings.freeGiftThreshold = 1499; dirty = true; }
       if (existingSettings.coinsEarnPercent === undefined) { existingSettings.coinsEarnPercent = 5; dirty = true; }
