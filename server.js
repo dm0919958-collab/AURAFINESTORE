@@ -2086,8 +2086,11 @@ app.post('/api/payments/razorpay/retry', async (req, res) => {
     const expiresAt = root.expiresAt || source.expiresAt;
     if (!expiresAt || Date.now() >= new Date(expiresAt).getTime())
       return res.status(410).json({ success: false, message: "The 24-hour payment retry period has expired. Please place a new order." });
-    const completed = await PaymentAttempt.findOne({ retryGroupId, status: "Completed" }).lean();
-    if (completed) return res.status(409).json({ success: false, message: "This order has already been paid and confirmed." });
+    const groupAttempts = await PaymentAttempt.find({ retryGroupId, phone }).select('status retryOf').lean();
+    if (groupAttempts.some(a => a.status === "Completed" || a.status === "Payment Received - Order Pending"))
+      return res.status(409).json({ success: false, message: "This order has already been paid or is awaiting payment review." });
+    if (groupAttempts.some(a => a.retryOf))
+      return res.status(409).json({ success: false, message: "A retry has already been used for this payment. Please place a new order." });
     if (!source.checkoutPayload || !Array.isArray(source.checkoutPayload.items) || !source.checkoutPayload.items.length)
       return res.status(409).json({ success: false, message: "This older payment attempt cannot be retried. Please place a new order." });
 
@@ -2112,6 +2115,27 @@ app.post('/api/payments/razorpay/retry', async (req, res) => {
   } catch (err) {
     console.error("Razorpay payment retry failed:", err.response?.data || err.message);
     return res.status(502).json({ success: false, message: "Could not restart payment. Please try again." });
+  }
+});
+
+app.delete('/api/admin/payment-attempts/:razorpayOrderId', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const razorpayOrderId = String(req.params.razorpayOrderId || '').trim();
+    const attempt = await PaymentAttempt.findOne({ razorpayOrderId }).lean();
+    if (!attempt) return res.status(404).json({ success: false, message: "Payment attempt not found." });
+    if (attempt.status === "Completed" || attempt.status === "Payment Received - Order Pending")
+      return res.status(409).json({ success: false, message: "Captured or completed payment records cannot be deleted. Resolve the payment review first." });
+    const groupId = attempt.retryGroupId || attempt.razorpayOrderId;
+    const result = await PaymentAttempt.deleteMany({
+      phone: attempt.phone,
+      $or: [{ retryGroupId: groupId }, { razorpayOrderId: groupId }]
+    });
+    return res.json({ success: true, deletedCount: result.deletedCount || 0,
+      message: "Payment retry group deleted. The customer can no longer retry this payment and must place a new order." });
+  } catch (err) {
+    console.error("Admin payment-attempt deletion failed:", err.message);
+    return res.status(500).json({ success: false, message: "Could not delete payment attempt." });
   }
 });
 
@@ -2568,7 +2592,7 @@ app.get('/api/orders/track', async (req, res) => {
     // Never expose the saved checkout address/payload in the public order-tracking response.
     const paymentAttempts = Array.from(latestByGroup.values()).map(({ checkoutPayload, ...attempt }) => ({
       ...attempt,
-      canRetry: Boolean(checkoutPayload && attempt.expiresAt && Date.now() < new Date(attempt.expiresAt).getTime())
+      canRetry: Boolean(checkoutPayload && !rawPaymentAttempts.some(a => (a.retryGroupId || a.razorpayOrderId) === (attempt.retryGroupId || attempt.razorpayOrderId) && a.retryOf) && attempt.expiresAt && Date.now() < new Date(attempt.expiresAt).getTime())
     }));
 
     let walletCoins = 0;
