@@ -2153,15 +2153,6 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
-    // Atomically deduct stock across all items (prevents overselling under concurrent orders)
-    const stockResult = await atomicallyDeductStock(verifiedItems, prodMap);
-    if (!stockResult.ok) {
-      if (deductedCoinsAmount > 0) {
-        await Wallet.findOneAndUpdate({ phone: deductedCoinsPhone }, { $inc: { coins: deductedCoinsAmount } }).catch(() => {});
-      }
-      return res.status(400).json({ success: false, message: stockResult.message });
-    }
-
     const appliedDelivery = deliveryFeeSetting;
     const verifiedFinalTotal = Math.max(1, netBagValue + appliedDelivery);
     const unlockedGift = (giftThreshold > 0 && netBagValue >= giftThreshold) ? giftTitle : "";
@@ -2174,6 +2165,14 @@ app.post('/api/orders', async (req, res) => {
     if (isRazorpay && Number(verifiedRazorpayPayment.amount) !== Math.round(verifiedAdvancePaid * 100)) {
       if (deductedCoinsAmount > 0) await Wallet.findOneAndUpdate({ phone: deductedCoinsPhone }, { $inc: { coins: deductedCoinsAmount } }).catch(() => {});
       return res.status(400).json({ success: false, message: "Paid amount does not match the verified order total." });
+    }
+        // Atomically deduct stock across all items (prevents overselling under concurrent orders)
+    const stockResult = await atomicallyDeductStock(verifiedItems, prodMap);
+    if (!stockResult.ok) {
+      if (deductedCoinsAmount > 0) {
+        await Wallet.findOneAndUpdate({ phone: deductedCoinsPhone }, { $inc: { coins: deductedCoinsAmount } }).catch(() => {});
+      }
+      return res.status(400).json({ success: false, message: stockResult.message });
     }
     const estimatedNetProfit = netBagValue - verifiedTotalCost;
 
