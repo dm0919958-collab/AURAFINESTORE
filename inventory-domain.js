@@ -51,7 +51,8 @@ function stockMutationPlan(product, item, direction) {
   const delta = direction === 'deduct' ? -qty : qty;
   const fields = {};
   let type = 'total';
-  if (Object.prototype.hasOwnProperty.call(variantStock, variantKey)) {
+  if (Object.keys(variantStock).length) {
+    if (!Object.prototype.hasOwnProperty.call(variantStock, variantKey)) throw new Error('Selected color and size combination is unavailable.');
     fields['variantStock.' + variantKey] = delta;
     if (Object.prototype.hasOwnProperty.call(sizeStock, size)) fields['sizeStock.' + size] = delta;
     type = 'variant';
