@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs/promises');
 const PDFDocument = require('pdfkit');
 const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
@@ -1104,6 +1105,49 @@ async function forwardSupportToTelegram(order, issueText, files) {
   }
 }
 
+// A per-response nonce lets us observe a strict CSP without breaking the legacy inline UI.
+app.use((req, res, next) => {
+  res.locals.cspNonce = crypto.randomBytes(18).toString('base64');
+  const nonce = res.locals.cspNonce;
+  const reportOnlyPolicy = [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self' https://checkout.razorpay.com",
+    `script-src 'self' 'nonce-${nonce}' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://connect.facebook.net https://checkout.razorpay.com`,
+    "script-src-attr 'none'",
+    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net`,
+    "style-src-attr 'none'",
+    "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
+    "img-src 'self' data: blob: https://images.unsplash.com https://res.cloudinary.com https://www.facebook.com",
+    "media-src 'self' data: blob: https://res.cloudinary.com",
+    "manifest-src 'self'",
+    "connect-src 'self' https://api.postalpincode.in https://api.razorpay.com https://checkout.razorpay.com https://connect.facebook.net https://www.facebook.com",
+    "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
+    "worker-src 'self' blob:",
+    "report-uri /api/csp-report"
+  ].join('; ');
+  res.setHeader('Content-Security-Policy-Report-Only', reportOnlyPolicy);
+  next();
+});
+
+async function sendHtmlWithCspNonce(req, res, next) {
+  const fileName = req.path === '/admin.html' ? 'admin.html' : 'index.html';
+  try {
+    const nonce = res.locals.cspNonce;
+    let html = await fs.readFile(path.join(__dirname, 'public', fileName), 'utf8');
+    html = html
+      .replace(/<script\\b(?![^>]*\\bnonce=)/gi, `<script nonce="${nonce}"`)
+      .replace(/<style\\b(?![^>]*\\bnonce=)/gi, `<style nonce="${nonce}"`);
+    res.set('Cache-Control', 'no-store');
+    res.type('html').send(html);
+  } catch (error) {
+    next(error);
+  }
+}
+app.get(['/', '/index.html', '/admin.html'], sendHtmlWithCspNonce);
+
 const configuredOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(value => value.trim().replace(/\/$/, '')).filter(Boolean);
 const allowedOrigins = new Set(['https://aura-fine-store.onrender.com','https://aurafinestore.in','https://www.aurafinestore.in',...configuredOrigins]);
 app.set('trust proxy', 1);
@@ -1144,6 +1188,29 @@ app.use(cors({
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 900, standardHeaders: 'draft-8', legacyHeaders: false, message: { success: false, message: 'Too many requests. Please try again later.' } });
 const adminLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, skipSuccessfulRequests: true, standardHeaders: 'draft-8', legacyHeaders: false, message: { success: false, message: 'Too many login attempts. Try again in 15 minutes.' } });
 app.use('/api', apiLimiter);
+const cspReportLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 60, standardHeaders: 'draft-8', legacyHeaders: false });
+app.post('/api/csp-report', cspReportLimiter, express.raw({
+  type: ['application/csp-report', 'application/reports+json', 'application/json'],
+  limit: '16kb'
+}), (req, res) => {
+  try {
+    const parsed = req.body?.length ? JSON.parse(req.body.toString('utf8')) : null;
+    const report = Array.isArray(parsed) ? parsed[0]?.body : (parsed?.['csp-report'] || parsed);
+    if (report && typeof report === 'object') {
+      const blocked = String(report.blockedURL || report.blockedUri || '');
+      let blockedOrigin = '';
+      try { blockedOrigin = blocked ? new URL(blocked).origin : ''; } catch (error) { blockedOrigin = 'invalid-or-inline'; }
+      console.warn('[CSP report]', JSON.stringify({
+        directive: String(report.effectiveDirective || report.violatedDirective || '').slice(0, 120),
+        blockedOrigin,
+        disposition: String(report.disposition || 'report')
+      }));
+    }
+  } catch (error) {
+    // Reports are best-effort telemetry; malformed public reports are ignored.
+  }
+  res.status(204).end();
+});
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
