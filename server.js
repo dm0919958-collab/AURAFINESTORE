@@ -1044,7 +1044,7 @@ app.use(cors({
   maxAge: 600
 }));
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 900, standardHeaders: 'draft-8', legacyHeaders: false, message: { success: false, message: 'Too many requests. Please try again later.' } });
-const adminLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: 'draft-8', legacyHeaders: false, message: { success: false, message: 'Too many login attempts. Try again in 15 minutes.' } });
+const adminLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, skipSuccessfulRequests: true, standardHeaders: 'draft-8', legacyHeaders: false, message: { success: false, message: 'Too many login attempts. Try again in 15 minutes.' } });
 app.use('/api', apiLimiter);
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
