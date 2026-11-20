@@ -18,7 +18,7 @@ test('JWT secret is mandatory and admin tokens are scoped', () => {
   assert.match(server, /audience: ADMIN_JWT_AUDIENCE/);
   assert.match(server, /algorithms: \['HS256'\]/);
   assert.match(server, /maxAge: ADMIN_JWT_TTL/);
-  assert.doesNotMatch(server, /req\.query\.token/);
+  assert.doesNotMatch(server, /req\.query\.(?:token|ctoken)/);
 });
 test('Multer 2 and file content-signature validation are enabled', () => {
   assert.match(pkg.dependencies.multer, /^\^2\./);
