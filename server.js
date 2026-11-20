@@ -1183,6 +1183,9 @@ app.use(helmet({
     defaultSrc: ["'self'"], baseUri: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"],
     formAction: ["'self'",'https://checkout.razorpay.com'],
     scriptSrc: ["'self'","'unsafe-inline'","'unsafe-eval'",'https://cdn.tailwindcss.com','https://cdnjs.cloudflare.com','https://cdn.jsdelivr.net','https://connect.facebook.net','https://checkout.razorpay.com'],
+    // The legacy Admin UI uses inline onclick/onkeydown attributes. Keep those working
+    // while the separate Report-Only policy tracks migration to addEventListener.
+    scriptSrcAttr: ["'unsafe-inline'"],
     styleSrc: ["'self'","'unsafe-inline'",'https://fonts.googleapis.com','https://cdnjs.cloudflare.com','https://cdn.jsdelivr.net'],
     fontSrc: ["'self'",'data:','https://fonts.gstatic.com','https://cdnjs.cloudflare.com','https://cdn.jsdelivr.net'],
     imgSrc: ["'self'",'data:','blob:','https://images.unsplash.com','https://res.cloudinary.com','https://www.facebook.com'],

@@ -110,3 +110,10 @@ test('CSP limits media sources to trusted origins and declares a same-origin man
 test('dependency lockfile is committed for reproducible installs', () => {
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'package-lock.json')));
 });
+
+test('Helmet permits legacy inline UI handlers while strict CSP migration remains report-only', () => {
+  assert.match(server, /scriptSrcAttr: \["'unsafe-inline'"\]/);
+  assert.match(server, /script-src-attr 'none'/);
+  assert.match(admin, /onclick="attemptLogin\(\)"/);
+  assert.match(admin, /onkeydown="if\(event\.key==='Enter'\) attemptLogin\(\)"/);
+});
