@@ -2191,14 +2191,14 @@ app.post('/api/admin/payment-attempts/:razorpayOrderId/approve', async (req, res
       razorpay_payment_id: captured.id, razorpay_signature: signature };
     const result = await axios.post('http://127.0.0.1:' + PORT + '/api/orders', payload,
       { headers: { 'Content-Type': 'application/json' }, timeout: 30000 });
-    if (!result.data?.success || !result.data?.order) {
+    if (!result.data?.success || !result.data?.orderId) {
       return res.status(502).json({ success: false, message: "Payment was captured, but normal order creation did not complete. Keep this payment in review.", details: result.data?.message || "Order creation failed." });
     }
     await PaymentAttempt.updateMany(
       { phone: attempt.phone, $or: [{ retryGroupId: groupId }, { razorpayOrderId: groupId }] },
-      { $set: { status: "Completed", orderId: result.data.order.id, razorpayPaymentId: captured.id, failureReason: "", updatedAt: new Date() } }
+      { $set: { status: "Completed", orderId: result.data.orderId, razorpayPaymentId: captured.id, failureReason: "", updatedAt: new Date() } }
     );
-    res.json({ success: true, orderId: result.data.order.id, message: "Captured payment approved. The order has been created using the normal checkout validation and is now in Admin Orders and customer My Orders." });
+    res.json({ success: true, orderId: result.data.orderId, message: "Captured payment approved. The order has been created using the normal checkout validation and is now in Admin Orders and customer My Orders." });
   } catch (err) {
     console.error("Admin payment approval failed:", err.response?.data || err.message);
     res.status(502).json({ success: false, message: err.response?.data?.message || "Could not safely create an order from this payment. Keep it in Payment Review." });
