@@ -80,7 +80,7 @@ test('wallet coin credits use a durable per-order idempotency ledger', () => {
   assert.match(server, /\$addToSet: \{ creditedOrderIds: orderId \}/);
   assert.match(server, /async function creditOrderCoinsOnce/);
   assert.match(server, /await creditOrderCoinsOnce\(ord\)/);
-  assert.match(server, /await creditOrderCoinsOnce\(order\)/);
+  assert.match(server, /await creditOrderCoinsOnce\(order(?:,\s*session)?\)/);
 });
 
 
