@@ -25,7 +25,7 @@ test('Multer 2 and file content-signature validation are enabled', () => {
   assert.match(pkg.dependencies['file-type'], /^\^22\./);
   assert.match(server, /fileTypeFromBuffer/);
   assert.match(server, /uploadedFilesMatchTypes/);
-  assert.match(server, /isValidImageDataUrl/);
+  assert.match(server, /isValidImageDataUrl/);\n  assert.match(server, /UPLOAD_FIELD_MAX_BYTES/);\n  assert.match(server, /fieldSize: 16 \\* 1024/);\n  assert.match(server, /fieldNestingDepth: 4/);\n  assert.match(server, /boundedUploadMemoryStorage/);
 });
 test('CORS uses exact allowlisted origins and Helmet CSP', () => {
   assert.match(server, /app\.use\(helmet\(/);
