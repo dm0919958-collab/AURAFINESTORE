@@ -18,6 +18,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
+      - run: npm ls multer --depth=0
       - run: npm run check
       - run: npm test
       - run: npm audit --omit=dev --audit-level=moderate
