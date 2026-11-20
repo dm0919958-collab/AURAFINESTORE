@@ -1107,6 +1107,7 @@
       <form id="returnRequestForm" onsubmit="submitReturnRequest(event)" class="hidden space-y-3.5">
         <div class="flex items-center justify-between border-b border-stone-800 pb-2"><div><h5 class="font-cinzel text-lg font-bold text-amber-300"><i class="fa-solid fa-rotate-left mr-2"></i>Return / Replacement</h5><p class="text-[10px] text-stone-400">Available within 7 days after delivery</p></div><span class="rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 text-[10px] font-bold">7-DAY WINDOW</span></div>
         <div class="bg-stone-950 border border-emerald-500/30 p-3 rounded-xl"><p class="text-[10px] uppercase font-bold text-emerald-400">Selected Delivered Order</p><p id="returnSelectedOrderId" class="font-mono font-bold text-amber-300 text-sm"></p><p id="returnSelectedOrderItems" class="text-[11px] text-stone-300 mt-1"></p><p id="returnWindowCountdown" class="text-[10px] text-emerald-300 mt-1"></p></div>
+        <div><label for="returnProductSelect" class="block text-stone-300 font-bold mb-1">Select the exact product *</label><select id="returnProductSelect" required onchange="updateReturnRefundEstimate()" class="w-full bg-stone-950 border border-stone-700 text-white p-3 rounded-xl"><option value="">Choose product</option></select><p id="returnRefundEstimate" class="text-[10px] text-emerald-300 mt-1">Select a product to view its estimated refund amount.</p></div>
         <div><p class="block text-stone-300 font-bold mb-2">Choose what you need *</p><div class="grid grid-cols-2 gap-2"><label class="cursor-pointer"><input class="peer sr-only" type="radio" name="returnRequestType" value="Return" checked onchange="updateReturnRequestType()"><span class="block rounded-xl border border-stone-700 bg-stone-900 p-3 text-center text-sm font-extrabold text-stone-300 peer-checked:border-emerald-400 peer-checked:bg-emerald-950 peer-checked:text-emerald-300"><i class="fa-solid fa-rotate-left mr-1"></i> Return</span></label><label class="cursor-pointer"><input class="peer sr-only" type="radio" name="returnRequestType" value="Replacement" onchange="updateReturnRequestType()"><span class="block rounded-xl border border-stone-700 bg-stone-900 p-3 text-center text-sm font-extrabold text-stone-300 peer-checked:border-amber-400 peer-checked:bg-amber-950 peer-checked:text-amber-300"><i class="fa-solid fa-arrows-rotate mr-1"></i> Replacement</span></label></div></div>
         <div><label id="returnReasonLabel" for="returnReason" class="block text-stone-300 font-bold mb-1">Reason for Return *</label><select id="returnReason" required class="w-full bg-stone-950 border border-stone-700 text-white p-3 rounded-xl"><option value="">Choose a reason</option><option>Damaged Product</option><option>Defective Product</option><option>Wrong Product Received</option><option>Missing Item</option><option>Size / Fit Issue</option><option>Other</option></select></div>
         <div><label for="returnDetails" class="block text-stone-300 font-bold mb-1">Describe the issue *</label><textarea id="returnDetails" rows="3" minlength="5" maxlength="2000" required placeholder="Please explain what happened..." class="w-full bg-stone-950 border border-stone-700 text-white p-3 rounded-xl"></textarea></div>
@@ -2841,12 +2842,23 @@
     function updateReturnRequestType(){
       const type=document.querySelector('input[name="returnRequestType"]:checked')?.value||'Return';
       document.getElementById('returnReasonLabel').innerText='Reason for '+type+' *';
+      updateReturnRefundEstimate();
+    }
+    function updateReturnRefundEstimate(){
+      const type=document.querySelector('input[name="returnRequestType"]:checked')?.value||'Return';
+      const index=Number(document.getElementById('returnProductSelect')?.value);
+      const item=selectedReturnOrder?.items?.[index];
+      const amount=item?((Number(item.price||item.unitPrice)||0)*(Number(item.qty||item.quantity)||1)):0;
+      const el=document.getElementById('returnRefundEstimate');
+      if(el)el.innerText=type==='Return'?(item?'Estimated requested refund: ₹'+amount.toFixed(2)+' (final amount subject to admin review)':'Select a product to view its estimated refund amount.'):'Replacement request — no refund amount will be requested.';
     }
     function openReturnForm(i){
       const o=supportMatchedOrders[i];if(!o)return;selectedReturnOrder=o;
       document.getElementById('supportStep1').classList.add('hidden');document.getElementById('supportStep2Form').classList.add('hidden');document.getElementById('returnRequestForm').classList.remove('hidden');
       document.getElementById('returnSelectedOrderId').innerText='#'+o.id;document.getElementById('returnSelectedOrderItems').innerText=(o.items||[]).map(x=>x.name).join(', ');
       document.getElementById('returnWindowCountdown').innerText='Submit before '+new Date(new Date(o.deliveredAt).getTime()+7*86400000).toLocaleString('en-IN');
+      const productSelect=document.getElementById('returnProductSelect');
+      productSelect.innerHTML='<option value="">Choose product</option>'+(o.items||[]).map((x,n)=>'<option value="'+n+'">'+(n+1)+'. '+escapeHTML(x.name||x.productName||x.title||'Product')+' • Qty: '+(Number(x.qty||x.quantity)||1)+' • Size: '+escapeHTML(x.selectedSize||x.size||'—')+' • Colour: '+escapeHTML(x.selectedColor||x.color||'—')+'</option>').join('');
       document.querySelector('input[name="returnRequestType"][value="Return"]').checked=true;updateReturnRequestType();
       document.getElementById('returnReason').value='';document.getElementById('returnDetails').value='';returnPhotoFiles=[];returnVideoFile=null;
       document.getElementById('returnPhotoInput').value='';document.getElementById('returnVideoInput').value='';renderReturnPhotoPreview();renderReturnVideoPreview();
@@ -2873,7 +2885,7 @@
       const phone=document.getElementById('supportPhoneInput').value.replace(/\D/g,''),btn=document.getElementById('returnSubmitBtn'),progress=document.getElementById('returnSubmitProgress');
       btn.disabled=true;btn.innerText='Uploading…';progress.classList.remove('hidden');setReturnProgress(1,'Preparing evidence…');
       try{
-        const form=new FormData();form.append('orderId',selectedReturnOrder.id);form.append('phone',phone);form.append('requestType',document.querySelector('input[name="returnRequestType"]:checked').value);form.append('reason',document.getElementById('returnReason').value);form.append('details',document.getElementById('returnDetails').value.trim());
+        const form=new FormData();form.append('orderId',selectedReturnOrder.id);form.append('phone',phone);form.append('productIndex',document.getElementById('returnProductSelect').value);form.append('requestType',document.querySelector('input[name="returnRequestType"]:checked').value);form.append('reason',document.getElementById('returnReason').value);form.append('details',document.getElementById('returnDetails').value.trim());
         returnPhotoFiles.forEach(f=>form.append('photos',f));form.append('video',returnVideoFile);
         const data=await new Promise((resolve,reject)=>{
           const xhr=new XMLHttpRequest();xhr.open('POST','/api/support/return-request',true);
