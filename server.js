@@ -2109,6 +2109,36 @@ app.post('/api/payments/razorpay/retry', async (req, res) => {
   }
 });
 
+app.post('/api/admin/payment-attempts/:razorpayOrderId/verify', async (req, res) => {
+  try {
+    if (!(await verifyAdminAuth(req))) return res.status(403).json({ success: false, message: "Unauthorized" });
+    const razorpayOrderId = String(req.params.razorpayOrderId || '').trim();
+    const attempt = await PaymentAttempt.findOne({ razorpayOrderId });
+    if (!attempt) return res.status(404).json({ success: false, message: "Payment attempt not found." });
+    const keyId = process.env.RAZORPAY_KEY_ID, keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) return res.status(503).json({ success: false, message: "Razorpay is not configured." });
+    const response = await axios.get('https://api.razorpay.com/v1/orders/' + encodeURIComponent(razorpayOrderId) + '/payments',
+      { auth: { username: keyId, password: keySecret }, timeout: 15000 });
+    const payments = Array.isArray(response.data.items) ? response.data.items : [];
+    const captured = payments.find(p => p.status === 'captured');
+    if (captured) {
+      attempt.razorpayPaymentId = captured.id;
+      attempt.status = attempt.orderId ? "Completed" : "Payment Received - Order Pending";
+      attempt.failureReason = attempt.orderId ? "" : "Razorpay confirms captured payment. Order creation still requires review.";
+      attempt.updatedAt = new Date();
+      await attempt.save();
+      return res.json({ success: true, captured: true, status: attempt.status, paymentId: captured.id,
+        message: attempt.orderId ? "Captured payment verified; linked order exists." : "Captured payment verified. Keep in Payment Review until the order is safely created." });
+    }
+    const latest = payments.sort((x, y) => Number(y.created_at || 0) - Number(x.created_at || 0))[0];
+    return res.json({ success: true, captured: false, status: latest ? latest.status : "No payment found",
+      message: "No captured payment found. The attempt has not been deleted." });
+  } catch (err) {
+    console.error("Admin Razorpay verification failed:", err.response?.data || err.message);
+    return res.status(502).json({ success: false, message: "Razorpay could not be checked. The attempt was kept safely." });
+  }
+});
+
 app.post('/api/payments/razorpay/status', async (req, res) => {
   try {
     const razorpayOrderId = String(req.body.razorpayOrderId || '').trim();
