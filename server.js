@@ -609,19 +609,14 @@ const defaultProducts = [
 
 function parseCleanStockMap(rawMap) { return cleanStockMap(rawMap); }
 
-function inventorySnapshot(product) {
-  return { stockQuantity: Number(product.stockQuantity) || 0, sizeStock: { ...(product.sizeStock || {}) }, variantStock: { ...(product.variantStock || {}) }, inStock: Boolean(product.inStock) };
-}
+function inventorySnapshot(product) { return { stockQuantity: Number(product.stockQuantity) || 0, sizeStock: { ...(product.sizeStock || {}) }, variantStock: { ...(product.variantStock || {}) }, inStock: Boolean(product.inStock) }; }
 
 async function applyInventoryMovement(item, direction, session, actor, orderId = '') {
   const product = await Product.findOne({ id: Number(item.id) }).session(session).lean();
   if (!product) throw new Error('Inventory product not found: ' + item.id);
   const plan = stockMutationPlan(product, item, direction);
   const filter = { id: Number(item.id) };
-  if (direction === 'deduct') {
-    filter.stockQuantity = { $gte: plan.qty };
-    for (const key of Object.keys(plan.fields)) if (key !== 'stockQuantity') filter[key] = { $gte: plan.qty };
-  }
+  if (direction === 'deduct') { filter.stockQuantity = { $gte: plan.qty }; for (const key of Object.keys(plan.fields)) if (key !== 'stockQuantity') filter[key] = { $gte: plan.qty }; }
   const addExpr = (path, delta) => ({ $add: [{ $ifNull: ['
 
 async function seedInitialData() {
@@ -3293,10 +3288,7 @@ module.exports = { app, startServer, removeLegacyAdminPinHashes, Settings, credi
   return updated;
 }
 
-async function atomicallyDeductStock(verifiedItems, prodMap, session, orderId = '') {
-  for (const item of verifiedItems) await applyInventoryMovement(item, 'deduct', session, 'system:checkout', orderId);
-  return { ok: true };
-}
+async function atomicallyDeductStock(verifiedItems, prodMap, session, orderId = '') { for (const item of verifiedItems) await applyInventoryMovement(item, 'deduct', session, 'system:checkout', orderId); return { ok: true }; }
 
 async function seedInitialData() {
   try {
@@ -4513,16 +4505,10 @@ app.post('/api/admin/products', async (req, res) => {
       );
     }
 
-    const parsedVariantStock = parseCleanStockMap(variantStock);
-    const parsedSizeStock = parseCleanStockMap(sizeStock);
-    const vKeys = Object.keys(parsedVariantStock);
-    const sKeys = Object.keys(parsedSizeStock);
-
-    const finalTotalStock = vKeys.length > 0
-      ? vKeys.reduce((sum, k) => sum + (Number(parsedVariantStock[k]) || 0), 0)
-      : (sKeys.length > 0
-          ? sKeys.reduce((sum, k) => sum + (Number(parsedSizeStock[k]) || 0), 0)
-          : (Number(stockQuantity) || 0));
+    const normalizedStock = normalizeStockMaps(variantStock, sizeStock, stockQuantity);
+    const parsedVariantStock = normalizedStock.variantStock;
+    const parsedSizeStock = normalizedStock.sizeStock;
+    const finalTotalStock = normalizedStock.stockQuantity;
 
     const newProd = await Product.create({
       id: Date.now(),
@@ -4570,16 +4556,10 @@ app.put('/api/admin/products/:id', async (req, res) => {
       );
     }
 
-    const parsedVariantStock = parseCleanStockMap(variantStock);
-    const parsedSizeStock = parseCleanStockMap(sizeStock);
-    const vKeys = Object.keys(parsedVariantStock);
-    const sKeys = Object.keys(parsedSizeStock);
-
-    const finalTotalStock = vKeys.length > 0
-      ? vKeys.reduce((sum, k) => sum + (Number(parsedVariantStock[k]) || 0), 0)
-      : (sKeys.length > 0
-          ? sKeys.reduce((sum, k) => sum + (Number(parsedSizeStock[k]) || 0), 0)
-          : (Number(stockQuantity) || 0));
+    const normalizedStock = normalizeStockMaps(variantStock, sizeStock, stockQuantity);
+    const parsedVariantStock = normalizedStock.variantStock;
+    const parsedSizeStock = normalizedStock.sizeStock;
+    const finalTotalStock = normalizedStock.stockQuantity;
 
     const prodId = Number(req.params.id);
     const updated = await Product.findOneAndUpdate(
