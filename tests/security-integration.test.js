@@ -98,3 +98,30 @@ test('upload route rejects spoofed file content after authenticated parsing', as
   assert.equal(response.status, 400);
   assert.match(response.body.message, /valid PDF/i);
 });
+
+
+test('strict CSP is monitored in report-only mode with per-response script/style nonces', async () => {
+  for (const page of ['/', '/admin.html']) {
+    const response = await request(app).get(page);
+    assert.equal(response.status, 200);
+    const policy = response.headers['content-security-policy-report-only'];
+    assert.ok(policy);
+    assert.match(policy, /script-src 'self' 'nonce-[A-Za-z0-9+/]+=*'/);
+    assert.match(policy, /script-src-attr 'none'/);
+    assert.match(policy, /style-src-attr 'none'/);
+    assert.doesNotMatch(policy, /unsafe-inline|unsafe-eval/);
+    const nonce = policy.match(/'nonce-([^']+)'/)[1];
+    assert.match(response.text, new RegExp('<script nonce="' + nonce + '"'));
+    assert.match(response.text, new RegExp('<style nonce="' + nonce + '"'));
+    assert.equal(response.headers['cache-control'], 'no-store');
+  }
+});
+
+test('CSP report endpoint accepts bounded reports without exposing report payloads', async () => {
+  const report = { 'csp-report': { 'violated-directive': 'script-src-attr', 'blocked-uri': 'inline' } };
+  const response = await request(app)
+    .post('/api/csp-report')
+    .set('Content-Type', 'application/csp-report')
+    .send(JSON.stringify(report));
+  assert.equal(response.status, 204);
+});
