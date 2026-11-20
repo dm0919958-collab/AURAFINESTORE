@@ -878,6 +878,13 @@ label { color: #f1e5ce; }
 
   </div>
 
+  <div id="paymentHistoryModal" class="hidden fixed inset-0 z-[9999] bg-black/70 p-3 overflow-y-auto">
+    <div class="max-w-2xl mx-auto mt-8 bg-white text-slate-900 rounded-2xl p-4 shadow-2xl">
+      <div class="flex justify-between items-center gap-3 mb-3"><h3 class="font-bold text-lg">Full Razorpay Payment History</h3><button type="button" onclick="closePaymentHistory()" class="px-3 py-1 rounded-lg bg-slate-200 font-bold">Close</button></div>
+      <div id="paymentHistoryContent" class="max-h-[70vh] overflow-y-auto"></div>
+    </div>
+  </div>
+
   <script>
     function renderAdminInvoices() {
       const body=document.getElementById("auraInvoicesTableBody"); if(!body)return;
@@ -2119,6 +2126,41 @@ label { color: #f1e5ce; }
       } catch (e) { alert("Razorpay could not be checked. The payment record is kept."); }
     }
 
+    async function viewAdminPaymentHistory(orderId) {
+      const modal = document.getElementById('paymentHistoryModal');
+      const content = document.getElementById('paymentHistoryContent');
+      if (!modal || !content) return;
+      content.innerHTML = '<p class="text-sm text-slate-500">Loading complete payment history from Razorpay…</p>';
+      modal.classList.remove('hidden');
+      try {
+        const res = await fetch('/api/admin/payment-attempts/' + encodeURIComponent(orderId) + '/history', { headers: getAuthHeaders(false) });
+        if (handleUnauthorized(res)) return;
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Could not load payment history.');
+        content.innerHTML = data.history.map((a, index) => `
+          <div class="border rounded-xl p-3 mb-3">
+            <div class="flex flex-wrap justify-between gap-2"><b>Attempt ${index + 1} — ${escapeHTML(a.status)}</b><small>${new Date(a.createdAt).toLocaleString('en-IN')}</small></div>
+            <p class="text-xs break-all">Razorpay Order: ${escapeHTML(a.razorpayOrderId)}</p>
+            <p class="text-xs">Saved failure reason: ${escapeHTML(a.failureReason || 'Not recorded')}</p>
+            ${a.checked ? (a.payments.length ? a.payments.map(p => `<div class="bg-slate-50 rounded p-2 mt-2 text-xs"><b>Razorpay: ${escapeHTML(p.status)}</b> · ₹${Number(p.amount).toFixed(2)} · ${escapeHTML(p.method || 'method unavailable')}<p>Payment ID: ${escapeHTML(p.id)}</p><p>Failure: ${escapeHTML([p.errorCode,p.errorDescription,p.errorReason].filter(Boolean).join(' — ') || 'No failure reason returned')}</p><p>${p.createdAt ? new Date(p.createdAt).toLocaleString('en-IN') : 'Time unavailable'}</p></div>`).join('') : '<p class="text-xs text-slate-500 mt-2">Razorpay returned no payment attempt for this order.</p>') : `<p class="text-xs text-rose-600">Razorpay check failed: ${escapeHTML(a.checkError || 'Unknown error')}</p>`}
+          </div>`).join('');
+        if (data.hasCaptured) content.innerHTML = '<p class="font-bold text-emerald-700 mb-3">Captured payment found in this retry group.</p>' + content.innerHTML;
+      } catch (e) { content.innerHTML = '<p class="text-sm text-rose-600">' + escapeHTML(e.message) + '</p>'; }
+    }
+    function closePaymentHistory() { document.getElementById('paymentHistoryModal')?.classList.add('hidden'); }
+
+    async function approveAdminPaymentAttempt(orderId) {
+      if (!confirm('Razorpay will be checked again. If a captured payment and matching checkout details are confirmed, the normal order-creation flow will run. Continue?')) return;
+      try {
+        const res = await fetch('/api/admin/payment-attempts/' + encodeURIComponent(orderId) + '/approve', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({}) });
+        if (handleUnauthorized(res)) return;
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Payment approval failed.');
+        alert(data.message);
+        await loadAdminOrdersOnlySilently();
+      } catch (e) { alert(e.message || 'Could not approve payment. Keep it in Payment Review.'); }
+    }
+
     function sendPaymentRetryInstructions(phone, orderId) {
       const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
       if (cleanPhone.length !== 10) return alert("Customer phone number is unavailable.");
@@ -2161,7 +2203,7 @@ label { color: #f1e5ce; }
           <td class="p-2"><b class="text-white">₹${Number(p.total) || 0}</b><span class="block text-slate-400">Payment: ₹${Number(p.amountToCollect) || 0}</span>${p.orderId ? `<span class="block text-emerald-300">Order #${escapeHTML(p.orderId)}</span>` : ''}</td>
           <td class="p-2 text-slate-300">₹${Number(p.deliveryCharge) || 0}</td>
           <td class="p-2"><b class="${color}">${escapeHTML(state)}</b>${p.failureReason ? `<span class="block mt-1 text-[10px] text-rose-300">${escapeHTML(p.failureReason)}</span>` : ''}${p.expiresAt ? `<span class="block mt-1 text-[10px] text-slate-400">Expires: ${new Date(p.expiresAt).toLocaleString('en-IN')}</span>` : ''}</td>
-          <td class="p-2 min-w-[145px] space-y-1"><button onclick="verifyAdminPaymentAttempt('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-cyan-700 hover:bg-cyan-600 px-2 py-1.5 text-[10px] font-bold text-white">Check Payment</button>${['Cancelled','Failed'].includes(state) ? `<button onclick="sendPaymentRetryInstructions('${escapeHTML(p.phone || '')}','${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-amber-500 hover:bg-amber-400 px-2 py-1.5 text-[10px] font-bold text-slate-950">Send Retry Instructions</button>` : state === 'Payment Received - Order Pending' ? '<span class="block text-[10px] font-bold text-rose-300">PAYMENT REVIEW — KEEP</span>' : ''}<button onclick="deleteAdminPaymentAttempt('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-rose-700 hover:bg-rose-600 px-2 py-1.5 text-[10px] font-bold text-white">Delete History</button></td>
+          <td class="p-2 min-w-[145px] space-y-1"><button onclick="viewAdminPaymentHistory('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-violet-700 hover:bg-violet-600 px-2 py-1.5 text-[10px] font-bold text-white">View History</button>${state === 'Payment Received - Order Pending' ? `<button onclick="approveAdminPaymentAttempt('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-emerald-700 hover:bg-emerald-600 px-2 py-1.5 text-[10px] font-bold text-white">Approve & Create Order</button>` : ''}<button onclick="verifyAdminPaymentAttempt('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-cyan-700 hover:bg-cyan-600 px-2 py-1.5 text-[10px] font-bold text-white">Check Payment</button>${['Cancelled','Failed'].includes(state) ? `<button onclick="sendPaymentRetryInstructions('${escapeHTML(p.phone || '')}','${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-amber-500 hover:bg-amber-400 px-2 py-1.5 text-[10px] font-bold text-slate-950">Send Retry Instructions</button>` : state === 'Payment Received - Order Pending' ? '<span class="block text-[10px] font-bold text-rose-300">PAYMENT REVIEW — KEEP</span>' : ''}<button onclick="deleteAdminPaymentAttempt('${escapeHTML(p.razorpayOrderId || '')}')" class="w-full rounded bg-rose-700 hover:bg-rose-600 px-2 py-1.5 text-[10px] font-bold text-white">Delete History</button></td>
         </tr>`;
       }).join('');
     }
