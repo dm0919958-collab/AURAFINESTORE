@@ -2130,12 +2130,17 @@ app.delete('/api/admin/payment-attempts/:razorpayOrderId', async (req, res) => {
     const razorpayOrderId = String(req.params.razorpayOrderId || '').trim();
     const attempt = await PaymentAttempt.findOne({ razorpayOrderId }).lean();
     if (!attempt) return res.status(404).json({ success: false, message: "Payment attempt not found." });
-    if (attempt.status === "Completed" || attempt.status === "Payment Received - Order Pending")
-      return res.status(409).json({ success: false, message: "Captured or completed payment records cannot be deleted. Resolve the payment review first." });
     const groupId = attempt.retryGroupId || attempt.razorpayOrderId;
-    const result = await PaymentAttempt.deleteMany({
+    const groupAttempts = await PaymentAttempt.find({
       phone: attempt.phone,
       $or: [{ retryGroupId: groupId }, { razorpayOrderId: groupId }]
+    }).select('status').lean();
+    if (groupAttempts.some(a => ["Completed", "Payment Received - Order Pending"].includes(a.status)))
+      return res.status(409).json({ success: false, message: "This payment history contains a captured or completed payment and cannot be deleted." });
+    const result = await PaymentAttempt.deleteMany({
+      phone: attempt.phone,
+      $or: [{ retryGroupId: groupId }, { razorpayOrderId: groupId }],
+      status: { $in: ["Payment Pending", "Cancelled", "Failed"] }
     });
     return res.json({ success: true, deletedCount: result.deletedCount || 0,
       message: "Payment retry group deleted. The customer can no longer retry this payment and must place a new order." });
