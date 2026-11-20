@@ -1379,17 +1379,76 @@ label { color: #f1e5ce; }
     }
 
     async function attemptLogin() {
-      const pin = document.getElementById('adminPinInput').value.trim();
+      const input = document.getElementById('adminPinInput');
+      const pin = input.value;
       const errEl = document.getElementById('loginError');
+      const button = document.querySelector('#loginScreen button');
+      const originalButtonText = button ? button.textContent : 'Unlock Store Command';
+
+      const showLoginError = (message) => {
+        errEl.textContent = message;
+        errEl.classList.remove('hidden');
+      };
+
+      if (!pin) {
+        showLoginError('Please enter your admin passphrase.');
+        input.focus();
+        return;
+      }
+
+      errEl.classList.add('hidden');
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Checking credentials…';
+        button.setAttribute('aria-busy', 'true');
+      }
+
       try {
-        const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) });
-        const data = await res.json();
-        if (data.success && data.token) {
-          adminToken = data.token; sessionStorage.setItem('aura_admin_jwt', data.token); errEl.classList.add('hidden');
-          document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('dashboardContent').classList.remove('hidden');
-          loadAdminDashboard(true); loadAdminSupportTickets(true); loadAdminReturnRequests(true); startAdminLiveSync(); updateAuraAdminSecurityStatus();
-        } else { errEl.innerText = data.message || "Incorrect PIN!"; errEl.classList.remove('hidden'); }
-      } catch (e) {}
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ pin })
+        });
+
+        const responseText = await res.text();
+        let data;
+        try {
+          data = responseText ? JSON.parse(responseText) : {};
+        } catch {
+          throw new Error('The server returned an unreadable response. Please refresh and try again.');
+        }
+
+        if (res.ok && data.success && data.token) {
+          adminToken = data.token;
+          sessionStorage.setItem('aura_admin_jwt', data.token);
+          errEl.classList.add('hidden');
+          document.getElementById('loginScreen').classList.add('hidden');
+          document.getElementById('dashboardContent').classList.remove('hidden');
+          loadAdminDashboard(true);
+          loadAdminSupportTickets(true);
+          loadAdminReturnRequests(true);
+          startAdminLiveSync();
+          updateAuraAdminSecurityStatus();
+          return;
+        }
+
+        showLoginError(data.message || (res.status === 401
+          ? 'Incorrect admin passphrase. Please check it and try again.'
+          : res.status === 429
+            ? 'Too many login attempts. Please wait 15 minutes before trying again.'
+            : `Login failed (HTTP ${res.status}). Please try again.`));
+      } catch (error) {
+        showLoginError(error && error.message
+          ? error.message
+          : 'Unable to contact the login server. Check your connection and try again.');
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalButtonText;
+          button.removeAttribute('aria-busy');
+        }
+      }
     }
 
     function startAdminLiveSync() {
