@@ -338,15 +338,16 @@ async function expireRazorpayPaymentAttempts() {
   if (!keyId || !keySecret) return;
   const now = new Date();
   // Retry access expires after 24 hours; payment verification records are retained for 7 days.
-  const legacyAttempts = await PaymentAttempt.find({
-    createdAt: { $ne: null },
-    $or: [{ expiresAt: null }, { verificationExpiresAt: null }]
-  }).select('_id createdAt expiresAt verificationExpiresAt').limit(300).lean();
+  const legacyAttempts = await PaymentAttempt.find({ createdAt: { $ne: null } })
+    .select('_id createdAt expiresAt verificationExpiresAt').limit(500).lean();
   for (const legacy of legacyAttempts) {
     const created = new Date(legacy.createdAt || now).getTime();
+    const retryExpiry = new Date(created + 24 * 60 * 60 * 1000);
+    const verificationExpiry = new Date(created + 7 * 24 * 60 * 60 * 1000);
     const patch = {};
-    if (!legacy.expiresAt) patch.expiresAt = new Date(created + 24 * 60 * 60 * 1000);
-    if (!legacy.verificationExpiresAt) patch.verificationExpiresAt = new Date(created + 7 * 24 * 60 * 60 * 1000);
+    // Correct previously stored 7-day retry dates to the 24-hour retry deadline.
+    if (!legacy.expiresAt || new Date(legacy.expiresAt).getTime() > retryExpiry.getTime()) patch.expiresAt = retryExpiry;
+    if (!legacy.verificationExpiresAt) patch.verificationExpiresAt = verificationExpiry;
     if (Object.keys(patch).length) await PaymentAttempt.updateOne({ _id: legacy._id }, { $set: patch });
   }
   const expired = await PaymentAttempt.find({
