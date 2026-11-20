@@ -1949,7 +1949,9 @@ app.post('/api/payments/razorpay/create-order', async (req, res) => {
         if (priorOrder) return res.status(400).json({ success: false, message: "This coupon is available for first-time customers only." });
       }
       const c = await Coupon.findOne({ code: cleanCode }).lean();
-      if (c && (!c.expiresAt || c.expiresAt <= 0 || Date.now() < c.expiresAt) && subtotal >= (c.minSpend || 0))
+      if (c && c.expiresAt && c.expiresAt > 0 && Date.now() >= c.expiresAt)
+        return res.status(400).json({ success: false, message: "This coupon has expired. Please remove it and try again." });
+      if (c && subtotal >= (c.minSpend || 0))
         discount = Math.round((subtotal * Number(c.discountPercent || 0)) / 100);
     }
     const afterDiscount = Math.max(1, subtotal - discount);
