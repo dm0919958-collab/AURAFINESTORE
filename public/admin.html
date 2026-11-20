@@ -2103,14 +2103,14 @@ label { color: #f1e5ce; }
         const state = String(p.status || 'Payment Pending');
         const color = state === 'Failed' || state === 'Cancelled' ? 'text-rose-300' : state === 'Completed' ? 'text-emerald-300' : 'text-amber-300';
         const items = (p.items || []).map(i => escapeHTML(i.name || ('Product ' + i.id)) + ' ×' + (Number(i.qty) || 1)).join('<br>');
-        return \`<tr class="border-b border-slate-800 align-top">
-          <td class="p-2"><span class="block text-slate-300">\${new Date(p.createdAt).toLocaleString('en-IN')}</span><span class="font-mono text-[10px] text-cyan-300 break-all">\${escapeHTML(p.razorpayOrderId || '')}</span>\${p.razorpayPaymentId ? \`<span class="block font-mono text-[10px] text-emerald-300 break-all">\${escapeHTML(p.razorpayPaymentId)}</span>\` : ''}</td>
-          <td class="p-2"><b class="text-white">\${escapeHTML(p.customerName || 'Customer')}</b><span class="block text-slate-400">+91 \${escapeHTML(p.phone || '')}</span></td>
-          <td class="p-2 text-slate-300">\${items || '—'}</td>
-          <td class="p-2"><b class="text-white">₹\${Number(p.total) || 0}</b><span class="block text-slate-400">Payment: ₹\${Number(p.amountToCollect) || 0}</span>\${p.orderId ? \`<span class="block text-emerald-300">Order #\${escapeHTML(p.orderId)}</span>\` : ''}</td>
-          <td class="p-2 text-slate-300">₹\${Number(p.deliveryCharge) || 0}</td>
-          <td class="p-2"><b class="\${color}">\${escapeHTML(state)}</b>\${p.failureReason ? \`<span class="block mt-1 text-[10px] text-rose-300">\${escapeHTML(p.failureReason)}</span>\` : ''}</td>
-        </tr>\`;
+        return `<tr class="border-b border-slate-800 align-top">
+          <td class="p-2"><span class="block text-slate-300">${new Date(p.createdAt).toLocaleString('en-IN')}</span><span class="font-mono text-[10px] text-cyan-300 break-all">${escapeHTML(p.razorpayOrderId || '')}</span>${p.razorpayPaymentId ? `<span class="block font-mono text-[10px] text-emerald-300 break-all">${escapeHTML(p.razorpayPaymentId)}</span>` : ''}</td>
+          <td class="p-2"><b class="text-white">${escapeHTML(p.customerName || 'Customer')}</b><span class="block text-slate-400">+91 ${escapeHTML(p.phone || '')}</span></td>
+          <td class="p-2 text-slate-300">${items || '—'}</td>
+          <td class="p-2"><b class="text-white">₹${Number(p.total) || 0}</b><span class="block text-slate-400">Payment: ₹${Number(p.amountToCollect) || 0}</span>${p.orderId ? `<span class="block text-emerald-300">Order #${escapeHTML(p.orderId)}</span>` : ''}</td>
+          <td class="p-2 text-slate-300">₹${Number(p.deliveryCharge) || 0}</td>
+          <td class="p-2"><b class="${color}">${escapeHTML(state)}</b>${p.failureReason ? `<span class="block mt-1 text-[10px] text-rose-300">${escapeHTML(p.failureReason)}</span>` : ''}</td>
+        </tr>`;
       }).join('');
     }
 
