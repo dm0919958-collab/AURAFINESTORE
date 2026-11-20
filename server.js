@@ -3141,4 +3141,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { app, startServer, removeLegacyAdminPinHashes };
+module.exports = { app, startServer, removeLegacyAdminPinHashes, Settings };
