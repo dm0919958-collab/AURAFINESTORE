@@ -185,6 +185,13 @@ label { color: #f1e5ce; }
 #adminReturnsSection article button{color:#102c20!important}
 #adminReturnsSection .bg-emerald-950\/20{background:#edf5ee!important}
 #adminReturnsSection .bg-rose-950\/20{background:#fff0ef!important}
+
+  /* AURA Admin image previews: preserve the complete uploaded photo */
+  #dynamicProdImagesPreview img,
+  #colorImageEditors img{
+    object-fit:contain!important;
+    object-position:center center!important;
+  }
 </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
