@@ -2467,7 +2467,11 @@
     function calculateCartTotals(mode = 'UPI') {
       let subTotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
       const isCouponExpired = appliedCouponExpiresAt > 0 && Date.now() >= appliedCouponExpiresAt;
-      let discountAmt = (!isCouponExpired && appliedDiscountRate > 0 && subTotal >= appliedCouponMinSpend) ? Math.round((subTotal * appliedDiscountRate) / 100) : 0;
+      // Coupon savings can never exceed the current selling-price subtotal.
+      // Product MRP/sale-price savings are already reflected in item.price and must not be deducted again.
+      const rawCouponDiscount = (!isCouponExpired && appliedDiscountRate > 0 && subTotal >= appliedCouponMinSpend)
+        ? Math.round((subTotal * appliedDiscountRate) / 100) : 0;
+      const discountAmt = Math.min(Math.max(0, rawCouponDiscount), Math.max(0, subTotal - 1));
       const afterCouponValue = Math.max(1, subTotal - discountAmt);
       const useCoinsChecked = document.getElementById('useAuraCoinsCheckbox')?.checked || false;
       const maxRedeemable = Math.min(customerAvailableCoins, storeMaxCoinsRedeem, Math.max(0, afterCouponValue - 1));
