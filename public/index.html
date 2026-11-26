@@ -211,6 +211,15 @@
   #liveSalesToast .text-emerald-400{color:#8df0bd!important}
   #liveSalesToast .text-amber-400,#liveSalesToast .text-amber-300,#liveSalesToast .text-amber-200{color:#ffe09a!important}
   #liveSalesToast button{color:#fff!important}
+  .checkout-total-lines{display:grid;gap:8px;width:100%;color:#405548;font-size:12px}
+  .checkout-total-lines>div{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .checkout-total-lines strong{font-variant-numeric:tabular-nums;color:#203b30}
+  .checkout-total-lines .checkout-product-saving strong,.checkout-total-lines .checkout-coupon-saving strong{color:#087747}
+  .checkout-total-lines .checkout-coupon-saving{padding:8px 10px;border:1px solid #b9d9c4;border-radius:10px;background:#eaf6ed;color:#176b43;font-weight:800}
+  .checkout-total-lines .checkout-payable-line{padding-top:10px;margin-top:2px;border-top:1px solid #d9e2d8;font-weight:900;color:#173f31}
+  .checkout-total-lines .checkout-payable-line strong{font-size:20px;color:#087747}
+  .checkout-total-lines del{font-size:12px;color:#87948a;margin-right:5px}
+  .checkout-total-saved{display:block;text-align:right;color:#087747;font-weight:800;font-size:11px}
   #checkoutSpecialCoupons{background:#f3f7f2;border:1px solid #cbdccc;border-radius:13px;padding:10px;margin-top:9px}
   #checkoutSpecialCoupons .special-coupon-chip{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:9px 10px;border:1px solid #d7c49a;border-radius:10px;background:#fffdf7;color:#234534;text-align:left;margin-top:7px}
   #checkoutSpecialCoupons .special-coupon-chip strong{font-family:monospace;color:#805b25}
@@ -2625,8 +2634,17 @@
       if(couponInput&&cartCoupon&&document.activeElement!==couponInput)couponInput.value=appliedCouponCode||cartCoupon.value||'';
       const couponStatus=document.getElementById('step2CouponStatus');
       if(couponStatus&&appliedCouponCode){couponStatus.textContent='✓ '+appliedCouponCode+' applied — '+(Number(appliedDiscountRate)||0)+'% discount';couponStatus.className='text-[10px] font-bold mt-2 text-emerald-700';couponStatus.classList.remove('hidden');}
-      const subtotal=cart.reduce((sum,item)=>sum+(Number(item.price)||0)*(Number(item.qty)||1),0),mrp=cart.reduce((sum,item)=>sum+Math.max(Number(item.originalPrice)||Number(item.price)||0,Number(item.price)||0)*(Number(item.qty)||1),0),saved=Math.max(0,mrp-subtotal);
-      totalBox.innerHTML='<span>Current order value'+(saved?' · You save ₹'+saved.toFixed(0):'')+'</span><strong>₹'+subtotal.toFixed(0)+'</strong>';
+      const totals=calculateCartTotals('UPI');
+      const subtotal=Number(totals.subTotal)||0, couponSaving=Number(totals.discountAmt)||0, payable=Number(totals.afterCouponValue)||subtotal;
+      const mrp=cart.reduce((sum,item)=>sum+Math.max(Number(item.originalPrice)||Number(item.price)||0,Number(item.price)||0)*(Number(item.qty)||1),0);
+      const productSaving=Math.max(0,mrp-subtotal), totalSaving=productSaving+couponSaving;
+      totalBox.innerHTML='<div class="checkout-total-lines">'+
+        '<div><span>Product subtotal</span><strong>₹'+subtotal.toFixed(0)+'</strong></div>'+
+        (productSaving?'<div class="checkout-product-saving"><span>Product discount</span><strong>−₹'+productSaving.toFixed(0)+'</strong></div>':'')+
+        (couponSaving?'<div class="checkout-coupon-saving"><span>Coupon ('+escapeHTML(appliedCouponCode)+') · '+(Number(appliedDiscountRate)||0)+'% OFF</span><strong>−₹'+couponSaving.toFixed(0)+'</strong></div>':'')+
+        '<div class="checkout-payable-line"><span>Payable after discount</span><strong>'+(couponSaving?'<del>₹'+subtotal.toFixed(0)+'</del> ':'')+'₹'+payable.toFixed(0)+'</strong></div>'+
+        (totalSaving?'<small class="checkout-total-saved">You save ₹'+totalSaving.toFixed(0)+' in total</small>':'')+
+        '</div>';
     }
 
     function addSuggestedCheckoutProduct(prod,color,button) {
