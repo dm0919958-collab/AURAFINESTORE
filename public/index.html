@@ -536,6 +536,43 @@
     object-fit:contain!important;
     object-position:center center!important;
   }
+
+  /* AURA three-stage instant checkout */
+  .aura-checkout-steps-three{gap:6px!important;padding:10px!important}
+  .aura-checkout-steps-three .aura-checkout-step{gap:5px}
+  .aura-checkout-steps-three .aura-step-number{width:31px;height:31px;flex-basis:31px}
+  .aura-checkout-steps-three .aura-checkout-step b{font-size:9px;letter-spacing:.07em}
+  .aura-checkout-steps-three .aura-checkout-step small{font-size:8px}
+  #checkoutProductStep{display:flex;flex-direction:column;gap:12px}
+  .checkout-product-intro{padding:4px 2px 8px}
+  .checkout-product-kicker{font-size:9px;font-weight:900;letter-spacing:.14em;color:#9a743c}
+  .checkout-product-intro h3{font-size:19px;font-weight:900;color:#193f31;margin-top:4px}
+  .checkout-product-intro p{font-size:11px;line-height:1.5;color:#68776d;margin-top:4px}
+  .checkout-product-list,.checkout-suggestions-wrap{background:#fff;border:1px solid #e7dfd0;border-radius:16px;padding:11px}
+  .checkout-product-card{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #eee9df}
+  .checkout-product-card:last-child{border-bottom:0}
+  .checkout-product-card img{width:64px;height:64px;object-fit:cover;border-radius:11px;background:#f2eee6}
+  .checkout-product-info{flex:1;min-width:0}
+  .checkout-product-info strong{display:block;font-size:11px;line-height:1.35;color:#263b30}
+  .checkout-product-info small{display:block;font-size:9px;color:#77847a;margin-top:3px}
+  .checkout-product-prices{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px}
+  .checkout-product-prices b{font-size:13px;color:#176044}
+  .checkout-product-prices del{font-size:10px;color:#8b948d}
+  .checkout-discount-pill{font-size:9px;font-weight:900;color:#087747;background:#e8f5ec;border-radius:99px;padding:3px 6px}
+  .checkout-suggestions-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+  .checkout-suggestions-heading b{display:block;font-size:12px;color:#214b3a}
+  .checkout-suggestions-heading small{display:block;font-size:9px;color:#77847a;margin-top:2px}
+  .checkout-suggestions-heading>span{font-size:8px;font-weight:900;letter-spacing:.08em;color:#946c31;background:#f7f1e4;padding:5px 7px;border-radius:99px}
+  .checkout-suggestion-card{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid #eee9df}
+  .checkout-suggestion-card img{width:52px;height:52px;object-fit:cover;border-radius:10px}
+  .checkout-suggestion-info{flex:1;min-width:0}
+  .checkout-suggestion-info strong{display:block;font-size:10px;color:#263b30;line-height:1.35}
+  .checkout-suggestion-info small{font-size:9px;color:#718076}
+  .checkout-suggestion-add{background:#174c3c!important;color:#fff!important;border-radius:9px;padding:7px 9px;font-size:9px;font-weight:900;white-space:nowrap}
+  .checkout-product-total{display:flex;justify-content:space-between;align-items:center;background:#edf4ed;border:1px solid #c8d9c9;border-radius:12px;padding:11px 13px;color:#294638;font-size:11px;font-weight:800}
+  .checkout-product-total strong{font-size:17px;color:#0c7048}
+  .checkout-next-button{display:flex;justify-content:center;align-items:center;gap:9px;min-height:48px;border-radius:13px;background:linear-gradient(110deg,#b58b48,#d5b779)!important;color:#172f24!important;font-size:12px;font-weight:900;box-shadow:0 8px 18px rgba(181,139,72,.2)}
+  @media(max-width:520px){.aura-checkout-steps-three{gap:4px!important;padding:7px 6px!important}.aura-checkout-steps-three .aura-checkout-step{gap:4px}.aura-checkout-steps-three .aura-step-number{width:26px;height:26px;flex-basis:26px;font-size:10px}.aura-checkout-steps-three .aura-checkout-step b{font-size:8px}.aura-checkout-steps-three .aura-checkout-step small{font-size:7px}#checkoutProductStep{gap:9px}.checkout-product-intro h3{font-size:16px}.checkout-product-list,.checkout-suggestions-wrap{padding:9px}.checkout-product-card img{width:54px;height:54px}.checkout-suggestion-card img{width:45px;height:45px}}
 </style>
 </head>
 <body class="selection:bg-amber-500 selection:text-stone-950 relative min-h-screen flex flex-col justify-between">
@@ -1021,14 +1058,20 @@
     <div id="checkoutModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-stone-900 text-stone-100 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto border border-amber-500/25">
       <div class="flex justify-between items-center border-b border-stone-800 pb-3">
-        <div><h4 class="font-cinzel font-bold text-lg text-amber-300">AURA Fine Store Checkout</h4><div id="checkoutStepIndicator" class="aura-checkout-steps" aria-label="Checkout progress">
-<div class="aura-checkout-step is-active" id="checkoutAddressProgress"><span class="aura-step-number"><i class="fa-solid fa-location-dot"></i></span><span><b>ADDRESS</b><small>Delivery details</small></span></div>
-<span class="aura-step-connector" aria-hidden="true"></span>
-<div class="aura-checkout-step" id="checkoutPaymentProgress"><span class="aura-step-number"><i class="fa-regular fa-credit-card"></i></span><span><b>PAYMENT</b><small>Choose payment</small></span></div>
-</div></div>
+        <div><h4 class="font-cinzel font-bold text-lg text-amber-300">AURA Fine Store Checkout</h4><div id="checkoutStepIndicator" class="aura-checkout-steps aura-checkout-steps-three" aria-label="Checkout progress">
+<div class="aura-checkout-step is-active" id="checkoutProductProgress"><span class="aura-step-number"><i class="fa-solid fa-bag-shopping"></i></span><span><b>PRODUCT</b><small>Review items</small></span></div><span class="aura-step-connector" aria-hidden="true"></span>
+<div class="aura-checkout-step" id="checkoutAddressProgress"><span class="aura-step-number"><i class="fa-solid fa-location-dot"></i></span><span><b>ADDRESS</b><small>Delivery details</small></span></div><span class="aura-step-connector" aria-hidden="true"></span>
+<div class="aura-checkout-step" id="checkoutPaymentProgress"><span class="aura-step-number"><i class="fa-regular fa-credit-card"></i></span><span><b>PAYMENT</b><small>Choose payment</small></span></div></div></div>
         <button onclick="closeCheckoutModal()" class="text-stone-400 hover:text-amber-400 text-xl font-bold">&times;</button>
       </div>
       <form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="space-y-3 text-xs">
+        <div id="checkoutProductStep" class="space-y-3">
+          <div class="checkout-product-intro"><span class="checkout-product-kicker">STEP 1 · REVIEW YOUR SELECTION</span><h3>Products in your checkout</h3><p>Review your selected product and discover a few matching picks before entering your delivery address.</p></div>
+          <div id="instantCheckoutMainItems" class="checkout-product-list" aria-label="Selected products"></div>
+          <div id="instantCheckoutSuggestionsWrap" class="checkout-suggestions-wrap"><div class="checkout-suggestions-heading"><div><b>You may also like</b><small>Optional picks · Add only what you want</small></div><span>2–3 PICKS</span></div><div id="instantCheckoutSuggestions" class="checkout-suggestions"></div></div>
+          <div id="instantCheckoutProductTotal" class="checkout-product-total"></div>
+          <button type="button" onclick="goToAddressStep()" class="w-full checkout-next-button">Continue to Address <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
         <div id="checkoutStep1" class="space-y-3">
           <section class="aura-form-section" aria-label="Customer contact details">
             <div class="aura-form-heading"><i class="fa-solid fa-user"></i> 01 · Contact details</div>
@@ -1059,7 +1102,7 @@
             <div class="aura-field full"><label class="block mb-1">Nearby Landmark (Optional)</label><input type="text" id="addrLandmark" placeholder="Nearby school, market, temple, building etc."></div>
           </section>
           <p class="text-[10px] leading-relaxed text-stone-500 px-1"><i class="fa-solid fa-shield-halved mr-1 text-emerald-700"></i> Please double-check your PIN code, mobile number and full address so the courier can deliver your order correctly.</p>
-          <button type="button" onclick="goToStep2Payment()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-3.5 rounded-xl font-extrabold text-xs shadow mt-2">Continue to Payment &rarr;</button>
+          <div class="flex gap-2 mt-2"><button type="button" onclick="showInstantCheckoutProducts()" class="w-1/3 rounded-xl border border-stone-200 py-3 text-[10px] font-bold text-stone-600">← Products</button><button type="button" onclick="goToStep2Payment()" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-3.5 rounded-xl font-extrabold text-xs shadow">Payment Options <i class="fa-solid fa-arrow-right ml-1"></i></button></div>
         </div>
 
         <div id="checkoutStep2" class="hidden space-y-3">
@@ -2512,13 +2555,74 @@
       applyCoupon(); handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
     }
 
+    function showInstantCheckoutProducts() {
+      document.body.classList.remove('aura-payment-open');
+      document.getElementById('checkoutProductStep').classList.remove('hidden');
+      document.getElementById('checkoutStep1').classList.add('hidden');
+      document.getElementById('checkoutStep2').classList.add('hidden');
+      updateCheckoutProgress('product');renderInstantCheckoutProducts();
+      const panel=document.querySelector('#checkoutModal > div');if(panel)panel.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function renderInstantCheckoutProducts() {
+      const selected=document.getElementById('instantCheckoutMainItems'),suggestions=document.getElementById('instantCheckoutSuggestions'),totalBox=document.getElementById('instantCheckoutProductTotal');
+      if(!selected||!suggestions||!totalBox)return;
+      selected.replaceChildren();const heading=document.createElement('div');heading.className='checkout-items-heading';heading.textContent='Your selected product'+(cart.length>1?'s':'');selected.appendChild(heading);
+      cart.forEach(item=>{
+        const row=document.createElement('div');row.className='checkout-product-card';
+        const img=document.createElement('img');img.src=safeImageUrl((item.images&&item.images[0])||'');img.alt=item.name||'Product';
+        const info=document.createElement('div');info.className='checkout-product-info';
+        const name=document.createElement('strong');name.textContent=item.name||'Product';
+        const meta=document.createElement('small');meta.textContent=(item.selectedSize||'Standard')+' · '+(item.selectedColor||'Standard')+' · Qty '+(Number(item.qty)||1);
+        const prices=document.createElement('div');prices.className='checkout-product-prices';
+        const price=document.createElement('b');price.textContent='₹'+(Number(item.price)||0);
+        const original=Math.max(Number(item.originalPrice)||0,Number(item.price)||0);
+        if(original>(Number(item.price)||0)){const del=document.createElement('del');del.textContent='₹'+original;prices.appendChild(del);}
+        const pct=original>(Number(item.price)||0)?Math.round((original-Number(item.price))*100/original):0;
+        if(pct){const discount=document.createElement('span');discount.className='checkout-discount-pill';discount.textContent=pct+'% OFF';prices.appendChild(discount);}
+        prices.prepend(price);info.append(name,meta,prices);row.append(img,info);selected.appendChild(row);
+      });
+      const first=cart[0],base=first&&allProducts.find(p=>p.id===first.id);
+      const related=base?allProducts.filter(p=>p.id!==base.id&&(p.category===base.category||p.mainCategory===base.mainCategory)&&p.inStock!==false&&Number(p.stockQuantity)>0).slice(0,3):[];
+      document.getElementById('instantCheckoutSuggestionsWrap').classList.toggle('hidden',!related.length);suggestions.replaceChildren();
+      related.forEach(prod=>{
+        const color=(prod.colorOptions&&prod.colorOptions[0])||'Standard',pricing=getColorPriceDetails(prod,color),original=Math.max(Number(pricing.originalPrice)||0,Number(pricing.price)||0),price=Number(pricing.price)||0,pct=original>price?Math.round((original-price)*100/original):0;
+        const row=document.createElement('div');row.className='checkout-suggestion-card';
+        const img=document.createElement('img');img.src=safeImageUrl(getImagesForColor(prod,color)[0]||(prod.images&&prod.images[0])||'');img.alt=prod.name||'Suggested product';
+        const info=document.createElement('div');info.className='checkout-suggestion-info';
+        const name=document.createElement('strong');name.textContent=prod.name||'Product';
+        const detail=document.createElement('small');detail.textContent='₹'+price+(original>price?' · MRP ₹'+original+' · '+pct+'% OFF':'');info.append(name,detail);
+        const add=document.createElement('button');add.type='button';add.className='checkout-suggestion-add';add.textContent='＋ Add';add.addEventListener('click',()=>addSuggestedCheckoutProduct(prod,color,add));
+        row.append(img,info,add);suggestions.appendChild(row);
+      });
+      const subtotal=cart.reduce((sum,item)=>sum+(Number(item.price)||0)*(Number(item.qty)||1),0),mrp=cart.reduce((sum,item)=>sum+Math.max(Number(item.originalPrice)||Number(item.price)||0,Number(item.price)||0)*(Number(item.qty)||1),0),saved=Math.max(0,mrp-subtotal);
+      totalBox.innerHTML='<span>Current order value'+(saved?' · You save ₹'+saved.toFixed(0):'')+'</span><strong>₹'+subtotal.toFixed(0)+'</strong>';
+    }
+
+    function addSuggestedCheckoutProduct(prod,color,button) {
+      const live=allProducts.find(p=>p.id===prod.id)||prod,size=(live.sizeOptions&&live.sizeOptions[0])||'Standard',info=getVariantStockInfo(live,color,size);
+      const inBag=cart.filter(item=>item.id===live.id&&(item.selectedColor||'Standard')===color&&(item.selectedSize||'Standard')===size).reduce((n,item)=>n+(Number(item.qty)||1),0);
+      if(info.max<=inBag){alert('Sorry, this product/variant is out of stock.');return;}
+      const key=live.id+'_'+size+'_'+color,existing=cart.find(item=>item.itemKey===key),priced={...live,...getColorPriceDetails(live,color)};
+      if(existing){existing.qty=(Number(existing.qty)||1)+1;existing.price=priced.price;existing.originalPrice=priced.originalPrice;}
+      else cart.push({...priced,itemKey:key,selectedSize:size,selectedColor:color,qty:1});
+      persistCartLocal();updateCartUI();renderInstantCheckoutProducts();if(button){button.textContent='✓ Added';button.disabled=true;}
+    }
+
+    function goToAddressStep() {
+      if(!cart.length){alert('Please select at least one product to continue.');return;}
+      document.getElementById('checkoutProductStep').classList.add('hidden');document.getElementById('checkoutStep2').classList.add('hidden');document.getElementById('checkoutStep1').classList.remove('hidden');
+      document.body.classList.remove('aura-payment-open');updateCheckoutProgress('address');
+      const panel=document.querySelector('#checkoutModal > div');if(panel)panel.scrollTo({top:0,behavior:'smooth'});
+    }
+
     function openCheckoutModal() {
       loadSavedCustomerProfile();
       const phoneField = document.getElementById('ordPhone');
       if (phoneField) phoneField.readOnly = false;
       toggleCart();
       document.getElementById('checkoutModal').classList.remove('hidden');
-      backToStep1Address();
+      showInstantCheckoutProducts();
     }
     function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); document.body.classList.remove('aura-payment-open'); }
 
@@ -2606,21 +2710,16 @@
     }
 
     function updateCheckoutProgress(step) {
-      const address = document.getElementById('checkoutAddressProgress');
-      const payment = document.getElementById('checkoutPaymentProgress');
-      if (!address || !payment) return;
-      address.classList.toggle('is-active', step === 'address');
-      address.classList.toggle('is-complete', step === 'payment');
-      payment.classList.toggle('is-active', step === 'payment');
+      const product=document.getElementById('checkoutProductProgress'),address=document.getElementById('checkoutAddressProgress'),payment=document.getElementById('checkoutPaymentProgress');
+      if(!product||!address||!payment)return;
+      product.classList.toggle('is-active',step==='product');product.classList.toggle('is-complete',step==='address'||step==='payment');
+      address.classList.toggle('is-active',step==='address');address.classList.toggle('is-complete',step==='payment');payment.classList.toggle('is-active',step==='payment');
     }
 
     function backToStep1Address() {
-      updateCheckoutProgress('address');
-      document.body.classList.remove('aura-payment-open');
-      document.getElementById('checkoutStep2').classList.add('hidden');
-      document.getElementById('checkoutStep1').classList.remove('hidden');
-      const checkoutPanel = document.querySelector('#checkoutModal > div');
-      if (checkoutPanel) checkoutPanel.scrollTo({ top: 0, behavior: 'smooth' });
+      updateCheckoutProgress('address');document.body.classList.remove('aura-payment-open');
+      document.getElementById('checkoutProductStep').classList.add('hidden');document.getElementById('checkoutStep2').classList.add('hidden');document.getElementById('checkoutStep1').classList.remove('hidden');
+      const checkoutPanel=document.querySelector('#checkoutModal > div');if(checkoutPanel)checkoutPanel.scrollTo({top:0,behavior:'smooth'});
     }
 
     async function validateAndLookupPincode(pin) {
