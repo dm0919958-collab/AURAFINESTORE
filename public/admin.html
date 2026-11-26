@@ -260,6 +260,70 @@ body{width:100%;max-width:100%;min-width:0;overflow-x:clip}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
+
+<style id="aura-admin-layout-overflow-fix-v2">
+/* Keep the admin workspace inside the available viewport; scroll only dense tables. */
+html,body{max-width:100%;overflow-x:hidden!important}
+#dashboardContent{
+  box-sizing:border-box!important;
+  width:calc(100vw - 286px)!important;
+  max-width:calc(100vw - 286px)!important;
+  min-width:0!important;
+  margin-left:246px!important;
+  margin-right:16px!important;
+  overflow-x:hidden!important;
+}
+#dashboardContent>header,
+#dashboardContent>section,
+#dashboardContent>div{
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+}
+#dashboardContent>header{flex-wrap:wrap!important}
+#dashboardContent>header>div{min-width:0!important;max-width:100%!important}
+#dashboardContent>header>div:last-child{display:flex;flex-wrap:wrap!important;min-width:0!important}
+#dashboardContent section,
+#dashboardContent [id$="Section"],
+#dashboardContent .aura-admin-view-active{min-width:0!important;max-width:100%!important}
+#adminReturnStats{
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))!important;
+  width:100%!important;
+  max-width:100%!important;
+}
+#adminReturnStats>*{min-width:0!important;width:100%!important}
+#dashboardContent .grid{min-width:0!important;max-width:100%!important}
+#dashboardContent .overflow-x-auto{
+  width:100%!important;max-width:100%!important;
+  overflow-x:auto!important;overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+}
+#dashboardContent table{max-width:none}
+#dashboardContent .overflow-x-auto table{width:max-content!important;min-width:100%!important}
+#dashboardContent img,#dashboardContent canvas,#dashboardContent svg{max-width:100%}
+#dashboardContent input,#dashboardContent select,#dashboardContent textarea{max-width:100%;min-width:0}
+@media(max-width:1200px) and (min-width:901px){
+  #dashboardContent{width:calc(100vw - 286px)!important;max-width:calc(100vw - 286px)!important}
+  #dashboardContent .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:900px){
+  #dashboardContent{
+    width:100%!important;max-width:100%!important;
+    margin:0 auto!important;padding:10px!important;
+  }
+  #dashboardContent>header,
+  #dashboardContent>section,
+  #dashboardContent>div{width:100%!important;max-width:100%!important}
+  #dashboardContent>header>div:last-child{display:flex!important;flex-wrap:wrap!important}
+  #adminReturnStats{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))!important}
+}
+@media(max-width:560px){
+  #adminReturnStats{grid-template-columns:minmax(0,1fr)!important}
+  #dashboardContent .grid{grid-template-columns:minmax(0,1fr)!important}
+}
+</style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
