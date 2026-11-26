@@ -385,6 +385,18 @@
     #checkoutStep2>.flex.gap-2.pt-2 button{min-height:39px!important}
   }
 
+
+  /* Product summary scroll is conditional on distinct product count */
+  #checkoutStep2 #checkoutItemsSummary.has-few-items{
+    max-height:none!important;height:auto!important;overflow:visible!important;
+    overflow-y:visible!important;overscroll-behavior:auto!important;
+  }
+  #checkoutStep2 #checkoutItemsSummary.has-many-items{
+    max-height:clamp(110px,22dvh,190px)!important;height:auto!important;
+    overflow-x:hidden!important;overflow-y:auto!important;
+    overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;
+  }
+
   /* Readability-only adjustment for the Handpicked Catalog heading */
   #catalogSection > div:first-child > div:first-child > div:first-child > span {
     color: #f6d98f !important;
@@ -2918,6 +2930,9 @@
       const box = document.getElementById('checkoutItemsSummary');
       if (!box) return;
       box.replaceChildren();
+      // Keep 1–2 product rows fully visible; enable inner scrolling only for larger carts.
+      box.classList.toggle('has-many-items', cart.length > 2);
+      box.classList.toggle('has-few-items', cart.length <= 2);
       const heading = document.createElement('div'); heading.className = 'checkout-items-heading'; heading.textContent = `Your Items (${cart.reduce((n, item) => n + (Number(item.qty) || 1), 0)})`; box.appendChild(heading);
       cart.forEach(item => {
         const row = document.createElement('div'); row.className = 'checkout-item-row';
