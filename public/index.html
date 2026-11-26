@@ -540,6 +540,16 @@
   /* Hidden-state guard: checkout panels must not override the utility hidden class */
   #checkoutProductStep.hidden,#checkoutStep1.hidden,#checkoutStep2.hidden{display:none!important}
   #checkoutProductStep:not(.hidden){display:flex!important}
+  .checkout-coupon-box{background:linear-gradient(145deg,#fffdf7,#fff8e9);border:1px solid #e8d5ad;border-radius:16px;padding:12px;box-shadow:0 5px 15px rgba(137,103,46,.07)}
+  .checkout-coupon-title{display:flex;flex-direction:column;gap:3px;color:#244b3a}
+  .checkout-coupon-title>span{font-size:12px;font-weight:900}
+  .checkout-coupon-title>span i{color:#a77a36;margin-right:5px}
+  .checkout-coupon-title small{font-size:9px;color:#7b8177}
+  .checkout-coupon-apply{background:#174c3c;color:white;border-radius:11px;padding:0 15px;font-size:10px;font-weight:900;letter-spacing:.05em}
+  #checkoutSpecialCouponsList .special-coupon-chip{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:9px 10px;margin-top:7px;border:1px solid #e4d9c4;border-radius:11px;background:#fff;color:#284638}
+  #checkoutSpecialCouponsList .special-coupon-chip small{font-size:9px;color:#6d786f}
+  #step2CouponStatus.text-emerald-700{color:#087747}
+  #step2CouponStatus.text-rose-600{color:#be123c}
   /* AURA three-stage instant checkout */
   .aura-checkout-steps-three{gap:6px!important;padding:10px!important}
   .aura-checkout-steps-three .aura-checkout-step{gap:5px}
@@ -1072,6 +1082,19 @@
           <div class="checkout-product-intro"><span class="checkout-product-kicker">STEP 1 · REVIEW YOUR SELECTION</span><h3>Products in your checkout</h3><p>Review your selected product and discover a few matching picks before entering your delivery address.</p></div>
           <div id="instantCheckoutMainItems" class="checkout-product-list" aria-label="Selected products"></div>
           <div id="instantCheckoutSuggestionsWrap" class="checkout-suggestions-wrap"><div class="checkout-suggestions-heading"><div><b>You may also like</b><small>Optional picks · Add only what you want</small></div><span>2–3 PICKS</span></div><div id="instantCheckoutSuggestions" class="checkout-suggestions"></div></div>
+          <div id="instantCheckoutCouponBox" class="checkout-coupon-box">
+            <div class="checkout-coupon-title"><span><i class="fa-solid fa-ticket"></i> Gift / Discount Coupon</span><small>Apply your offer before checkout</small></div>
+            <div class="flex gap-2 mt-2">
+              <input type="text" id="step2CouponInput" placeholder="Enter gift or coupon code" autocomplete="off" class="uppercase bg-white border border-amber-200 text-stone-900 rounded-xl px-3 py-2.5 text-xs flex-1 min-w-0 font-mono font-bold">
+              <button type="button" onclick="applyCouponFromStep2()" class="checkout-coupon-apply">APPLY</button>
+            </div>
+            <p id="step2CouponStatus" class="text-[10px] font-semibold hidden mt-2"></p>
+            <div id="checkoutSpecialCoupons" class="mt-3">
+              <p class="text-[11px] font-extrabold text-emerald-900"><i class="fa-solid fa-tags mr-1"></i> Available Gift & Special Coupons</p>
+              <p class="text-[10px] text-stone-500 mt-1">Tap an offer to apply it to your order</p>
+              <div id="checkoutSpecialCouponsList" class="mt-2"></div>
+            </div>
+          </div>
           <div id="instantCheckoutProductTotal" class="checkout-product-total"></div>
           <button type="button" onclick="goToAddressStep()" class="w-full checkout-next-button">Continue to Address <i class="fa-solid fa-arrow-right"></i></button>
         </div>
@@ -1134,19 +1157,7 @@
             </label>
           </div>
 
-          <div class="bg-stone-950 border border-stone-800 p-2.5 rounded-xl space-y-1.5">
-            <label class="block font-bold text-amber-300 text-[11px]">Apply Coupon Code:</label>
-            <div class="flex gap-2">
-              <input type="text" id="step2CouponInput" placeholder="Coupon Code" class="uppercase bg-stone-900 border border-stone-700 text-white rounded-lg px-2.5 py-1.5 text-xs flex-1 font-mono font-bold">
-              <button type="button" onclick="applyCouponFromStep2()" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-lg text-xs font-extrabold">Apply</button>
-            </div>
-            <p id="step2CouponStatus" class="text-[10px] font-semibold hidden"></p>
-            <div id="checkoutSpecialCoupons">
-              <p class="text-[11px] font-extrabold text-emerald-800"><i class="fa-solid fa-tags mr-1"></i> Special Coupons</p>
-              <p class="text-[10px] text-stone-600 mt-1">Choose from currently available offers</p>
-              <div id="checkoutSpecialCouponsList"></div>
-            </div>
-          </div>
+
           <div>
             <label class="block font-semibold text-stone-300 mb-1">Select Payment Mode</label>
             <select id="ordPaymentMethod" onchange="handlePaymentModeChange(this.value)" class="w-full bg-stone-950 border border-stone-700 p-2.5 rounded-xl font-bold text-amber-300">
@@ -2554,8 +2565,20 @@
     }
 
     function applyCouponFromStep2() {
-      document.getElementById('couponInput').value = document.getElementById('step2CouponInput').value;
-      applyCoupon(); handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
+      const input=document.getElementById('step2CouponInput');
+      const mainInput=document.getElementById('couponInput');
+      if(mainInput)mainInput.value=input?input.value:'';
+      applyCoupon();
+      const paymentMethod=document.getElementById('ordPaymentMethod');
+      if(paymentMethod)handlePaymentModeChange(paymentMethod.value);
+      const status=document.getElementById('step2CouponStatus');
+      if(status){
+        const applied=!!appliedCouponCode;
+        status.textContent=applied?'✓ Coupon '+appliedCouponCode+' applied successfully!':'✕ '+(document.getElementById('couponStatusMsg')?.textContent||'Coupon could not be applied.');
+        status.className='text-[10px] font-bold mt-2 '+(applied?'text-emerald-700':'text-rose-600');
+        status.classList.remove('hidden');
+      }
+      renderInstantCheckoutProducts();
     }
 
     function showInstantCheckoutProducts() {
@@ -2598,6 +2621,10 @@
         const add=document.createElement('button');add.type='button';add.className='checkout-suggestion-add';add.textContent='＋ Add';add.addEventListener('click',()=>addSuggestedCheckoutProduct(prod,color,add));
         row.append(img,info,add);suggestions.appendChild(row);
       });
+      const couponInput=document.getElementById('step2CouponInput'),cartCoupon=document.getElementById('couponInput');
+      if(couponInput&&cartCoupon&&document.activeElement!==couponInput)couponInput.value=appliedCouponCode||cartCoupon.value||'';
+      const couponStatus=document.getElementById('step2CouponStatus');
+      if(couponStatus&&appliedCouponCode){couponStatus.textContent='✓ '+appliedCouponCode+' applied — '+(Number(appliedDiscountRate)||0)+'% discount';couponStatus.className='text-[10px] font-bold mt-2 text-emerald-700';couponStatus.classList.remove('hidden');}
       const subtotal=cart.reduce((sum,item)=>sum+(Number(item.price)||0)*(Number(item.qty)||1),0),mrp=cart.reduce((sum,item)=>sum+Math.max(Number(item.originalPrice)||Number(item.price)||0,Number(item.price)||0)*(Number(item.qty)||1),0),saved=Math.max(0,mrp-subtotal);
       totalBox.innerHTML='<span>Current order value'+(saved?' · You save ₹'+saved.toFixed(0):'')+'</span><strong>₹'+subtotal.toFixed(0)+'</strong>';
     }
