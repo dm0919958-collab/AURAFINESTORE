@@ -537,6 +537,9 @@
     object-position:center center!important;
   }
 
+  /* Hidden-state guard: checkout panels must not override the utility hidden class */
+  #checkoutProductStep.hidden,#checkoutStep1.hidden,#checkoutStep2.hidden{display:none!important}
+  #checkoutProductStep:not(.hidden){display:flex!important}
   /* AURA three-stage instant checkout */
   .aura-checkout-steps-three{gap:6px!important;padding:10px!important}
   .aura-checkout-steps-three .aura-checkout-step{gap:5px}
@@ -2620,7 +2623,8 @@
       loadSavedCustomerProfile();
       const phoneField = document.getElementById('ordPhone');
       if (phoneField) phoneField.readOnly = false;
-      toggleCart();
+      const cartDrawer=document.getElementById('cartDrawer');
+      if(cartDrawer)cartDrawer.classList.add('hidden');
       document.getElementById('checkoutModal').classList.remove('hidden');
       showInstantCheckoutProducts();
     }
