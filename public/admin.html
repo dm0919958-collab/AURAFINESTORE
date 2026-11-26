@@ -386,6 +386,59 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
 }
 </style>
 
+
+<style id="aura-admin-sidebar-restore-v4">
+/* Restore the original compact left admin rail; prevent generic panel rules from stretching it. */
+#dashboardContent>#auraAdminSidebar{
+ position:fixed!important;z-index:80!important;
+ left:16px!important;top:16px!important;bottom:16px!important;
+ width:218px!important;min-width:218px!important;max-width:218px!important;
+ height:auto!important;max-height:none!important;
+ margin:0!important;padding:16px 12px!important;
+ display:flex!important;flex-direction:column!important;gap:10px!important;
+ overflow:hidden!important;border-radius:22px!important
+}
+#dashboardContent>#auraAdminSidebar .aura-brand{display:block!important;flex:0 0 auto!important}
+#dashboardContent>#auraAdminSidebar nav{
+ display:flex!important;flex:1 1 auto!important;flex-direction:column!important;
+ align-items:stretch!important;gap:5px!important;
+ width:100%!important;min-width:0!important;min-height:0!important;
+ overflow-x:hidden!important;overflow-y:auto!important;
+ white-space:normal!important;padding:0 3px 0 0!important
+}
+#dashboardContent>#auraAdminSidebar nav>a,
+#dashboardContent>#auraAdminSidebar nav>.aura-all-view-btn{
+ display:flex!important;flex:0 0 auto!important;width:100%!important;min-width:0!important;
+ min-height:38px!important;padding:10px 11px!important;font-size:12px!important;
+ white-space:normal!important
+}
+#dashboardContent>#auraAdminSidebar .aura-side-note{display:block!important;flex:0 0 auto!important;margin-top:auto!important}
+@media(min-width:901px){
+ #dashboardContent{margin-left:246px!important;width:calc(100vw - 270px)!important;max-width:calc(100vw - 270px)!important}
+ #dashboardContent>#auraAdminSidebar{left:16px!important;width:218px!important;max-width:218px!important}
+}
+@media(max-width:900px){
+ #dashboardContent>#auraAdminSidebar{
+  position:sticky!important;left:auto!important;top:6px!important;bottom:auto!important;
+  width:calc(100% - 16px)!important;min-width:0!important;max-width:calc(100% - 16px)!important;
+  height:auto!important;max-height:none!important;margin:8px!important;
+  padding:8px!important;border-radius:14px!important;overflow:hidden!important
+ }
+ #dashboardContent>#auraAdminSidebar .aura-brand,
+ #dashboardContent>#auraAdminSidebar .aura-side-note{display:none!important}
+ #dashboardContent>#auraAdminSidebar nav{
+  flex:0 0 auto!important;flex-direction:row!important;align-items:center!important;
+  overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;
+  padding:0 0 3px!important
+ }
+ #dashboardContent>#auraAdminSidebar nav>a,
+ #dashboardContent>#auraAdminSidebar nav>.aura-all-view-btn{
+  width:auto!important;min-width:max-content!important;min-height:38px!important;
+  flex:0 0 auto!important;padding:8px 10px!important;font-size:11px!important
+ }
+}
+</style>
+
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
