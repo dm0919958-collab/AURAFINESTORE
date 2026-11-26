@@ -1999,11 +1999,8 @@
       document.getElementById('couponInput').value = code;
       applyCoupon();
       handlePaymentModeChange(document.getElementById('ordPaymentMethod').value);
-      const status = document.getElementById('step2CouponStatus');
-      if (status) {
-        status.textContent = appliedCouponCode === code ? 'Coupon ' + code + ' applied successfully.' : (document.getElementById('couponStatusMsg').textContent || 'Coupon could not be applied.');
-        status.className = 'text-[10px] font-bold mt-1 ' + (appliedCouponCode === code ? 'text-emerald-700' : 'text-rose-600');
-      }
+      renderStep2CouponStatus(appliedCouponCode === code ? '' : (document.getElementById('couponStatusMsg')?.textContent || 'Coupon could not be applied.'));
+      renderInstantCheckoutProducts();
     }
 
     function quickApplyCoupon(code) { document.getElementById('couponInput').value = code; applyCoupon(); }
