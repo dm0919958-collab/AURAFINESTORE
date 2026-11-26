@@ -559,6 +559,7 @@
   #checkoutSpecialCouponsList .special-coupon-chip small{font-size:9px;color:#6d786f}
   #step2CouponStatus.text-emerald-700{color:#087747}
   #step2CouponStatus.text-rose-600{color:#be123c}
+  .checkout-coupon-remove{margin-left:8px;padding:4px 9px;border:1px solid #d6a2a2;border-radius:7px;background:#fff;color:#a52c2c;font-size:9px;font-weight:900;letter-spacing:.04em}
   /* AURA three-stage instant checkout */
   .aura-checkout-steps-three{gap:6px!important;padding:10px!important}
   .aura-checkout-steps-three .aura-checkout-step{gap:5px}
@@ -2570,11 +2571,43 @@
         appliedDiscountRate = found.discountPercent; appliedCouponCode = found.code; appliedCouponMinSpend = found.minSpend || 0; appliedCouponExpiresAt = found.expiresAt || 0;
         status.innerText = `Applied ${found.discountPercent}% OFF!`; status.className = "text-[11px] text-emerald-400 block font-bold";
       } else {
-        appliedDiscountRate = 0; appliedCouponCode = ""; appliedCouponExpiresAt = 0;
+        appliedDiscountRate = 0; appliedCouponCode = ""; appliedCouponMinSpend = 0; appliedCouponExpiresAt = 0;
         status.innerText = isExpired ? `Coupon "${code}" has expired!` : (found ? `Min order ₹${found.minSpend} required!` : "Invalid coupon code!");
         status.className = "text-[11px] text-rose-400 block font-bold";
       }
       persistCartLocal(); status.classList.remove('hidden'); updateCartUI();
+    }
+
+    function renderStep2CouponStatus(errorMessage = '') {
+      const status=document.getElementById('step2CouponStatus');
+      if(!status)return;
+      if(appliedCouponCode){
+        status.innerHTML='✓ <strong>'+escapeHTML(appliedCouponCode)+'</strong> applied — '+(Number(appliedDiscountRate)||0)+'% discount <button type="button" onclick="removeCheckoutCoupon()" class="checkout-coupon-remove">REMOVE</button>';
+        status.className='text-[10px] font-bold mt-2 text-emerald-700';
+        status.classList.remove('hidden');
+      }else if(errorMessage){
+        status.textContent='✕ '+errorMessage;
+        status.className='text-[10px] font-bold mt-2 text-rose-600';
+        status.classList.remove('hidden');
+      }else{
+        status.textContent='';
+        status.classList.add('hidden');
+      }
+    }
+
+    function removeCheckoutCoupon() {
+      appliedDiscountRate=0;appliedCouponCode='';appliedCouponMinSpend=0;appliedCouponExpiresAt=0;
+      const stepInput=document.getElementById('step2CouponInput'),mainInput=document.getElementById('couponInput');
+      if(stepInput)stepInput.value='';
+      if(mainInput)mainInput.value='';
+      const mainStatus=document.getElementById('couponStatusMsg');
+      if(mainStatus){mainStatus.textContent='';mainStatus.classList.add('hidden');}
+      persistCartLocal();
+      renderStep2CouponStatus();
+      updateCartUI();
+      const paymentMethod=document.getElementById('ordPaymentMethod');
+      if(paymentMethod)handlePaymentModeChange(paymentMethod.value);
+      renderInstantCheckoutProducts();
     }
 
     function applyCouponFromStep2() {
@@ -2584,13 +2617,7 @@
       applyCoupon();
       const paymentMethod=document.getElementById('ordPaymentMethod');
       if(paymentMethod)handlePaymentModeChange(paymentMethod.value);
-      const status=document.getElementById('step2CouponStatus');
-      if(status){
-        const applied=!!appliedCouponCode;
-        status.textContent=applied?'✓ Coupon '+appliedCouponCode+' applied successfully!':'✕ '+(document.getElementById('couponStatusMsg')?.textContent||'Coupon could not be applied.');
-        status.className='text-[10px] font-bold mt-2 '+(applied?'text-emerald-700':'text-rose-600');
-        status.classList.remove('hidden');
-      }
+      renderStep2CouponStatus(appliedCouponCode?'':(document.getElementById('couponStatusMsg')?.textContent||'Coupon could not be applied.'));
       renderInstantCheckoutProducts();
     }
 
@@ -2635,18 +2662,18 @@
         row.append(img,info,add);suggestions.appendChild(row);
       });
       const couponInput=document.getElementById('step2CouponInput'),cartCoupon=document.getElementById('couponInput');
-      if(couponInput&&cartCoupon&&document.activeElement!==couponInput)couponInput.value=appliedCouponCode||cartCoupon.value||'';
-      const couponStatus=document.getElementById('step2CouponStatus');
-      if(couponStatus&&appliedCouponCode){couponStatus.textContent='✓ '+appliedCouponCode+' applied — '+(Number(appliedDiscountRate)||0)+'% discount';couponStatus.className='text-[10px] font-bold mt-2 text-emerald-700';couponStatus.classList.remove('hidden');}
+      if(couponInput&&cartCoupon&&document.activeElement!==couponInput)couponInput.value=appliedCouponCode||'';
+      renderStep2CouponStatus();
       const totals=calculateCartTotals('UPI');
       const subtotal=Number(totals.subTotal)||0, couponSaving=Number(totals.discountAmt)||0, payable=Number(totals.afterCouponValue)||subtotal;
       const mrp=cart.reduce((sum,item)=>sum+Math.max(Number(item.originalPrice)||Number(item.price)||0,Number(item.price)||0)*(Number(item.qty)||1),0);
       const productSaving=Math.max(0,mrp-subtotal), totalSaving=productSaving+couponSaving;
       totalBox.innerHTML='<div class="checkout-total-lines">'+
-        '<div><span>Product subtotal</span><strong>₹'+subtotal.toFixed(0)+'</strong></div>'+
+        '<div><span>Original price (MRP)</span><strong>₹'+mrp.toFixed(0)+'</strong></div>'+
         (productSaving?'<div class="checkout-product-saving"><span>Product discount</span><strong>−₹'+productSaving.toFixed(0)+'</strong></div>':'')+
+        '<div><span>Price after product discount</span><strong>₹'+subtotal.toFixed(0)+'</strong></div>'+
         (couponSaving?'<div class="checkout-coupon-saving"><span>Coupon ('+escapeHTML(appliedCouponCode)+') · '+(Number(appliedDiscountRate)||0)+'% OFF</span><strong>−₹'+couponSaving.toFixed(0)+'</strong></div>':'')+
-        '<div class="checkout-payable-line"><span>Payable after discount</span><strong>'+(couponSaving?'<del>₹'+subtotal.toFixed(0)+'</del> ':'')+'₹'+payable.toFixed(0)+'</strong></div>'+
+        '<div class="checkout-payable-line"><span>Payable amount</span><strong>'+(couponSaving?'<del>₹'+subtotal.toFixed(0)+'</del> ':'')+'₹'+payable.toFixed(0)+'</strong></div>'+
         (totalSaving?'<small class="checkout-total-saved">You save ₹'+totalSaving.toFixed(0)+' in total</small>':'')+
         '</div>';
     }
